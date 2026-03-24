@@ -74,18 +74,16 @@ async def get_public_project(handle: str, project_slug: str) -> dict:
     }
 
 
-@router.get("/{handle}/projects/{project_slug}/collections/{collection_slug}")
-async def get_public_collection(handle: str, project_slug: str, collection_slug: str) -> dict:
+@router.get("/{handle}/projects/{project_slug}/collections/{collection_id}")
+async def get_public_collection(handle: str, project_slug: str, collection_id: str) -> dict:
     user = user_service.get_by_username(handle)
     project = projects_service.get_by_slug(user["userId"], project_slug)
     if not _is_public_project(project):
         raise HTTPException(status_code=404, detail="Project not found.")
 
-    collection = collections_service.get_by_slug(
-        user["userId"],
-        project["projectId"],
-        collection_slug,
-    )
+    collection = collections_service.get_by_id(collection_id)
+    if collection.get("ownerId") != user["userId"] or collection.get("projectId") != project["projectId"]:
+        raise HTTPException(status_code=404, detail="Collection not found.")
     if not _is_public_collection(collection):
         raise HTTPException(status_code=404, detail="Collection not found.")
 

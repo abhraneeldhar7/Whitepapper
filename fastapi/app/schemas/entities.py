@@ -44,7 +44,7 @@ class ProjectCreate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     description: str | None = Field(default=None, max_length=50000)
     logoUrl: str | None = None
-    isPublic: bool = False
+    isPublic: bool = True
 
 
 class ProjectUpdate(BaseModel):
@@ -74,7 +74,7 @@ class CollectionDoc(BaseModel):
 class CollectionCreate(BaseModel):
     projectId: str
     name: str = Field(min_length=1, max_length=120)
-    slug: str = Field(min_length=2, max_length=80)
+    slug: str | None = Field(default=None, min_length=2, max_length=80)
     description: str | None = Field(default=None, max_length=50000)
     isPublic: bool | None = None
 

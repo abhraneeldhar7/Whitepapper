@@ -33,7 +33,7 @@ type DashboardTab = "pages" | "settings";
 
 const dashboardTabs = ["pages", "settings"];
 
-function buildOptimisticProject(ownerId?: string, name?: string, description?: string, isPublic?: boolean): ProjectDoc {
+function buildOptimisticProject(ownerId?: string, name?: string, isPublic?: boolean): ProjectDoc {
   const now = new Date().toISOString();
   const nonce = Date.now();
   return {
@@ -41,7 +41,7 @@ function buildOptimisticProject(ownerId?: string, name?: string, description?: s
     ownerId: ownerId || "optimistic-owner",
     name: name?.trim() || "Creating project...",
     slug: `creating-project-${nonce}`,
-    description: description?.trim() || "",
+    description: "",
     isPublic: Boolean(isPublic),
     pagesNumber: 0,
     createdAt: now,
@@ -78,8 +78,7 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
   const [creatingProject, setCreatingProject] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
-  const [newProjectDescription, setNewProjectDescription] = useState("");
-  const [newProjectPublic, setNewProjectPublic] = useState(false);
+  const [newProjectPublic, setNewProjectPublic] = useState(true);
 
   // Sync state with props to get fresh data when navigating back
   useEffect(() => {
@@ -116,7 +115,6 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
     const optimisticProject = buildOptimisticProject(
       initialUser?.userId,
       newProjectName,
-      newProjectDescription,
       newProjectPublic,
     );
     setProjects((prev) => [optimisticProject, ...prev]);
@@ -124,13 +122,12 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
     try {
       const project = await createProject({
         name: newProjectName.trim() || undefined,
-        description: newProjectDescription.trim() || null,
+        description: null,
         isPublic: newProjectPublic,
       });
       setCreateDialogOpen(false);
       setNewProjectName("");
-      setNewProjectDescription("");
-      setNewProjectPublic(false);
+      setNewProjectPublic(true);
       window.location.href = `/dashboard/${project.projectId}`;
     } catch (error) {
       setProjects((prev) => prev.filter((project) => project.projectId !== optimisticProject.projectId));
@@ -249,7 +246,7 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
                     <DialogHeader>
                       <DialogTitle>Create Project</DialogTitle>
                       <DialogDescription>
-                        Pick a name, add an optional description, and choose visibility.
+                        Pick a name and choose visibility.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-1">
@@ -261,16 +258,6 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
                           onChange={(event) => setNewProjectName(event.target.value)}
                           placeholder="Untitled Project"
                           maxLength={120}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="project-description">Description</Label>
-                        <Input
-                          id="project-description"
-                          value={newProjectDescription}
-                          onChange={(event) => setNewProjectDescription(event.target.value)}
-                          placeholder="What is this project about?"
-                          maxLength={1000}
                         />
                       </div>
                       <div className="flex items-center justify-between rounded-md border p-3">

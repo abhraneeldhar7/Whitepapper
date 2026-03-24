@@ -2,8 +2,7 @@ import { useState } from "react";
 import PaperCardComponent from "@/components/paperCardComponent";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getPublicCollectionBySlug } from "@/lib/api/public";
+import { getPublicCollectionById } from "@/lib/api/public";
 import type { CollectionDoc, PaperDoc } from "@/lib/types";
 
 type ProjectCollectionsViewerProps = {
@@ -41,14 +40,13 @@ export default function ProjectCollectionsViewer({
     }));
 
     try {
-      const data = await getPublicCollectionBySlug(handle, projectSlug, collection.slug);
-      const sorted = [...data.papers].sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
+      const data = await getPublicCollectionById(handle, projectSlug, collection.collectionId);
       setCollectionStates((prev) => ({
         ...prev,
         [collection.collectionId]: {
           loading: false,
           loaded: true,
-          papers: sorted,
+          papers: data.papers,
         },
       }));
     } catch {
@@ -74,7 +72,6 @@ export default function ProjectCollectionsViewer({
       <Accordion type="multiple" className="w-full">
         {collections.map((collection) => {
           const state = collectionStates[collection.collectionId];
-          const isLoading = state?.loading;
           const papersForCollection = state?.papers || [];
 
           return (
@@ -86,24 +83,16 @@ export default function ProjectCollectionsViewer({
               >
                 {collection.name}
               </AccordionTrigger>
-              <AccordionContent>
-                {isLoading ? (
-                  <div className="grid grid-cols-2 gap-5 pt-2 md:grid-cols-3">
-                    <Skeleton className="h-[185px] rounded-md" />
-                    <Skeleton className="h-[185px] rounded-md" />
-                    <Skeleton className="hidden h-[185px] rounded-md md:block" />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-5 pt-2 md:grid-cols-3">
-                    {papersForCollection.map((paper) => (
-                      <PaperCardComponent
-                        key={paper.paperId}
-                        handle={handle}
-                        paperData={paper}
-                      />
-                    ))}
-                  </div>
-                )}
+              <AccordionContent className="h-auto overflow-visible">
+                <div className="grid grid-cols-2 gap-5 pt-2 md:grid-cols-3">
+                  {papersForCollection.map((paper) => (
+                    <PaperCardComponent
+                      key={paper.paperId}
+                      handle={handle}
+                      paperData={paper}
+                    />
+                  ))}
+                </div>
               </AccordionContent>
             </AccordionItem>
           );

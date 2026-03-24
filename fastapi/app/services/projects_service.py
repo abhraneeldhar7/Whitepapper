@@ -95,7 +95,7 @@ class ProjectsService:
         payload["description"] = payload.get("description") or ""
         payload["logoUrl"] = payload.get("logoUrl") or None
         payload["pagesNumber"] = 0
-        payload["isPublic"] = bool(payload.get("isPublic", False))
+        payload["isPublic"] = bool(payload.get("isPublic", True))
         payload["slug"] = self._generate_unique_slug(owner_id, payload["name"])
         payload["ownerId"] = owner_id
         payload["projectId"] = project_id

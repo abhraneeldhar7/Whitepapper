@@ -7,6 +7,30 @@ from app.services.slug_utils import normalize_slug
 
 
 class CollectionsService:
+    def _is_slug_conflict(self, project_id: str, slug: str, collection_id: str | None = None) -> bool:
+        normalized = normalize_slug(slug)
+        if not normalized:
+            return True
+
+        existing = firestore_store.find_by_fields(
+            "collections",
+            {"projectId": project_id, "slug": normalized},
+        )
+        return any(item.get("collectionId") != collection_id for item in existing)
+
+    def _generate_unique_slug(self, project_id: str, source: str) -> str:
+        base = normalize_slug(source) or "collection"
+        if not self._is_slug_conflict(project_id, base):
+            return base
+
+        for _ in range(20):
+            suffix = uuid4().hex[:6]
+            candidate = f"{base}-{suffix}"
+            if not self._is_slug_conflict(project_id, candidate):
+                return candidate
+
+        return f"{base}-{uuid4().hex[:8]}"
+
     def _propagate_collection_visibility(self, collection_id: str, is_public: bool) -> None:
         target_status = "published" if is_public else "draft"
         papers = firestore_store.find_by_fields("papers", {"collectionId": collection_id})
@@ -37,20 +61,17 @@ class CollectionsService:
         if project.get("ownerId") != owner_id:
             raise HTTPException(status_code=403, detail="Not allowed.")
 
-        if payload.get("slug"):
-            payload["slug"] = normalize_slug(payload["slug"])
-            existing = firestore_store.find_by_fields(
-                "collections",
-                {
-                    "projectId": project_id,
-                    "slug": payload["slug"],
-                },
-            )
-            if existing:
+        provided_slug = payload.get("slug")
+        if provided_slug:
+            normalized = normalize_slug(provided_slug)
+            if self._is_slug_conflict(project_id, normalized):
                 raise HTTPException(status_code=409, detail="Collection slug already exists in this project.")
+            payload["slug"] = normalized
+        else:
+            payload["slug"] = self._generate_unique_slug(project_id, payload.get("name") or "collection")
 
         if payload.get("isPublic") is None:
-            payload["isPublic"] = bool(project.get("isPublic", False))
+            payload["isPublic"] = True
         else:
             payload["isPublic"] = bool(payload["isPublic"])
 
@@ -85,11 +106,7 @@ class CollectionsService:
             if not new_slug:
                 raise HTTPException(status_code=400, detail="Invalid slug.")
             project_id = str(current.get("projectId") or "")
-            existing = firestore_store.find_by_fields(
-                "collections",
-                {"projectId": project_id, "slug": new_slug},
-            )
-            if any(item.get("collectionId") != collection_id for item in existing):
+            if self._is_slug_conflict(project_id, new_slug, collection_id):
                 raise HTTPException(status_code=409, detail="Collection slug already exists in this project.")
             payload["slug"] = new_slug
 
@@ -156,5 +173,7 @@ class CollectionsService:
             raise HTTPException(status_code=404, detail="Collection not found.")
         return matches[0]
 
+    def is_slug_available(self, project_id: str, slug: str, collection_id: str | None = None) -> bool:
+        return not self._is_slug_conflict(project_id, slug, collection_id)
 
 collections_service = CollectionsService()

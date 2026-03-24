@@ -27,6 +27,20 @@ async def get_collection(
     return collections_service.get_by_id(collection_id, user_id)
 
 
+@router.get("/collections/slug/available")
+async def check_collection_slug_available(
+    slug: str = Query(..., min_length=2, max_length=80),
+    projectId: str = Query(...),
+    collectionId: str | None = Query(default=None),
+    user_id: str = Depends(get_verified_id),
+) -> dict[str, bool]:
+    project = projects_service.get_by_id(projectId)
+    if project.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    available = collections_service.is_slug_available(projectId, slug, collectionId)
+    return {"available": available}
+
+
 @router.post("/collections", response_model=CollectionDoc, status_code=201)
 async def create_collection(payload: CollectionCreate, user_id: str = Depends(get_verified_id)) -> CollectionDoc:
     return collections_service.create(user_id, payload.model_dump())

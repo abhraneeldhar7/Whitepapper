@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createCollection } from "@/lib/api/collections";
 import { createPaper } from "@/lib/api/papers";
@@ -102,6 +103,7 @@ export default function ProjectWorkspace({
   const [tempUploadingProjectLogo, setTempUploadingProjectLogo] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
+  const [newCollectionPublic, setNewCollectionPublic] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [checkingSlug, setCheckingSlug] = useState(false);
@@ -405,10 +407,11 @@ export default function ProjectWorkspace({
       await createCollection({
         projectId: project.projectId,
         name: newCollectionName.trim() || "Untitled Collection",
-        slug: newCollectionName.trim().toLowerCase().replace(/\s+/g, "-"),
+        isPublic: newCollectionPublic,
       });
       setCreateDialogOpen(false);
       setNewCollectionName("");
+      setNewCollectionPublic(true);
       window.location.href = `/dashboard/${project.projectId}?tab=pages`;
     } catch (error) {
       setCreatingCollection(false);
@@ -695,7 +698,7 @@ export default function ProjectWorkspace({
                     ) : projectDescription.trim().length > 0 ? (
                       <PostRender key={projectPreviewKey} content={projectDescription} />
                     ) : (
-                      <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground">
+                      <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground h-[250px]">
                         <NotebookPen size={35} />
                         <p>No description provided.</p>
                       </div>
@@ -785,7 +788,7 @@ export default function ProjectWorkspace({
                       <DialogHeader>
                         <DialogTitle>Create Collection</DialogTitle>
                         <DialogDescription>
-                          Pick a name and organize pages into this collection.
+                          Pick a name and choose visibility.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-1">
@@ -797,6 +800,17 @@ export default function ProjectWorkspace({
                             onChange={(event) => setNewCollectionName(event.target.value)}
                             placeholder="Untitled Collection"
                             maxLength={120}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between rounded-md border p-3">
+                          <div>
+                            <p className="text-sm font-medium">Public collection</p>
+                            <p className="text-xs text-muted-foreground">Allow visitors to view this collection.</p>
+                          </div>
+                          <Switch
+                            checked={newCollectionPublic}
+                            onCheckedChange={setNewCollectionPublic}
+                            aria-label="Toggle public collection"
                           />
                         </div>
                       </div>

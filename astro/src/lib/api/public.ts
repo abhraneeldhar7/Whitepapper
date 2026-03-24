@@ -30,13 +30,13 @@ export async function getPublicProjectBySlug(
   return apiClient.get<PublicProjectResponse>(`/public/${handle}/projects/${projectSlug}`, { auth: "none" });
 }
 
-export async function getPublicCollectionBySlug(
+export async function getPublicCollectionById(
   handle: string,
   projectSlug: string,
-  collectionSlug: string,
+  collectionId: string,
 ): Promise<PublicCollectionResponse> {
   return apiClient.get<PublicCollectionResponse>(
-    `/public/${handle}/projects/${projectSlug}/collections/${collectionSlug}`,
+    `/public/${handle}/projects/${projectSlug}/collections/${collectionId}`,
     { auth: "none" },
   );
 }

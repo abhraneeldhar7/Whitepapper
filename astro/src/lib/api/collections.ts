@@ -4,7 +4,7 @@ import type { CollectionDoc } from "@/lib/types";
 type CreateCollectionInput = {
   projectId: string;
   name: string;
-  slug: string;
+  slug?: string;
   description?: string | null;
   isPublic?: boolean;
 };
@@ -64,4 +64,16 @@ export async function deleteCollection(
   client: ApiClient = apiClient,
 ): Promise<void> {
   await client.delete<{ ok: boolean }>(`/collections/${collectionId}`);
+}
+
+export async function checkCollectionSlugAvailable(
+  slug: string,
+  projectId: string,
+  collectionId?: string,
+  client: ApiClient = apiClient,
+): Promise<boolean> {
+  const response = await client.get<{ available: boolean }>("/collections/slug/available", {
+    query: { slug, projectId, collectionId },
+  });
+  return response.available;
 }

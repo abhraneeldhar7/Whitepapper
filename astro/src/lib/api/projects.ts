@@ -46,7 +46,7 @@ export async function createProject(
     body: {
       name: input.name,
       description: input.description ?? null,
-      isPublic: input.isPublic ?? false,
+      isPublic: input.isPublic ?? true,
     },
   });
 }

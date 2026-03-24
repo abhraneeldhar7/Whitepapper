@@ -130,13 +130,11 @@ def get_collection_bundle(
             raise HTTPException(status_code=403, detail="Collection does not belong to the API key project.")
     else:
         normalized_slug = normalize_slug(collection_slug or "")
-        matches = firestore_store.find_by_fields(
-            "collections",
-            {"projectId": key_project_id, "slug": normalized_slug},
+        collection = collections_service.get_by_slug(
+            owner_id=project.get("ownerId"),
+            project_id=key_project_id,
+            collection_slug=normalized_slug,
         )
-        collection = matches[0] if matches else None
-        if not collection:
-            raise HTTPException(status_code=404, detail="Collection not found for slug in this project.")
 
     if not bool(collection.get("isPublic")):
         raise HTTPException(status_code=403, detail="Requested collection is not public.")
