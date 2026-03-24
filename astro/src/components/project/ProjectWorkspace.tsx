@@ -39,6 +39,7 @@ import type { CollectionDoc, PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
 import { compressImage } from "@/lib/utils";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
+import ScrollToTop from "../scrollToTop";
 
 type ProjectWorkspaceProps = {
   projectId: string;
@@ -404,7 +405,7 @@ export default function ProjectWorkspace({
     setCreatingCollection(true);
 
     try {
-      await createCollection({
+      const createdCollection = await createCollection({
         projectId: project.projectId,
         name: newCollectionName.trim() || "Untitled Collection",
         isPublic: newCollectionPublic,
@@ -412,7 +413,7 @@ export default function ProjectWorkspace({
       setCreateDialogOpen(false);
       setNewCollectionName("");
       setNewCollectionPublic(true);
-      window.location.href = `/dashboard/${project.projectId}?tab=pages`;
+      window.location.href = `/dashboard/${project.projectId}/${createdCollection.collectionId}`;
     } catch (error) {
       setCreatingCollection(false);
       toast.error(error instanceof Error ? error.message : "Failed to create collection.");
@@ -443,7 +444,8 @@ export default function ProjectWorkspace({
 
   return (
     <div className="min-h-screen bg-background px-[15px] pt-15 pb-20">
-      <div className="z-[10] fixed top-0 left-0 flex w-full justify-end p-[10px]">
+      <ScrollToTop />
+      <div className="z-[10] fixed top-4 right-4">
         <UserPopover user={initialUser} />
       </div>
 
@@ -472,7 +474,7 @@ export default function ProjectWorkspace({
           <TabsContent value="overview" className="mt-5">
             <div className="flex flex-col gap-8 md:flex-row">
               <div className="space-y-6 md:flex-2">
-                <div className="flex items-center gap-2 justify-end md:w-[480px]">
+                <div className="flex items-center gap-2 justify-end w-full">
                   {editingProject ? (
                     <>
                       <Button
@@ -559,14 +561,14 @@ export default function ProjectWorkspace({
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-5 w-full md:w-[350px]">
+                  <div className="flex flex-col gap-5 w-full ">
                     <div>
                       <Label htmlFor="project-name">Project name</Label>
                       {editingProject ?
                         <Input
                           id="project-name"
                           value={project.name}
-                          className="mt-2"
+                          className="mt-2 md:w-[300px]"
                           onChange={(event) => setProject((prev) => ({ ...prev, name: event.target.value }))}
                           maxLength={120}
                         /> :
@@ -580,7 +582,7 @@ export default function ProjectWorkspace({
                         <Input
                           id="project-slug"
                           value={project.slug}
-                          className="mt-2"
+                          className="mt-2 md:w-[300px]"
                           onChange={(event) => {
                             const normalized = normalizeProjectSlug(event.target.value);
                             setProject((prev) => ({ ...prev, slug: normalized }));
@@ -732,6 +734,7 @@ export default function ProjectWorkspace({
 
                       {pages.map((page) => (
                         <PaperCardComponent
+                          showStatus
                           key={page.paperId}
                           handle={initialUser?.username ?? "user"}
                           paperData={page}
@@ -775,7 +778,14 @@ export default function ProjectWorkspace({
                         {collections.map((collection) => (
                           <div key={collection.collectionId} className="flex flex-col items-center">
                             <a href={`/dashboard/${projectId}/${collection.collectionId}`}>
-                              <FolderNotes />
+                              <div className="relative inline-flex">
+                                <FolderNotes />
+                                {!collection.isPublic ? (
+                                  <span className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full border bg-background">
+                                    <LockIcon size={12} />
+                                  </span>
+                                ) : null}
+                              </div>
                             </a>
                             <p className="text-sm">{collection.name}</p>
                             <p className="mt-2 text-xs text-muted-foreground">{collection.pagesNumber} pages</p>

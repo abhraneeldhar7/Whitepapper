@@ -24,8 +24,7 @@ const [initialUser, projectData] = await Promise.all([
   getCurrentUser(serverClient).catch(() => null as UserDoc | null),
   getProjectDashboardData(projectId, serverClient).catch(() => null),
 ]);
-console.log("Current User:", initialUser);
-console.log("Project Dashboard Data:", projectData);
+
 if (!initialUser || !projectData) {
   return Astro.redirect("/404");
 }

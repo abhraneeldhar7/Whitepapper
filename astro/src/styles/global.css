@@ -208,3 +208,8 @@ html[data-collection-workspace-ready="true"] .collection-shell-app {
 h1{
   line-height: 1.2em;
 }
+
+body::selection {
+  background-color: var(--primary);
+  color: black;
+}

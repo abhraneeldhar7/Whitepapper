@@ -4,6 +4,7 @@ import CollectionWorkspaceSkeleton from "@/components/collection/CollectionWorks
 import Layout from "@/layouts/Layout.astro";
 import { createApiClient } from "@/lib/api/client";
 import { getCollection } from "@/lib/api/collections";
+import { getProjectById } from "@/lib/api/projects";
 import { listProjectPapers } from "@/lib/api/papers";
 import { getCurrentUser } from "@/lib/api/users";
 import type { CollectionDoc, PaperDoc, UserDoc } from "@/lib/types";
@@ -40,6 +41,10 @@ try {
 const initialPages = await listProjectPapers(projectId, serverClient)
   .then((papers) => papers.filter((p) => p.collectionId === collectionId))
   .catch(() => [] as PaperDoc[]);
+
+const initialProjectName = await getProjectById(projectId, serverClient)
+  .then((project) => project.name)
+  .catch(() => "Project");
 ---
 
 <Layout>
@@ -49,6 +54,7 @@ const initialPages = await listProjectPapers(projectId, serverClient)
       client:only="react"
       projectId={projectId}
       collectionId={collectionId}
+      initialProjectName={initialProjectName}
       initialCollection={initialCollection}
       initialPages={initialPages}
       initialUser={initialUser}

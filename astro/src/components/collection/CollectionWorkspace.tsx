@@ -25,10 +25,12 @@ import {
 import type { CollectionDoc, PaperDoc, UserDoc } from "@/lib/types";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
+import ScrollToTop from "../scrollToTop";
 
 type CollectionWorkspaceProps = {
   projectId: string;
   collectionId: string;
+  initialProjectName: string;
   initialCollection: CollectionDoc;
   initialPages: PaperDoc[];
   initialUser?: UserDoc | null;
@@ -47,6 +49,7 @@ function normalizeCollectionSlug(value: string): string {
 export default function CollectionWorkspace({
   projectId,
   collectionId,
+  initialProjectName,
   initialCollection,
   initialPages,
   initialUser,
@@ -263,20 +266,21 @@ export default function CollectionWorkspace({
 
   return (
     <div className="min-h-screen bg-background px-[15px] pt-15 pb-20">
-      <div className="z-[10] fixed top-0 left-0 flex w-full justify-end p-[10px]">
+      <ScrollToTop />
+      <div className="z-[10] fixed top-4 right-4">
         <UserPopover user={initialUser} />
       </div>
 
       <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
         <div>
           <p className="text-sm text-muted-foreground">
-            <a href={`/dashboard/${projectId}`} className="transition-all duration-300 hover:text-foreground">Project</a> / {collection.name}
+            <a href={`/dashboard/${projectId}`} className="transition-all duration-300 hover:text-foreground">{initialProjectName}</a> / {collection.name}
           </p>
         </div>
 
         <div className="flex flex-col gap-8 md:flex-row">
           <div className="space-y-6 md:flex-2">
-            <div className="flex items-center gap-2 justify-end md:w-[480px]">
+            <div className="flex items-center gap-2 justify-end">
               {editingCollection ? (
                 <>
                   <Button
@@ -308,14 +312,14 @@ export default function CollectionWorkspace({
             </div>
 
             <div className="flex md:flex-row flex-col md:gap-10 gap-6">
-              <div className="flex flex-col gap-5 w-full md:w-[480px]">
+              <div className="flex flex-col gap-5 w-full">
                 <div>
                   <Label htmlFor="collection-name">Collection name</Label>
                   {editingCollection ? (
                     <Input
                       id="collection-name"
                       value={collection.name}
-                      className="mt-2"
+                      className="mt-2 md:w-[300px]"
                       onChange={(event) => setCollection((prev) => (prev ? { ...prev, name: event.target.value } : prev))}
                       maxLength={120}
                     />
@@ -330,7 +334,7 @@ export default function CollectionWorkspace({
                     <Input
                       id="collection-slug"
                       value={collection.slug}
-                      className="mt-2"
+                      className="mt-2 w-[300px]"
                       onChange={(event) => {
                         const normalized = normalizeCollectionSlug(event.target.value);
                         setCollection((prev) => (prev ? { ...prev, slug: normalized } : prev));
@@ -470,6 +474,7 @@ export default function CollectionWorkspace({
 
                   {pages.map((page) => (
                     <PaperCardComponent
+                      showStatus
                       key={page.paperId}
                       handle={initialUser?.username ?? "user"}
                       paperData={page}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import PaperCardComponent from "@/components/paperCardComponent";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getPublicCollectionById } from "@/lib/api/public";
 import type { CollectionDoc, PaperDoc } from "@/lib/types";
 
@@ -85,6 +86,11 @@ export default function ProjectCollectionsViewer({
               </AccordionTrigger>
               <AccordionContent className="h-auto overflow-visible">
                 <div className="grid grid-cols-2 gap-5 pt-2 md:grid-cols-3">
+                  {state?.loading
+                    ? Array.from({ length: 3 }).map((_, index) => (
+                        <Skeleton key={`collection-paper-skeleton-${collection.collectionId}-${index}`} className="h-36 rounded-xl" />
+                      ))
+                    : null}
                   {papersForCollection.map((paper) => (
                     <PaperCardComponent
                       key={paper.paperId}

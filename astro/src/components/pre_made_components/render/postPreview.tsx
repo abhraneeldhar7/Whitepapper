@@ -3,11 +3,68 @@ import styles from "./postPreview.module.css";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useId } from "react";
-import PostPreviewTocIsland from "./PostPreviewTocIsland";
 
 type PostRenderProps = {
     content: string
     contentContainerId?: string
+}
+
+const HIGHLIGHT_REGEX = /==(.+?)==/g;
+
+function remarkHighlight() {
+    return (tree: any) => {
+        const walk = (node: any) => {
+            if (!node || !Array.isArray(node.children)) {
+                return;
+            }
+
+            const nextChildren: any[] = [];
+
+            for (const child of node.children) {
+                if (child?.type === "text" && typeof child.value === "string" && child.value.includes("==")) {
+                    let lastIndex = 0;
+                    let match: RegExpExecArray | null;
+
+                    HIGHLIGHT_REGEX.lastIndex = 0;
+                    while ((match = HIGHLIGHT_REGEX.exec(child.value)) !== null) {
+                        const [fullMatch, highlightedText] = match;
+                        const startIndex = match.index;
+
+                        if (startIndex > lastIndex) {
+                            nextChildren.push({
+                                type: "text",
+                                value: child.value.slice(lastIndex, startIndex),
+                            });
+                        }
+
+                        nextChildren.push({
+                            type: "highlight",
+                            data: { hName: "mark" },
+                            children: [{ type: "text", value: highlightedText }],
+                        });
+
+                        lastIndex = startIndex + fullMatch.length;
+                    }
+
+                    if (lastIndex < child.value.length) {
+                        nextChildren.push({
+                            type: "text",
+                            value: child.value.slice(lastIndex),
+                        });
+                    }
+
+                    continue;
+                }
+
+                walk(child);
+                nextChildren.push(child);
+            }
+
+            node.children = nextChildren;
+        };
+
+        walk(tree);
+    };
 }
 
 export default function PostRender({ content, contentContainerId }: PostRenderProps) {
@@ -19,7 +76,7 @@ export default function PostRender({ content, contentContainerId }: PostRenderPr
             <div id={resolvedContentContainerId} className={styles.markdownDiv}>
                 <ReactMarkdown
                     children={content}
-                    remarkPlugins={[remarkGfm]}
+                    remarkPlugins={[remarkGfm, remarkHighlight]}
                     components={{
                         a: ({ node, ...props }) => (
                             <a
@@ -36,6 +93,16 @@ export default function PostRender({ content, contentContainerId }: PostRenderPr
                                 </code>
                             );
                         },
+                        // mark: ({ node, children, ...props }) => (
+                        //     <div className={styles.highlightedText}>
+                        //         <mark {...props}>{children}</mark>
+                        //     </div>
+                        // ),
+                        mark: ({ node, children, ...props }) => (
+                            <mark {...props} className={styles.highlightedText}>
+                                {children}
+                            </mark>
+                        ),
                     }} />
             </div>
         </div>)

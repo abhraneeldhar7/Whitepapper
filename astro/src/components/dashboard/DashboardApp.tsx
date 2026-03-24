@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FolderPlus, PlusIcon } from "lucide-react";
+import { FolderPlus, LockIcon, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import UserPopover from "@/components/pre_made_components/user_popover/userPopover";
@@ -22,6 +22,7 @@ import type { PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
 import FolderNotes from "../folderComponent";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
+import ScrollToTop from "../scrollToTop";
 
 type DashboardAppProps = {
   initialProjects: ProjectDoc[];
@@ -139,6 +140,7 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
 
   return (
     <div className="min-h-screen bg-background px-[15px] pt-15 pb-20">
+      <ScrollToTop />
 
       <div className="z-[10] flex p-[10px] justify-end fixed top-0 left-0 w-full">
         <UserPopover user={initialUser} />
@@ -233,7 +235,23 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
                     {projects.map((project, index) => (
                       <div key={index} className="flex flex-col items-center">
                         <a href={`/dashboard/${project.projectId}`} >
-                          <FolderNotes />
+                          <div className="relative inline-flex">
+                            <FolderNotes />
+                            {project.logoUrl ? (
+                              <span className="absolute left-1/2 top-1/2 inline-flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full border bg-background">
+                                <img
+                                  src={project.logoUrl}
+                                  alt={project.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              </span>
+                            ) : null}
+                            {!project.isPublic ? (
+                              <span className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full border bg-background">
+                                <LockIcon size={12} />
+                              </span>
+                            ) : null}
+                          </div>
                         </a>
                         <p className="text-sm ">{project.name}</p>
                         <p className="text-xs mt-2 text-muted-foreground">{project.pagesNumber} pages</p>

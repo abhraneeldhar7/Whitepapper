@@ -53,6 +53,7 @@ import click2Sound from "@/assets/sounds/click2.mp3";
 import click3Sound from "@/assets/sounds/click3.mp3";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import OnscreenKeyboard from "../keyboard";
+import ScrollToTop from "../scrollToTop";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
@@ -490,6 +491,7 @@ export default function WriteEditor({ initialPaper, initialUser }: WriteEditorPr
 
   return (
     <div className="min-h-screen flex flex-col max-w-[700px] mx-auto px-[15px] pb-8 pt-14 relative">
+      <ScrollToTop />
       <div
         className="fixed top-0 left-0 w-full z-[10] md:pb-8 md:bg-[unset] bg-background/20 md:backdrop-blur-[0px] backdrop-blur-[30px]"
         data-editor-topbar
@@ -503,7 +505,7 @@ export default function WriteEditor({ initialPaper, initialUser }: WriteEditorPr
           ${isTopBarHovered || isTopBarPinned || sheetOpen || statusPopoverOpen ? "md:translate-y-0 md:opacity-100" : "md:translate-y-[-100%] md:opacity-0"}
           `}
         >
-          <a href={initialPaper.projectId ? `/dashboard/${initialPaper.projectId}` : "/dashboard"}>
+          <a href={initialPaper.collectionId ? `/dashboard/${initialPaper.projectId}/${initialPaper.collectionId}` : initialPaper.projectId ? `/dashboard/${initialPaper.projectId}` : "/dashboard"}>
             <img
               src="/appLogo.png"
               height={28}

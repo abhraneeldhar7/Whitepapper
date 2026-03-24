@@ -71,12 +71,12 @@
     margin-top: 0;
 }
 
-.markdownDiv h1 + p,
-.markdownDiv h2 + p,
-.markdownDiv h3 + p,
-.markdownDiv h4 + p,
-.markdownDiv h5 + p,
-.markdownDiv h6 + p {
+.markdownDiv h1+p,
+.markdownDiv h2+p,
+.markdownDiv h3+p,
+.markdownDiv h4+p,
+.markdownDiv h5+p,
+.markdownDiv h6+p {
     margin-top: 0;
 }
 
@@ -230,10 +230,18 @@
 
 
 /* Highlighted Text */
+.highlightedText {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    padding: 5px;
+    line-height: 1.5em;
+    border-radius: 3px;
+}
+
 .markdownDiv mark {
     background-color: var(--primary, #3b82f6);
     color: var(--primary-foreground);
-    padding: 2px 5px;
+    padding: 5px;
     border-radius: 3px;
 }
 
