@@ -1,0 +1,60 @@
+---
+import { FooterThemeToggler } from "./FooterThemeToggler";
+---
+
+<div class="h-fit w-full flex flex-col justify-between text-[15px]">
+  <div
+    class="md:p-[30px] p-[15px] flex justify-between gap-[50px] md:flex-row flex-col"
+  >
+    <div>
+      <a href="/" class="flex items-center gap-[15px]">
+        <img
+          src="/appLogo.png"
+          height="28"
+          width="28"
+          alt=""
+          class="transition-all duration-380 hover:translate-y-[-3px] ease-in-out"
+        />
+        <h1>Whitepapper</h1>
+      </a>
+      <p class="mt-[15px] max-w-[300px] opacity-[0.8] text-[12px]">
+        Whitepapper is an API first CMS engine for devs who publish content.
+      </p>
+    </div>
+
+    <div
+      class="flex flex-col gap-[10px] md:text-right md:items-end text-[14px]"
+    >
+      <!--
+      <a class="w-fit" href="/terms-of-service">Terms of Service</a>
+      <a class="w-fit" href="/privacy-policy">Privacy Policy</a>
+      <a class="w-fit" href="/changelogs">Changelogs</a>
+      <a class="w-fit" href="/contact">Contact</a>
+      -->
+    </div>
+  </div>
+
+  <div class="mt-[30px] relative overflow-hidden md:h-[200px] h-[200px]">
+    <div class="absolute bottom-0 translate-y-[32%] left-0 right-0">
+      <div class="relative flex justify-center items-baseline">
+        <h2 class="md:text-[150px] leading-[1.45em] text-[120px] flex items-baseline font-[Geist]">
+          <span>Antk</span>
+          <span class="relative inline-block">
+            i
+            <span
+              class="absolute left-1/2 -translate-x-1/2 top-[0.25em] bg-foreground rounded-full text-background p-[4px] h-[0.25em] w-[0.25em] flex items-center justify-center cursor-pointer select-none"
+            >
+              <FooterThemeToggler client:load />
+            </span>
+          </span>
+          <span class="z-[1]">n</span>
+        </h2>
+        <div
+          class="md:h-[8vw] h-[27vw] bg-gradient-to-t from-background from-[50%] to-transparent to-[100%] absolute bottom-[-4px] z-[2] w-full"
+        >
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

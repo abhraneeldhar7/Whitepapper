@@ -1,0 +1,625 @@
+.g-md-editor-component {
+    color: var(--foreground);
+    --g-color-text-primary: var(--foreground);
+    font-family: var(--font-satoshi, var(--font-sans));
+    word-break: break-word;
+}
+
+/* Let editor grow with content instead of creating an internal scroll viewport. */
+.g-md-editor-component,
+.g-md-editor-component__editor,
+.g-md-editor-component__editor-wrapper,
+.g-md-wysiwyg-editor,
+.g-md-wysiwyg-editor__editor,
+.g-md-wysiwyg-editor .yfm-editor,
+.g-md-editor.ProseMirror,
+.g-md-editor .ProseMirror {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+}
+
+.g-md-wysiwyg-editor__editor,
+.g-md-editor.ProseMirror,
+.g-md-editor .ProseMirror {
+    overflow-y: visible !important;
+}
+
+.g-md-placeholder .g-md-placeholder__text {
+    opacity: 0.5;
+    user-select: none;
+    cursor: text;
+}
+
+/* "/" popover menu */
+.g-popup_open {
+    margin: 0px 15px;
+}
+
+#_r_1_ {
+    display: none !important;
+}
+
+#_r_4_ {
+    display: none !important;
+}
+
+.g-md-command-menu {
+    background-color: var(--card);
+    padding: 5px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.g-md-command-menu__item-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.g-md-command-menu__list-item:hover {
+    background-color: var(--muted);
+    border-radius: 6px;
+}
+
+/* Hide shortcut keys */
+.g-md-command-menu__item-hotkey {
+    display: none !important;
+    font-size: 12px;
+}
+
+/* Minimal scrollbar for command menu */
+.g-md-command-menu__list.g-list {
+    scrollbar-width: 2px !important;
+    scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
+}
+
+.g-md-command-menu__list.g-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.g-md-command-menu__list.g-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.g-md-command-menu__list.g-list::-webkit-scrollbar-thumb {
+    background-color: rgba(128, 128, 128, 0.25);
+    border-radius: 999px;
+}
+
+.g-md-command-menu__list.g-list::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(128, 128, 128, 0.45);
+}
+
+/* Hide "/" command preview panel */
+.g-md-action-preview,
+.g-md-preview-tooltip {
+    display: none !important;
+}
+
+/* ALL Popups (Link tooltips, popovers, etc.) 
+   Excluding the selection toolbar so custom rules can apply without conflict, 
+   although they both use var(--card), this prevents double-shadowing or unwanted inheritance.
+*/
+.g-popup:not(:has([data-qa="g-md-toolbar-selection"])),
+.g-tooltip,
+[data-floating-ui-portal]:not(:has([data-qa="g-md-toolbar-selection"])) {
+    --g-color-base-float: var(--card) !important;
+    background-color: var(--card) !important;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+[data-qa="g-md-toolbar-selection"] {
+    background-color: var(--card) !important;
+    padding: 5px;
+
+    border-radius: 8px !important;
+    box-shadow: 0 0px 12px rgba(0, 0, 0, 0.15) !important;
+
+    .g-button_view_flat:hover {
+        background-color: var(--muted);
+        border-radius: 6px;
+        transition: all 0.25s ease-in-out;
+    }
+}
+
+.g-md-toolbar__group-separator {
+    display: none;
+}
+
+.g-tooltip,
+.g-tooltip__content,
+[data-floating-ui-portal] {
+    font-size: 11px !important;
+    padding: 0.2em 0.6em;
+}
+
+
+/* PostPreview styles sync (applied to editor content) */
+.g-md-editor-component,
+.g-md-editor-component .yfm {
+    word-break: break-word;
+    font-family: var(--font-satoshi, var(--font-sans));
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) p {
+    font-size: 18px;
+    line-height: 1.9;
+    margin: 0 0 0.9em;
+    font-weight: 450;
+    /* opacity: 0.8; */
+    color: var(--muted-foreground, #1a1a1a);
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h1 {
+    font-size: clamp(2.3rem, 4vw, 2.9rem);
+    font-weight: 550;
+    line-height: 1.12;
+    letter-spacing: -0.035em;
+    margin: 1.35em 0 0.42em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h2 {
+    font-size: clamp(1.85rem, 3vw, 2.3rem);
+    font-weight: 540;
+    line-height: 1.16;
+    letter-spacing: -0.03em;
+    margin: 1.45em 0 0.48em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h3 {
+    font-size: clamp(1.5rem, 2.4vw, 1.8rem);
+    font-weight: 530;
+    line-height: 1.22;
+    letter-spacing: -0.022em;
+    margin: 1.4em 0 0.5em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h4 {
+    font-size: 1.28rem;
+    font-weight: 525;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    margin: 1.25em 0 0.45em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h5 {
+    font-size: 1.08rem;
+    font-weight: 525;
+    line-height: 1.35;
+    margin: 1.15em 0 0.4em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h6 {
+    font-size: 1em;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    margin: 1em 0 0.35em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h1:first-child,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h2:first-child,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h3:first-child,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h4:first-child,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h5:first-child,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h6:first-child {
+    margin-top: 0;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h1 + p,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h2 + p,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h3 + p,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h4 + p,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h5 + p,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) h6 + p {
+    margin-top: 0;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) hr {
+    height: 1px;
+    margin: 30px 0;
+    opacity: 0.2;
+    background-color: var(--foreground);
+    border: none;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) ul {
+    list-style-type: disc;
+    padding-left: 1.5em;
+    margin: 0 0 1.1em;
+    color: var(--foreground, #1a1a1a);
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) ul ul {
+    list-style-type: circle;
+    margin: 0.5em 0;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) ul ul ul {
+    list-style-type: square;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) ol {
+    list-style-type: decimal;
+    padding-left: 1.5em;
+    margin: 0 0 1.1em;
+    color: var(--foreground, #1a1a1a);
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) ol ol {
+    list-style-type: lower-alpha;
+    margin: 0.5em 0;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) ol ol ol {
+    list-style-type: lower-roman;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) li {
+    margin-bottom: 0.45em;
+    line-height: 1.8;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) li > p {
+    margin-bottom: 0.5em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) li > ul,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) li > ol {
+    margin-top: 0.5em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) blockquote {
+    border-left: 2px solid var(--accent) !important;
+    padding: 10px 12px 10px 1rem;
+    margin: 1.5em 0;
+    color: var(--foreground);
+    background: color-mix(in srgb, var(--muted, #f3f4f6) 50%, transparent);
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    font-style: normal;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) blockquote p {
+    margin-bottom: 0.55em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) a {
+    color: var(--foreground) !important;
+    text-decoration: underline !important;
+    text-underline-offset: 4px;
+    transition: color 0.2s ease;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) a:hover {
+    color: var(--primary, #3b82f6) !important;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) a strong {
+    font-weight: 600 !important;
+    color: var(--foreground);
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) code:not(pre code) {
+    background-color: var(--muted) !important;
+    color: var(--foreground, #1a1a1a) !important;
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-family: var(--font-mono, 'SF Mono', Monaco, 'Cascadia Mono', monospace);
+    font-weight: 400;
+    margin: 0 2px;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) pre {
+    background-color: var(--muted) !important;
+    margin: 1.5em 0;
+    border-radius: 8px;
+    overflow: hidden;
+    color: var(--muted-foreground);
+    border: 1px solid var(--border);
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) pre code {
+    background-color: var(--card) !important;
+    font-family: var(--font-mono, 'SF Mono', Monaco, 'Cascadia Mono', monospace);
+    font-size: 14px;
+    line-height: 1.5;
+    display: block;
+    padding: 1em;
+    overflow-x: auto;
+    color: var(--muted-foreground);
+    white-space: pre-line;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) pre code.hljs {
+    background-color: var(--card) !important;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) code[class*="language-"]:not(pre code) {
+    background-color: var(--primary, #3b82f6) !important;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) pre code[class*="language-"] {
+    background-color: transparent !important;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) mark {
+    background-color: var(--primary, #3b82f6);
+    color: var(--primary-foreground);
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) em {
+    font-style: italic;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) strong {
+    font-weight: 600 !important;
+    color: var(--foreground);
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) table,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) .yfm-table,
+.g-md-yfm-table-view {
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 1.5em;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 50%, transparent);
+    width: 100%;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) th,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) .yfm-table th,
+.g-md-yfm-table-view th {
+    background-color: color-mix(in srgb, var(--muted, #f3f4f6) 80%, transparent) !important;
+    color: var(--foreground, #1a1a1a) !important;
+    font-weight: 600;
+    text-align: left;
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 40%, transparent) !important;
+    border-right: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 20%, transparent) !important;
+    transition: all 0.25s ease-in-out;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) th:last-child,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) .yfm-table th:last-child,
+.g-md-yfm-table-view th:last-child {
+    border-right: none !important;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) table {
+    background-color: transparent;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) td,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) .yfm-table td,
+.g-md-yfm-table-view td {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 20%, transparent) !important;
+    border-right: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 15%, transparent) !important;
+    color: var(--foreground, #1a1a1a) !important;
+    background-color: transparent !important;
+    transition: all 0.25s ease-in-out;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) td:last-child,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) .yfm-table td:last-child,
+.g-md-yfm-table-view td:last-child {
+    border-right: none !important;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) tr:last-child td,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) .yfm-table tr:last-child td,
+.g-md-yfm-table-view tr:last-child td {
+    border-bottom: none !important;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) tr:hover td,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) .yfm-table tr:hover td,
+.g-md-yfm-table-view tr:hover td {
+    background-color: color-mix(in srgb, var(--muted, #f3f4f6) 30%, transparent) !important;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) input[type="checkbox"] {
+    margin-right: 0.5em;
+    transform: scale(1.2);
+    accent-color: var(--primary, #3b82f6);
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) ul.contains-task-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) ul.contains-task-list li {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 0.75em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) ul.contains-task-list li input[type="checkbox"] {
+    margin-top: 0.3em;
+    margin-right: 0.75em;
+    flex-shrink: 0;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) ul.contains-task-list li > p {
+    margin-bottom: 0;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 1.5em 0;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) img + em {
+    display: block;
+    text-align: center;
+    font-size: 0.9em;
+    color: var(--foreground);
+    margin-top: -1em;
+    margin-bottom: 1.5em;
+    opacity: 0.8;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) kbd {
+    background-color: var(--muted, #f3f4f6);
+    border: 1px solid var(--border, #e5e5e5);
+    border-radius: 4px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+    color: var(--foreground, #1a1a1a);
+    font-family: var(--font-mono, 'SF Mono', Monaco, 'Cascadia Mono', monospace);
+    font-size: 0.85em;
+    padding: 0.2em 0.4em;
+    white-space: nowrap;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) sub,
+:is(.g-md-editor-component, .g-md-editor-component .yfm) sup {
+    font-size: 0.75em;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) sup {
+    top: -0.5em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) sub {
+    bottom: -0.25em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) dl {
+    margin: 1.5em 0;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) dt {
+    font-weight: 600;
+    margin-top: 1em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) dd {
+    margin-left: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) abbr[title] {
+    border-bottom: 1px dotted var(--border, #e5e5e5);
+    cursor: help;
+    text-decoration: none;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) > *:first-child {
+    margin-top: 0;
+}
+
+:is(.g-md-editor-component, .g-md-editor-component .yfm) > *:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) {
+        padding: 0 0.5em;
+    }
+
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) p {
+        font-size: 17px;
+        /* font-weight: 400; */
+        line-height: 1.85;
+    }
+
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) h1 {
+        font-size: 2.1rem;
+        line-height: 1.12;
+    }
+
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) h2 {
+        font-size: 1.8rem;
+        line-height: 1.16;
+    }
+
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) h3 {
+        font-size: 1.5rem;
+        line-height: 1.22;
+    }
+
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) h4 {
+        font-size: 1.22rem;
+    }
+
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) h5 {
+        font-size: 1.04rem;
+    }
+
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) pre {
+        border-radius: 6px;
+    }
+
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) pre code {
+        padding: 0.75em;
+        font-size: 0.85em;
+    }
+
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) table,
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) .yfm-table,
+    .g-md-yfm-table-view {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+@media print {
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) {
+        color: #000;
+    }
+
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) a {
+        color: #000 !important;
+        text-decoration: underline;
+    }
+
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) pre {
+        background-color: #f5f5f5 !important;
+        border: 1px solid #ddd;
+    }
+
+    :is(.g-md-editor-component, .g-md-editor-component .yfm) code {
+        background-color: #f5f5f5 !important;
+    }
+}
+
+.g-button_pin_round-round {
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.g-button_pin_round-round:hover {
+    opacity: 1;
+    background-color: var(--muted);
+}
+
+/* image edit menu buttons */
+.g-menu_size_m {
+    padding: 5px;
+    border-radius: 12px;
+}
+
+.g-menu_size_m li {
+    border-radius: 7px;
+    padding: 1px 12px;
+}
+
+.g-menu_size_m li:hover {
+    background-color: var(--muted);
+}

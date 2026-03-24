@@ -1,0 +1,57 @@
+---
+import CollectionWorkspace from "@/components/collection/CollectionWorkspace";
+import CollectionWorkspaceSkeleton from "@/components/collection/CollectionWorkspaceSkeleton";
+import Layout from "@/layouts/Layout.astro";
+import { createApiClient } from "@/lib/api/client";
+import { getCollection } from "@/lib/api/collections";
+import { listProjectPapers } from "@/lib/api/papers";
+import { getCurrentUser } from "@/lib/api/users";
+import type { CollectionDoc, PaperDoc, UserDoc } from "@/lib/types";
+
+const { userId, getToken } = Astro.locals.auth();
+const projectId = Astro.params.projectId as string;
+const collectionId = Astro.params.collectionId as string;
+
+if (!userId) {
+  return Astro.redirect("/sign-in");
+}
+
+const token = await getToken();
+if (!token) {
+  return Astro.redirect("/sign-in");
+}
+
+const serverClient = createApiClient(token);
+const initialUser = await getCurrentUser(serverClient).catch(
+  () => null as UserDoc | null,
+);
+
+let initialCollection: CollectionDoc;
+try {
+  initialCollection = await getCollection(collectionId, serverClient);
+  if (initialCollection.projectId !== projectId) {
+    return Astro.redirect("/404");
+  }
+} catch (error) {
+  const message = error instanceof Error ? error.message : "";
+  return Astro.redirect(message.includes("403") || message.includes("Not allowed") ? "/unauthorized" : "/404");
+}
+
+const initialPages = await listProjectPapers(projectId, serverClient)
+  .then((papers) => papers.filter((p) => p.collectionId === collectionId))
+  .catch(() => [] as PaperDoc[]);
+---
+
+<Layout>
+  <CollectionWorkspaceSkeleton />
+  <div class="collection-shell-app">
+    <CollectionWorkspace
+      client:only="react"
+      projectId={projectId}
+      collectionId={collectionId}
+      initialCollection={initialCollection}
+      initialPages={initialPages}
+      initialUser={initialUser}
+    />
+  </div>
+</Layout>

@@ -1,0 +1,389 @@
+---
+import Layout from "../layouts/Layout.astro";
+import LandingMobileMenu from "@/components/landing/LandingMobileMenu";
+import { ArrowUpRight, RadioIcon, SlidersHorizontal } from "lucide-react";
+
+import LinkedinLogo from "@/assets/logos/linkedinLogo.png";
+import PeerlistLogo from "@/assets/logos/peerList.webp";
+import XLogo from "@/assets/logos/xLogo.jpg";
+import MediumLogo from "@/assets/logos/mediumLogo.jpeg";
+import RedditLogo from "@/assets/logos/redditLogo.jpeg";
+import DevtoLogo from "@/assets/logos/devto.webp";
+import HashnodeLogo from "@/assets/logos/hashnodeLogo.png";
+import SubstackLogo from "@/assets/logos/substackLogo.png";
+import ThreadsLogo from "@/assets/logos/threadsLogo.png";
+
+import GreenPattern from "@/assets/landingPage/greenPattern.jpg";
+import EditorPage from "@/assets/landingPage/editor_light.png";
+import BlogSite from "@/assets/landingPage/blogSite.png";
+import DashboardPic from "@/assets/landingPage/dashboardPic.png";
+import MobileToc from "@/assets/landingPage/mobileToc.png";
+import DesktopToc from "@/assets/landingPage/desktopLinesToc.png";
+import MarkdownRender from "@/assets/landingPage/markdownRender.png";
+
+const integrationLogoList = [
+	{ src: LinkedinLogo, alt: "LinkedIn" },
+	{ src: MediumLogo, alt: "Medium" },
+	{ src: XLogo, alt: "X" },
+	{ src: PeerlistLogo, alt: "Peerlist" },
+	{ src: RedditLogo, alt: "Reddit" },
+	{ src: DevtoLogo, alt: "Dev.to" },
+	{ src: HashnodeLogo, alt: "Hashnode" },
+	{ src: SubstackLogo, alt: "Substack" },
+	{ src: ThreadsLogo, alt: "Threads" },
+];
+
+const navButtonsList = [
+	{ title: "Docs", href: "/docs" },
+	{ title: "Integrations", href: "/int" },
+	{ title: "Blog", href: "/blog" },
+	{ title: "Components", href: "/components" },
+	{ title: "Pricing", href: "/pricing" },
+];
+---
+
+<Layout>
+	<div class="relative mb-20 overflow-hidden">
+		<div
+			class="fixed left-0 top-0 z-[10] flex w-full items-center justify-between gap-5 px-2 py-2 md:backdrop-blur-[20px]"
+		>
+			<div></div>
+
+			<div class="hidden gap-5 text-[14px] leading-[1em] md:flex">
+				{
+					navButtonsList.map((button) => (
+						<a
+							href={button.href}
+							class="group flex cursor-pointer gap-2 p-3 font-[350] opacity-[0.8] transition-all duration-300 hover:opacity-[1]"
+						>
+							{button.title}
+							<ArrowUpRight className="size-[14px] opacity-[0.7] transition-all duration-300 group-hover:opacity-[1]" />
+						</a>
+					))
+				}
+			</div>
+
+			<a
+				href="/sign-up"
+				class="hidden h-[35px] w-[70px] items-center justify-center rounded-sm bg-primary text-sm text-primary-foreground transition-all duration-300 hover:bg-primary/80 md:flex"
+			>
+				Join
+			</a>
+
+			<div class="md:hidden">
+				<LandingMobileMenu client:load navButtons={navButtonsList} />
+			</div>
+		</div>
+
+		<div class="mx-auto w-full font-[Satoshi]">
+			<div
+				class="absolute left-[-80%] top-[3%] z-[-1] h-[10px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-30%] md:top-[-2%]"
+			>
+			</div>
+			<div
+				class="absolute left-[-45%] top-[0%] z-[-1] h-[8px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-50%] md:top-[-3%]"
+			>
+			</div>
+
+			<div
+				class="relative flex h-[100svh] flex-col items-center justify-start overflow-hidden pt-20 md:pt-40"
+			>
+				<div
+					class="heroText group relative flex cursor-pointer gap-2 overflow-hidden rounded-[20px] border bg-muted px-[15px] pb-[7px] pt-[8px] text-[12px] leading-[1em]"
+					style="animation-delay: 0.65s;"
+				>
+					<div
+						class="absolute left-[-60%] top-[-20px] h-[10px] w-full rotate-[40deg] rounded-[50%] bg-foreground/40 blur-[20px] transition-all duration-300 group-hover:left-[5%] group-active:left-[5%] dark:bg-foreground"
+					>
+					</div>
+					<RadioIcon className="z-2 size-3 text-primary" />
+					<p class="z-2">Developers API</p>
+					<ArrowUpRight className="size-[14px]" />
+				</div>
+
+				<div
+					class="group mt-6 flex flex-col items-center gap-5 px-[15px] font-[500] md:mt-10 md:flex-row"
+				>
+					<div
+						class="heroText flex items-center gap-4 text-[60px] md:text-[50px]"
+					>
+						<h1>SEO</h1>
+						<h1>first</h1>
+					</div>
+					<div
+						class="heroText flex items-center gap-4 text-[50px]"
+						style="animation-delay: 0.2s;"
+					>
+						<img
+							src="/appLogo.png"
+							class="h-[50px] w-[50px] rotate-[-6deg] transition-all duration-300 ease-in-out group-hover:scale-[1.05] group-hover:rotate-0"
+							height="40"
+							width="40"
+							alt="Whitepapper"
+						/>
+						<h1>CMS</h1>
+						<h1>engine</h1>
+					</div>
+				</div>
+
+				<div
+					class="heroText mt-5 flex flex-col gap-6 px-[15px] text-[20px] md:flex-row md:gap-4"
+					style="animation-delay: 0.5s;"
+				>
+					<p class="font-[350]">
+						<span class="opacity-[0.8]">Write</span>
+						<span class="text-[22px] font-[550]"> once </span>
+						<span class="opacity-[0.8]">distribute everywhere</span>
+					</p>
+					<div class="flex items-center justify-center gap-2">
+						{
+							integrationLogoList
+								.slice(0, 3)
+								.map((logo, index) => (
+									<img
+										src={logo.src.src}
+										alt={logo.alt}
+										width="30"
+										height="30"
+										class="heroText h-[30px] w-[30px] shrink-0 rounded-[5px] transition-all duration-300 hover:translate-y-[-6px] md:h-[27px] md:w-[27px]"
+										style={`animation-delay: ${0.5 + (index * 2) / 10}s;`}
+										loading="eager"
+										fetchpriority="high"
+									/>
+								))
+						}
+						<p class="ml-2 text-[15px] hover:underline">
+							+ 6 more <span class="md:hidden">integrations</span>
+						</p>
+					</div>
+				</div>
+
+				<div
+					class="heroText mt-10 flex w-full gap-3 px-[15px] md:w-[350px]"
+					style="animation-delay: 0.6s;"
+				>
+					<a
+						href="/dashboard"
+						class="flex h-12 flex-1 items-center justify-center rounded-sm border border-border bg-transparent text-[17px] leading-[1em] transition-all duration-300 hover:bg-muted"
+					>
+						Playground
+					</a>
+					<a
+						href="/sign-up"
+						class="flex h-12 flex-1 items-center justify-center rounded-sm bg-primary text-[17px] leading-[1em] text-primary-foreground transition-all duration-300 hover:bg-primary/80"
+					>
+						Get started
+					</a>
+				</div>
+
+				<p
+					class="heroText absolute bottom-7 text-center text-[15px]"
+					style="animation-delay: 0.4s;"
+				>
+					Whitepapper is <span class="font-[450] underline"
+						>open-sourced</span
+					> for schizo writers
+				</p>
+
+				<div
+					class="heroText absolute bottom-0 left-[50%] z-[-1] h-[110vw] w-[200vw] translate-x-[-50%] translate-y-[54%] overflow-hidden rounded-[50%] md:w-[150vw] md:translate-y-[85%]"
+					style="animation-delay: 0.3s;"
+				>
+					<div
+						class="h-[110vw] w-full rounded-[50%] border-[5px] border-foreground/50 blur-[20px]"
+					>
+					</div>
+				</div>
+			</div>
+
+			<div
+				class="mx-auto mt-25 flex w-full max-w-[1400px] flex-col gap-15 md:gap-40"
+			>
+				<div
+					class="flex w-full flex-col gap-6 px-5 md:flex-row md:items-end md:gap-20"
+				>
+					<div class="md:flex-1">
+						<h1 class="text-[30px] font-[450]">
+							Content engine for your business
+						</h1>
+						<p class="mt-3 text-[16px]">
+							Lorem ipsum dolor sit amet consectetur adipisicing
+							elit. Ex, earum. Nostrum, nihil sapiente sint
+							tempore quam expedita et id in officia eos
+							consequuntur esse repudiandae perspiciatis explicabo
+							unde nesciunt quo!
+						</p>
+					</div>
+					<div
+						class="relative w-full overflow-hidden rounded-[20px] md:flex-1"
+					>
+						<img
+							src={GreenPattern.src}
+							alt="Green pattern background"
+							class="absolute left-0 top-0 z-[-1] h-full w-full"
+							loading="lazy"
+							decoding="async"
+						/>
+						<img
+							src={BlogSite.src}
+							alt="Blog publishing preview"
+							class="h-full w-full -translate-x-10 translate-y-10 rounded-tr-[10px] object-cover md:-translate-x-15 md:translate-y-15"
+							loading="lazy"
+							decoding="async"
+						/>
+					</div>
+				</div>
+
+				<div
+					class="flex w-full flex-col-reverse gap-6 px-5 md:flex-row md:items-end md:gap-20"
+				>
+					<div class="relative flex-1 overflow-hidden rounded-[20px]">
+						<img
+							src={GreenPattern.src}
+							alt="Green pattern background"
+							class="absolute left-0 top-0 z-[-1] h-full w-full"
+							loading="lazy"
+							decoding="async"
+						/>
+						<img
+							src={EditorPage.src}
+							alt="Editor preview"
+							class="h-full w-full translate-x-10 translate-y-10 rounded-tl-[10px] object-cover md:translate-x-15 md:translate-y-15"
+							loading="lazy"
+							decoding="async"
+						/>
+					</div>
+
+					<div class="md:flex-1">
+						<h1 class="text-[30px] font-[450]">
+							Integrated text editor
+						</h1>
+						<p class="mt-1 text-[16px]">
+							Lorem ipsum dolor sit amet consectetur adipisicing
+							elit. Ex, earum. Nostrum, nihil sapiente sint
+							tempore quam expedita et id in officia eos
+							consequuntur esse repudiandae perspiciatis explicabo
+							unde nesciunt quo!
+						</p>
+					</div>
+				</div>
+
+				<div class="flex flex-col gap-6 px-5 md:gap-8">
+					<div>
+						<h1 class="text-[30px] font-[450]">
+							Perfect wallet for attention economy
+						</h1>
+						<p class="mt-2 text-[16px]">
+							Lorem ipsum dolor sit amet consectetur adipisicing
+							elit. Ex, earum. Nostrum, nihil sapiente sint
+							tempore quam expedita et id in officia eos
+							consequuntur esse repudiandae perspiciatis explicabo
+							unde nesciunt quo!
+						</p>
+					</div>
+					<div
+						class="relative w-full overflow-hidden rounded-[20px] px-4 md:px-15"
+					>
+						<img
+							src={GreenPattern.src}
+							alt="Green pattern background"
+							class="absolute left-0 top-0 z-[-1] h-full w-full"
+							loading="lazy"
+							decoding="async"
+						/>
+						<img
+							src={DashboardPic.src}
+							alt="Dashboard preview"
+							class="h-full w-full translate-y-4 rounded-[10px] object-contain md:translate-y-15"
+							loading="lazy"
+							decoding="async"
+						/>
+					</div>
+				</div>
+
+				<div class="w-full px-5">
+					<h1 class="text-[30px] font-[450]">Free components</h1>
+					<p class="mt-2 text-[16px] md:w-[400px]">
+						Make your own content engine
+					</p>
+
+					<div class="mt-6 flex w-full flex-col gap-5 md:flex-row">
+						<div
+							class="relative h-[200px] overflow-hidden rounded-[10px] px-4 md:h-[300px] md:flex-1 md:px-8"
+						>
+							<img
+								src={GreenPattern.src}
+								alt="Green pattern background"
+								class="absolute left-0 top-0 z-[-1] h-full w-full"
+								loading="lazy"
+								decoding="async"
+							/>
+							<img
+								src={MobileToc.src}
+								alt="Mobile table of contents component"
+								class="h-full w-full -translate-y-4 rounded-[15px] border border-[4px] object-cover object-bottom md:-translate-y-8"
+								loading="lazy"
+								decoding="async"
+							/>
+						</div>
+						<div
+							class="relative h-[200px] overflow-hidden rounded-[10px] md:h-[300px] md:flex-1"
+						>
+							<img
+								src={GreenPattern.src}
+								alt="Green pattern background"
+								class="absolute left-0 top-0 z-[-1] h-full w-full"
+								loading="lazy"
+								decoding="async"
+							/>
+							<img
+								src={DesktopToc.src}
+								alt="Desktop table of contents component"
+								class="h-full w-full -translate-x-8 translate-y-8 rounded-[8px] object-cover object-[right_top]"
+								loading="lazy"
+								decoding="async"
+							/>
+						</div>
+						<div
+							class="relative h-[200px] overflow-hidden rounded-[10px] px-4 md:h-[300px] md:flex-1 md:px-8"
+						>
+							<img
+								src={GreenPattern.src}
+								alt="Green pattern background"
+								class="absolute left-0 top-0 z-[-1] h-full w-full"
+								loading="lazy"
+								decoding="async"
+							/>
+							<img
+								src={MarkdownRender.src}
+								alt="Markdown render component"
+								class="h-full w-full translate-y-4 rounded-[15px] object-cover object-top md:translate-y-8"
+								loading="lazy"
+								decoding="async"
+							/>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</Layout>
+
+<style>
+	.heroText {
+		animation: fadeInUp 0.4s ease-out forwards;
+		animation-fill-mode: both;
+	}
+
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(30px);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+</style>

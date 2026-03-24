@@ -1,0 +1,15 @@
+---
+import PostPreviewTocIsland from "./PostPreviewTocIsland";
+import PostRender from "./postPreview";
+
+type Props = {
+  content: string;
+  showTOC?: boolean;
+};
+
+const { content, showTOC = false } = Astro.props as Props;
+const contentContainerId = `post-preview-${Math.random().toString(36).slice(2, 10)}`;
+---
+
+<PostRender content={content || ""} contentContainerId={contentContainerId} />
+{showTOC ? <PostPreviewTocIsland client:idle contentContainerId={contentContainerId} /> : null}

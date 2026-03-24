@@ -1,0 +1,76 @@
+---
+import Footer from "@/components/footer.astro";
+import { Toaster } from "@/components/ui/sonner";
+import "../styles/global.css";
+
+interface Props {
+  hideFooter?: boolean;
+  title?: string;
+}
+
+const { hideFooter = false, title = "Whitepapper" } = Astro.props as Props;
+const themeCookie = Astro.cookies.get("theme")?.value ?? null;
+const isDarkTheme = themeCookie === "dark";
+---
+
+<!doctype html>
+<html lang="en" class={isDarkTheme ? "dark" : ""} style={`color-scheme: ${isDarkTheme ? "dark" : "light"};`}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <script is:inline>
+      (() => {
+        try {
+          const storageKey = "theme";
+          const root = document.documentElement;
+          const stored = localStorage.getItem(storageKey);
+          const cookieMatch = document.cookie.match(/(?:^|; )theme=([^;]+)/);
+          const cookieTheme = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+          const resolved = stored || cookieTheme || "light";
+          const isDark = resolved === "dark";
+          root.classList.toggle("dark", isDark);
+          root.style.colorScheme = isDark ? "dark" : "light";
+          if (stored !== resolved) {
+            localStorage.setItem(storageKey, resolved);
+          }
+          if (cookieTheme !== resolved) {
+            document.cookie = `theme=${resolved}; path=/; max-age=31536000`;
+          }
+        } catch {
+          // ignore theme init errors (e.g. storage blocked)
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app-scroll-root">
+      <slot />
+      {!hideFooter && <Footer />}
+    </div>
+    <Toaster client:load />
+  </body>
+</html>
+
+<style>
+  html,
+  body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  #app-scroll-root {
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  #app-scroll-root::-webkit-scrollbar {
+    display: none;
+  }
+</style>

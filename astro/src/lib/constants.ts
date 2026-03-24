@@ -1,0 +1,8 @@
+export const MAX_THUMBNAIL_WIDTH = 2000;
+export const MAX_THUMBNAIL_HEIGHT = 2000;
+export const MAX_EMBEDDED_WIDTH = 2000;
+export const MAX_EMBEDDED_HEIGHT = 2000;
+export const MAX_PROJECT_LOGO_WIDTH = 500;
+export const MAX_PROJECT_LOGO_HEIGHT = 500;
+export const MAX_PROFILE_IMAGE_WIDTH = 1000;
+export const MAX_PROFILE_IMAGE_HEIGHT = 1000;

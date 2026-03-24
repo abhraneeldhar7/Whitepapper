@@ -1,0 +1,85 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { getPublicPaperPageData } from "@/lib/api/public";
+import { formatFirestoreDate } from "@/lib/utils";
+import PostPreviewServer from "@/components/pre_made_components/render/PostPreviewServer.astro";
+import type { PaperDoc, PublicAuthorSummary, UserDoc } from "@/lib/types";
+
+const handle = Astro.params.handle as string;
+const pageSlug = Astro.params.slug as string;
+const normalizedHandle = handle.replace(/^@+/, "").trim().toLowerCase();
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=300, s-maxage=300, stale-while-revalidate=300",
+);
+
+
+let paper: PaperDoc;
+let author: PublicAuthorSummary;
+({ paper, author } = await getPublicPaperPageData(normalizedHandle, pageSlug));
+const publishedDate = formatFirestoreDate(paper.createdAt);
+
+
+---
+<Layout>
+  <main
+    class="mx-auto min-h-screen max-w-[700px] px-[15px] pt-[15px] pb-20 md:pt-6"
+  >
+    <h1
+      class="text-[28px] md:text-[35px] font-[600] font-[]"
+      style={{ lineHeight: "1.4em" }}
+    >
+      {paper.title}
+    </h1>
+
+    <div class="mt-4 flex items-center justify-between gap-3">
+      {
+        author ? (
+          <a
+            href={`/${author.username}`}
+            class="flex items-center gap-[8px] w-fit"
+          >
+            <div class="h-[28px] w-[28px] p-[1px] bg-[white] dark:bg-[black] rounded-[8px] border shadow-md">
+              <img
+                src={author.avatarUrl}
+                class="rounded-[6px] h-full w-full object-cover"
+                alt={author.displayName ?? author.username}
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+            <p class="text-[14px] text-muted-foreground">
+              {author.displayName}
+            </p>
+          </a>
+        ) : null
+      }
+
+      {
+        publishedDate ? (
+          <p class="text-[14px] text-muted-foreground">{publishedDate}</p>
+        ) : null
+      }
+    </div>
+
+    {
+      paper.thumbnailUrl ? (
+        <div class="mt-6 border rounded-[8px] overflow-hidden">
+          <img
+            src={paper.thumbnailUrl}
+            alt={paper.title}
+            class="h-full w-full object-contain"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+          />
+        </div>
+      ) : null
+    }
+
+    <div class="mt-6">
+      <PostPreviewServer content={paper.body} showTOC={true} />
+    </div>
+  </main>
+</Layout>

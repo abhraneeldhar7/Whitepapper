@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+clerk-backend-api
+httpx
+PyJWT
+svix
+pydantic
+pydantic-settings
+firebase-admin
+python-multipart
+Pillow

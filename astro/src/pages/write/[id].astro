@@ -1,0 +1,36 @@
+---
+import WriteEditorRoot from "@/components/write/WriteEditorRoot";
+import WriteEditorSkeleton from "@/components/write/WriteEditorSkeleton";
+import Layout from "@/layouts/Layout.astro";
+import { createApiClient } from "@/lib/api/client";
+import { getPaper } from "@/lib/api/papers";
+import { getCurrentUser } from "@/lib/api/users";
+import type { PaperDoc, UserDoc } from "@/lib/types";
+
+const { userId, getToken } = Astro.locals.auth();
+const id = Astro.params.id as string;
+
+if (!userId) {
+  return Astro.redirect("/sign-in");
+}
+
+const token = await getToken();
+if (!token) {
+  return Astro.redirect("/sign-in");
+}
+
+const serverClient = createApiClient(token);
+const initialUser = await getCurrentUser(serverClient).catch(() => null as UserDoc | null);
+let initialPaper: PaperDoc;
+try {
+  initialPaper = await getPaper(id, serverClient);
+} catch (error) {
+  const message = error instanceof Error ? error.message : "";
+  return Astro.redirect(message.includes("403") || message.includes("Not allowed") ? "/unauthorized" : "/404");
+}
+---
+
+<Layout>
+  <WriteEditorSkeleton />
+  <WriteEditorRoot client:only="react" initialPaper={initialPaper} initialUser={initialUser} />
+</Layout>

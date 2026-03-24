@@ -1,0 +1,31 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import DashboardApp from "@/components/dashboard/DashboardApp";
+import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
+import { createApiClient } from "@/lib/api/client";
+import { getDashboardData } from "@/lib/api/users";
+
+const { userId, getToken } = Astro.locals.auth();
+
+const token = await getToken();
+
+const serverClient = createApiClient(token);
+const dashboardData = await getDashboardData(serverClient).catch(() => null);
+
+if (!dashboardData) {
+  return Astro.redirect("/sign-in");
+}
+
+const { user: initialUser, projects: initialProjects, papers: initialPages } = dashboardData;
+---
+
+<Layout>
+  <DashboardApp
+    client:only="react"
+    initialProjects={initialProjects}
+    initialPages={initialPages}
+    initialUser={initialUser}
+  >
+    <DashboardSkeleton slot="fallback" />
+  </DashboardApp>
+</Layout>

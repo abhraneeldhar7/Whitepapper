@@ -1,0 +1,81 @@
+---
+import ProfilePage from "@/components/profilePage";
+import Layout from "@/layouts/Layout.astro";
+import { getPublicProfile } from "@/lib/api/public";
+import styles from "@/components/profile.module.css";
+
+const routeHandle = Astro.params.handle as string;
+const handle = routeHandle.replace(/^@+/, "").trim().toLowerCase();
+
+let userData;
+try {
+  userData = await getPublicProfile(handle);
+} catch (error) {
+  const message = error instanceof Error ? error.message : "";
+  return Astro.redirect(
+    message.includes("403") || message.includes("Not allowed")
+      ? "/unauthorized"
+      : "/404",
+  );
+}
+
+// Get current user ID from Clerk
+const { userId } = Astro.locals.auth();
+
+// Filter to only show published standalone papers (not in collections) for public profile
+const publishedPapers = userData.papers.filter((p) => p.status === "published" && !p.collectionId);
+---
+
+<Layout>
+  <div class="min-h-screen w-full mx-auto max-w-[600px] px-[15px] py-10">
+    <div class="flex gap-5 items-end">
+      <div class="flex-1 h-full w-full">
+        <div class="flex gap-3 font-[Satoshi] items-end opacity-[0.7]">
+          <h2
+            class={`md:text-[7cqw] text-[16cqw] font-[480] leading-[1em] ${styles.heroText}`}
+          >
+            Hi,
+          </h2>
+          <h2
+            class={`md:text-[5cqw] text-[14cqw] font-[510] leading-[1em] ${styles.heroText}`}
+            style="animation-delay: 0.2s;"
+          >
+            this is
+          </h2>
+        </div>
+      </div>
+      <div class="px-4">
+        {
+          userData.user.avatarUrl && (
+            <img
+              src={userData.user.avatarUrl}
+              class={`md:w-[100px] md:h-[100px] w-[80px] h-[80px] shadow rounded-[14px] border-[4px] border-card rotate-[1deg] ${styles.heroText}`}
+              style="animation-delay: 0.5s;"
+            />
+          )
+        }
+      </div>
+    </div>
+
+    <h1
+      class={`md:text-[4.5cqw] font-[Satoshi] mt-5 md:mt-6 font-[520] text-[12cqw] break-all ${styles.heroText}`}
+      style="animation-delay: 0.4s;"
+    >
+      {userData.user.displayName}
+    </h1>
+
+    <p
+      class="my-8 font-[Satoshi] text-[17px] break-normal text-muted-foreground"
+    >
+      {userData.user.description}
+    </p>
+
+    <ProfilePage
+      client:load
+      user={userData.user}
+      papers={publishedPapers}
+      projects={userData.projects}
+      currentUserId={userId}
+    />
+  </div>
+</Layout>

@@ -1,0 +1,28 @@
+---
+import SettingsPage from "@/components/settings/SettingsPage";
+import Layout from "@/layouts/Layout.astro";
+import { createApiClient } from "@/lib/api/client";
+import { getCurrentUser } from "@/lib/api/users";
+import type { UserDoc } from "@/lib/types";
+
+const { userId, getToken } = Astro.locals.auth();
+
+if (!userId) {
+  return Astro.redirect("/sign-in");
+}
+
+const token = await getToken();
+if (!token) {
+  return Astro.redirect("/sign-in");
+}
+
+const serverClient = createApiClient(token);
+const initialUser = await getCurrentUser(serverClient).catch(() => null as UserDoc | null);
+if (!initialUser) {
+  return Astro.redirect("/unauthorized");
+}
+---
+
+<Layout>
+  <SettingsPage client:load initialUser={initialUser} />
+</Layout>

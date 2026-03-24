@@ -1,0 +1,48 @@
+---
+import ProjectWorkspace from "@/components/project/ProjectWorkspace";
+import ProjectWorkspaceSkeleton from "@/components/project/ProjectWorkspaceSkeleton";
+import Layout from "@/layouts/Layout.astro";
+import { createApiClient } from "@/lib/api/client";
+import { getProjectDashboardData } from "@/lib/api/projects";
+import { getCurrentUser } from "@/lib/api/users";
+import type { UserDoc } from "@/lib/types";
+
+const { userId, getToken } = Astro.locals.auth();
+const projectId = Astro.params.projectId as string;
+
+if (!userId) {
+  return Astro.redirect("/sign-in");
+}
+
+const token = await getToken();
+if (!token) {
+  return Astro.redirect("/sign-in");
+}
+
+const serverClient = createApiClient(token);
+const [initialUser, projectData] = await Promise.all([
+  getCurrentUser(serverClient).catch(() => null as UserDoc | null),
+  getProjectDashboardData(projectId, serverClient).catch(() => null),
+]);
+console.log("Current User:", initialUser);
+console.log("Project Dashboard Data:", projectData);
+if (!initialUser || !projectData) {
+  return Astro.redirect("/404");
+}
+
+const { project: initialProject, collections: initialCollections, papers: initialPages } = projectData;
+---
+
+<Layout>
+  <ProjectWorkspaceSkeleton />
+  <div class="project-shell-app">
+    <ProjectWorkspace
+      client:only="react"
+      projectId={projectId}
+      initialProject={initialProject}
+      initialPages={initialPages}
+      initialCollections={initialCollections}
+      initialUser={initialUser}
+    />
+  </div>
+</Layout>
