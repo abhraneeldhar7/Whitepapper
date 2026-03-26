@@ -1,12 +1,57 @@
 from fastapi import HTTPException
 from uuid import uuid4
 
+from app.core.cache_policies import COLLECTION_CACHE_POLICY
 from app.core.firestore_store import firestore_store, utc_now
+from app.services.cache_service import cache_service
 from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
 
 
 class CollectionsService:
+    def _cache_key_by_id(self, collection_id: str) -> str:
+        return cache_service.build_key(COLLECTION_CACHE_POLICY.namespace, "id", collection_id)
+
+    def _cache_key_by_slug(self, owner_id: str, project_id: str, slug: str) -> str:
+        return cache_service.build_key(
+            COLLECTION_CACHE_POLICY.namespace,
+            "slug",
+            owner_id,
+            project_id,
+            normalize_slug(slug),
+        )
+
+    def _cache_document(self, collection: dict | None) -> None:
+        if not collection:
+            return
+        collection_id = collection.get("collectionId")
+        owner_id = collection.get("ownerId")
+        project_id = collection.get("projectId")
+        slug = collection.get("slug")
+        if collection_id:
+            cache_service.set(self._cache_key_by_id(collection_id), collection, COLLECTION_CACHE_POLICY.ttl_seconds)
+        if owner_id and project_id and slug:
+            cache_service.set(
+                self._cache_key_by_slug(owner_id, project_id, slug),
+                collection,
+                COLLECTION_CACHE_POLICY.ttl_seconds,
+            )
+
+    def invalidate_cache_entry(
+        self,
+        collection_id: str,
+        owner_id: str | None,
+        project_id: str | None,
+        old_slug: str | None,
+        new_slug: str | None = None,
+    ) -> None:
+        keys = [self._cache_key_by_id(collection_id)]
+        if owner_id and project_id and old_slug:
+            keys.append(self._cache_key_by_slug(owner_id, project_id, old_slug))
+        if owner_id and project_id and new_slug:
+            keys.append(self._cache_key_by_slug(owner_id, project_id, new_slug))
+        cache_service.delete_many(*keys)
+
     def _is_slug_conflict(self, project_id: str, slug: str, collection_id: str | None = None) -> bool:
         normalized = normalize_slug(slug)
         if not normalized:
@@ -32,8 +77,10 @@ class CollectionsService:
         return f"{base}-{uuid4().hex[:8]}"
 
     def _propagate_collection_visibility(self, collection_id: str, is_public: bool) -> None:
+        from app.services.papers_service import papers_service
+
         target_status = "published" if is_public else "draft"
-        papers = firestore_store.find_by_fields("papers", {"collectionId": collection_id})
+        papers = papers_service.list_by_collection_id(collection_id)
         for paper in papers:
             current_status = paper.get("status") or "draft"
             if current_status == "archived" or current_status == target_status:
@@ -41,10 +88,13 @@ class CollectionsService:
             paper_id = paper.get("paperId")
             if not paper_id:
                 continue
-            firestore_store.update(
-                "papers",
+            paper_owner_id = paper.get("ownerId")
+            if not paper_owner_id:
+                continue
+            papers_service.update(
                 paper_id,
-                {"status": target_status, "updatedAt": utc_now()},
+                paper_owner_id,
+                {"status": target_status},
             )
 
     def list_project_collections(self, project_id: str) -> list[dict]:
@@ -86,7 +136,11 @@ class CollectionsService:
         return payload
 
     def update(self, collection_id: str, owner_id: str, payload: dict) -> dict:
-        current = self.get_by_id(collection_id, owner_id=owner_id)
+        current = firestore_store.get("collections", collection_id)
+        if not current:
+            raise HTTPException(status_code=404, detail="Collection not found.")
+        if current.get("ownerId") != owner_id:
+            raise HTTPException(status_code=403, detail="Not allowed.")
 
         allowed_update_fields = {"name", "title", "slug", "description"}
         payload = {key: value for key, value in payload.items() if key in allowed_update_fields}
@@ -112,9 +166,17 @@ class CollectionsService:
 
         if not payload:
             return current
+        previous_slug = current.get("slug")
         payload["updatedAt"] = utc_now()
         firestore_store.update("collections", collection_id, payload)
         current.update(payload)
+        self.invalidate_cache_entry(
+            collection_id=collection_id,
+            owner_id=current.get("ownerId"),
+            project_id=current.get("projectId"),
+            old_slug=previous_slug,
+            new_slug=current.get("slug"),
+        )
         return current
 
     def set_visibility(self, collection_id: str, owner_id: str, is_public: bool) -> dict:
@@ -123,24 +185,38 @@ class CollectionsService:
         if bool(current.get("isPublic", False)) == target_visibility:
             return current
 
+        previous_slug = current.get("slug")
         payload = {"isPublic": target_visibility, "updatedAt": utc_now()}
         firestore_store.update("collections", collection_id, payload)
         current.update(payload)
+        self.invalidate_cache_entry(
+            collection_id=collection_id,
+            owner_id=current.get("ownerId"),
+            project_id=current.get("projectId"),
+            old_slug=previous_slug,
+            new_slug=current.get("slug"),
+        )
         self._propagate_collection_visibility(collection_id, target_visibility)
         return current
 
     def delete(self, collection_id: str, owner_id: str | None = None) -> dict[str, bool]:
-        _ = self.get_by_id(collection_id, owner_id=owner_id)
+        current = self.get_by_id(collection_id, owner_id=owner_id)
 
         from app.services.papers_service import papers_service
 
-        papers = firestore_store.find_by_fields("papers", {"collectionId": collection_id})
+        papers = papers_service.list_by_collection_id(collection_id)
         for paper in papers:
             paper_id = paper.get("paperId")
             if paper_id:
                 papers_service.delete(paper_id)
 
         firestore_store.delete("collections", collection_id)
+        self.invalidate_cache_entry(
+            collection_id=collection_id,
+            owner_id=current.get("ownerId"),
+            project_id=current.get("projectId"),
+            old_slug=current.get("slug"),
+        )
         return {"ok": True}
 
     def get_by_id(
@@ -148,7 +224,12 @@ class CollectionsService:
         collection_id: str,
         owner_id: str | None = None,
     ) -> dict:
-        collection = firestore_store.get("collections", collection_id)
+        cached = cache_service.get(self._cache_key_by_id(collection_id))
+        collection = cached if isinstance(cached, dict) else None
+        if collection is None:
+            collection = firestore_store.get("collections", collection_id)
+            if collection:
+                self._cache_document(collection)
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found.")
         if owner_id and collection.get("ownerId") != owner_id:
@@ -161,6 +242,10 @@ class CollectionsService:
         project_id: str,
         collection_slug: str,
     ) -> dict:
+        cached = cache_service.get(self._cache_key_by_slug(owner_id, project_id, collection_slug))
+        if isinstance(cached, dict):
+            return cached
+
         matches = firestore_store.find_by_fields(
             "collections",
             {
@@ -171,7 +256,9 @@ class CollectionsService:
         )
         if not matches:
             raise HTTPException(status_code=404, detail="Collection not found.")
-        return matches[0]
+        collection = matches[0]
+        self._cache_document(collection)
+        return collection
 
     def is_slug_available(self, project_id: str, slug: str, collection_id: str | None = None) -> bool:
         return not self._is_slug_conflict(project_id, slug, collection_id)

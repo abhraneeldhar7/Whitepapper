@@ -66,6 +66,21 @@ export async function copyToClipboard(value: string): Promise<boolean> {
   }
 }
 
+export async function copyToClipboardWithToast(
+  value: string,
+  successMessage: string = "Copied",
+  errorMessage: string = "Unable to copy",
+): Promise<boolean> {
+  const { toast } = await import("sonner");
+  const ok = await copyToClipboard(value);
+  if (ok) {
+    toast.success(successMessage);
+  } else {
+    toast.error(errorMessage);
+  }
+  return ok;
+}
+
 
 
 export async function compressImage(

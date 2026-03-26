@@ -9,7 +9,7 @@ router = APIRouter(tags=["collections"])
 
 
 @router.get("/collections", response_model=list[CollectionDoc])
-async def list_project_collections(
+def list_project_collections(
     user_id: str = Depends(get_verified_id),
     projectId: str = Query(...),
 ) -> list[CollectionDoc]:
@@ -20,7 +20,7 @@ async def list_project_collections(
 
 
 @router.get("/collections/{collection_id}", response_model=CollectionDoc)
-async def get_collection(
+def get_collection(
     collection_id: str,
     user_id: str = Depends(get_verified_id),
 ) -> CollectionDoc:
@@ -28,7 +28,7 @@ async def get_collection(
 
 
 @router.get("/collections/slug/available")
-async def check_collection_slug_available(
+def check_collection_slug_available(
     slug: str = Query(..., min_length=2, max_length=80),
     projectId: str = Query(...),
     collectionId: str | None = Query(default=None),
@@ -42,12 +42,12 @@ async def check_collection_slug_available(
 
 
 @router.post("/collections", response_model=CollectionDoc, status_code=201)
-async def create_collection(payload: CollectionCreate, user_id: str = Depends(get_verified_id)) -> CollectionDoc:
+def create_collection(payload: CollectionCreate, user_id: str = Depends(get_verified_id)) -> CollectionDoc:
     return collections_service.create(user_id, payload.model_dump())
 
 
 @router.patch("/collections/{collection_id}", response_model=CollectionDoc)
-async def patch_collection(
+def patch_collection(
     collection_id: str,
     payload: CollectionUpdate,
     user_id: str = Depends(get_verified_id),
@@ -60,7 +60,7 @@ async def patch_collection(
 
 
 @router.patch("/collections/{collection_id}/visibility", response_model=CollectionDoc)
-async def patch_collection_visibility(
+def patch_collection_visibility(
     collection_id: str,
     payload: CollectionVisibilityToggle,
     user_id: str = Depends(get_verified_id),
@@ -69,5 +69,5 @@ async def patch_collection_visibility(
 
 
 @router.delete("/collections/{collection_id}")
-async def delete_collection(collection_id: str, user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
+def delete_collection(collection_id: str, user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
     return collections_service.delete(collection_id, user_id)

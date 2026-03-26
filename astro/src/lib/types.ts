@@ -72,12 +72,23 @@ export type ApiKeyDoc = {
   keyId: string;
   ownerId: string;
   projectId: string;
+  keyHash: string;
   usage: number;
   limitPerMonth: number;
   isActive: boolean;
   createdAt: string;
 };
 
-export type ApiKeyCreateResponse = ApiKeyDoc & {
+export type ApiKeySummary = {
+  keyId: string;
+  ownerId: string;
+  projectId: string;
+  usage: number;
+  limitPerMonth: number;
+  isActive: boolean;
+  createdAt: string;
+};
+
+export type ApiKeyCreateResponse = ApiKeySummary & {
   rawKey: string;
 };

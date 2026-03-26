@@ -13,7 +13,7 @@ from app.schemas.entities import (
 from app.services.auth_service import get_verified_id
 from app.services._dev_api_service import _dev_api_service
 from app.services.collections_service import collections_service
-from app.core.firestore_store import firestore_store
+from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
 
@@ -43,30 +43,29 @@ def _load_authorized_project(key_doc: dict) -> dict:
 
 
 def _add_usage_increment(background_tasks: BackgroundTasks, key_doc: dict) -> None:
-    key_id = key_doc.get("keyId")
-    if not key_id:
+    key_hash = key_doc.get("keyHash")
+    if not key_hash:
         return
     background_tasks.add_task(
         _dev_api_service.increment_usage,
-        key_id,
+        key_hash,
     )
 
 
-def _resolve_paper_for_project(project_id: str, paper_id: str | None, paper_slug: str | None) -> dict:
+def _resolve_paper_for_project(project: dict, paper_id: str | None, paper_slug: str | None) -> dict:
     if bool(paper_id) == bool(paper_slug):
         raise HTTPException(status_code=400, detail="Provide exactly one of: id or slug.")
 
+    project_id = str(project.get("projectId") or "")
+    owner_id = str(project.get("ownerId") or "")
+
     if paper_id:
-        paper = firestore_store.get("papers", paper_id)
+        paper = papers_service.get_by_id(paper_id)
         if not paper:
             raise HTTPException(status_code=404, detail="Paper not found for id.")
     else:
         normalized_slug = normalize_slug(paper_slug or "")
-        matches = firestore_store.find_by_fields(
-            "papers",
-            {"projectId": project_id, "slug": normalized_slug},
-        )
-        paper = matches[0] if matches else None
+        paper = papers_service.find_by_slug(normalized_slug, owner_id=owner_id)
         if not paper:
             raise HTTPException(status_code=404, detail="Paper not found for slug in this project.")
 
@@ -97,7 +96,7 @@ def get_project_bundle(
     ]
     papers = [
         item
-        for item in firestore_store.find_by_fields("papers", {"projectId": project_id})
+        for item in papers_service.list_by_project_id(project_id)
         if item.get("status") == "published" and not item.get("collectionId")
     ]
 
@@ -123,9 +122,7 @@ def get_collection_bundle(
         raise HTTPException(status_code=400, detail="Provide exactly one of: id or slug.")
 
     if collection_id:
-        collection = firestore_store.get("collections", collection_id)
-        if not collection:
-            raise HTTPException(status_code=404, detail="Collection not found for id.")
+        collection = collections_service.get_by_id(collection_id)
         if collection.get("projectId") != key_project_id:
             raise HTTPException(status_code=403, detail="Collection does not belong to the API key project.")
     else:
@@ -142,9 +139,7 @@ def get_collection_bundle(
     _add_usage_increment(background_tasks, key_doc)
 
     papers = [
-        item
-        for item in firestore_store.find_by_fields("papers", {"collectionId": collection.get("collectionId")})
-        if item.get("status") == "published"
+        item for item in papers_service.list_by_collection_id(collection.get("collectionId")) if item.get("status") == "published"
     ]
 
     return {
@@ -163,8 +158,7 @@ def get_paper(
     raw_key = _extract_api_key(x_api_key)
     key_doc = _dev_api_service.validate_key(raw_key)
     authorized_project = _load_authorized_project(key_doc)
-    key_project_id = authorized_project["projectId"]
-    paper = _resolve_paper_for_project(key_project_id, paper_id, paper_slug)
+    paper = _resolve_paper_for_project(authorized_project, paper_id, paper_slug)
     _add_usage_increment(background_tasks, key_doc)
 
     matched_project = None
@@ -172,15 +166,23 @@ def get_paper(
 
     paper_project_id = str(paper.get("projectId") or "")
     if paper_project_id:
-        project = firestore_store.get("projects", paper_project_id)
-        if project and bool(project.get("isPublic")):
-            matched_project = project
+        try:
+            project = projects_service.get_by_id(paper_project_id)
+            if bool(project.get("isPublic")):
+                matched_project = project
+        except HTTPException as exc:
+            if exc.status_code != 404:
+                raise
 
     collection_id = str(paper.get("collectionId") or "")
     if collection_id:
-        collection = firestore_store.get("collections", collection_id)
-        if collection and bool(collection.get("isPublic")):
-            matched_collection = collection
+        try:
+            collection = collections_service.get_by_id(collection_id)
+            if bool(collection.get("isPublic")):
+                matched_collection = collection
+        except HTTPException as exc:
+            if exc.status_code != 404:
+                raise
 
     return {
         "paper": paper,
@@ -190,22 +192,18 @@ def get_paper(
 
 
 @api_keys_router.get("/projects/{project_id}/api-key", response_model=ApiKeySummary | None)
-async def get_project_api_key(
+def get_project_api_key(
     project_id: Annotated[str, Path()],
     user_id: CurrentUserIdDep,
 ) -> ApiKeySummary | None:
     project = projects_service.get_by_id(project_id)
     if project.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
-    matches = firestore_store.find_by_fields("apiKeys", {"projectId": project_id, "ownerId": user_id})
-    key_doc = matches[0] if matches else None
-    if not key_doc:
-        return None
-    return {key: value for key, value in key_doc.items() if key != "keyHash"}
+    return _dev_api_service.get_project_api_key(project_id, user_id)
 
 
 @api_keys_router.post("/projects/{project_id}/api-key", response_model=ApiKeyCreateResponse, status_code=201)
-async def create_api_key(
+def create_api_key(
     project_id: Annotated[str, Path()],
     user_id: CurrentUserIdDep,
 ) -> ApiKeyCreateResponse:
@@ -216,10 +214,10 @@ async def create_api_key(
 
 
 @api_keys_router.patch("/api-keys/{key_id}", response_model=ApiKeySummary)
-async def toggle_api_key(key_id: str, payload: ApiKeyToggle, user_id: CurrentUserIdDep) -> ApiKeySummary:
+def toggle_api_key(key_id: str, payload: ApiKeyToggle, user_id: CurrentUserIdDep) -> ApiKeySummary:
     return _dev_api_service.toggle_active(key_id, user_id, payload.isActive)
 
 
 @api_keys_router.delete("/api-keys/{key_id}")
-async def delete_api_key(key_id: str, user_id: CurrentUserIdDep) -> dict[str, bool]:
+def delete_api_key(key_id: str, user_id: CurrentUserIdDep) -> dict[str, bool]:
     return _dev_api_service.delete(key_id, user_id)

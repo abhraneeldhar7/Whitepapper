@@ -2,10 +2,11 @@
 import ProjectWorkspace from "@/components/project/ProjectWorkspace";
 import ProjectWorkspaceSkeleton from "@/components/project/ProjectWorkspaceSkeleton";
 import Layout from "@/layouts/Layout.astro";
+import { getProjectApiKey } from "@/lib/api/api_keys";
 import { createApiClient } from "@/lib/api/client";
 import { getProjectDashboardData } from "@/lib/api/projects";
 import { getCurrentUser } from "@/lib/api/users";
-import type { UserDoc } from "@/lib/types";
+import type { ApiKeyDoc, UserDoc } from "@/lib/types";
 
 const { userId, getToken } = Astro.locals.auth();
 const projectId = Astro.params.projectId as string;
@@ -20,9 +21,10 @@ if (!token) {
 }
 
 const serverClient = createApiClient(token);
-const [initialUser, projectData] = await Promise.all([
+const [initialUser, projectData, initialApiDoc] = await Promise.all([
   getCurrentUser(serverClient).catch(() => null as UserDoc | null),
   getProjectDashboardData(projectId, serverClient).catch(() => null),
+  getProjectApiKey(projectId, serverClient).catch(() => null as ApiKeyDoc | null),
 ]);
 
 if (!initialUser || !projectData) {
@@ -41,6 +43,7 @@ const { project: initialProject, collections: initialCollections, papers: initia
       initialProject={initialProject}
       initialPages={initialPages}
       initialCollections={initialCollections}
+      initialApiDoc={initialApiDoc}
       initialUser={initialUser}
     />
   </div>

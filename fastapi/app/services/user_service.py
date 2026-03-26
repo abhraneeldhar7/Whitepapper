@@ -1,14 +1,39 @@
 from fastapi import HTTPException
 
+from app.core.cache_policies import USER_CACHE_POLICY
 from app.services.clerk_service import clerk_service
 from app.core.reserved_paths import is_reserved_username
 from app.core.firestore_store import firestore_store, utc_now
+from app.services.cache_service import cache_service
 from app.services.slug_utils import normalize_slug
 from app.services.storage_service import storage_service
 from app.services.projects_service import projects_service
 from app.services.papers_service import papers_service
 
 class UserService:
+    def _cache_key_by_username(self, username: str) -> str:
+        return cache_service.build_key(USER_CACHE_POLICY.namespace, "username", normalize_slug(username))
+
+    def _cache_user(self, user_doc: dict | None) -> None:
+        if not user_doc:
+            return
+        username = user_doc.get("username")
+        if not username:
+            return
+        cache_service.set(
+            self._cache_key_by_username(username),
+            user_doc,
+            USER_CACHE_POLICY.ttl_seconds,
+        )
+
+    def _invalidate_user_cache(self, old_username: str | None, new_username: str | None = None) -> None:
+        keys: list[str] = []
+        if old_username:
+            keys.append(self._cache_key_by_username(old_username))
+        if new_username:
+            keys.append(self._cache_key_by_username(new_username))
+        cache_service.delete_many(*keys)
+
     def _normalize_user_document(self, user_doc: dict) -> dict:
         normalized = dict(user_doc)
 
@@ -163,8 +188,10 @@ class UserService:
         if not payload:
             return current
 
+        previous_username = current.get("username")
         firestore_store.update("users", user_id, payload)
         current.update(payload)
+        self._invalidate_user_cache(previous_username, current.get("username"))
         return current
 
     def get_by_username(self, username: str) -> dict:
@@ -179,9 +206,15 @@ class UserService:
                 candidates.append(candidate)
 
         for candidate in candidates:
+            cached = cache_service.get(self._cache_key_by_username(candidate))
+            if isinstance(cached, dict):
+                return self._normalize_user_document(cached)
+
             matches = firestore_store.find_by_fields("users", {"username": candidate})
             if matches:
-                return self._normalize_user_document(matches[0])
+                normalized = self._normalize_user_document(matches[0])
+                self._cache_user(normalized)
+                return normalized
 
         raise HTTPException(status_code=404, detail="User not found.")
 
@@ -203,6 +236,7 @@ class UserService:
 
     def delete_user(self, user_id: str) -> dict[str, int]:
         deleted_counts: dict[str, int] = {}
+        user_doc = firestore_store.get("users", user_id)
 
         projects = firestore_store.find_by_fields("projects", {"ownerId": user_id})
         deleted_counts["projects"] = len(projects)
@@ -212,7 +246,7 @@ class UserService:
                 continue
             projects_service.delete_with_dependencies(project_id, user_id)
 
-        standalone_papers = firestore_store.find_by_fields("papers", {"ownerId": user_id})
+        standalone_papers = papers_service.list_owned(user_id)
         deleted_counts["papers"] = 0
         for paper in standalone_papers:
             if paper.get("projectId"):
@@ -225,14 +259,16 @@ class UserService:
 
         api_keys = firestore_store.find_by_fields("apiKeys", {"ownerId": user_id})
         deleted_counts["apiKeys"] = len(api_keys)
+        from app.services._dev_api_service import _dev_api_service
         for api_key in api_keys:
             key_id = api_key.get("keyId")
             if key_id:
-                firestore_store.delete("apiKeys", key_id)
+                _dev_api_service.delete(key_id, user_id)
 
         storage_count = storage_service.delete_owner_assets(user_id)
         deleted_counts["storageObjects"] = storage_count
 
+        self._invalidate_user_cache(user_doc.get("username") if user_doc else None)
         firestore_store.delete("users", user_id)
         deleted_counts["users"] = 1
         return deleted_counts

@@ -1,7 +1,7 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
-import type { ApiKeyDoc, ApiKeyCreateResponse } from "@/lib/types";
+import type { ApiKeyDoc, ApiKeySummary, ApiKeyCreateResponse } from "@/lib/types";
 
-export type { ApiKeyDoc, ApiKeyCreateResponse };
+export type { ApiKeyDoc, ApiKeySummary, ApiKeyCreateResponse };
 
 
 export async function getProjectApiKey(

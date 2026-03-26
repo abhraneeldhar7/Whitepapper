@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Ellipsis, LockIcon, NotebookPen, PencilIcon, PlusIcon, RssIcon, SaveIcon, XIcon } from "lucide-react";
+import { Copy, Ellipsis, LockIcon, NotebookPen, PencilIcon, PlusIcon, RssIcon, SaveIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import UserPopover from "@/components/pre_made_components/user_popover/userPopover";
@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { copyToClipboardWithToast } from "@/lib/utils";
 import { createPaper } from "@/lib/api/papers";
 import {
   checkCollectionSlugAvailable,
@@ -314,6 +315,23 @@ export default function CollectionWorkspace({
             <div className="flex md:flex-row flex-col md:gap-10 gap-6">
               <div className="flex flex-col gap-5 w-full">
                 <div>
+                  <Label>Collection ID</Label>
+                  <div className="flex items-center gap-4 justify-between">
+                    <p className="text-sm font-mono text-muted-foreground break-all">{collection.collectionId}</p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => {
+                        void copyToClipboardWithToast(collection.collectionId, "Collection ID copied.");
+                      }}
+                    >
+                      <Copy />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
                   <Label htmlFor="collection-name">Collection name</Label>
                   {editingCollection ? (
                     <Input
@@ -329,7 +347,7 @@ export default function CollectionWorkspace({
                 </div>
 
                 <div>
-                  <Label htmlFor="collection-slug">Collection URL</Label>
+                  <Label htmlFor="collection-slug">Collection Slug</Label>
                   {editingCollection ? (
                     <Input
                       id="collection-slug"

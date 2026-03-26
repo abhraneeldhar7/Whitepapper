@@ -27,7 +27,7 @@ def _with_cache_buster(url: str) -> str:
 
 
 @router.get("/me", response_model=UserProfile)
-async def get_me(user_id: str = Depends(get_verified_id)) -> UserProfile:
+def get_me(user_id: str = Depends(get_verified_id)) -> UserProfile:
 
     try:
         return user_service.get_by_id(user_id)
@@ -41,7 +41,7 @@ async def get_me(user_id: str = Depends(get_verified_id)) -> UserProfile:
 
 
 @router.patch("/me", response_model=UserProfile)
-async def patch_me(
+def patch_me(
     payload: UserProfile,
     user_id: str = Depends(get_verified_id),
 ) -> UserProfile:
@@ -52,7 +52,7 @@ async def patch_me(
 
 
 @router.delete("/me")
-async def delete_me(user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
+def delete_me(user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
     user_service.delete_user(user_id)
     return {"ok": True}
 
@@ -63,7 +63,7 @@ async def upload_profile_image(
     user_id: str = Depends(get_verified_id),
 ) -> dict[str, str]:
     url = await storage_service.upload_image(
-        f"users/{user_id}/avatar",
+        f"users/{user_id}/profile/avatar",
         file,
         max_width=MAX_PROFILE_IMAGE_WIDTH,
         max_height=MAX_PROFILE_IMAGE_HEIGHT,
@@ -76,7 +76,7 @@ async def upload_profile_image(
 
 
 @router.get("/username/available")
-async def check_username_available(
+def check_username_available(
     username: str = Query(...),
     user_id: str = Depends(get_verified_id),
 ) -> dict[str, bool]:
@@ -84,20 +84,16 @@ async def check_username_available(
 
 
 @router.get("/dashboard", response_model=DashboardPayload)
-async def get_dashboard_data(user_id: str = Depends(get_verified_id)) -> DashboardPayload:
+def get_dashboard_data(user_id: str = Depends(get_verified_id)) -> DashboardPayload:
     """Get all dashboard data: user profile, projects, and standalone papers (public/draft), sorted by updatedAt."""
     user = user_service.get_by_id(user_id)
     projects = projects_service.list_owned(user_id)
-    papers = papers_service.list_owned(user_id)
-    
-    # Filter to only standalone papers (no projectId) - include all regardless of isPublic
-    # since these are owned by the user
-    standalone_papers = [p for p in papers if not p.get("projectId")]
-    
+    standalone_papers = papers_service.list_owned_filtered(owner_id=user_id, standalone=True)
+
     # Sort by updatedAt in descending order
     projects.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
     standalone_papers.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
-    
+
     return DashboardPayload(
         user=user,
         projects=projects,
@@ -106,5 +102,5 @@ async def get_dashboard_data(user_id: str = Depends(get_verified_id)) -> Dashboa
 
 
 @router.get("/{username}", response_model=UserProfile)
-async def get_user_by_username(username: str) -> UserProfile:
+def get_user_by_username(username: str) -> UserProfile:
     return user_service.get_by_username(username)

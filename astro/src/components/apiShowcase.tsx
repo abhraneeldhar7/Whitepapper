@@ -1,0 +1,433 @@
+"use client";
+
+import { useState } from "react";
+import { Check, Copy, Play, Loader2, LandPlot, PlayIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn, copyToClipboardWithToast } from "@/lib/utils";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { toast } from "sonner";
+
+
+// API endpoints configuration
+const ENDPOINTS = [
+    {
+        id: "project",
+        name: "Project details",
+        method: "GET",
+        path: "/dev/project",
+        description: "Get project details, public collections, and published standalone papers",
+        variables: [
+            { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "your-api-key" },
+        ],
+        hasIdentifierOptions: false,
+        identifierOptions: [],
+        code: {
+            typescript: `const response = await fetch("https://whitepapper.antk.in/api/v1/dev/project", {
+  method: "GET",
+  headers: {
+    "x-api-key": API_KEY,
+    "Content-Type": "application/json",
+  },
+});
+
+const data = await response.json();
+console.log(data);`,
+            python: `response = requests.get("https://whitepapper.antk.in/api/v1/dev/project", headers={
+    "x-api-key": API_KEY,
+    "Content-Type": "application/json",
+})
+
+data = response.json()
+print(data)`,
+        },
+    },
+    {
+        id: "collection",
+        name: "Collection details",
+        method: "GET",
+        path: "/dev/collection",
+        description: "Get collection details and its published papers",
+        hasIdentifierOptions: true,
+        identifierOptions: [
+            { value: "id", label: "By ID" },
+            { value: "slug", label: "By Slug" },
+        ],
+        variables: [
+            { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "your-api-key" },
+            { name: "identifier", label: "Collection ID", type: "text", required: true, placeholder: "collection-id" },
+        ],
+        code: {
+            typescript: `const response = await fetch("https://whitepapper.antk.in/api/v1/dev/collection?id=COLLECTION_ID", {
+  method: "GET",
+  headers: {
+    "x-api-key": API_KEY,
+    "Content-Type": "application/json",
+  },
+});
+
+const data = await response.json();
+console.log(data);`,
+            python: `response = requests.get("https://whitepapper.antk.in/api/v1/dev/collection?id=COLLECTION_ID", headers={
+    "x-api-key": API_KEY,
+    "Content-Type": "application/json",
+})
+
+data = response.json()
+print(data)`,
+        },
+    },
+    {
+        id: "paper",
+        name: "Paper details",
+        method: "GET",
+        path: "/dev/paper",
+        description: "Get paper details with associated project and collection info (if public)",
+        hasIdentifierOptions: true,
+        identifierOptions: [
+            { value: "id", label: "By ID" },
+            { value: "slug", label: "By Slug" },
+        ],
+        variables: [
+            { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "your-api-key" },
+            { name: "identifier", label: "Paper ID", type: "text", required: true, placeholder: "paper-id" },
+        ],
+        code: {
+            typescript: `const response = await fetch("https://whitepapper.antk.in/api/v1/dev/paper?id=PAPER_ID", {
+  method: "GET",
+  headers: {
+    "x-api-key": API_KEY,
+    "Content-Type": "application/json",
+  },
+});
+
+const data = await response.json();
+console.log(data);`,
+            python: `response = requests.get("https://whitepapper.antk.in/api/v1/dev/paper?id=PAPER_ID", headers={
+    "x-api-key": API_KEY,
+    "Content-Type": "application/json",
+})
+
+data = response.json()
+print(data)`,
+        },
+    },
+];
+
+
+// Helper to replace placeholder in code
+const replaceCodePlaceholders = (code: string, variables: Record<string, string>, identifierType: string | null, identifierValue: string, endpointId: string) => {
+    let updatedCode = code;
+
+    // Replace API_KEY placeholder
+    if (variables.apiKey) {
+        updatedCode = updatedCode.replace(/API_KEY/g, `"${variables.apiKey}"`);
+    }
+
+    // Replace identifier placeholder based on type
+    if (identifierType && identifierValue) {
+        if (endpointId === "collection") {
+            if (identifierType === "id") {
+                updatedCode = updatedCode.replace(/id=COLLECTION_ID/g, `id=${identifierValue}`);
+                updatedCode = updatedCode.replace(/COLLECTION_ID/g, identifierValue);
+            } else if (identifierType === "slug") {
+                updatedCode = updatedCode.replace(/id=COLLECTION_ID/g, `slug=${identifierValue}`);
+                updatedCode = updatedCode.replace(/COLLECTION_ID/g, identifierValue);
+            }
+        } else if (endpointId === "paper") {
+            if (identifierType === "id") {
+                updatedCode = updatedCode.replace(/id=PAPER_ID/g, `id=${identifierValue}`);
+                updatedCode = updatedCode.replace(/PAPER_ID/g, identifierValue);
+            } else if (identifierType === "slug") {
+                updatedCode = updatedCode.replace(/id=PAPER_ID/g, `slug=${identifierValue}`);
+                updatedCode = updatedCode.replace(/PAPER_ID/g, identifierValue);
+            }
+        }
+    }
+
+    return updatedCode;
+};
+
+export function ApiShowcase() {
+    const [selectedEndpoint, setSelectedEndpoint] = useState<(typeof ENDPOINTS)[0]>(ENDPOINTS[0]);
+    const [language, setLanguage] = useState<"typescript" | "python">("typescript");
+    const [identifierType, setIdentifierType] = useState<"id" | "slug">("id");
+    const [variables, setVariables] = useState<Record<string, string>>({});
+    const [response, setResponse] = useState<{ type: "success" | "error"; data: any } | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [copied, setCopied] = useState(false);
+
+    // Initialize variables when endpoint changes
+    const handleEndpointChange = (endpoint: (typeof ENDPOINTS)[0]) => {
+        setSelectedEndpoint(endpoint);
+        const initialVars: Record<string, string> = {};
+        endpoint.variables.forEach((v) => {
+            initialVars[v.name] = "";
+        });
+        setVariables(initialVars);
+        setResponse(null);
+        // Reset identifier type to default (id)
+        if (endpoint.hasIdentifierOptions) {
+            setIdentifierType("id");
+            // Update variable label based on identifier type
+            const updatedVariables = [...endpoint.variables];
+            const identifierVar = updatedVariables.find(v => v.name === "identifier");
+            if (identifierVar) {
+                identifierVar.label = endpoint.id === "collection" ? "Collection ID" : "Paper ID";
+                identifierVar.placeholder = endpoint.id === "collection" ? "collection-id" : "paper-id";
+            }
+            endpoint.variables = updatedVariables;
+        }
+    };
+
+    // Handle identifier type change
+    const handleIdentifierTypeChange = (type: "id" | "slug") => {
+        setIdentifierType(type);
+        // Update the variable label and placeholder
+        const updatedVariables = [...selectedEndpoint.variables];
+        const identifierVar = updatedVariables.find(v => v.name === "identifier");
+        if (identifierVar) {
+            if (type === "id") {
+                identifierVar.label = selectedEndpoint.id === "collection" ? "Collection ID" : "Paper ID";
+                identifierVar.placeholder = selectedEndpoint.id === "collection" ? "collection-id" : "paper-id";
+            } else {
+                identifierVar.label = selectedEndpoint.id === "collection" ? "Collection Slug" : "Paper Slug";
+                identifierVar.placeholder = selectedEndpoint.id === "collection" ? "collection-slug" : "paper-slug";
+            }
+        }
+        setSelectedEndpoint({ ...selectedEndpoint, variables: updatedVariables });
+    };
+
+    // Handle variable input change
+    const handleVariableChange = (name: string, value: string) => {
+        setVariables((prev) => ({ ...prev, [name]: value }));
+    };
+
+    // Copy code snippet
+    const handleCopyCode = async () => {
+        let code = selectedEndpoint.code[language];
+        // Replace placeholders for copy
+        code = replaceCodePlaceholders(
+            code,
+            variables,
+            selectedEndpoint.hasIdentifierOptions ? identifierType : null,
+            variables.identifier || "",
+            selectedEndpoint.id
+        );
+        const ok = await copyToClipboardWithToast(code, "Code copied.", "Unable to copy code.");
+        if (ok) {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
+    // Get the current code with replaced placeholders for display
+    const getCurrentCode = () => {
+        let code = selectedEndpoint.code[language];
+        code = replaceCodePlaceholders(
+            code,
+            variables,
+            selectedEndpoint.hasIdentifierOptions ? identifierType : null,
+            variables.identifier || "",
+            selectedEndpoint.id
+        );
+        return code;
+    };
+
+    // Make API request
+    const handleRunRequest = async () => {
+        // Validate required variables
+        const missingVars = selectedEndpoint.variables.filter(
+            (v) => v.required && !variables[v.name]
+        );
+        if (missingVars.length > 0) {
+            setResponse({
+                type: "error",
+                data: { error: `Missing required variables: ${missingVars.map((v) => v.label).join(", ")}` },
+            });
+            return;
+        }
+
+        setIsLoading(true);
+        setResponse(null);
+
+        try {
+            const BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
+            let url = `${BASE_URL}/api/v1${selectedEndpoint.path}`;
+            console.log(url)
+            const headers: HeadersInit = {
+                "x-api-key": variables.apiKey,
+                "Content-Type": "application/json",
+            };
+
+            // Handle identifier for collection and paper endpoints
+            if (selectedEndpoint.hasIdentifierOptions && variables.identifier) {
+                if (selectedEndpoint.id === "collection") {
+                    url += identifierType === "id"
+                        ? `?id=${encodeURIComponent(variables.identifier)}`
+                        : `?slug=${encodeURIComponent(variables.identifier)}`;
+                } else if (selectedEndpoint.id === "paper") {
+                    url += identifierType === "id"
+                        ? `?id=${encodeURIComponent(variables.identifier)}`
+                        : `?slug=${encodeURIComponent(variables.identifier)}`;
+                }
+            }
+
+            const res = await fetch(url, {
+                method: selectedEndpoint.method,
+                headers,
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                setResponse({ type: "error", data });
+            } else {
+                setResponse({ type: "success", data });
+            }
+        } catch (error: any) {
+            setResponse({ type: "error", data: { error: error.message || "Network error occurred" } });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const currentCode = getCurrentCode();
+
+    return (
+        <div className="w-full">
+            {/* Endpoint Pills with Identifier Options */}
+
+            <div className="flex flex-wrap items-center gap-2">
+                {ENDPOINTS.map((endpoint) => (
+                    <Button
+                        key={endpoint.id}
+                        size="sm"
+                        variant={endpoint.id == selectedEndpoint.id ? "default" : "ghost"}
+                        onClick={() => handleEndpointChange(endpoint)}
+                    >
+                        {endpoint.name}
+                    </Button>
+                ))}
+            </div>
+
+
+
+            {/* Code Section */}
+
+            <div className={`overflow-hidden relative rounded-lg border bg-muted mt-2 ${language == "typescript" ? "h-[260px]" : "h-[200px]"} transition-all duration-300`}>
+                {/* Identifier Type Buttons - appears only for collection/paper with transition */}
+                <div
+                    className={cn(
+                        "flex gap-1 transition-all duration-300 ease-in-out absolute top-2 left-2 z-2",
+                        selectedEndpoint.hasIdentifierOptions
+                            ? "translate-y-[0px]"
+                            : "translate-y-[-50px]")}>
+                    <Button
+                        type="button"
+                        variant={identifierType === "id" ? "default" : "outline"}
+                        size="xs"
+                        onClick={() => handleIdentifierTypeChange("id")}>
+                        By ID
+                    </Button>
+                    <Button
+                        type="button"
+                        variant={identifierType === "slug" ? "default" : "outline"}
+                        size="xs"
+                        onClick={() => handleIdentifierTypeChange("slug")}>
+                        By Slug
+                    </Button>
+
+                </div>
+
+
+                <ScrollArea>
+                    <ScrollBar orientation="horizontal" />
+                    {/* Copy Button */}
+                    <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="absolute top-2 right-2 z-2"
+                        onClick={handleCopyCode}
+                    >
+                        {copied ? <Check className="p-[1px]" /> : <Copy className="p-[1px]" />}
+                    </Button>
+
+                    {/* Code Snippet */}
+                    <pre className="p-4 pt-12 overflow-x-auto text-sm">
+                        <code>{currentCode}</code>
+                    </pre>
+                </ScrollArea>
+            </div>
+
+            <div className="mt-2 flex gap-2">
+                <Button variant={language == "typescript" ? "secondary" : "ghost"} onClick={() => { setLanguage("typescript") }}>Typescript</Button>
+                <Button variant={language == "python" ? "secondary" : "ghost"} onClick={() => { setLanguage("python") }}>Python</Button>
+            </div>
+
+
+            {/* Variables Section - Vercel style */}
+            <div className="space-y-4 mt-5">
+                <h3 className="text-sm font-semibold text-foreground">Variables</h3>
+                <div className="space-y-3">
+                    {selectedEndpoint.variables.map((variable) => (
+                        <div
+                            key={variable.name}
+                            className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center"
+                        >
+                            <Label htmlFor={variable.name} className="text-sm font-medium text-muted-foreground">
+                                {variable.label}
+                                {variable.required && <span className="text-destructive ml-1">*</span>}
+                            </Label>
+                            <div className="md:col-span-2">
+                                <Input
+                                    id={variable.name}
+                                    type={variable.type}
+                                    placeholder={variable.placeholder}
+                                    value={variables[variable.name] || ""}
+                                    onChange={(e) => handleVariableChange(variable.name, e.target.value)}
+                                    className="font-mono text-sm"
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Run Button */}
+                <div className="mt-10 flex justify-end">
+                    <Button loading={isLoading} onClick={handleRunRequest} disabled={isLoading} className="w-full md:w-auto">
+                        <PlayIcon /> Run
+                    </Button>
+                </div>
+            </div>
+
+            {/* Response Section */}
+            {
+                response && (
+                    <div className="space-y-2">
+                        <h3 className="text-sm font-semibold text-foreground">Response</h3>
+                        <div
+                            className={cn(
+                                "rounded-lg border p-4 overflow-x-auto",
+                                response.type === "error"
+                                    ? "bg-destructive/10 border-destructive/30"
+                                    : "bg-muted/30"
+                            )}
+                        >
+                            <pre
+                                className={cn(
+                                    "text-sm font-mono whitespace-pre-wrap break-words",
+                                    response.type === "error" && "text-destructive"
+                                )}
+                            >
+                                {JSON.stringify(response.data, null, 2)}
+                            </pre>
+                        </div>
+                    </div>
+                )
+            }
+        </div >
+    );
+}

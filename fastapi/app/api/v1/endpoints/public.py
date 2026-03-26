@@ -22,19 +22,18 @@ def _is_published_paper(paper: dict) -> bool:
 
 
 @router.get("/{handle}")
-async def get_public_profile(handle: str) -> dict:
+def get_public_profile(handle: str) -> dict:
     user = user_service.get_by_username(handle)
     owner_id = user["userId"]
 
     public_projects = [item for item in projects_service.list_owned(owner_id) if _is_public_project(item)]
-    # Filter to only standalone papers (no projectId) - papers not in any project or collection
-    papers = [item for item in papers_service.list_owned(owner_id) if _is_published_paper(item) and not item.get("projectId")]
+    papers = [item for item in papers_service.list_owned_filtered(owner_id=owner_id, standalone=True) if _is_published_paper(item)]
 
     return {"user": user, "projects": public_projects, "papers": papers}
 
 
 @router.get("/{handle}/papers/{paper_slug}", response_model=PublicPaperPagePayload)
-async def get_public_paper_page_data(handle: str, paper_slug: str) -> PublicPaperPagePayload:
+def get_public_paper_page_data(handle: str, paper_slug: str) -> PublicPaperPagePayload:
     user = user_service.get_by_username(handle)
     paper = papers_service.find_by_slug(paper_slug, owner_id=user["userId"])
     if not paper or not _is_published_paper(paper):
@@ -51,7 +50,7 @@ async def get_public_paper_page_data(handle: str, paper_slug: str) -> PublicPape
 
 
 @router.get("/{handle}/projects/{project_slug}")
-async def get_public_project(handle: str, project_slug: str) -> dict:
+def get_public_project(handle: str, project_slug: str) -> dict:
     user = user_service.get_by_username(handle)
     project = projects_service.get_by_slug(user["userId"], project_slug)
     if not _is_public_project(project):
@@ -75,7 +74,7 @@ async def get_public_project(handle: str, project_slug: str) -> dict:
 
 
 @router.get("/{handle}/projects/{project_slug}/collections/{collection_id}")
-async def get_public_collection(handle: str, project_slug: str, collection_id: str) -> dict:
+def get_public_collection(handle: str, project_slug: str, collection_id: str) -> dict:
     user = user_service.get_by_username(handle)
     project = projects_service.get_by_slug(user["userId"], project_slug)
     if not _is_public_project(project):

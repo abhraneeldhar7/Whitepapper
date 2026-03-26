@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import React, { useId } from 'react';
 
 export interface FolderNotesProps {
+  logoUrl?: string|null;
   /** Width of the component. Scales perfectly. */
   width?: number | string;
   /** Height of the component. Scales perfectly. */
@@ -11,6 +12,7 @@ export interface FolderNotesProps {
 }
 
 const FolderNotes: React.FC<FolderNotesProps> = ({
+  logoUrl,
   width,
   height,
   className = '',
@@ -45,7 +47,7 @@ const FolderNotes: React.FC<FolderNotesProps> = ({
 
   return (
     <div
-      className={cn("md:w-[180px] md:h-[180px]",`${wrapperClass} ${className}`)}
+      className={cn("md:w-[180px] md:h-[180px]", `${wrapperClass} ${className}`)}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -54,6 +56,12 @@ const FolderNotes: React.FC<FolderNotesProps> = ({
         height: height ?? undefined,
       }}
     >
+      {logoUrl &&
+        <img
+          src={logoUrl}
+          alt="P"
+          className="h-[35px] w-[35px] absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 rounded-[12px] z-2 object-cover"
+        />}
       <svg
         viewBox="35 70 330 300"
         style={{ width: '100%', height: '100%', display: 'block' }}

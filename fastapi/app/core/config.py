@@ -28,6 +28,12 @@ class Settings(BaseSettings):
 
     cron_secret: str | None = None
 
+    valkey_service_uri: str | None = None
+    valkey_host: str | None = None
+    valkey_port: int | None = None
+    valkey_user: str | None = None
+    valkey_password: str | None = None
+
 
 @lru_cache
 def get_settings() -> Settings:

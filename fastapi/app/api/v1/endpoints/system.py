@@ -9,12 +9,12 @@ router = APIRouter(tags=["system"])
 
 
 @router.get("/health")
-async def health() -> dict[str, str]:
+def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
 @router.post("/reset-api-usage")
-async def reset_api_usage(request: Request) -> dict[str, object]:
+def reset_api_usage(request: Request) -> dict[str, object]:
     settings = get_settings()
     cron_secret = request.headers.get("x-cron-secret", "")
     if not settings.cron_secret or not hmac.compare_digest(

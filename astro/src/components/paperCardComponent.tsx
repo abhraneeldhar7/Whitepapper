@@ -58,7 +58,7 @@ export default function PaperCardComponent({
             });
     }
 
-    return (<div className="flex flex-col relative h-[210px] md:h-[260px] justify-between">
+    return (<div className="flex flex-col relative justify-between">
         <a href={paperData.status == "published" ? `/${handle}/${paperData.slug}` : `/write/${paperData.paperId}`} target={paperData.status == "published" ? "_blank" : ""} className="relative">
             {showStatus && (
                 <span className={`inline-flex items-center gap-1 rounded-full border px-[8px] py-[5px] text-[10px] leading-[11px] font-[420] w-fit ${statusClassName} absolute top-[8px] right-[7px]`}>
@@ -66,15 +66,17 @@ export default function PaperCardComponent({
                 </span>
             )}
 
-            {
-                paperData.thumbnailUrl ?
-                    <img className="w-full object-cover md:h-[170px] h-[125px] border rounded-[3px]" src={paperData.thumbnailUrl} />
-                    :
-                    <>
-                        <img className="dark:hidden w-full object-cover md:h-[170px] h-[125px] border opacity-[0.7] rounded-[3px]" src={abstractLightPic.src} />
-                        <img className="hidden dark:block w-full object-cover md:h-[170px] h-[125px] border opacity-[0.4] rounded-[3px]" src={abstractDarkPic.src} />
-                    </>
-            }
+            <div className="overflow-hidden md:h-[170px] h-[125px]">
+                {
+                    paperData.thumbnailUrl ?
+                        <img className="w-full object-cover w-full h-full border rounded-[3px]" src={paperData.thumbnailUrl} />
+                        :
+                        <>
+                            <img className="dark:hidden w-full object-cover border w-full h-full opacity-[0.7] rounded-[3px]" src={abstractLightPic.src} />
+                            <img className="hidden dark:block w-full object-cover w-full h-full border opacity-[0.4] rounded-[3px]" src={abstractDarkPic.src} />
+                        </>
+                }
+            </div>
             <p className="mt-2 text-[16px] line-clamp-2">{paperData.title}</p>
         </a>
 

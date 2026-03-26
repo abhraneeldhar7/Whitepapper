@@ -8,7 +8,7 @@ import { Label } from "./ui/label";
 import EmptyPaperNotes from "./emptyPagesComp";
 import PaperCardComponent from "./paperCardComponent";
 import WorkspaceCard from "./dashboard/WorkspaceCard";
-import FolderNotes from "./folderComponent";
+import ProjectCard from "./project/ProjectCard";
 
 type ProfilePageProps = {
     user: UserDoc;
@@ -116,14 +116,13 @@ export default function ProfilePage({ user, papers, projects, currentUserId }: P
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 gap-5">
-                            {projects.map((project, index) => (
-                                <div key={index} className="flex flex-col items-center">
-                                    <a href={`/${user.username}/p/${project.slug}`} >
-                                        <FolderNotes />
-                                    </a>
-                                    <p className="text-sm ">{project.name}</p>
-                                    <p className="text-xs mt-2 text-muted-foreground">{project.pagesNumber} pages</p>
-                                </div>
+                            {projects.map((project) => (
+                                <ProjectCard
+                                    key={project.projectId}
+                                    project={project}
+                                    href={`/${user.username}/p/${project.slug}`}
+                                    showLockIcon={false}
+                                />
                             ))}
                         </div>
                     )}

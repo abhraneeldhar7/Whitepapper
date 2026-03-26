@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createCollection } from "@/lib/api/collections";
+import { createApiKey, deleteApiKey, setApiKeyActive, type ApiKeyDoc, type ApiKeyCreateResponse } from "@/lib/api/api_keys";
 import { createPaper } from "@/lib/api/papers";
 import {
   checkProjectSlugAvailable,
@@ -36,16 +37,18 @@ import {
   MAX_PROJECT_LOGO_WIDTH,
 } from "@/lib/constants";
 import type { CollectionDoc, PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
-import { compressImage } from "@/lib/utils";
+import { compressImage, copyToClipboardWithToast, formatFirestoreDate } from "@/lib/utils";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
 import ScrollToTop from "../scrollToTop";
+import { ApiShowcase } from "../apiShowcase";
 
 type ProjectWorkspaceProps = {
   projectId: string;
   initialProject: ProjectDoc;
   initialPages: PaperDoc[];
   initialCollections: CollectionDoc[];
+  initialApiDoc: ApiKeyDoc | null;
   initialUser?: UserDoc | null;
 };
 
@@ -89,6 +92,7 @@ export default function ProjectWorkspace({
   initialProject,
   initialPages,
   initialCollections,
+  initialApiDoc,
   initialUser,
 }: ProjectWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<ProjectTab>(readTabFromQuery);
@@ -111,6 +115,13 @@ export default function ProjectWorkspace({
   const [isSlugAvailable, setIsSlugAvailable] = useState(true);
   const [slugCheckMessage, setSlugCheckMessage] = useState<string | null>(null);
   const [updatingProjectVisibility, setUpdatingProjectVisibility] = useState(false);
+  const [apiDoc, setApiDoc] = useState<ApiKeyDoc | null>(initialApiDoc);
+  const [creatingApiKey, setCreatingApiKey] = useState(false);
+  const [togglingApiKey, setTogglingApiKey] = useState(false);
+  const [revokingApiKey, setRevokingApiKey] = useState(false);
+  const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
+  const [revokeConfirmOpen, setRevokeConfirmOpen] = useState(false);
+  const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
   const projectLogoInputRef = useRef<HTMLInputElement>(null);
 
   const isProjectAssetUploading = uploadingProjectLogo || uploadingProjectEmbeddedCount > 0;
@@ -119,8 +130,9 @@ export default function ProjectWorkspace({
     setProject(initialProject);
     setPages(initialPages);
     setCollections(initialCollections);
+    setApiDoc(initialApiDoc);
     setEditingProject(false);
-  }, [initialProject, initialPages, initialCollections]);
+  }, [initialProject, initialPages, initialCollections, initialApiDoc]);
 
 
   useEffect(() => {
@@ -430,6 +442,76 @@ export default function ProjectWorkspace({
       toast.error(error instanceof Error ? error.message : "Failed to delete project.");
       setDeleteLoading(false);
     }
+  }
+
+  async function handleCreateApiKey() {
+    setCreatingApiKey(true);
+
+    try {
+      const response = await createApiKey({ projectId });
+      // FastAPI returns ApiKeyCreateResponse which extends ApiKeySummary + rawKey
+      // We need to reconstruct ApiKeyDoc with keyHash (which is not returned on creation)
+      const apiKeyDoc: ApiKeyDoc = {
+        keyId: response.keyId,
+        ownerId: response.ownerId,
+        projectId: response.projectId,
+        keyHash: "", // Empty on creation, will be populated from server
+        usage: response.usage,
+        limitPerMonth: response.limitPerMonth,
+        isActive: response.isActive,
+        createdAt: response.createdAt,
+      };
+      setApiDoc(apiKeyDoc);
+      setCreatedApiKey(response.rawKey);
+      setApiKeyDialogOpen(true);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create API key.");
+    } finally {
+      setCreatingApiKey(false);
+    }
+  }
+
+  async function handleToggleApiKey(nextIsActive: boolean) {
+    if (!apiDoc || togglingApiKey || apiDoc.isActive === nextIsActive) {
+      return;
+    }
+
+    setTogglingApiKey(true);
+    try {
+      const updated = await setApiKeyActive(apiDoc.keyId, nextIsActive);
+      setApiDoc(updated);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update API key status.");
+    } finally {
+      setTogglingApiKey(false);
+    }
+  }
+
+  async function handleRevokeApiKey() {
+    if (!apiDoc || revokingApiKey) {
+      return;
+    }
+
+    setRevokingApiKey(true);
+    try {
+      await deleteApiKey(apiDoc.keyId);
+      setApiDoc(null);
+      setCreatedApiKey(null);
+      setRevokeConfirmOpen(false);
+      toast.success("API key revoked.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to revoke API key.");
+    } finally {
+      setRevokingApiKey(false);
+    }
+  }
+
+  async function handleCopyCreatedApiKey() {
+    if (!createdApiKey) {
+      return;
+    }
+
+    await copyToClipboardWithToast(createdApiKey, "API key copied.", "Unable to copy API key.");
   }
 
 
@@ -844,8 +926,119 @@ export default function ProjectWorkspace({
             </div>
           </TabsContent>
 
-          <TabsContent value="api">
-            api coming soon...
+          <TabsContent value="api" className="mt-5">
+            <div className="space-y-6 max-w-[600px] w-full mx-auto">
+
+
+              {!apiDoc ? (
+                <div className="rounded-md border p-4 space-y-4">
+                  <p className="text-sm text-muted-foreground">No API key created for this project.</p>
+                  <Button type="button" onClick={handleCreateApiKey} loading={creatingApiKey}>
+                    Create API key
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-md border p-4 space-y-4">
+                  <div className="grid gap-2 text-sm">
+                    <div className="flex items-center gap-3">
+                      <p className="text-muted-foreground">Monthly Usage</p>
+                      <p className="font-[450]">{apiDoc.usage} / {apiDoc.limitPerMonth}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="text-muted-foreground">Status</p>
+                      <p className="font-[450]">{apiDoc.isActive ? "Active" : "Disabled"}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="text-muted-foreground">Created</p>
+                      <p className="font-[450]">{formatFirestoreDate(apiDoc.createdAt)}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant={apiDoc.isActive ? "secondary" : "default"}
+                      onClick={() => {
+                        void handleToggleApiKey(!apiDoc.isActive);
+                      }}
+                      loading={togglingApiKey}
+                      disabled={revokingApiKey}
+                    >
+                      {apiDoc.isActive ? "Disable" : "Enable"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => setRevokeConfirmOpen(true)}
+                      loading={revokingApiKey}
+                      disabled={togglingApiKey}
+                    >
+                      Revoke
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {apiDoc && <ApiShowcase />}
+            </div>
+
+            <Dialog open={apiKeyDialogOpen} onOpenChange={setApiKeyDialogOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Copy your API key</DialogTitle>
+                  <DialogDescription>
+                    Save this key now. It is hashed in storage and cannot be shown again.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="rounded-md border p-3 break-all font-mono text-xs bg-muted/30">
+                  {createdApiKey}
+                </div>
+                <DialogFooter>
+                  <Button type="button" onClick={handleCopyCreatedApiKey}>
+                    Copy key
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={revokeConfirmOpen} onOpenChange={setRevokeConfirmOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Revoke API key?</DialogTitle>
+                  <DialogDescription>
+                    This will permanently revoke access using this API key. This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                {apiDoc && (
+                  <div className="grid gap-2 text-sm bg-muted/30 rounded-md p-3">
+                    <div className="flex items-center gap-3">
+                      <p className="text-muted-foreground">Key ID</p>
+                      <p className="font-mono text-xs break-all">{apiDoc.keyId}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="text-muted-foreground">Status</p>
+                      <p className="font-[450]">{apiDoc.isActive ? "Active" : "Disabled"}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="text-muted-foreground">Monthly Usage</p>
+                      <p className="font-[450]">{apiDoc.usage} / {apiDoc.limitPerMonth}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="text-muted-foreground">Created</p>
+                      <p className="font-[450]">{formatFirestoreDate(apiDoc.createdAt)}</p>
+                    </div>
+                  </div>
+                )}
+                <DialogFooter>
+                  <Button type="button" variant="secondary" onClick={() => setRevokeConfirmOpen(false)} disabled={revokingApiKey}>
+                    Cancel
+                  </Button>
+                  <Button type="button" variant="destructive" onClick={handleRevokeApiKey} loading={revokingApiKey}>
+                    Revoke
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
         </Tabs>
       </div>
