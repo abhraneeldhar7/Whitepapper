@@ -132,8 +132,10 @@ class ProjectsService:
     def get_by_id(self, project_id: str) -> dict:
         cached = cache_service.get(self._cache_key_by_id(project_id))
         if isinstance(cached, dict):
+            print("found in cache", flush=True)
             return cached
 
+        print("not found in cache", flush=True)
         project = firestore_store.get("projects", project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found.")

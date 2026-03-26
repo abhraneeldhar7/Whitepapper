@@ -38,7 +38,7 @@ async def lifespan(_: FastAPI):
         except Exception:
             api_sync_task.cancel()
         if async_redis:
-            await async_redis.aclose()
+            await async_redis.close()
         if sync_redis:
             sync_redis.close()
 
