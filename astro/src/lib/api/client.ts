@@ -39,7 +39,6 @@ type ApiRequestOptions = RequestOptions & {
 type TokenResolver = (auth: AuthMode) => Promise<string | null>;
 
 const PUBLIC_API_BASE_URL = import.meta.env.PUBLIC_API_BASE_URL?.trim();
-const API_BASE_PATH = "/api/v1";
 const MISSING_TOKEN_ERROR = "Authentication token is unavailable.";
 
 
@@ -59,7 +58,7 @@ function resolveApiBaseUrl(): string {
 function toRequestUrl(path: string, query?: QueryParams): string {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const apiBaseUrl = resolveApiBaseUrl();
-  const url = new URL(`${API_BASE_PATH}${normalizedPath}`, `${apiBaseUrl}/`);
+  const url = new URL(normalizedPath, `${apiBaseUrl}/`);
   if (!query) return url.toString();
 
   for (const [key, value] of Object.entries(query)) {

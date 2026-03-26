@@ -27,10 +27,9 @@ uvicorn app.main:app --reload --port 8000
 
 ## API base URLs
 
-Backend supports both route styles:
+Backend endpoints are available from root paths:
 
-- Legacy: `/health`, `/users/me`, `/projects`, ...
-- Versioned: `/api/v1/health`, `/api/v1/users/me`, `/api/v1/projects`, ...
+- `/health`, `/users/me`, `/projects`, ...
 
 ## Project API keys
 

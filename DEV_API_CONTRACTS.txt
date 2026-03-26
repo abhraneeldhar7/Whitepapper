@@ -1,7 +1,7 @@
 Whitepapper Dev API Contracts
 Date: 2026-03-24
 
-Base path: /api/v1
+Base path: /
 Auth for public dev bundle endpoints: x-api-key header
 
 1) GET /dev/project

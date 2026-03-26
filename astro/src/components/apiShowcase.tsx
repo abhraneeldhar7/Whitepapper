@@ -25,7 +25,7 @@ const ENDPOINTS = [
         hasIdentifierOptions: false,
         identifierOptions: [],
         code: {
-            typescript: `const response = await fetch("https://whitepapper.antk.in/api/v1/dev/project", {
+            typescript: `const response = await fetch("https://whitepapper.antk.in/dev/project", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -35,7 +35,7 @@ const ENDPOINTS = [
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("https://whitepapper.antk.in/api/v1/dev/project", headers={
+            python: `response = requests.get("https://whitepapper.antk.in/dev/project", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -60,7 +60,7 @@ print(data)`,
             { name: "identifier", label: "Collection ID", type: "text", required: true, placeholder: "collection-id" },
         ],
         code: {
-            typescript: `const response = await fetch("https://whitepapper.antk.in/api/v1/dev/collection?id=COLLECTION_ID", {
+            typescript: `const response = await fetch("https://whitepapper.antk.in/dev/collection?id=COLLECTION_ID", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -70,7 +70,7 @@ print(data)`,
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("https://whitepapper.antk.in/api/v1/dev/collection?id=COLLECTION_ID", headers={
+            python: `response = requests.get("https://whitepapper.antk.in/dev/collection?id=COLLECTION_ID", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -95,7 +95,7 @@ print(data)`,
             { name: "identifier", label: "Paper ID", type: "text", required: true, placeholder: "paper-id" },
         ],
         code: {
-            typescript: `const response = await fetch("https://whitepapper.antk.in/api/v1/dev/paper?id=PAPER_ID", {
+            typescript: `const response = await fetch("https://whitepapper.antk.in/dev/paper?id=PAPER_ID", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -105,7 +105,7 @@ print(data)`,
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("https://whitepapper.antk.in/api/v1/dev/paper?id=PAPER_ID", headers={
+            python: `response = requests.get("https://whitepapper.antk.in/dev/paper?id=PAPER_ID", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -255,7 +255,7 @@ export function ApiShowcase() {
 
         try {
             const BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
-            let url = `${BASE_URL}/api/v1${selectedEndpoint.path}`;
+            let url = `${BASE_URL}${selectedEndpoint.path}`;
             console.log(url)
             const headers: HeadersInit = {
                 "x-api-key": variables.apiKey,
