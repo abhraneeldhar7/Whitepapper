@@ -89,41 +89,12 @@ export async function compressImage(
     maxHeight,
     crop = false
   }: {
-    file: File | Buffer | Blob,
+    file: File | Blob,
     maxWidth?: number,
     maxHeight?: number,
     crop?: boolean
   }
-): Promise<Buffer | Blob> {
-  if (typeof window === 'undefined') {
-    const sharpInstance = (await import('sharp')).default;
-    const inputBuffer = Buffer.isBuffer(file) ? file : Buffer.from(await (file as Blob).arrayBuffer());
-
-    let sharpChain = sharpInstance(inputBuffer).rotate();
-
-    if (maxWidth && maxHeight) {
-      sharpChain = sharpChain.resize({
-        width: maxWidth,
-        height: maxHeight,
-        fit: crop ? 'cover' : 'inside',
-        withoutEnlargement: true
-      });
-    } else {
-      sharpChain = sharpChain.resize({
-        width: maxWidth,
-        height: maxHeight,
-        fit: 'inside',
-        withoutEnlargement: true
-      });
-    }
-
-    const processedBuffer = await sharpChain
-      .jpeg({ quality: 85, mozjpeg: true })
-      .toBuffer();
-
-    return processedBuffer;
-  }
-
+): Promise<File | Blob> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file as Blob);
