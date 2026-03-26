@@ -23,3 +23,15 @@ def reset_api_usage(request: Request) -> dict[str, object]:
         raise HTTPException(status_code=401, detail="Unauthorized.")
     count = _dev_api_service.reset_all_usage()
     return {"ok": True, "reset": count}
+
+
+@router.post("/sync-api-keys-cache")
+def sync_api_keys_cache(request: Request) -> dict[str, object]:
+    settings = get_settings()
+    cron_secret = request.headers.get("x-cron-secret", "")
+    if not settings.cron_secret or not hmac.compare_digest(
+        cron_secret.encode("utf-8"), settings.cron_secret.encode("utf-8")
+    ):
+        raise HTTPException(status_code=401, detail="Unauthorized.")
+    synced = _dev_api_service.sync_cache_with_firestore()
+    return {"ok": True, "synced": synced}

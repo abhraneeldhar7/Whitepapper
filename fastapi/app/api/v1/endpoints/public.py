@@ -35,7 +35,7 @@ def get_public_profile(handle: str) -> dict:
 @router.get("/{handle}/papers/{paper_slug}", response_model=PublicPaperPagePayload)
 def get_public_paper_page_data(handle: str, paper_slug: str) -> PublicPaperPagePayload:
     user = user_service.get_by_username(handle)
-    paper = papers_service.find_by_slug(paper_slug, owner_id=user["userId"])
+    paper = papers_service.find_by_slug(paper_slug, owner_username=user["username"])
     if not paper or not _is_published_paper(paper):
         raise HTTPException(status_code=404, detail="Paper not found.")
 
@@ -52,7 +52,7 @@ def get_public_paper_page_data(handle: str, paper_slug: str) -> PublicPaperPageP
 @router.get("/{handle}/projects/{project_slug}")
 def get_public_project(handle: str, project_slug: str) -> dict:
     user = user_service.get_by_username(handle)
-    project = projects_service.get_by_slug(user["userId"], project_slug)
+    project = projects_service.get_by_slug(user["username"], project_slug)
     if not _is_public_project(project):
         raise HTTPException(status_code=404, detail="Project not found.")
 
@@ -76,7 +76,7 @@ def get_public_project(handle: str, project_slug: str) -> dict:
 @router.get("/{handle}/projects/{project_slug}/collections/{collection_id}")
 def get_public_collection(handle: str, project_slug: str, collection_id: str) -> dict:
     user = user_service.get_by_username(handle)
-    project = projects_service.get_by_slug(user["userId"], project_slug)
+    project = projects_service.get_by_slug(user["username"], project_slug)
     if not _is_public_project(project):
         raise HTTPException(status_code=404, detail="Project not found.")
 

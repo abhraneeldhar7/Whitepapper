@@ -1,13 +1,13 @@
 import re
-import time
-from urllib.parse import urlsplit, urlunsplit
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 
 from app.services.auth_service import get_verified_id
 from app.schemas.entities import PaperCreate, PaperCreateResponse, PaperDoc, PaperUpdate
+from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
-from app.services.storage_service import storage_service
+from app.services.projects_service import projects_service
+from app.utils.cache import add_cache_buster
 
 router = APIRouter(tags=["papers"])
 
@@ -15,26 +15,13 @@ MARKDOWN_IMAGE_PATTERN = re.compile(r"!\[[^\]]*]\(([^)\s]+)", re.IGNORECASE)
 HTML_IMAGE_PATTERN = re.compile(r"<img[^>]+src=[\"']([^\"']+)[\"']", re.IGNORECASE)
 
 
-def _normalize_url(url: str) -> str:
-    parts = urlsplit(url)
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
-
-
 def _extract_image_urls(content: str) -> set[str]:
     urls = set()
     for match in MARKDOWN_IMAGE_PATTERN.findall(content):
-        urls.add(_normalize_url(match))
+        urls.add(match)
     for match in HTML_IMAGE_PATTERN.findall(content):
-        urls.add(_normalize_url(match))
+        urls.add(match)
     return urls
-
-
-def _with_cache_buster(url: str) -> str:
-    parts = urlsplit(url)
-    if parts.query:
-        return url
-    stamp = int(time.time() * 1000)
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, f"time={stamp}", ""))
 
 
 @router.get("/papers", response_model=list[PaperDoc])
@@ -56,7 +43,12 @@ async def upload_thumbnail(
     file: UploadFile = File(...),
     user_id: str = Depends(get_verified_id),
 ) -> dict[str, str]:
-    return await papers_service.upload_thumbnail(paper_id, user_id, file)
+    paper = papers_service.get_by_id(paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="Paper not found.")
+    if paper.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    return await papers_service.upload_thumbnail(paper_id, file)
 
 
 @router.post("/papers/{paper_id}/embedded-image")
@@ -65,11 +57,24 @@ async def upload_embedded_image(
     file: UploadFile = File(...),
     user_id: str = Depends(get_verified_id),
 ) -> dict[str, str]:
-    return await papers_service.upload_embedded_image(paper_id, user_id, file)
+    paper = papers_service.get_by_id(paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="Paper not found.")
+    if paper.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    return await papers_service.upload_embedded_image(paper_id, file)
 
 
 @router.post("/papers", response_model=PaperCreateResponse, status_code=201)
 def create_paper(payload: PaperCreate, user_id: str = Depends(get_verified_id)) -> PaperCreateResponse:
+    if payload.projectId:
+        project = projects_service.get_by_id(payload.projectId)
+        if project.get("ownerId") != user_id:
+            raise HTTPException(status_code=403, detail="Not allowed.")
+    if payload.collectionId:
+        collection = collections_service.get_by_id(payload.collectionId)
+        if collection.get("ownerId") != user_id:
+            raise HTTPException(status_code=403, detail="Not allowed.")
     return papers_service.create(user_id, payload.model_dump())
 
 
@@ -79,21 +84,23 @@ def patch_paper(
     payload: PaperUpdate,
     user_id: str = Depends(get_verified_id),
 ) -> PaperDoc:
+    paper = papers_service.get_by_id(paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="Paper not found.")
+    if paper.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+
     update_payload = payload.model_dump(exclude_unset=True)
 
     if "thumbnailUrl" in update_payload:
         if update_payload["thumbnailUrl"]:
-            update_payload["thumbnailUrl"] = _with_cache_buster(update_payload["thumbnailUrl"])
-    updated = papers_service.update(
-        paper_id,
-        user_id,
-        update_payload,
-    )
+            update_payload["thumbnailUrl"] = add_cache_buster(update_payload["thumbnailUrl"])
+    updated = papers_service.update(paper_id, update_payload)
     if "thumbnailUrl" in update_payload and not update_payload["thumbnailUrl"]:
-        storage_service.delete_thumbnail(user_id, paper_id)
+        papers_service.delete_thumbnail(user_id, paper_id)
     if payload.body is not None:
         used_urls = _extract_image_urls(updated.get("body") or "")
-        storage_service.delete_unused_embedded_images(user_id, paper_id, used_urls)
+        papers_service.delete_unused_embedded_images(user_id, paper_id, used_urls)
     return updated
 
 
@@ -126,4 +133,4 @@ def delete_paper(paper_id: str, user_id: str = Depends(get_verified_id)) -> dict
         raise HTTPException(status_code=404, detail="Paper not found.")
     if paper.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
-    return papers_service.delete(paper_id, user_id)
+    return papers_service.delete(paper_id)

@@ -8,5 +8,4 @@ pydantic-settings
 firebase-admin
 python-multipart
 Pillow
-fastapi-cache2[redis]
 redis

@@ -31,15 +31,6 @@ def _extract_clerk_avatar(data: dict) -> str | None:
         return avatar_url
     return None
 
-def _generate_default_username(email: str | None, username: str | None = None) -> str | None:
-    """Generate default username from email prefix or use provided username."""
-    if username:
-        return username
-    if email and "@" in email:
-        return email.split("@", 1)[0]
-    return None
-
-
 def _extract_clerk_description(data: dict) -> str:
     unsafe_metadata = data.get("unsafe_metadata")
     if isinstance(unsafe_metadata, dict):
@@ -84,10 +75,9 @@ async def clerk_webhook(request: Request) -> JSONResponse:
     if event_type == "user.created" and user_id:
         try:
             email = _extract_clerk_email(data)
-            default_username = _generate_default_username(email, data.get("username"))
             user_service.create_user(
                 user_id=user_id,
-                username=default_username,
+                username=data.get("username"),
                 display_name=data.get("first_name") or data.get("full_name"),
                 description=_extract_clerk_description(data),
                 email=email,

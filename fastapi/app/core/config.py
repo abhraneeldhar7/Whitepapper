@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "Whitepapper_API"
+    redis_prefix: str = "whitepapper"
 
     clerk_webhook_signing_secret: str | None = None
     clerk_secret_key: str | None = None

@@ -1,80 +1,96 @@
-from fastapi import HTTPException
+import logging
+import pickle
 from uuid import uuid4
+
+from fastapi import HTTPException
 
 from app.core.cache_policies import COLLECTION_CACHE_POLICY
 from app.core.firestore_store import firestore_store, utc_now
-from app.services.cache_service import cache_service
+from app.core.redis_client import get_cache_prefix, get_redis_client
 from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
 
+logger = logging.getLogger(__name__)
+
+COLLECTIONS_COLLECTION = "collections"
+COLLECTION_ID_KEY = "collectionId"
+COLLECTION_OWNER_KEY = "ownerId"
+COLLECTION_PROJECT_KEY = "projectId"
+COLLECTION_SLUG_KEY = "slug"
+
 
 class CollectionsService:
-    def _cache_key_by_id(self, collection_id: str) -> str:
-        return cache_service.build_key(COLLECTION_CACHE_POLICY.namespace, "id", collection_id)
+    def _collection_by_id_key(self, collection_id: str) -> str:
+        return f"{get_cache_prefix()}:collections:id:{collection_id}"
 
-    def _cache_key_by_slug(self, owner_id: str, project_id: str, slug: str) -> str:
-        return cache_service.build_key(
-            COLLECTION_CACHE_POLICY.namespace,
-            "slug",
-            owner_id,
-            project_id,
-            normalize_slug(slug),
-        )
+    def _collection_by_slug_key(self, project_id: str, slug: str) -> str:
+        return f"{get_cache_prefix()}:collections:slug:{project_id}:{slug}"
 
-    def _cache_document(self, collection: dict | None) -> None:
-        if not collection:
+    def _load_cached_collection(self, key: str) -> dict | None:
+        client = get_redis_client()
+        if not client:
+            return None
+        try:
+            payload = client.get(key)
+            if payload is None:
+                return None
+            value = pickle.loads(payload)
+            return value if isinstance(value, dict) else None
+        except Exception:
+            logger.exception("Collection cache read failed for key=%s", key)
+            return None
+
+    def _set_cached_collection(self, collection: dict) -> None:
+        client = get_redis_client()
+        if not client:
             return
-        collection_id = collection.get("collectionId")
-        owner_id = collection.get("ownerId")
-        project_id = collection.get("projectId")
-        slug = collection.get("slug")
-        if collection_id:
-            cache_service.set(self._cache_key_by_id(collection_id), collection, COLLECTION_CACHE_POLICY.ttl_seconds)
-        if owner_id and project_id and slug:
-            cache_service.set(
-                self._cache_key_by_slug(owner_id, project_id, slug),
-                collection,
-                COLLECTION_CACHE_POLICY.ttl_seconds,
-            )
 
-    def invalidate_cache_entry(
-        self,
-        collection_id: str,
-        owner_id: str | None,
-        project_id: str | None,
-        old_slug: str | None,
-        new_slug: str | None = None,
-    ) -> None:
-        keys = [self._cache_key_by_id(collection_id)]
-        if owner_id and project_id and old_slug:
-            keys.append(self._cache_key_by_slug(owner_id, project_id, old_slug))
-        if owner_id and project_id and new_slug:
-            keys.append(self._cache_key_by_slug(owner_id, project_id, new_slug))
-        cache_service.delete_many(*keys)
+        collection_id = collection.get(COLLECTION_ID_KEY)
+        project_id = collection.get(COLLECTION_PROJECT_KEY)
+        slug = collection.get(COLLECTION_SLUG_KEY)
+        if not collection_id and not (project_id and slug):
+            return
 
-    def _is_slug_conflict(self, project_id: str, slug: str, collection_id: str | None = None) -> bool:
-        normalized = normalize_slug(slug)
-        if not normalized:
-            return True
+        try:
+            if collection_id:
+                client.setex(
+                    self._collection_by_id_key(collection_id),
+                    COLLECTION_CACHE_POLICY.ttl_seconds,
+                    pickle.dumps(collection),
+                )
+            if project_id and slug:
+                client.setex(
+                    self._collection_by_slug_key(project_id, slug),
+                    COLLECTION_CACHE_POLICY.ttl_seconds,
+                    pickle.dumps(collection),
+                )
+        except Exception:
+            logger.exception("Collection cache write failed for collection_id=%s", collection_id)
 
-        existing = firestore_store.find_by_fields(
-            "collections",
-            {"projectId": project_id, "slug": normalized},
-        )
-        return any(item.get("collectionId") != collection_id for item in existing)
+    def invalidate_collection(self, collection_id: str, project_id: str | None = None, slug: str | None = None) -> None:
+        client = get_redis_client()
+        if not client:
+            return
 
-    def _generate_unique_slug(self, project_id: str, source: str) -> str:
+        keys = [self._collection_by_id_key(collection_id)]
+        if project_id and slug:
+            keys.append(self._collection_by_slug_key(project_id, slug))
+        try:
+            client.delete(*keys)
+        except Exception:
+            logger.exception("Collection cache invalidation failed for keys=%s", keys)
+
+    def _unique_slug(self, project_id: str, source: str, exclude_collection_id: str | None = None) -> str:
         base = normalize_slug(source) or "collection"
-        if not self._is_slug_conflict(project_id, base):
-            return base
-
-        for _ in range(20):
-            suffix = uuid4().hex[:6]
-            candidate = f"{base}-{suffix}"
-            if not self._is_slug_conflict(project_id, candidate):
+        candidate = base
+        while True:
+            matches = firestore_store.find_by_fields(
+                COLLECTIONS_COLLECTION,
+                {COLLECTION_PROJECT_KEY: project_id, COLLECTION_SLUG_KEY: candidate},
+            )
+            if all(item.get(COLLECTION_ID_KEY) == exclude_collection_id for item in matches):
                 return candidate
-
-        return f"{base}-{uuid4().hex[:8]}"
+            candidate = f"{base}-{uuid4().hex[:4]}"
 
     def _propagate_collection_visibility(self, collection_id: str, is_public: bool) -> None:
         from app.services.papers_service import papers_service
@@ -85,64 +101,45 @@ class CollectionsService:
             current_status = paper.get("status") or "draft"
             if current_status == "archived" or current_status == target_status:
                 continue
-            paper_id = paper.get("paperId")
-            if not paper_id:
-                continue
-            paper_owner_id = paper.get("ownerId")
-            if not paper_owner_id:
-                continue
-            papers_service.update(
-                paper_id,
-                paper_owner_id,
-                {"status": target_status},
-            )
+            papers_service.update(paper["paperId"], {"status": target_status})
 
     def list_project_collections(self, project_id: str) -> list[dict]:
-        return firestore_store.find_by_fields("collections", {"projectId": project_id})
+        return firestore_store.find_by_fields(COLLECTIONS_COLLECTION, {COLLECTION_PROJECT_KEY: project_id})
 
     def create(self, owner_id: str, payload: dict) -> dict:
         collection_id = str(uuid4())
         now = utc_now()
-        project_id = payload.get("projectId")
+        project_id = payload.get(COLLECTION_PROJECT_KEY)
         if not project_id:
             raise HTTPException(status_code=400, detail="projectId is required.")
 
-        project = projects_service.get_by_id(project_id)
-        if project.get("ownerId") != owner_id:
-            raise HTTPException(status_code=403, detail="Not allowed.")
+        projects_service.get_by_id(project_id)
 
-        provided_slug = payload.get("slug")
+        provided_slug = payload.get(COLLECTION_SLUG_KEY)
         if provided_slug:
-            normalized = normalize_slug(provided_slug)
-            if self._is_slug_conflict(project_id, normalized):
-                raise HTTPException(status_code=409, detail="Collection slug already exists in this project.")
-            payload["slug"] = normalized
+            slug_value = self._unique_slug(project_id, provided_slug)
         else:
-            payload["slug"] = self._generate_unique_slug(project_id, payload.get("name") or "collection")
+            slug_value = self._unique_slug(project_id, payload.get("name") or "collection")
 
-        if payload.get("isPublic") is None:
-            payload["isPublic"] = True
-        else:
-            payload["isPublic"] = bool(payload["isPublic"])
+        created = {
+            COLLECTION_ID_KEY: collection_id,
+            COLLECTION_PROJECT_KEY: project_id,
+            COLLECTION_OWNER_KEY: owner_id,
+            "name": (payload.get("name") or "Untitled Collection").strip() or "Untitled Collection",
+            "description": payload.get("description") or "",
+            COLLECTION_SLUG_KEY: slug_value,
+            "isPublic": bool(payload.get("isPublic", True)),
+            "pagesNumber": 0,
+            "createdAt": now,
+            "updatedAt": now,
+        }
+        firestore_store.create(COLLECTIONS_COLLECTION, created, doc_id=collection_id)
+        return created
 
-        payload["ownerId"] = owner_id
-        payload["collectionId"] = collection_id
-        payload["name"] = (payload.get("name") or "Untitled Collection").strip() or "Untitled Collection"
-        payload["description"] = payload.get("description") or ""
-        payload["pagesNumber"] = 0
-        payload["createdAt"] = now
-        payload["updatedAt"] = now
-        firestore_store.create("collections", payload, doc_id=collection_id)
-        return payload
+    def update(self, collection_id: str, payload: dict) -> dict:
+        current = self.get_by_id(collection_id)
 
-    def update(self, collection_id: str, owner_id: str, payload: dict) -> dict:
-        current = firestore_store.get("collections", collection_id)
-        if not current:
-            raise HTTPException(status_code=404, detail="Collection not found.")
-        if current.get("ownerId") != owner_id:
-            raise HTTPException(status_code=403, detail="Not allowed.")
-
-        allowed_update_fields = {"name", "title", "slug", "description"}
+        allowed_update_fields = {"name", "title", "slug", "description", "isPublic"}
         payload = {key: value for key, value in payload.items() if key in allowed_update_fields}
 
         if "title" in payload and "name" not in payload:
@@ -151,116 +148,101 @@ class CollectionsService:
 
         if "name" in payload:
             payload["name"] = (payload.get("name") or "Untitled Collection").strip() or "Untitled Collection"
-
         if "description" in payload:
             payload["description"] = payload.get("description") or ""
-
+        if "isPublic" in payload:
+            payload["isPublic"] = bool(payload.get("isPublic"))
         if "slug" in payload:
             new_slug = normalize_slug(payload.get("slug") or "")
             if not new_slug:
                 raise HTTPException(status_code=400, detail="Invalid slug.")
-            project_id = str(current.get("projectId") or "")
-            if self._is_slug_conflict(project_id, new_slug, collection_id):
+            matches = firestore_store.find_by_fields(
+                COLLECTIONS_COLLECTION,
+                {COLLECTION_PROJECT_KEY: str(current.get(COLLECTION_PROJECT_KEY)), COLLECTION_SLUG_KEY: new_slug},
+            )
+            if any(item.get(COLLECTION_ID_KEY) != collection_id for item in matches):
                 raise HTTPException(status_code=409, detail="Collection slug already exists in this project.")
             payload["slug"] = new_slug
 
         if not payload:
             return current
-        previous_slug = current.get("slug")
+
+        previous_slug = current.get(COLLECTION_SLUG_KEY)
         payload["updatedAt"] = utc_now()
-        firestore_store.update("collections", collection_id, payload)
+        firestore_store.update(COLLECTIONS_COLLECTION, collection_id, payload)
         current.update(payload)
-        self.invalidate_cache_entry(
+        self.invalidate_collection(
             collection_id=collection_id,
-            owner_id=current.get("ownerId"),
-            project_id=current.get("projectId"),
-            old_slug=previous_slug,
-            new_slug=current.get("slug"),
+            project_id=current.get(COLLECTION_PROJECT_KEY),
+            slug=previous_slug,
         )
         return current
 
-    def set_visibility(self, collection_id: str, owner_id: str, is_public: bool) -> dict:
-        current = self.get_by_id(collection_id, owner_id=owner_id)
+    def set_visibility(self, collection_id: str, is_public: bool) -> dict:
+        current = self.get_by_id(collection_id)
         target_visibility = bool(is_public)
         if bool(current.get("isPublic", False)) == target_visibility:
             return current
 
-        previous_slug = current.get("slug")
-        payload = {"isPublic": target_visibility, "updatedAt": utc_now()}
-        firestore_store.update("collections", collection_id, payload)
-        current.update(payload)
-        self.invalidate_cache_entry(
-            collection_id=collection_id,
-            owner_id=current.get("ownerId"),
-            project_id=current.get("projectId"),
-            old_slug=previous_slug,
-            new_slug=current.get("slug"),
-        )
+        updated = self.update(collection_id, {"isPublic": target_visibility})
         self._propagate_collection_visibility(collection_id, target_visibility)
-        return current
+        return updated
 
-    def delete(self, collection_id: str, owner_id: str | None = None) -> dict[str, bool]:
-        current = self.get_by_id(collection_id, owner_id=owner_id)
+    def delete(self, collection_id: str) -> dict[str, bool]:
+        current = self.get_by_id(collection_id)
 
         from app.services.papers_service import papers_service
 
         papers = papers_service.list_by_collection_id(collection_id)
         for paper in papers:
-            paper_id = paper.get("paperId")
-            if paper_id:
-                papers_service.delete(paper_id)
+            papers_service.delete(paper["paperId"])
 
-        firestore_store.delete("collections", collection_id)
-        self.invalidate_cache_entry(
+        firestore_store.delete(COLLECTIONS_COLLECTION, collection_id)
+        self.invalidate_collection(
             collection_id=collection_id,
-            owner_id=current.get("ownerId"),
-            project_id=current.get("projectId"),
-            old_slug=current.get("slug"),
+            project_id=current.get(COLLECTION_PROJECT_KEY),
+            slug=current.get(COLLECTION_SLUG_KEY),
         )
         return {"ok": True}
 
-    def get_by_id(
-        self,
-        collection_id: str,
-        owner_id: str | None = None,
-    ) -> dict:
-        cached = cache_service.get(self._cache_key_by_id(collection_id))
-        collection = cached if isinstance(cached, dict) else None
-        if collection is None:
-            collection = firestore_store.get("collections", collection_id)
-            if collection:
-                self._cache_document(collection)
+    def get_by_id(self, collection_id: str) -> dict:
+        cached = self._load_cached_collection(self._collection_by_id_key(collection_id))
+        if cached:
+            return cached
+
+        collection = firestore_store.get(COLLECTIONS_COLLECTION, collection_id)
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found.")
-        if owner_id and collection.get("ownerId") != owner_id:
-            raise HTTPException(status_code=403, detail="Not allowed.")
+        self._set_cached_collection(collection)
         return collection
 
-    def get_by_slug(
-        self,
-        owner_id: str,
-        project_id: str,
-        collection_slug: str,
-    ) -> dict:
-        cached = cache_service.get(self._cache_key_by_slug(owner_id, project_id, collection_slug))
-        if isinstance(cached, dict):
+    def get_by_slug(self, project_id: str, collection_slug: str) -> dict:
+        cached = self._load_cached_collection(self._collection_by_slug_key(project_id, collection_slug))
+        if cached:
             return cached
 
         matches = firestore_store.find_by_fields(
-            "collections",
+            COLLECTIONS_COLLECTION,
             {
-                "ownerId": owner_id,
-                "projectId": project_id,
-                "slug": normalize_slug(collection_slug),
+                COLLECTION_PROJECT_KEY: project_id,
+                COLLECTION_SLUG_KEY: collection_slug,
             },
         )
         if not matches:
             raise HTTPException(status_code=404, detail="Collection not found.")
         collection = matches[0]
-        self._cache_document(collection)
+        self._set_cached_collection(collection)
         return collection
 
     def is_slug_available(self, project_id: str, slug: str, collection_id: str | None = None) -> bool:
-        return not self._is_slug_conflict(project_id, slug, collection_id)
+        candidate = normalize_slug(slug or "")
+        if not candidate:
+            return False
+        matches = firestore_store.find_by_fields(
+            COLLECTIONS_COLLECTION,
+            {COLLECTION_PROJECT_KEY: project_id, COLLECTION_SLUG_KEY: candidate},
+        )
+        return all(item.get(COLLECTION_ID_KEY) == collection_id for item in matches)
+
 
 collections_service = CollectionsService()

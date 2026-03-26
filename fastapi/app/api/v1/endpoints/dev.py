@@ -15,7 +15,6 @@ from app.services._dev_api_service import _dev_api_service
 from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
-from app.services.slug_utils import normalize_slug
 
 router = APIRouter(prefix="/dev", tags=["dev"])
 api_keys_router = APIRouter(tags=["api-keys"])
@@ -64,8 +63,7 @@ def _resolve_paper_for_project(project: dict, paper_id: str | None, paper_slug: 
         if not paper:
             raise HTTPException(status_code=404, detail="Paper not found for id.")
     else:
-        normalized_slug = normalize_slug(paper_slug or "")
-        paper = papers_service.find_by_slug(normalized_slug, owner_id=owner_id)
+        paper = papers_service.find_by_slug(paper_slug or "", owner_id=owner_id)
         if not paper:
             raise HTTPException(status_code=404, detail="Paper not found for slug in this project.")
 
@@ -126,11 +124,9 @@ def get_collection_bundle(
         if collection.get("projectId") != key_project_id:
             raise HTTPException(status_code=403, detail="Collection does not belong to the API key project.")
     else:
-        normalized_slug = normalize_slug(collection_slug or "")
         collection = collections_service.get_by_slug(
-            owner_id=project.get("ownerId"),
             project_id=key_project_id,
-            collection_slug=normalized_slug,
+            collection_slug=collection_slug or "",
         )
 
     if not bool(collection.get("isPublic")):
@@ -215,9 +211,15 @@ def create_api_key(
 
 @api_keys_router.patch("/api-keys/{key_id}", response_model=ApiKeySummary)
 def toggle_api_key(key_id: str, payload: ApiKeyToggle, user_id: CurrentUserIdDep) -> ApiKeySummary:
-    return _dev_api_service.toggle_active(key_id, user_id, payload.isActive)
+    key_doc = _dev_api_service.get_by_id(key_id)
+    if key_doc.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    return _dev_api_service.toggle_active(key_id, payload.isActive)
 
 
 @api_keys_router.delete("/api-keys/{key_id}")
 def delete_api_key(key_id: str, user_id: CurrentUserIdDep) -> dict[str, bool]:
-    return _dev_api_service.delete(key_id, user_id)
+    key_doc = _dev_api_service.get_by_id(key_id)
+    if key_doc.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    return _dev_api_service.delete(key_id)

@@ -24,7 +24,10 @@ def get_collection(
     collection_id: str,
     user_id: str = Depends(get_verified_id),
 ) -> CollectionDoc:
-    return collections_service.get_by_id(collection_id, user_id)
+    collection = collections_service.get_by_id(collection_id)
+    if collection.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    return collection
 
 
 @router.get("/collections/slug/available")
@@ -43,6 +46,9 @@ def check_collection_slug_available(
 
 @router.post("/collections", response_model=CollectionDoc, status_code=201)
 def create_collection(payload: CollectionCreate, user_id: str = Depends(get_verified_id)) -> CollectionDoc:
+    project = projects_service.get_by_id(payload.projectId)
+    if project.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
     return collections_service.create(user_id, payload.model_dump())
 
 
@@ -52,11 +58,10 @@ def patch_collection(
     payload: CollectionUpdate,
     user_id: str = Depends(get_verified_id),
 ) -> CollectionDoc:
-    return collections_service.update(
-        collection_id,
-        user_id,
-        payload.model_dump(exclude_unset=True),
-    )
+    collection = collections_service.get_by_id(collection_id)
+    if collection.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    return collections_service.update(collection_id, payload.model_dump(exclude_unset=True))
 
 
 @router.patch("/collections/{collection_id}/visibility", response_model=CollectionDoc)
@@ -65,9 +70,15 @@ def patch_collection_visibility(
     payload: CollectionVisibilityToggle,
     user_id: str = Depends(get_verified_id),
 ) -> CollectionDoc:
-    return collections_service.set_visibility(collection_id, user_id, payload.isPublic)
+    collection = collections_service.get_by_id(collection_id)
+    if collection.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    return collections_service.set_visibility(collection_id, payload.isPublic)
 
 
 @router.delete("/collections/{collection_id}")
 def delete_collection(collection_id: str, user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
-    return collections_service.delete(collection_id, user_id)
+    collection = collections_service.get_by_id(collection_id)
+    if collection.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    return collections_service.delete(collection_id)

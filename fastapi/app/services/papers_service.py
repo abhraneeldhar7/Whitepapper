@@ -1,75 +1,100 @@
-from fastapi import HTTPException, UploadFile
+import logging
+import pickle
 from uuid import uuid4
-import time
-from urllib.parse import urlsplit, urlunsplit
+
+from fastapi import HTTPException, UploadFile
 
 from app.core.cache_policies import PAPER_CACHE_POLICY
-from app.core.firestore_store import firestore_store, utc_now
-from app.core.reserved_paths import is_reserved_paper_slug
 from app.core.constants import (
     MAX_EMBEDDED_HEIGHT,
     MAX_EMBEDDED_WIDTH,
     MAX_THUMBNAIL_HEIGHT,
     MAX_THUMBNAIL_WIDTH,
 )
-from app.services.cache_service import cache_service
+from app.core.firestore_store import firestore_store, utc_now
+from app.core.redis_client import get_cache_prefix, get_redis_client
+from app.core.reserved_paths import is_reserved_paper_slug
 from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
 from app.services.storage_service import storage_service
+from app.utils.cache import add_cache_buster
 
+logger = logging.getLogger(__name__)
 
-def _with_cache_buster(url: str) -> str:
-    """Add cache buster timestamp to URL if not already present."""
-    parts = urlsplit(url)
-    if parts.query:
-        return url
-    stamp = int(time.time() * 1000)
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, f"time={stamp}", ""))
+PAPERS_COLLECTION = "papers"
+PAPER_ID_KEY = "paperId"
+PAPER_OWNER_KEY = "ownerId"
+PAPER_SLUG_KEY = "slug"
 
 
 class PapersService:
-    def _cache_key_by_id(self, paper_id: str) -> str:
-        return cache_service.build_key(PAPER_CACHE_POLICY.namespace, "id", paper_id)
+    def _paper_by_id_key(self, paper_id: str) -> str:
+        return f"{get_cache_prefix()}:papers:id:{paper_id}"
 
-    def _cache_key_by_slug(self, owner_id: str, slug: str) -> str:
-        return cache_service.build_key(
-            PAPER_CACHE_POLICY.namespace,
-            "slug",
-            owner_id,
-            normalize_slug(slug),
-        )
+    def _paper_by_slug_key(self, owner_username: str, slug: str) -> str:
+        return f"{get_cache_prefix()}:papers:slug:{owner_username}:{slug}"
 
-    def _cache_document(self, paper: dict | None) -> None:
-        if not paper:
+    def _load_cached_paper(self, key: str) -> dict | None:
+        client = get_redis_client()
+        if not client:
+            return None
+        try:
+            payload = client.get(key)
+            if payload is None:
+                return None
+            value = pickle.loads(payload)
+            return value if isinstance(value, dict) else None
+        except Exception:
+            logger.exception("Paper cache read failed for key=%s", key)
+            return None
+
+    def _set_cached_paper(self, paper: dict) -> None:
+        client = get_redis_client()
+        if not client:
             return
-        paper_id = paper.get("paperId")
-        if paper_id:
-            cache_service.set(self._cache_key_by_id(paper_id), paper, PAPER_CACHE_POLICY.ttl_seconds)
 
-        owner_id = paper.get("ownerId")
-        slug = paper.get("slug")
-        if owner_id and slug:
-            cache_service.set(
-                self._cache_key_by_slug(owner_id, slug),
-                paper,
-                PAPER_CACHE_POLICY.ttl_seconds,
-            )
+        paper_id = paper.get(PAPER_ID_KEY)
+        owner_username = self._get_owner_username(paper.get(PAPER_OWNER_KEY))
+        slug = paper.get(PAPER_SLUG_KEY)
+        if not paper_id and not (owner_username and slug):
+            return
 
-    def _invalidate_document_cache(
-        self,
-        paper_id: str,
-        owner_id: str | None,
-        old_slug: str | None,
-        new_slug: str | None = None,
-    ) -> None:
-        keys = [self._cache_key_by_id(paper_id)]
+        try:
+            if paper_id:
+                client.setex(
+                    self._paper_by_id_key(paper_id),
+                    PAPER_CACHE_POLICY.ttl_seconds,
+                    pickle.dumps(paper),
+                )
+            if owner_username and slug:
+                client.setex(
+                    self._paper_by_slug_key(owner_username, slug),
+                    PAPER_CACHE_POLICY.ttl_seconds,
+                    pickle.dumps(paper),
+                )
+        except Exception:
+            logger.exception("Paper cache write failed for paper_id=%s", paper_id)
 
-        if owner_id and old_slug:
-            keys.append(self._cache_key_by_slug(owner_id, old_slug))
-        if owner_id and new_slug:
-            keys.append(self._cache_key_by_slug(owner_id, new_slug))
+    def invalidate_paper(self, paper_id: str, owner_username: str | None = None, slug: str | None = None) -> None:
+        client = get_redis_client()
+        if not client:
+            return
 
-        cache_service.delete_many(*keys)
+        keys = [self._paper_by_id_key(paper_id)]
+        if owner_username and slug:
+            keys.append(self._paper_by_slug_key(owner_username, slug))
+        try:
+            client.delete(*keys)
+        except Exception:
+            logger.exception("Paper cache invalidation failed for keys=%s", keys)
+
+    def _get_owner_username(self, owner_id: str | None) -> str | None:
+        if not owner_id:
+            return None
+        user_doc = firestore_store.get("users", owner_id)
+        if not user_doc:
+            return None
+        return user_doc.get("username")
 
     @staticmethod
     def _paper_matches_scope(paper: dict, project_id: str | None, standalone: bool) -> bool:
@@ -79,102 +104,90 @@ class PapersService:
             if standalone and paper.get("collectionId"):
                 return False
             return True
-
         if standalone:
             return not paper.get("projectId")
-
         return True
-
-    @staticmethod
-    def _get_by_id_from_store(paper_id: str) -> dict | None:
-        return firestore_store.get("papers", paper_id)
 
     def _refresh_collection_pages_number(self, collection_id: str) -> None:
         from app.services.collections_service import collections_service
 
-        collection_papers = self.list_by_collection_id(collection_id)
+        papers = self.list_by_collection_id(collection_id)
         now = utc_now()
         firestore_store.update(
             "collections",
             collection_id,
-            {"pagesNumber": len(collection_papers), "updatedAt": now},
+            {"pagesNumber": len(papers), "updatedAt": now},
         )
         collection = firestore_store.get("collections", collection_id)
-        if collection:
-            collection["pagesNumber"] = len(collection_papers)
-            collection["updatedAt"] = now
-            collections_service.invalidate_cache_entry(
-                collection_id=collection_id,
-                owner_id=collection.get("ownerId"),
-                project_id=collection.get("projectId"),
-                old_slug=collection.get("slug"),
-                new_slug=collection.get("slug"),
-            )
+        if not collection:
+            return
+        collections_service.invalidate_collection(
+            collection_id=collection_id,
+            project_id=collection.get("projectId"),
+            slug=collection.get("slug"),
+        )
 
     def _refresh_project_pages_number(self, project_id: str) -> None:
-        from app.services.projects_service import projects_service
-
-        project_papers = self.list_by_project_id(project_id)
-        now = utc_now()
-        firestore_store.update(
-            "projects",
-            project_id,
-            {"pagesNumber": len(project_papers), "updatedAt": now},
-        )
-        project = firestore_store.get("projects", project_id)
-        if project:
-            project["pagesNumber"] = len(project_papers)
-            project["updatedAt"] = now
-            projects_service.invalidate_cache_entry(
-                project_id=project_id,
-                owner_id=project.get("ownerId"),
-                old_slug=project.get("slug"),
-                new_slug=project.get("slug"),
-            )
+        papers = self.list_by_project_id(project_id)
+        try:
+            projects_service.update(project_id, {"pagesNumber": len(papers)})
+        except HTTPException as exc:
+            if exc.status_code != 404:
+                raise
 
     def list_owned(self, owner_id: str) -> list[dict]:
-        return firestore_store.find_by_fields("papers", {"ownerId": owner_id})
+        return firestore_store.find_by_fields(PAPERS_COLLECTION, {PAPER_OWNER_KEY: owner_id})
 
-    def list_owned_filtered(
-        self,
-        owner_id: str,
-        project_id: str | None = None,
-        standalone: bool = False,
-    ) -> list[dict]:
+    def list_owned_filtered(self, owner_id: str, project_id: str | None = None, standalone: bool = False) -> list[dict]:
         papers = self.list_owned(owner_id)
         return [paper for paper in papers if self._paper_matches_scope(paper, project_id, standalone)]
 
     def list_by_project_id(self, project_id: str) -> list[dict]:
-        return firestore_store.find_by_fields("papers", {"projectId": project_id})
+        return firestore_store.find_by_fields(PAPERS_COLLECTION, {"projectId": project_id})
 
     def list_by_collection_id(self, collection_id: str) -> list[dict]:
-        return firestore_store.find_by_fields("papers", {"collectionId": collection_id})
+        return firestore_store.find_by_fields(PAPERS_COLLECTION, {"collectionId": collection_id})
 
     def get_by_id(self, paper_id: str) -> dict | None:
-        cached = cache_service.get(self._cache_key_by_id(paper_id))
-        if isinstance(cached, dict):
+        cached = self._load_cached_paper(self._paper_by_id_key(paper_id))
+        if cached:
             return cached
 
-        paper = self._get_by_id_from_store(paper_id)
-        self._cache_document(paper)
+        paper = firestore_store.get(PAPERS_COLLECTION, paper_id)
+        if paper:
+            self._set_cached_paper(paper)
         return paper
 
-    def find_by_slug(self, slug: str, owner_id: str | None = None) -> dict | None:
-        normalized_slug = normalize_slug(slug)
-        if not normalized_slug:
+    def find_by_slug(
+        self,
+        slug: str,
+        owner_username: str | None = None,
+        owner_id: str | None = None,
+    ) -> dict | None:
+        if not slug:
             return None
 
-        if owner_id:
-            cached = cache_service.get(self._cache_key_by_slug(owner_id, normalized_slug))
-            if isinstance(cached, dict):
+        resolved_owner_id = owner_id
+        resolved_owner_username = owner_username
+        if resolved_owner_id and not resolved_owner_username:
+            resolved_owner_username = self._get_owner_username(resolved_owner_id)
+        if resolved_owner_username and not resolved_owner_id:
+            matches = firestore_store.find_by_fields("users", {"username": resolved_owner_username})
+            if matches:
+                resolved_owner_id = matches[0].get("userId")
+
+        if resolved_owner_username:
+            cached = self._load_cached_paper(self._paper_by_slug_key(resolved_owner_username, slug))
+            if cached:
                 return cached
 
-        filters: dict[str, str] = {"slug": normalized_slug}
-        if owner_id:
-            filters["ownerId"] = owner_id
-        matches = firestore_store.find_by_fields("papers", filters)
+        filters: dict[str, str] = {PAPER_SLUG_KEY: slug}
+        if resolved_owner_id:
+            filters[PAPER_OWNER_KEY] = resolved_owner_id
+        matches = firestore_store.find_by_fields(PAPERS_COLLECTION, filters)
         paper = matches[0] if matches else None
-        self._cache_document(paper)
+        if paper and resolved_owner_username:
+            self._set_cached_paper(paper)
         return paper
 
     def create(self, owner_id: str, payload: dict) -> dict:
@@ -188,14 +201,10 @@ class PapersService:
             collection = firestore_store.get("collections", collection_id)
             if not collection:
                 raise HTTPException(status_code=404, detail="Collection not found.")
-            if collection.get("ownerId") != owner_id:
-                raise HTTPException(status_code=403, detail="Not allowed.")
             payload["projectId"] = collection.get("projectId")
             payload["status"] = "published" if collection.get("isPublic", False) else "draft"
         elif project_id:
             project = projects_service.get_by_id(project_id)
-            if project.get("ownerId") != owner_id:
-                raise HTTPException(status_code=403, detail="Not allowed.")
             payload["status"] = "published" if project.get("isPublic", False) else "draft"
         else:
             payload["status"] = payload.get("status") or "draft"
@@ -205,74 +214,64 @@ class PapersService:
             if is_reserved_paper_slug(payload["slug"]):
                 raise HTTPException(status_code=409, detail="Slug is reserved.")
             existing = firestore_store.find_by_fields(
-                "papers",
-                {"ownerId": owner_id, "slug": payload["slug"]},
+                PAPERS_COLLECTION,
+                {PAPER_OWNER_KEY: owner_id, PAPER_SLUG_KEY: payload["slug"]},
             )
             if existing:
                 raise HTTPException(status_code=409, detail="Paper slug already exists.")
         else:
             payload["slug"] = f"paper-{paper_id}"
 
-        payload["ownerId"] = owner_id
-        payload["paperId"] = paper_id
+        payload[PAPER_OWNER_KEY] = owner_id
+        payload[PAPER_ID_KEY] = paper_id
         payload["createdAt"] = now
         payload["updatedAt"] = now
-        firestore_store.create("papers", payload, doc_id=paper_id)
+        firestore_store.create(PAPERS_COLLECTION, payload, doc_id=paper_id)
 
-        # Recalculate collection pagesNumber if paper is added to a collection
         if collection_id:
             self._refresh_collection_pages_number(collection_id)
 
-        # Recalculate project pagesNumber if paper is added to a project
         resolved_project_id = payload.get("projectId")
         if resolved_project_id:
             self._refresh_project_pages_number(resolved_project_id)
 
         return {"paperId": paper_id, "projectId": resolved_project_id}
 
-    def update(self, paper_id: str, owner_id: str, payload: dict) -> dict:
-        current = self._get_by_id_from_store(paper_id)
+    def update(self, paper_id: str, payload: dict) -> dict:
+        current = firestore_store.get(PAPERS_COLLECTION, paper_id)
         if not current:
-            raise HTTPException(status_code=404, detail="papers not found.")
-        if current.get("ownerId") != owner_id:
-            raise HTTPException(status_code=403, detail="Not allowed.")
+            raise HTTPException(status_code=404, detail="Paper not found.")
 
         if payload.get("slug"):
             new_slug = normalize_slug(payload["slug"])
             if is_reserved_paper_slug(new_slug):
                 raise HTTPException(status_code=409, detail="Slug is reserved.")
             existing = firestore_store.find_by_fields(
-                "papers",
-                {"ownerId": owner_id, "slug": new_slug},
+                PAPERS_COLLECTION,
+                {PAPER_OWNER_KEY: current.get(PAPER_OWNER_KEY), PAPER_SLUG_KEY: new_slug},
             )
-            if any(item.get("paperId") != paper_id for item in existing):
+            if any(item.get(PAPER_ID_KEY) != paper_id for item in existing):
                 raise HTTPException(status_code=409, detail="Paper slug already exists.")
             payload["slug"] = new_slug
 
         if not payload:
             return current
 
-        previous_slug = current.get("slug")
+        previous_slug = current.get(PAPER_SLUG_KEY)
+        owner_username = self._get_owner_username(current.get(PAPER_OWNER_KEY))
         payload["updatedAt"] = utc_now()
-        firestore_store.update("papers", paper_id, payload)
+        firestore_store.update(PAPERS_COLLECTION, paper_id, payload)
         current.update(payload)
-        self._invalidate_document_cache(
-            paper_id=paper_id,
-            owner_id=current.get("ownerId"),
-            old_slug=previous_slug,
-            new_slug=current.get("slug"),
-        )
+        self.invalidate_paper(paper_id=paper_id, owner_username=owner_username, slug=previous_slug)
         return current
 
-    async def upload_thumbnail(
-        self, paper_id: str, owner_id: str, file: UploadFile
-    ) -> dict[str, str]:
-        """Upload a thumbnail image for a paper."""
+    async def upload_thumbnail(self, paper_id: str, file: UploadFile) -> dict[str, str]:
         paper = self.get_by_id(paper_id)
         if not paper:
             raise HTTPException(status_code=404, detail="Paper not found.")
-        if paper.get("ownerId") != owner_id:
-            raise HTTPException(status_code=403, detail="Not allowed.")
+        owner_id = paper.get(PAPER_OWNER_KEY)
+        if not owner_id:
+            raise HTTPException(status_code=400, detail="Paper owner is missing.")
 
         url = await storage_service.upload_image(
             f"users/{owner_id}/papers/{paper_id}/thumbnail",
@@ -280,21 +279,19 @@ class PapersService:
             max_width=MAX_THUMBNAIL_WIDTH,
             max_height=MAX_THUMBNAIL_HEIGHT,
             crop=False,
-            overwrite_name="thumbnail",
+            overwrite_name="thumbnail.jpg",
         )
-        url = _with_cache_buster(url)
-        self.update(paper_id, owner_id, {"thumbnailUrl": url})
+        url = add_cache_buster(url)
+        self.update(paper_id, {"thumbnailUrl": url})
         return {"url": url}
 
-    async def upload_embedded_image(
-        self, paper_id: str, owner_id: str, file: UploadFile
-    ) -> dict[str, str]:
-        """Upload an embedded image for the editor."""
+    async def upload_embedded_image(self, paper_id: str, file: UploadFile) -> dict[str, str]:
         paper = self.get_by_id(paper_id)
         if not paper:
             raise HTTPException(status_code=404, detail="Paper not found.")
-        if paper.get("ownerId") != owner_id:
-            raise HTTPException(status_code=403, detail="Not allowed.")
+        owner_id = paper.get(PAPER_OWNER_KEY)
+        if not owner_id:
+            raise HTTPException(status_code=400, detail="Paper owner is missing.")
 
         url = await storage_service.upload_image(
             f"users/{owner_id}/papers/{paper_id}/embedded",
@@ -305,45 +302,54 @@ class PapersService:
         )
         return {"url": url}
 
-    def delete(self, paper_id: str, owner_id: str | None = None) -> dict[str, bool]:
-        current = self._get_by_id_from_store(paper_id)
+    def delete_unused_embedded_images(self, owner_id: str, paper_id: str, used_urls: set[str]) -> int:
+        return storage_service.delete_unreferenced_blobs(
+            f"users/{owner_id}/papers/{paper_id}/embedded/",
+            used_urls,
+        )
+
+    def delete_thumbnail(self, owner_id: str, paper_id: str) -> bool:
+        return storage_service.delete_first_existing(
+            [
+                f"users/{owner_id}/papers/{paper_id}/thumbnail/thumbnail.jpg",
+            ]
+        )
+
+    def delete_paper_assets(self, owner_id: str, paper_id: str) -> int:
+        return storage_service.delete_by_prefix(f"users/{owner_id}/papers/{paper_id}/")
+
+    def delete(self, paper_id: str) -> dict[str, bool]:
+        current = firestore_store.get(PAPERS_COLLECTION, paper_id)
         if not current:
-            raise HTTPException(status_code=404, detail="papers not found.")
-        if owner_id and current.get("ownerId") != owner_id:
-            raise HTTPException(status_code=403, detail="Not allowed.")
+            raise HTTPException(status_code=404, detail="Paper not found.")
 
         collection_id = current.get("collectionId")
         project_id = current.get("projectId")
-        resolved_owner_id = current.get("ownerId")
-        if resolved_owner_id:
-            storage_service.delete_paper_assets(resolved_owner_id, paper_id)
-        firestore_store.delete("papers", paper_id)
-
-        self._invalidate_document_cache(
+        owner_id = current.get(PAPER_OWNER_KEY)
+        if owner_id:
+            self.delete_paper_assets(owner_id, paper_id)
+        firestore_store.delete(PAPERS_COLLECTION, paper_id)
+        self.invalidate_paper(
             paper_id=paper_id,
-            owner_id=current.get("ownerId"),
-            old_slug=current.get("slug"),
+            owner_username=self._get_owner_username(current.get(PAPER_OWNER_KEY)),
+            slug=current.get(PAPER_SLUG_KEY),
         )
 
-        # Recalculate collection pagesNumber if paper was in a collection
         if collection_id:
             self._refresh_collection_pages_number(collection_id)
-
-        # Recalculate project pagesNumber if paper was in a project
         if project_id:
             self._refresh_project_pages_number(project_id)
-
         return {"ok": True}
 
     def is_slug_available(self, owner_id: str, slug: str, paper_id: str | None = None) -> bool:
         normalized = normalize_slug(slug)
         if not normalized or is_reserved_paper_slug(normalized):
             return False
-
-        existing = self.find_by_slug(normalized, owner_id=owner_id)
-        if not existing:
-            return True
-        return existing.get("paperId") == paper_id
+        matches = firestore_store.find_by_fields(
+            PAPERS_COLLECTION,
+            {PAPER_OWNER_KEY: owner_id, PAPER_SLUG_KEY: normalized},
+        )
+        return all(item.get(PAPER_ID_KEY) == paper_id for item in matches)
 
 
 papers_service = PapersService()

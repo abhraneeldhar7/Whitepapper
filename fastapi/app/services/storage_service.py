@@ -52,81 +52,36 @@ class StorageService:
         blob.make_public()
         return blob.public_url
 
-    def delete_owner_assets(self, owner_id: str) -> int:
+    def delete_by_prefix(self, prefix: str) -> int:
         deleted = 0
-        prefix = f"users/{owner_id}/"
         for blob in self._bucket().list_blobs(prefix=prefix):
             blob.delete()
             deleted += 1
         return deleted
 
-    def delete_unused_embedded_images(self, owner_id: str, paper_id: str, used_urls: set[str]) -> int:
-        def normalize(url: str) -> str:
+    def delete_unreferenced_blobs(self, prefix: str, used_urls: set[str]) -> int:
+        normalized_used: set[str] = set()
+        for url in used_urls:
+            normalized_used.add(url)
             parts = urlsplit(url)
-            return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+            normalized_used.add(urlunsplit((parts.scheme, parts.netloc, parts.path, "", "")))
 
-        normalized_used = {normalize(url) for url in used_urls}
         deleted = 0
-        prefix = f"users/{owner_id}/papers/{paper_id}/embedded/"
         for blob in self._bucket().list_blobs(prefix=prefix):
-            blob_url = normalize(blob.public_url)
-            if blob_url not in normalized_used:
+            blob_url = blob.public_url
+            parts = urlsplit(blob_url)
+            blob_url_without_query = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+            if blob_url not in normalized_used and blob_url_without_query not in normalized_used:
                 blob.delete()
                 deleted += 1
         return deleted
 
-    def delete_paper_assets(self, owner_id: str, paper_id: str) -> int:
-        deleted = 0
-        prefix = f"users/{owner_id}/papers/{paper_id}/"
-        for blob in self._bucket().list_blobs(prefix=prefix):
-            blob.delete()
-            deleted += 1
-        return deleted
-
-    def delete_thumbnail(self, owner_id: str, paper_id: str) -> bool:
-        for object_path in (
-            f"users/{owner_id}/papers/{paper_id}/thumbnail/thumbnail",
-            f"users/{owner_id}/papers/{paper_id}/thumbnail/thumbnail.jpg",
-        ):
+    def delete_first_existing(self, object_paths: list[str]) -> bool:
+        for object_path in object_paths:
             blob = self._bucket().blob(object_path)
             if blob.exists():
                 blob.delete()
                 return True
         return False
-
-    def delete_unused_project_embedded_images(self, owner_id: str, project_id: str, used_urls: set[str]) -> int:
-        def normalize(url: str) -> str:
-            parts = urlsplit(url)
-            return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
-
-        normalized_used = {normalize(url) for url in used_urls}
-        deleted = 0
-        prefix = f"users/{owner_id}/projects/{project_id}/embedded/"
-        for blob in self._bucket().list_blobs(prefix=prefix):
-            blob_url = normalize(blob.public_url)
-            if blob_url not in normalized_used:
-                blob.delete()
-                deleted += 1
-        return deleted
-
-    def delete_project_assets(self, owner_id: str, project_id: str) -> int:
-        deleted = 0
-        prefix = f"users/{owner_id}/projects/{project_id}/"
-        for blob in self._bucket().list_blobs(prefix=prefix):
-            blob.delete()
-            deleted += 1
-        return deleted
-
-    def delete_project_logo(self, owner_id: str, project_id: str) -> bool:
-        for object_path in (
-            f"users/{owner_id}/projects/{project_id}/logo/logo",
-            f"users/{owner_id}/projects/{project_id}/logo/logo.jpg",
-        ):
-            blob = self._bucket().blob(object_path)
-            if blob.exists():
-                blob.delete()
-                return True
-        return False
-
 
 storage_service = StorageService()
