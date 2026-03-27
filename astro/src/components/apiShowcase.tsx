@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Play, Loader2, LandPlot, PlayIcon } from "lucide-react";
+import { Check, Copy, PlayIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn, copyToClipboardWithToast } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-import { toast } from "sonner";
 
+
+const BASE_API_URL = import.meta.env.PUBLIC_API_BASE_URL;
 
 // API endpoints configuration
 const ENDPOINTS = [
@@ -25,7 +25,7 @@ const ENDPOINTS = [
         hasIdentifierOptions: false,
         identifierOptions: [],
         code: {
-            typescript: `const response = await fetch("https://whitepapper.antk.in/dev/project", {
+            typescript: `const response = await fetch("${BASE_API_URL}/dev/project", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -35,7 +35,7 @@ const ENDPOINTS = [
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("https://whitepapper.antk.in/dev/project", headers={
+            python: `response = requests.get("${BASE_API_URL}/dev/project", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -60,7 +60,7 @@ print(data)`,
             { name: "identifier", label: "Collection ID", type: "text", required: true, placeholder: "collection-id" },
         ],
         code: {
-            typescript: `const response = await fetch("https://whitepapper.antk.in/dev/collection?id=COLLECTION_ID", {
+            typescript: `const response = await fetch("${BASE_API_URL}/dev/collection?id=COLLECTION_ID", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -70,7 +70,7 @@ print(data)`,
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("https://whitepapper.antk.in/dev/collection?id=COLLECTION_ID", headers={
+            python: `response = requests.get("${BASE_API_URL}/dev/collection?id=COLLECTION_ID", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -95,7 +95,7 @@ print(data)`,
             { name: "identifier", label: "Paper ID", type: "text", required: true, placeholder: "paper-id" },
         ],
         code: {
-            typescript: `const response = await fetch("https://whitepapper.antk.in/dev/paper?id=PAPER_ID", {
+            typescript: `const response = await fetch("${BASE_API_URL}/dev/paper?id=PAPER_ID", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -105,7 +105,7 @@ print(data)`,
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("https://whitepapper.antk.in/dev/paper?id=PAPER_ID", headers={
+            python: `response = requests.get("${BASE_API_URL}/dev/paper?id=PAPER_ID", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
