@@ -15,6 +15,7 @@ from app.services._dev_api_service import _dev_api_service
 from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
+from app.services.user_service import user_service
 
 router = APIRouter(prefix="/dev", tags=["dev"])
 api_keys_router = APIRouter(tags=["api-keys"])
@@ -63,7 +64,15 @@ def _resolve_paper_for_project(project: dict, paper_id: str | None, paper_slug: 
         if not paper:
             raise HTTPException(status_code=404, detail="Paper not found for id.")
     else:
-        paper = papers_service.find_by_slug(paper_slug or "", owner_id=owner_id)
+        if not owner_id:
+            raise HTTPException(status_code=404, detail="Paper not found for slug in this project.")
+        try:
+            owner_username = user_service.get_by_id(owner_id).get("username")
+        except HTTPException as exc:
+            if exc.status_code == 404:
+                raise HTTPException(status_code=404, detail="Paper not found for slug in this project.") from None
+            raise
+        paper = papers_service.get_by_slug(owner_username or "", paper_slug or "")
         if not paper:
             raise HTTPException(status_code=404, detail="Paper not found for slug in this project.")
 

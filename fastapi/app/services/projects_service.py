@@ -156,10 +156,16 @@ class ProjectsService:
         if cached:
             return cached
 
-        owner_matches = firestore_store.find_by_fields("users", {"username": owner_username})
-        if not owner_matches:
-            raise HTTPException(status_code=404, detail="Project not found.")
-        owner_id = owner_matches[0].get("userId")
+        from app.services.user_service import user_service
+
+        try:
+            owner = user_service.get_by_username(owner_username)
+        except HTTPException as exc:
+            if exc.status_code == 404:
+                raise HTTPException(status_code=404, detail="Project not found.") from None
+            raise
+
+        owner_id = owner.get("userId")
         if not owner_id:
             raise HTTPException(status_code=404, detail="Project not found.")
 

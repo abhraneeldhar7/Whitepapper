@@ -20,7 +20,6 @@ let author: PublicAuthorSummary;
 ({ paper, author } = await getPublicPaperPageData(normalizedHandle, pageSlug));
 const publishedDate = formatFirestoreDate(paper.createdAt);
 
-
 ---
 <Layout>
   <main

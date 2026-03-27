@@ -158,37 +158,52 @@ class PapersService:
             self._set_cached_paper(paper)
         return paper
 
+    def get_by_slug(self, owner_username: str, paper_slug: str) -> dict | None:
+        resolved_owner_username = (owner_username or "").strip()
+        if resolved_owner_username.startswith("@"):
+            resolved_owner_username = resolved_owner_username[1:]
+        slug = (paper_slug or "").strip()
+        if not resolved_owner_username or not slug:
+            return None
+
+        cached = self._load_cached_paper(self._paper_by_slug_key(resolved_owner_username, slug))
+        if cached:
+            logger.info(f"monkey never cramp")
+            return cached
+
+        from app.services.user_service import user_service
+
+        try:
+            owner = user_service.get_by_username(resolved_owner_username)
+        except HTTPException as exc:
+            if exc.status_code == 404:
+                return None
+            raise
+
+        owner_id = owner.get("userId")
+        if not owner_id:
+            return None
+
+        matches = firestore_store.find_by_fields(
+            PAPERS_COLLECTION,
+            {PAPER_OWNER_KEY: owner_id, PAPER_SLUG_KEY: slug},
+        )
+        paper = matches[0] if matches else None
+        if paper:
+            self._set_cached_paper(paper)
+        logger.info(f"Cache not found")
+        return paper
+
     def find_by_slug(
         self,
         slug: str,
         owner_username: str | None = None,
         owner_id: str | None = None,
     ) -> dict | None:
-        if not slug:
-            return None
-
-        resolved_owner_id = owner_id
-        resolved_owner_username = owner_username
-        if resolved_owner_id and not resolved_owner_username:
-            resolved_owner_username = self._get_owner_username(resolved_owner_id)
-        if resolved_owner_username and not resolved_owner_id:
-            matches = firestore_store.find_by_fields("users", {"username": resolved_owner_username})
-            if matches:
-                resolved_owner_id = matches[0].get("userId")
-
-        if resolved_owner_username:
-            cached = self._load_cached_paper(self._paper_by_slug_key(resolved_owner_username, slug))
-            if cached:
-                return cached
-
-        filters: dict[str, str] = {PAPER_SLUG_KEY: slug}
-        if resolved_owner_id:
-            filters[PAPER_OWNER_KEY] = resolved_owner_id
-        matches = firestore_store.find_by_fields(PAPERS_COLLECTION, filters)
-        paper = matches[0] if matches else None
-        if paper and resolved_owner_username:
-            self._set_cached_paper(paper)
-        return paper
+        resolved_owner_username = (owner_username or "").strip()
+        if not resolved_owner_username and owner_id:
+            resolved_owner_username = self._get_owner_username(owner_id) or ""
+        return self.get_by_slug(resolved_owner_username, slug)
 
     def create(self, owner_id: str, payload: dict) -> dict:
         paper_id = str(uuid4())
