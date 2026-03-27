@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     app_name: str = "Whitepapper_API"
     redis_prefix: str = "whitepapper"
+    cors_origins: str = "https://whitepapper.antk.in,http://localhost:4321"
 
     clerk_webhook_signing_secret: str | None = None
     clerk_secret_key: str | None = None
@@ -39,3 +40,9 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def parse_csv(value: str | None) -> list[str]:
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]

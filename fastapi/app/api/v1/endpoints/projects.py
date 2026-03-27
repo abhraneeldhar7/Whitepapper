@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
 import re
 
 from app.services.auth_service import get_verified_id
@@ -6,7 +6,6 @@ from app.schemas.entities import ProjectCreate, ProjectDoc as Project, ProjectUp
 from app.services.projects_service import projects_service
 from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
-from app.services.user_service import user_service
 from app.utils.cache import add_cache_buster
 
 router = APIRouter(tags=["projects"])
@@ -46,10 +45,12 @@ def check_project_slug_available(
     return {"available": projects_service.is_slug_available(user_id, slug, project_id)}
 
 
-@router.get("/projects/slug/{project_slug}", response_model=Project)
-def get_project_by_slug(project_slug: str, user_id: str = Depends(get_verified_id)) -> Project:
-    current_user = user_service.get_by_id(user_id)
-    return projects_service.get_by_slug(current_user["username"], project_slug)
+@router.get("/projects/slug/{username}/{project_slug}", response_model=Project)
+def get_project_by_slug(username: str, project_slug: str, user_id: str = Depends(get_verified_id)) -> Project:
+    project = projects_service.get_by_slug(username, project_slug)
+    if project.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    return project
 
 
 @router.get("/projects/{project_id}", response_model=Project)
@@ -64,6 +65,7 @@ def get_project(project_id: str, user_id: str = Depends(get_verified_id)) -> Pro
 def patch_project(
     project_id: str,
     payload: ProjectUpdate,
+    background_tasks: BackgroundTasks,
     user_id: str = Depends(get_verified_id),
 ) -> Project:
     project = projects_service.get_by_id(project_id)
@@ -85,7 +87,12 @@ def patch_project(
 
     if payload.description is not None:
         used_urls = _extract_image_urls(updated.get("description") or "")
-        projects_service.delete_unused_project_embedded_images(user_id, project_id, used_urls)
+        background_tasks.add_task(
+            projects_service.delete_unused_project_embedded_images,
+            user_id,
+            project_id,
+            used_urls,
+        )
 
     return updated
 

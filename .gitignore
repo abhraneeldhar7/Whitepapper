@@ -1,6 +1,10 @@
 # build output
 dist/
 
+# local agent + editor settings
+.agents/
+.vscode/
+
 # generated types
 .astro/
 

@@ -31,12 +31,10 @@ export async function getPublicProjectBySlug(
 }
 
 export async function getPublicCollectionById(
-  handle: string,
-  projectSlug: string,
   collectionId: string,
 ): Promise<PublicCollectionResponse> {
   return apiClient.get<PublicCollectionResponse>(
-    `/public/${handle}/projects/${projectSlug}/collections/${collectionId}`,
+    `/public/collections/${collectionId}`,
     { auth: "none" },
   );
 }

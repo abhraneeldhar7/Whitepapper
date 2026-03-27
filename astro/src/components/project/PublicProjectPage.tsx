@@ -98,7 +98,6 @@ export default function PublicProjectPage({
 
           <ProjectCollectionsViewer
             handle={handle}
-            projectSlug={project.slug}
             collections={collections}
           />
         </div>

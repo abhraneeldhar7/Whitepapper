@@ -6,16 +6,12 @@ from app.schemas.entities import (
     ApiKeyCreateResponse,
     ApiKeySummary,
     ApiKeyToggle,
-    DevCollectionPayload,
-    DevPaperPayload,
-    DevProjectPayload,
 )
 from app.services.auth_service import get_verified_id
 from app.services._dev_api_service import _dev_api_service
 from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
-from app.services.user_service import user_service
 
 router = APIRouter(prefix="/dev", tags=["dev"])
 api_keys_router = APIRouter(tags=["api-keys"])
@@ -31,15 +27,15 @@ def _extract_api_key(api_key_header: str | None) -> str:
     return value
 
 
-def _load_authorized_project(key_doc: dict) -> dict:
-    key_project_id = str(key_doc.get("projectId"))
+def _extract_key_project_id(key_doc: dict) -> str:
+    key_project_id = str(key_doc.get("projectId") or "").strip()
     if not key_project_id:
         raise HTTPException(status_code=401, detail="API key is not linked to any project.")
+    return key_project_id
 
-    project = projects_service.get_by_id(key_project_id)
-    if not bool(project.get("isPublic")):
-        raise HTTPException(status_code=403, detail="Requested project is not public.")
-    return project
+
+def _load_authorized_project(key_doc: dict) -> dict:
+    return projects_service.get_by_id(_extract_key_project_id(key_doc), public=True)
 
 
 def _add_usage_increment(background_tasks: BackgroundTasks, key_doc: dict) -> None:
@@ -52,69 +48,68 @@ def _add_usage_increment(background_tasks: BackgroundTasks, key_doc: dict) -> No
     )
 
 
-def _resolve_paper_for_project(project: dict, paper_id: str | None, paper_slug: str | None) -> dict:
+def _resolve_paper_for_project(project_id: str, paper_id: str | None, paper_slug: str | None) -> dict:
     if bool(paper_id) == bool(paper_slug):
         raise HTTPException(status_code=400, detail="Provide exactly one of: id or slug.")
 
-    project_id = str(project.get("projectId") or "")
-    owner_id = str(project.get("ownerId") or "")
-
     if paper_id:
-        paper = papers_service.get_by_id(paper_id)
+        paper = papers_service.get_by_id(paper_id, public=True)
         if not paper:
             raise HTTPException(status_code=404, detail="Paper not found for id.")
+        if paper.get("projectId") != project_id:
+            raise HTTPException(status_code=403, detail="Paper does not belong to the API key project.")
     else:
-        if not owner_id:
-            raise HTTPException(status_code=404, detail="Paper not found for slug in this project.")
-        try:
-            owner_username = user_service.get_by_id(owner_id).get("username")
-        except HTTPException as exc:
-            if exc.status_code == 404:
-                raise HTTPException(status_code=404, detail="Paper not found for slug in this project.") from None
-            raise
-        paper = papers_service.get_by_slug(owner_username or "", paper_slug or "")
+        paper = papers_service.get_by_project_slug(project_id=project_id, paper_slug=paper_slug or "", public=True)
         if not paper:
             raise HTTPException(status_code=404, detail="Paper not found for slug in this project.")
-
-    if paper.get("projectId") != project_id:
-        raise HTTPException(status_code=403, detail="Paper does not belong to the API key project.")
-
-    if paper.get("status") != "published":
-        raise HTTPException(status_code=403, detail="Requested paper is not public (status must be published).")
 
     return paper
 
 
-@router.get("/project", response_model=DevProjectPayload)
+def _mask_owner_in_project(project: dict) -> dict:
+    masked = dict(project)
+    masked["ownerId"] = None
+    return masked
+
+
+def _mask_owner_in_collection(collection: dict) -> dict:
+    masked = dict(collection)
+    masked["ownerId"] = None
+    return masked
+
+
+def _mask_owner_in_paper(paper: dict) -> dict:
+    masked = dict(paper)
+    masked["ownerId"] = None
+    return masked
+
+
+@router.get("/project")
 def get_project_bundle(
     background_tasks: BackgroundTasks,
     x_api_key: XApiKey = None,
-) -> DevProjectPayload:
+) -> dict:
     raw_key = _extract_api_key(x_api_key)
     key_doc = _dev_api_service.validate_key(raw_key)
     project = _load_authorized_project(key_doc)
     _add_usage_increment(background_tasks, key_doc)
     project_id = project["projectId"]
 
-    collections = [
-        item
-        for item in collections_service.list_project_collections(project_id)
-        if bool(item.get("isPublic"))
-    ]
+    collections = collections_service.list_project_collections(project_id, public=True)
 
     return {
-        "project": project,
-        "collections": collections,
+        "project": _mask_owner_in_project(project),
+        "collections": [_mask_owner_in_collection(collection) for collection in collections],
     }
 
 
-@router.get("/collection", response_model=DevCollectionPayload)
+@router.get("/collection")
 def get_collection_bundle(
     background_tasks: BackgroundTasks,
     collection_id: Annotated[str | None, Query(alias="id")] = None,
     collection_slug: Annotated[str | None, Query(alias="slug")] = None,
     x_api_key: XApiKey = None,
-) -> DevCollectionPayload:
+) -> dict:
     raw_key = _extract_api_key(x_api_key)
     key_doc = _dev_api_service.validate_key(raw_key)
     project = _load_authorized_project(key_doc)
@@ -123,45 +118,41 @@ def get_collection_bundle(
         raise HTTPException(status_code=400, detail="Provide exactly one of: id or slug.")
 
     if collection_id:
-        collection = collections_service.get_by_id(collection_id)
+        collection = collections_service.get_by_id(collection_id, public=True)
         if collection.get("projectId") != key_project_id:
             raise HTTPException(status_code=403, detail="Collection does not belong to the API key project.")
     else:
         collection = collections_service.get_by_slug(
             project_id=key_project_id,
             collection_slug=collection_slug or "",
+            public=True,
         )
-
-    if not bool(collection.get("isPublic")):
-        raise HTTPException(status_code=403, detail="Requested collection is not public.")
 
     _add_usage_increment(background_tasks, key_doc)
 
-    papers = [
-        item for item in papers_service.list_by_collection_id(collection.get("collectionId")) if item.get("status") == "published"
-    ]
+    papers = papers_service.list_by_collection_id(collection.get("collectionId"), public=True)
 
     return {
-        "collection": collection,
-        "papers": papers,
+        "collection": _mask_owner_in_collection(collection),
+        "papers": [_mask_owner_in_paper(paper) for paper in papers],
     }
 
 
-@router.get("/paper", response_model=DevPaperPayload)
+@router.get("/paper")
 def get_paper(
     background_tasks: BackgroundTasks,
     paper_id: Annotated[str | None, Query(alias="id")] = None,
     paper_slug: Annotated[str | None, Query(alias="slug")] = None,
     x_api_key: XApiKey = None,
-) -> DevPaperPayload:
+) -> dict:
     raw_key = _extract_api_key(x_api_key)
     key_doc = _dev_api_service.validate_key(raw_key)
-    authorized_project = _load_authorized_project(key_doc)
-    paper = _resolve_paper_for_project(authorized_project, paper_id, paper_slug)
+    key_project_id = _extract_key_project_id(key_doc)
+    paper = _resolve_paper_for_project(key_project_id, paper_id, paper_slug)
     _add_usage_increment(background_tasks, key_doc)
 
     return {
-        "paper": paper,
+        "paper": _mask_owner_in_paper(paper),
     }
 
 

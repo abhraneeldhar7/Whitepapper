@@ -56,12 +56,12 @@ const FolderNotes: React.FC<FolderNotesProps> = ({
         height: height ?? undefined,
       }}
     >
-      {logoUrl &&
+      {/* {logoUrl &&
         <img
           src={logoUrl}
           alt="P"
           className="h-[35px] w-[35px] absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 rounded-[12px] z-2 object-cover"
-        />}
+        />} */}
       <svg
         viewBox="35 70 330 300"
         style={{ width: '100%', height: '100%', display: 'block' }}

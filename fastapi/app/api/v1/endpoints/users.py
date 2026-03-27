@@ -1,7 +1,8 @@
+import logging
 import time
 from urllib.parse import urlsplit, urlunsplit
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
 
 from app.services.auth_service import get_verified_id
 from app.schemas.users import UserProfile
@@ -16,6 +17,7 @@ from app.services.projects_service import projects_service
 from app.services.papers_service import papers_service
 
 router = APIRouter(prefix="/users", tags=["users"])
+logger = logging.getLogger(__name__)
 
 
 def _with_cache_buster(url: str) -> str:
@@ -51,9 +53,17 @@ def patch_me(
     )
 
 
-@router.delete("/me")
-def delete_me(user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
-    user_service.delete_user(user_id)
+def _delete_user_in_background(user_id: str) -> None:
+    try:
+        user_service.delete_user(user_id)
+    except Exception:
+        logger.exception("Background user delete failed for user_id=%s", user_id)
+
+
+@router.delete("/me", status_code=202)
+def delete_me(background_tasks: BackgroundTasks, user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
+    user_service.get_by_id(user_id)
+    background_tasks.add_task(_delete_user_in_background, user_id)
     return {"ok": True}
 
 
@@ -88,7 +98,7 @@ def get_dashboard_data(user_id: str = Depends(get_verified_id)) -> DashboardPayl
     """Get all dashboard data: user profile, projects, and standalone papers (public/draft), sorted by updatedAt."""
     user = user_service.get_by_id(user_id)
     projects = projects_service.list_owned(user_id)
-    standalone_papers = papers_service.list_owned_filtered(owner_id=user_id, standalone=True)
+    standalone_papers = papers_service.list_standalone(owner_id=user_id)
 
     # Sort by updatedAt in descending order
     projects.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)

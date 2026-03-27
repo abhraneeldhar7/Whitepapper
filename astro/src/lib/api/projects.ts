@@ -25,10 +25,11 @@ export async function listProjects(client: ApiClient = apiClient): Promise<Proje
 }
 
 export async function getProjectBySlug(
+  username: string,
   slug: string,
   client: ApiClient = apiClient,
 ): Promise<ProjectDoc> {
-  return client.get<ProjectDoc>(`/projects/slug/${slug}`);
+  return client.get<ProjectDoc>(`/projects/slug/${username}/${slug}`);
 }
 
 export async function getProjectById(

@@ -8,7 +8,6 @@ import type { CollectionDoc, PaperDoc } from "@/lib/types";
 
 type ProjectCollectionsViewerProps = {
   handle: string;
-  projectSlug: string;
   collections: CollectionDoc[];
 };
 
@@ -20,7 +19,6 @@ type CollectionState = {
 
 export default function ProjectCollectionsViewer({
   handle,
-  projectSlug,
   collections,
 }: ProjectCollectionsViewerProps) {
   const [collectionStates, setCollectionStates] = useState<Record<string, CollectionState>>({});
@@ -41,7 +39,7 @@ export default function ProjectCollectionsViewer({
     }));
 
     try {
-      const data = await getPublicCollectionById(handle, projectSlug, collection.collectionId);
+      const data = await getPublicCollectionById(collection.collectionId);
       setCollectionStates((prev) => ({
         ...prev,
         [collection.collectionId]: {

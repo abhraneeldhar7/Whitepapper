@@ -1,9 +1,9 @@
 import { LockIcon } from "lucide-react";
-import type { ProjectDoc } from "@/lib/types";
+import type { CollectionDoc, ProjectDoc } from "@/lib/types";
 import FolderNotes from "@/components/folderComponent";
 
 type ProjectCardProps = {
-    project: ProjectDoc;
+    project: ProjectDoc | CollectionDoc;
     href: string;
     showLockIcon?: boolean;
 };
@@ -17,11 +17,11 @@ export default function ProjectCard({
         <div className="flex flex-col items-center">
             <a href={href}>
                 <div className="relative inline-flex">
-                    <FolderNotes logoUrl={project.logoUrl} />
-                    
+                    <FolderNotes />
+
                     {showLockIcon && !project.isPublic ? (
-                        <span className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full border bg-background">
-                            <LockIcon size={12} />
+                        <span className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 z-2">
+                            <LockIcon size={22} strokeWidth={3} className="text-destructive" />
                         </span>
                     ) : null}
                 </div>

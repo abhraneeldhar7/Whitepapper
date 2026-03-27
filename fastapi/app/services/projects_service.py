@@ -24,6 +24,7 @@ PROJECTS_COLLECTION = "projects"
 PROJECT_ID_KEY = "projectId"
 PROJECT_SLUG_KEY = "slug"
 PROJECT_OWNER_KEY = "ownerId"
+PROJECT_PUBLIC_KEY = "isPublic"
 
 
 class ProjectsService:
@@ -95,6 +96,10 @@ class ProjectsService:
             return None
         return user_doc.get("username")
 
+    @staticmethod
+    def _is_public_project(project: dict | None) -> bool:
+        return bool(project) and bool(project.get(PROJECT_PUBLIC_KEY))
+
     def _unique_slug(self, owner_id: str, source: str, exclude_project_id: str | None = None) -> str:
         base = normalize_slug(source) or "project"
         if is_reserved_project_slug(base):
@@ -137,23 +142,32 @@ class ProjectsService:
                 {"status": target_status},
             )
 
-    def list_owned(self, owner_id: str) -> list[dict]:
-        return firestore_store.find_by_fields(PROJECTS_COLLECTION, {PROJECT_OWNER_KEY: owner_id})
+    def list_owned(self, owner_id: str, public: bool = False) -> list[dict]:
+        filters: dict[str, object] = {PROJECT_OWNER_KEY: owner_id}
+        if public:
+            filters[PROJECT_PUBLIC_KEY] = True
+        return firestore_store.find_by_fields(PROJECTS_COLLECTION, filters)
 
-    def get_by_id(self, project_id: str) -> dict:
+    def get_by_id(self, project_id: str, public: bool = False) -> dict:
         cached = self._load_cached_project(self._project_by_id_key(project_id))
         if cached:
+            if public and not self._is_public_project(cached):
+                raise HTTPException(status_code=404, detail="Project not found.")
             return cached
 
         project = firestore_store.get(PROJECTS_COLLECTION, project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found.")
+        if public and not self._is_public_project(project):
+            raise HTTPException(status_code=404, detail="Project not found.")
         self._set_cached_project(project)
         return project
 
-    def get_by_slug(self, owner_username: str, project_slug: str) -> dict:
+    def get_by_slug(self, owner_username: str, project_slug: str, public: bool = False) -> dict:
         cached = self._load_cached_project(self._project_by_slug_key(owner_username, project_slug))
         if cached:
+            if public and not self._is_public_project(cached):
+                raise HTTPException(status_code=404, detail="Project not found.")
             return cached
 
         from app.services.user_service import user_service
@@ -169,10 +183,10 @@ class ProjectsService:
         if not owner_id:
             raise HTTPException(status_code=404, detail="Project not found.")
 
-        matches = firestore_store.find_by_fields(
-            PROJECTS_COLLECTION,
-            {PROJECT_OWNER_KEY: owner_id, PROJECT_SLUG_KEY: project_slug},
-        )
+        filters: dict[str, object] = {PROJECT_OWNER_KEY: owner_id, PROJECT_SLUG_KEY: project_slug}
+        if public:
+            filters[PROJECT_PUBLIC_KEY] = True
+        matches = firestore_store.find_by_fields(PROJECTS_COLLECTION, filters)
         if not matches:
             raise HTTPException(status_code=404, detail="Project not found.")
         project = matches[0]

@@ -223,10 +223,8 @@ class UserService:
             except Exception:
                 logger.exception("Failed to delete project for user_id=%s", user_id)
 
-        standalone_papers = papers_service.list_owned(user_id)
+        standalone_papers = papers_service.list_standalone(user_id)
         for paper in standalone_papers:
-            if paper.get("projectId"):
-                continue
             try:
                 papers_service.delete(paper["paperId"])
                 deleted_counts["papers"] += 1

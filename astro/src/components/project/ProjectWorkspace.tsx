@@ -42,6 +42,7 @@ import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
 import ScrollToTop from "../scrollToTop";
 import { ApiShowcase } from "../apiShowcase";
+import ProjectCard from "./ProjectCard";
 
 type ProjectWorkspaceProps = {
   projectId: string;
@@ -858,20 +859,7 @@ export default function ProjectWorkspace({
                         </div>
 
                         {collections.map((collection) => (
-                          <div key={collection.collectionId} className="flex flex-col items-center">
-                            <a href={`/dashboard/${projectId}/${collection.collectionId}`}>
-                              <div className="relative inline-flex">
-                                <FolderNotes />
-                                {!collection.isPublic ? (
-                                  <span className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full border bg-background">
-                                    <LockIcon size={12} />
-                                  </span>
-                                ) : null}
-                              </div>
-                            </a>
-                            <p className="text-sm">{collection.name}</p>
-                            <p className="mt-2 text-xs text-muted-foreground">{collection.pagesNumber} pages</p>
-                          </div>
+                          <ProjectCard project={collection} href={`/dashboard/${projectId}/${collection.collectionId}`} />
                         ))}
                       </div>
                     )}

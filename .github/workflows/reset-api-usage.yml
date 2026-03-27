@@ -11,5 +11,5 @@ jobs:
     steps:
       - name: Reset API key usage counters
         run: |
-          curl -f -X POST "${{ secrets.API_BASE_URL }}/api/v1/reset-api-usage" \
+          curl -f -X POST "${{ secrets.API_BASE_URL }}/reset-api-usage" \
             -H "x-cron-secret: ${{ secrets.CRON_SECRET }}"

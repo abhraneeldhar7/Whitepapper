@@ -17,6 +17,7 @@ COLLECTION_ID_KEY = "collectionId"
 COLLECTION_OWNER_KEY = "ownerId"
 COLLECTION_PROJECT_KEY = "projectId"
 COLLECTION_SLUG_KEY = "slug"
+COLLECTION_PUBLIC_KEY = "isPublic"
 
 
 class CollectionsService:
@@ -103,8 +104,15 @@ class CollectionsService:
                 continue
             papers_service.update(paper["paperId"], {"status": target_status})
 
-    def list_project_collections(self, project_id: str) -> list[dict]:
-        return firestore_store.find_by_fields(COLLECTIONS_COLLECTION, {COLLECTION_PROJECT_KEY: project_id})
+    @staticmethod
+    def _is_public_collection(collection: dict | None) -> bool:
+        return bool(collection) and bool(collection.get(COLLECTION_PUBLIC_KEY))
+
+    def list_project_collections(self, project_id: str, public: bool = False) -> list[dict]:
+        filters: dict[str, object] = {COLLECTION_PROJECT_KEY: project_id}
+        if public:
+            filters[COLLECTION_PUBLIC_KEY] = True
+        return firestore_store.find_by_fields(COLLECTIONS_COLLECTION, filters)
 
     def create(self, owner_id: str, payload: dict) -> dict:
         collection_id = str(uuid4())
@@ -205,29 +213,35 @@ class CollectionsService:
         )
         return {"ok": True}
 
-    def get_by_id(self, collection_id: str) -> dict:
+    def get_by_id(self, collection_id: str, public: bool = False) -> dict:
         cached = self._load_cached_collection(self._collection_by_id_key(collection_id))
         if cached:
+            if public and not self._is_public_collection(cached):
+                raise HTTPException(status_code=404, detail="Collection not found.")
             return cached
 
         collection = firestore_store.get(COLLECTIONS_COLLECTION, collection_id)
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found.")
+        if public and not self._is_public_collection(collection):
+            raise HTTPException(status_code=404, detail="Collection not found.")
         self._set_cached_collection(collection)
         return collection
 
-    def get_by_slug(self, project_id: str, collection_slug: str) -> dict:
+    def get_by_slug(self, project_id: str, collection_slug: str, public: bool = False) -> dict:
         cached = self._load_cached_collection(self._collection_by_slug_key(project_id, collection_slug))
         if cached:
+            if public and not self._is_public_collection(cached):
+                raise HTTPException(status_code=404, detail="Collection not found.")
             return cached
 
-        matches = firestore_store.find_by_fields(
-            COLLECTIONS_COLLECTION,
-            {
-                COLLECTION_PROJECT_KEY: project_id,
-                COLLECTION_SLUG_KEY: collection_slug,
-            },
-        )
+        filters: dict[str, object] = {
+            COLLECTION_PROJECT_KEY: project_id,
+            COLLECTION_SLUG_KEY: collection_slug,
+        }
+        if public:
+            filters[COLLECTION_PUBLIC_KEY] = True
+        matches = firestore_store.find_by_fields(COLLECTIONS_COLLECTION, filters)
         if not matches:
             raise HTTPException(status_code=404, detail="Collection not found.")
         collection = matches[0]

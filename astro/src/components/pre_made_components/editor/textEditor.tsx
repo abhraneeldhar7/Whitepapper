@@ -23,7 +23,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
         const fileInputRef = useRef<HTMLInputElement>(null);
         const editor = useMarkdownEditor({
             md: {
-                html: true,
+                html: false,
             },
             initial: {
                 mode: 'wysiwyg',

@@ -1,0 +1,26 @@
+Remaining API Slowdown Factors (Simple English)
+Updated: 2026-03-27
+
+1) Big delete requests are still heavy.
+Deleting a project or collection can still trigger many database and storage deletes in one request path.
+
+2) Visibility updates still fan out to many records.
+Changing project/collection visibility can still loop through child records and update them one by one.
+
+3) Image upload and image cleanup still depend on remote storage I/O.
+Even with some background work, upload/delete calls can still be slow when storage is slow.
+
+4) Dashboard endpoints still sort in Python.
+They fetch lists and then sort in app code, which gets slower as data grows.
+
+5) API key maintenance endpoints still scan many keys.
+Reset/sync operations can be slow because they iterate through all keys.
+
+6) Some writes still trigger follow-up count refreshes.
+Paper create/delete updates project/collection page counts, which adds extra database work.
+
+7) Public/project pages can still become heavy with very large datasets.
+Without pagination, large projects/collections can still produce slow responses.
+
+8) There is still no full step-by-step endpoint timing in code.
+Without per-step timing logs, it is harder to quickly find the exact bottleneck in production.
