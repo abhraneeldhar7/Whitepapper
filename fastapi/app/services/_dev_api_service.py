@@ -4,6 +4,7 @@ import pickle
 from uuid import uuid4
 
 from fastapi import HTTPException
+from redis import Redis
 
 from app.core.cache_policies import API_KEY_CACHE_POLICY
 from app.core.constants import API_KEY_LIMIT_PER_MONTH
@@ -21,8 +22,8 @@ class DevApiService:
     def _doc_cache_key(self, key_hash: str) -> str:
         return f"{get_cache_prefix()}:api_keys:doc:{key_hash}"
 
-    def _read_cached_doc(self, key_hash: str) -> dict | None:
-        client = get_redis_client()
+    def _read_cached_doc(self, key_hash: str, client: Redis | None = None) -> dict | None:
+        client = client or get_redis_client()
         if not client:
             return None
         try:
@@ -35,8 +36,8 @@ class DevApiService:
             logger.exception("API key cache read failed for key_hash=%s", key_hash)
             return None
 
-    def _write_cached_doc(self, doc: dict) -> None:
-        client = get_redis_client()
+    def _write_cached_doc(self, doc: dict, client: Redis | None = None) -> None:
+        client = client or get_redis_client()
         if not client:
             return
         key_hash = doc.get(API_KEY_HASH_KEY)
@@ -51,15 +52,15 @@ class DevApiService:
         except Exception:
             logger.exception("API key cache write failed for key_hash=%s", key_hash)
 
-    def _read_doc_by_hash(self, key_hash: str) -> dict | None:
-        cached = self._read_cached_doc(key_hash)
+    def _read_doc_by_hash(self, key_hash: str, client: Redis | None = None) -> dict | None:
+        cached = self._read_cached_doc(key_hash, client=client)
         if cached:
             return cached
 
         matches = firestore_store.find_by_fields(API_KEYS_COLLECTION, {API_KEY_HASH_KEY: key_hash})
         doc = matches[0] if matches else None
         if doc:
-            self._write_cached_doc(doc)
+            self._write_cached_doc(doc, client=client)
         return doc
 
     @staticmethod
@@ -106,7 +107,7 @@ class DevApiService:
         key_hash = current.get(API_KEY_HASH_KEY)
         client = get_redis_client()
         if client and key_hash:
-            cached_doc = self._read_cached_doc(key_hash)
+            cached_doc = self._read_cached_doc(key_hash, client=client)
             merged_doc = dict(current)
             if cached_doc:
                 merged_doc.update(cached_doc)
@@ -135,15 +136,15 @@ class DevApiService:
 
     def validate_key(self, raw_key: str) -> dict:
         key_hash = self.hash_raw_key(raw_key)
-        key_doc = self._read_doc_by_hash(key_hash)
+        client = get_redis_client()
+        key_doc = self._read_doc_by_hash(key_hash, client=client)
         if not key_doc:
             raise HTTPException(status_code=401, detail="Invalid API key.")
 
         if not key_doc.get("isActive", True):
-            client = get_redis_client()
             if client:
                 try:
-                    cached_doc = self._read_cached_doc(key_hash)
+                    cached_doc = self._read_cached_doc(key_hash, client=client)
                     merged_doc = dict(key_doc)
                     if cached_doc:
                         merged_doc.update(cached_doc)
@@ -165,15 +166,16 @@ class DevApiService:
     def increment_usage(self, key_hash: str | None) -> None:
         if not key_hash:
             return
-        if not get_redis_client():
+        client = get_redis_client()
+        if not client:
             return
 
-        key_doc = self._read_doc_by_hash(key_hash)
+        key_doc = self._read_doc_by_hash(key_hash, client=client)
         if not key_doc:
             return
 
         key_doc["usage"] = int(key_doc.get("usage", 0)) + 1
-        self._write_cached_doc(key_doc)
+        self._write_cached_doc(key_doc, client=client)
 
     def get_project_api_key(self, project_id: str, owner_id: str) -> dict | None:
         matches = firestore_store.find_by_fields(
@@ -185,15 +187,17 @@ class DevApiService:
             return None
 
         key_hash = key_doc.get(API_KEY_HASH_KEY)
+        client = get_redis_client()
         if key_hash:
-            cached_doc = self._read_doc_by_hash(key_hash)
+            cached_doc = self._read_doc_by_hash(key_hash, client=client)
             if cached_doc:
                 key_doc = cached_doc
 
         return self._public_doc(key_doc)
 
     def sync_cache_with_firestore(self) -> int:
-        if not get_redis_client():
+        client = get_redis_client()
+        if not client:
             return 0
 
         all_keys = firestore_store.list_all(API_KEYS_COLLECTION)
@@ -202,7 +206,7 @@ class DevApiService:
             key_hash = key_doc.get(API_KEY_HASH_KEY)
             if not key_hash:
                 continue
-            cached_doc = self._read_cached_doc(key_hash)
+            cached_doc = self._read_cached_doc(key_hash, client=client)
             merged_doc = dict(key_doc)
             if cached_doc:
                 merged_doc.update(cached_doc)
@@ -210,13 +214,14 @@ class DevApiService:
             if key_id:
                 firestore_store.update(API_KEYS_COLLECTION, key_id, merged_doc)
             try:
-                get_redis_client().delete(self._doc_cache_key(key_hash))
+                client.delete(self._doc_cache_key(key_hash))
             except Exception:
                 logger.exception("API key cache delete failed for key_hash=%s", key_hash)
             synced += 1
         return synced
 
     def reset_all_usage(self) -> int:
+        client = get_redis_client()
         all_keys = firestore_store.list_all(API_KEYS_COLLECTION)
         count = 0
         for key in all_keys:
@@ -225,9 +230,8 @@ class DevApiService:
                 continue
             if int(key.get("usage", 0)) <= 0:
                 continue
-            client = get_redis_client()
             if client:
-                cached_doc = self._read_cached_doc(key_hash)
+                cached_doc = self._read_cached_doc(key_hash, client=client)
                 merged_doc = dict(key)
                 if cached_doc:
                     merged_doc.update(cached_doc)

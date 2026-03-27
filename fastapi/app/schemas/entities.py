@@ -142,7 +142,6 @@ class PaperCreateResponse(BaseModel):
 class DevProjectPayload(BaseModel):
     project: ProjectDoc
     collections: list[CollectionDoc]
-    papers: list[PaperDoc]
 
 
 class DevCollectionPayload(BaseModel):
@@ -152,8 +151,6 @@ class DevCollectionPayload(BaseModel):
 
 class DevPaperPayload(BaseModel):
     paper: PaperDoc
-    project: ProjectDoc | None = None
-    collection: CollectionDoc | None = None
 
 
 class DashboardPayload(BaseModel):

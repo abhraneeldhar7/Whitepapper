@@ -101,16 +101,10 @@ def get_project_bundle(
         for item in collections_service.list_project_collections(project_id)
         if bool(item.get("isPublic"))
     ]
-    papers = [
-        item
-        for item in papers_service.list_by_project_id(project_id)
-        if item.get("status") == "published" and not item.get("collectionId")
-    ]
 
     return {
         "project": project,
         "collections": collections,
-        "papers": papers,
     }
 
 
@@ -166,33 +160,8 @@ def get_paper(
     paper = _resolve_paper_for_project(authorized_project, paper_id, paper_slug)
     _add_usage_increment(background_tasks, key_doc)
 
-    matched_project = None
-    matched_collection = None
-
-    paper_project_id = str(paper.get("projectId") or "")
-    if paper_project_id:
-        try:
-            project = projects_service.get_by_id(paper_project_id)
-            if bool(project.get("isPublic")):
-                matched_project = project
-        except HTTPException as exc:
-            if exc.status_code != 404:
-                raise
-
-    collection_id = str(paper.get("collectionId") or "")
-    if collection_id:
-        try:
-            collection = collections_service.get_by_id(collection_id)
-            if bool(collection.get("isPublic")):
-                matched_collection = collection
-        except HTTPException as exc:
-            if exc.status_code != 404:
-                raise
-
     return {
         "paper": paper,
-        "project": matched_project,
-        "collection": matched_collection,
     }
 
 
