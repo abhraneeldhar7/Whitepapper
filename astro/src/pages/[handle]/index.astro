@@ -7,6 +7,12 @@ import styles from "@/components/profile.module.css";
 const routeHandle = Astro.params.handle as string;
 const handle = routeHandle.replace(/^@+/, "").trim().toLowerCase();
 
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+);
+
 let userData;
 try {
   userData = await getPublicProfile(handle);

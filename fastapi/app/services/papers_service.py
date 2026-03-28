@@ -14,6 +14,7 @@ from app.core.constants import (
 from app.core.firestore_store import firestore_store, utc_now
 from app.core.redis_client import get_cache_prefix, get_redis_client
 from app.core.reserved_paths import is_reserved_paper_slug
+from app.services.paper_metadata_service import paper_metadata_service
 from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
 from app.services.storage_service import storage_service
@@ -59,6 +60,33 @@ class PapersService:
     @staticmethod
     def _first_or_none(items: list[dict]) -> dict | None:
         return items[0] if items else None
+
+    @staticmethod
+    def _resolve_author_doc(owner_id: str | None) -> dict | None:
+        if not owner_id:
+            return None
+        from app.services.user_service import user_service
+
+        try:
+            return user_service.get_by_id(owner_id)
+        except HTTPException:
+            return None
+
+    @staticmethod
+    def _resolve_project_doc(project_id: str | None) -> dict | None:
+        if not project_id:
+            return None
+        try:
+            return projects_service.get_by_id(project_id)
+        except HTTPException:
+            return None
+
+    def _build_metadata(self, paper_doc: dict) -> dict:
+        return paper_metadata_service.build_metadata(
+            paper_doc=paper_doc,
+            author_doc=self._resolve_author_doc(paper_doc.get(PAPER_OWNER_KEY)),
+            project_doc=self._resolve_project_doc(paper_doc.get(PAPER_PROJECT_KEY)),
+        )
 
     def _load_cached_paper(self, key: str) -> dict | None:
         client = get_redis_client()
@@ -347,6 +375,7 @@ class PapersService:
         payload[PAPER_ID_KEY] = paper_id
         payload["createdAt"] = now
         payload["updatedAt"] = now
+        payload["metadata"] = self._build_metadata(payload)
         firestore_store.create(PAPERS_COLLECTION, payload, doc_id=paper_id)
 
         if collection_id:
@@ -358,7 +387,7 @@ class PapersService:
 
         return {"paperId": paper_id, "projectId": resolved_project_id}
 
-    def update(self, paper_id: str, payload: dict) -> dict:
+    def update(self, paper_id: str, payload: dict, *, force_metadata_refresh: bool = False) -> dict:
         current = firestore_store.get(PAPERS_COLLECTION, paper_id)
         if not current:
             raise HTTPException(status_code=404, detail="Paper not found.")
@@ -375,7 +404,7 @@ class PapersService:
                 raise HTTPException(status_code=409, detail="Paper slug already exists.")
             payload["slug"] = new_slug
 
-        if not payload:
+        if not payload and not force_metadata_refresh:
             return current
 
         previous_slug = current.get(PAPER_SLUG_KEY)
@@ -390,6 +419,8 @@ class PapersService:
             except HTTPException:
                 owner_username = None
         payload["updatedAt"] = utc_now()
+        merged_doc = {**current, **payload}
+        payload["metadata"] = self._build_metadata(merged_doc)
         firestore_store.update(PAPERS_COLLECTION, paper_id, payload)
         current.update(payload)
         self.invalidate_paper(

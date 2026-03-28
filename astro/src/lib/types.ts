@@ -9,8 +9,27 @@ export type UserDoc = {
   preferences?: {
     showKeyboardEffect?: boolean;
     typingSoundEnabled?: boolean;
+    hashnodeStoreInCloud?: boolean;
+    hashnodeIntegrated?: boolean;
+    devtoStoreInCloud?: boolean;
+    devtoIntegrated?: boolean;
   };
   createdAt: string;
+  updatedAt: string;
+};
+
+export type HashnodeDistribution = {
+  accessToken: string;
+};
+
+export type DevtoDistribution = {
+  accessToken: string;
+};
+
+export type DistributionDoc = {
+  userId: string;
+  hashnode?: HashnodeDistribution | null;
+  devto?: DevtoDistribution | null;
 };
 
 export type ProjectDoc = {
@@ -49,8 +68,46 @@ export type PaperDoc = {
   slug: string;
   body: string;
   status: "draft" | "published" | "archived";
+  metadata?: PaperMetadata | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type PaperMetadata = {
+  title: string;
+  metaDescription: string;
+  canonical: string;
+  robots: string;
+  ogTitle: string;
+  ogDescription: string;
+  ogImage: string;
+  ogImageWidth: number;
+  ogImageHeight: number;
+  ogImageAlt: string;
+  ogLocale: string;
+  ogPublishedTime: string;
+  ogModifiedTime: string;
+  ogAuthorUrl: string;
+  ogTags: string[];
+  twitterTitle: string;
+  twitterDescription: string;
+  twitterImage: string;
+  twitterImageAlt: string;
+  twitterCreator?: string | null;
+  headline: string;
+  abstract: string;
+  keywords: string;
+  articleSection: string;
+  wordCount: number;
+  inLanguage: string;
+  datePublished: string;
+  dateModified: string;
+  authorName: string;
+  authorUrl: string;
+  authorId: string;
+  coverImageUrl: string;
+  isAccessibleForFree: boolean;
+  license: string;
 };
 
 export type PublicAuthorSummary = {
@@ -61,7 +118,6 @@ export type PublicAuthorSummary = {
 
 export type PublicPaperPagePayload = {
   paper: PaperDoc;
-  author: PublicAuthorSummary;
 };
 
 export type PaperCreateResponse = {

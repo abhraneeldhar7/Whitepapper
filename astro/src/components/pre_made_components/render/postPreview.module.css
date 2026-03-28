@@ -5,10 +5,10 @@
 }
 
 .markdownDiv p {
-    font-size: 18px;
-    line-height: 1.9;
+    font-size: 17px;
+    line-height: 2;
     margin: 0 0 0.9em;
-    font-weight: 450;
+    font-weight: 435;
     /* opacity: 0.8; */
     color: var(--muted-foreground, #1a1a1a);
 }
@@ -177,7 +177,7 @@
 
 /* Inline Code - code elements NOT inside pre tags */
 .markdownDiv code:not(pre code) {
-    font-size: 17px;
+    font-size: 16px;
     background-color: var(--muted) !important;
     color: var(--foreground, #1a1a1a) !important;
     padding: 0.2em 0.4em;
@@ -196,6 +196,7 @@
     overflow: hidden;
     color: var(--muted-foreground);
     border: 1px solid var(--border);
+
 }
 
 /* Code inside pre tags (code blocks) */
@@ -423,7 +424,7 @@
     .markdownDiv p {
         font-size: 17px;
         /* font-weight: 400; */
-        line-height: 1.85;
+        line-height: 1.95;
     }
 
     .markdownDiv h1 {

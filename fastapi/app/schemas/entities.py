@@ -13,6 +13,10 @@ class AuthUser(BaseModel):
 class UserPreferences(BaseModel):
     showKeyboardEffect: bool = False
     typingSoundEnabled: bool = False
+    hashnodeStoreInCloud: bool = False
+    hashnodeIntegrated: bool = False
+    devtoStoreInCloud: bool = False
+    devtoIntegrated: bool = False
 
 
 class UserDoc(BaseModel):
@@ -25,7 +29,34 @@ class UserDoc(BaseModel):
     plan: Literal["free", "pro"] = "free"
     preferences: UserPreferences = Field(default_factory=UserPreferences)
     createdAt: datetime
+    updatedAt: datetime
 
+
+class HashnodeDistribution(BaseModel):
+    accessToken: str
+
+
+
+
+class HashnodeDistributionUpsert(BaseModel):
+    accessToken: str = Field(min_length=1)
+    storeInCloud: bool = False
+
+
+class DevtoDistribution(BaseModel):
+    accessToken: str
+
+
+class DevtoDistributionUpsert(BaseModel):
+    accessToken: str = Field(min_length=1)
+    storeInCloud: bool = False
+
+
+
+class DistributionDoc(BaseModel):
+    userId: str
+    hashnode: HashnodeDistribution | None = None
+    devto: DevtoDistribution | None = None
 
 class ProjectDoc(BaseModel):
     projectId: str
@@ -90,6 +121,43 @@ class CollectionVisibilityToggle(BaseModel):
     isPublic: bool
 
 
+class PaperMetadata(BaseModel):
+    title: str
+    metaDescription: str
+    canonical: str
+    robots: str
+    ogTitle: str
+    ogDescription: str
+    ogImage: str
+    ogImageWidth: int
+    ogImageHeight: int
+    ogImageAlt: str
+    ogLocale: str
+    ogPublishedTime: str
+    ogModifiedTime: str
+    ogAuthorUrl: str
+    ogTags: list[str]
+    twitterTitle: str
+    twitterDescription: str
+    twitterImage: str
+    twitterImageAlt: str
+    twitterCreator: str | None = None
+    headline: str
+    abstract: str
+    keywords: str
+    articleSection: str
+    wordCount: int
+    inLanguage: str
+    datePublished: str
+    dateModified: str
+    authorName: str
+    authorUrl: str
+    authorId: str
+    coverImageUrl: str
+    isAccessibleForFree: bool
+    license: str
+
+
 class PaperDoc(BaseModel):
     paperId: str
     collectionId: str | None = None
@@ -100,6 +168,7 @@ class PaperDoc(BaseModel):
     slug: str
     body: str = ""
     status: Literal["draft", "published", "archived"] = "draft"
+    metadata: PaperMetadata | None = None
     createdAt: datetime
     updatedAt: datetime
 
@@ -112,7 +181,6 @@ class PublicAuthorSummary(BaseModel):
 
 class PublicPaperPagePayload(BaseModel):
     paper: PaperDoc
-    author: PublicAuthorSummary
 
 
 class PaperCreate(BaseModel):

@@ -5,7 +5,7 @@ from urllib.parse import urlsplit, urlunsplit
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
 
 from app.services.auth_service import get_verified_id
-from app.schemas.users import UserProfile
+from app.schemas.users import UserProfile, UserUpdate
 from app.schemas.entities import DashboardPayload
 from app.core.constants import (
     MAX_PROFILE_IMAGE_HEIGHT,
@@ -44,12 +44,12 @@ def get_me(user_id: str = Depends(get_verified_id)) -> UserProfile:
 
 @router.patch("/me", response_model=UserProfile)
 def patch_me(
-    payload: UserProfile,
+    payload: UserUpdate,
     user_id: str = Depends(get_verified_id),
 ) -> UserProfile:
     return user_service.update_user(
         user_id,
-        payload.model_dump(),
+        payload.model_dump(exclude_none=True),
     )
 
 
@@ -112,5 +112,8 @@ def get_dashboard_data(user_id: str = Depends(get_verified_id)) -> DashboardPayl
 
 
 @router.get("/{username}", response_model=UserProfile)
-def get_user_by_username(username: str) -> UserProfile:
+def get_user_by_username(
+    username: str,
+    _user_id: str = Depends(get_verified_id),
+) -> UserProfile:
     return user_service.get_by_username(username)

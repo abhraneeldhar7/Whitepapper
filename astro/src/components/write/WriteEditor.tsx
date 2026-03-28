@@ -236,7 +236,6 @@ export default function WriteEditor({ initialPaper, initialUser }: WriteEditorPr
     );
 
     void updateCurrentUser({
-      ...user,
       preferences: nextPreferences,
     })
       .then((updatedUser) => {

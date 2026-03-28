@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { ImagePlus, Save } from "lucide-react";
+import { ImagePlus, Save, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { uploadProfileImage } from "@/lib/api/uploads";
@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { DevtoCard } from "../integrations/devto";
+import { HashnodeCard } from "../integrations/hashnode";
 
 type SettingsPageProps = {
   initialUser: UserDoc;
@@ -59,9 +61,9 @@ export default function SettingsPage({ initialUser }: SettingsPageProps) {
         compressedBlob instanceof File
           ? compressedBlob
           : new File([compressedBlob], file.name || "profile.jpg", {
-              type: "image/jpeg",
-              lastModified: Date.now(),
-            });
+            type: "image/jpeg",
+            lastModified: Date.now(),
+          });
 
       return uploadProfileImage(uploadableFile);
     })();
@@ -86,7 +88,12 @@ export default function SettingsPage({ initialUser }: SettingsPageProps) {
     }
 
     setSaving(true);
-    const savePromise = updateCurrentUser(userDetails);
+    const savePromise = updateCurrentUser({
+      displayName: currentEditable.displayName,
+      username: currentEditable.username,
+      description: currentEditable.description,
+      avatarUrl: currentEditable.avatarUrl,
+    });
 
     toast.promise(savePromise, {
       loading: "Saving settings...",
@@ -104,89 +111,114 @@ export default function SettingsPage({ initialUser }: SettingsPageProps) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[600px] px-[15px] py-10 space-y-10">
-      <div className="space-y-2">
-        <h1 className="font-[Satoshi] text-[30px] leading-[1em]">Settings</h1>
-        <p className="text-sm text-muted-foreground">Manage your profile details.</p>
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-[15px] pt-15 pb-25">
+      <div>
+        <p className="text-sm text-muted-foreground">
+          <a href={`/${userDetails.username}`} className="transition-all duration-300 hover:text-foreground">User</a> / Settings
+        </p>
       </div>
 
-      <div className="space-y-4">
-        <Label>Profile Picture</Label>
-        <div className="flex items-center gap-4">
-          <div className="h-[80px] w-[80px] overflow-hidden rounded-[14px] border-[4px] border-card shadow">
-            {userDetails.avatarUrl ? (
-              <img src={userDetails.avatarUrl} className="h-full w-full object-cover" alt="Profile" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-muted text-lg font-semibold">
-                {(userDetails.displayName || userDetails.username || "U").trim().charAt(0).toUpperCase()}
+      <div className="flex gap-20 md:flex-row flex-col ">
+
+        <div className="md:flex-1 md:w-[350px]">
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="h-[80px] w-[80px] overflow-hidden rounded-[14px] border-[4px] border-card shadow" onClick={() => fileInputRef.current?.click()}>
+                {userDetails.avatarUrl ? (
+                  <img src={userDetails.avatarUrl} className="h-full w-full object-cover" alt="Profile" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-muted text-lg font-semibold">
+                    {(userDetails.displayName || userDetails.username || "U").trim().charAt(0).toUpperCase()}
+                  </div>
+                )}
               </div>
-            )}
+
+              <div className={`overflow-hidden flex gap-2 transition-all duration-300 ${hasChanges ? "opacity-100 h-full" : "opacity-0 h-0"}`} >
+                <Button variant="secondary" onClick={() => { setUserDetails(initialUser) }}><XIcon /></Button>
+                <Button type="button" onClick={onSave} disabled={!hasChanges || uploadingAvatar} loading={saving}>
+                  <Save /> Save
+                </Button>
+              </div>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) {
+                  void onPickAvatar(file);
+                }
+                event.currentTarget.value = "";
+              }}
+            />
           </div>
-          <div className="space-y-2">
-            <Button
-              type="button"
-              variant="secondary"
-              loading={uploadingAvatar}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <ImagePlus /> Upload
-            </Button>
-            <p className="text-xs text-muted-foreground">Image is cropped and compressed to 1000x1000.</p>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Name</Label>
+              <Input
+                id="displayName"
+                value={userDetails.displayName ?? ""}
+                onChange={(event) => updateField("displayName", event.target.value)}
+                placeholder="Your name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="username">Handle</Label>
+              <Input
+                id="username"
+                value={userDetails.username}
+                onChange={(event) => updateField("username", event.target.value)}
+                placeholder="your-handle"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">About</Label>
+              <Textarea
+                id="about"
+                value={userDetails.description}
+                onChange={(event) => updateField("description", event.target.value)}
+                placeholder="Tell people about yourself"
+                className="min-h-[120px] max-h-[160px]"
+              />
+            </div>
           </div>
         </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) {
-              void onPickAvatar(file);
-            }
-            event.currentTarget.value = "";
-          }}
-        />
-      </div>
 
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="displayName">Name</Label>
-          <Input
-            id="displayName"
-            value={userDetails.displayName ?? ""}
-            onChange={(event) => updateField("displayName", event.target.value)}
-            placeholder="Your name"
-          />
+
+        <div className="md:flex-1">
+          <h2>Integraitons</h2>
+
+          <div className="mt-5 flex flex-col w-full gap-4">
+            <HashnodeCard
+              user={userDetails}
+              onUserUpdated={(updatedUser) => {
+                setUserDetails((current) => ({
+                  ...current,
+                  preferences: updatedUser.preferences,
+                }));
+              }}
+            />
+            <DevtoCard
+              user={userDetails}
+              onUserUpdated={(updatedUser) => {
+                setUserDetails((current) => ({
+                  ...current,
+                  preferences: updatedUser.preferences,
+                }));
+              }}
+            />
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="username">Handle</Label>
-          <Input
-            id="username"
-            value={userDetails.username}
-            onChange={(event) => updateField("username", event.target.value)}
-            placeholder="your-handle"
-          />
-        </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            value={userDetails.description}
-            onChange={(event) => updateField("description", event.target.value)}
-            placeholder="Tell people about yourself"
-            className="min-h-[120px]"
-          />
-        </div>
+
       </div>
 
-      <div className="flex justify-end pt-2">
-        <Button type="button" onClick={onSave} disabled={!hasChanges || uploadingAvatar} loading={saving}>
-          <Save /> Save
-        </Button>
-      </div>
     </div>
   );
 }

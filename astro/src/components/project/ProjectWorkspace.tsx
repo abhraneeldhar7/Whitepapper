@@ -526,7 +526,7 @@ export default function ProjectWorkspace({
   const projectPreviewKey = `${project.projectId}:${project.updatedAt}:${projectDescription.length}`;
 
   return (
-    <div className="min-h-screen bg-background px-[15px] pt-15 pb-20">
+    <div className="min-h-screen px-[15px] pt-15 pb-20">
       <ScrollToTop />
       <div className="z-[10] fixed top-4 right-4">
         <UserPopover user={initialUser} />

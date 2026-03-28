@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     app_name: str = "Whitepapper_API"
     redis_prefix: str = "whitepapper"
     cors_origins: str = "https://whitepapper.antk.in,http://localhost:4321"
+    public_site_url: str | None = None
 
     clerk_webhook_signing_secret: str | None = None
     clerk_secret_key: str | None = None
@@ -35,6 +36,7 @@ class Settings(BaseSettings):
     valkey_port: int | None = None
     valkey_user: str | None = None
     valkey_password: str | None = None
+    groq_api_key: str | None = None
 
 
 @lru_cache

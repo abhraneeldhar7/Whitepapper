@@ -16,10 +16,18 @@ export async function getDashboardData(client: ApiClient = apiClient): Promise<D
 }
 
 export async function updateCurrentUser(
-  input: UserDoc,
+  input: UserUpdateInput,
   client: ApiClient = apiClient,
 ): Promise<UserDoc> {
   return client.patch<UserDoc>("/users/me", {
     body: input,
   });
 }
+
+export type UserUpdateInput = {
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  username?: string;
+  description?: string;
+  preferences?: UserDoc["preferences"];
+};

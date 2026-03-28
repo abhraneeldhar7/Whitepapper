@@ -1,6 +1,7 @@
 import logging
 import pickle
 import secrets
+from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 USERS_COLLECTION = "users"
 USER_ID_KEY = "userId"
 USERNAME_KEY = "username"
+USERNAME_UPDATE_COOLDOWN = timedelta(days=7)
 
 
 class UserService:
@@ -98,6 +100,21 @@ class UserService:
             if all(item.get(USER_ID_KEY) == user_id for item in matches):
                 return candidate
 
+    @staticmethod
+    def _ensure_updated_at(user_doc: dict) -> dict:
+        if "updatedAt" in user_doc and isinstance(user_doc.get("updatedAt"), datetime):
+            return user_doc
+
+        fallback = user_doc.get("createdAt")
+        if not isinstance(fallback, datetime):
+            fallback = utc_now()
+        user_doc["updatedAt"] = fallback
+
+        user_id = user_doc.get(USER_ID_KEY)
+        if user_id:
+            firestore_store.update(USERS_COLLECTION, user_id, {"updatedAt": fallback})
+        return user_doc
+
     def create_user(
         self,
         user_id: str,
@@ -109,9 +126,10 @@ class UserService:
     ) -> dict:
         existing = firestore_store.get(USERS_COLLECTION, user_id)
         if existing:
-            return existing
+            return self._ensure_updated_at(existing)
 
         username_value = self._generate_username(email, user_id, username)
+        now = utc_now()
         created = {
             USER_ID_KEY: user_id,
             "displayName": display_name,
@@ -123,26 +141,56 @@ class UserService:
             "preferences": {
                 "showKeyboardEffect": True,
                 "typingSoundEnabled": True,
+                "hashnodeStoreInCloud": False,
+                "hashnodeIntegrated": False,
+                "devtoStoreInCloud": False,
+                "devtoIntegrated": False,
             },
-            "createdAt": utc_now(),
+            "createdAt": now,
+            "updatedAt": now,
         }
         firestore_store.create(USERS_COLLECTION, created, doc_id=user_id)
         return created
+
+    @staticmethod
+    def _can_change_username(user_doc: dict) -> bool:
+        updated_at = user_doc.get("updatedAt") or user_doc.get("createdAt")
+        if not isinstance(updated_at, datetime):
+            return True
+        return utc_now() - updated_at >= USERNAME_UPDATE_COOLDOWN
+
+    @staticmethod
+    def _refresh_user_papers_after_username_change(user_id: str) -> None:
+        papers = papers_service.list_owned(user_id)
+        for paper in papers:
+            paper_id = paper.get("paperId")
+            if not paper_id:
+                continue
+            try:
+                papers_service.update(paper_id, {}, force_metadata_refresh=True)
+            except Exception:
+                logger.exception(
+                    "Failed to refresh paper metadata after username change for user_id=%s paper_id=%s",
+                    user_id,
+                    paper_id,
+                )
 
     def update_user(self, user_id: str, user_doc: dict) -> dict:
         current = firestore_store.get(USERS_COLLECTION, user_id)
         if not current:
             raise HTTPException(status_code=404, detail="User not found.")
+        current = self._ensure_updated_at(current)
 
         allowed_fields = {
             "displayName",
-            "email",
             "avatarUrl",
             USERNAME_KEY,
             "description",
             "preferences",
         }
         payload = {key: user_doc[key] for key in allowed_fields if key in user_doc}
+        previous_username = current.get(USERNAME_KEY)
+        username_changed = False
 
         if USERNAME_KEY in payload:
             next_username = normalize_slug(str(payload[USERNAME_KEY] or ""))
@@ -153,18 +201,39 @@ class UserService:
             matches = firestore_store.find_by_fields(USERS_COLLECTION, {USERNAME_KEY: next_username})
             if any(item.get(USER_ID_KEY) != user_id for item in matches):
                 raise HTTPException(status_code=409, detail="Username already taken.")
+            username_changed = next_username != previous_username
+            if username_changed and not self._can_change_username(current):
+                raise HTTPException(
+                    status_code=429,
+                    detail="Username can only be changed once every 7 days.",
+                )
             payload[USERNAME_KEY] = next_username
 
         if "description" in payload and not isinstance(payload["description"], str):
             raise HTTPException(status_code=400, detail="description must be a string.")
 
+        if "preferences" in payload:
+            if not isinstance(payload["preferences"], dict):
+                raise HTTPException(status_code=400, detail="preferences must be an object.")
+            existing_preferences = current.get("preferences")
+            if not isinstance(existing_preferences, dict):
+                existing_preferences = {}
+            payload["preferences"] = {
+                **existing_preferences,
+                **payload["preferences"],
+            }
+
         if not payload:
             return current
 
-        previous_username = current.get(USERNAME_KEY)
+        if username_changed:
+            payload["updatedAt"] = utc_now()
+
         firestore_store.update(USERS_COLLECTION, user_id, payload)
         current.update(payload)
         self.invalidate_user(previous_username)
+        if username_changed:
+            self._refresh_user_papers_after_username_change(user_id)
         return current
 
     def get_by_username(self, username: str) -> dict:
@@ -176,13 +245,16 @@ class UserService:
 
         cached = self.getcached_user__by_username(value)
         if cached:
-            return cached
+            hydrated = self._ensure_updated_at(cached)
+            self._set_cached_user(hydrated)
+            return hydrated
 
         matches = firestore_store.find_by_fields(USERS_COLLECTION, {USERNAME_KEY: value})
         if not matches:
             raise HTTPException(status_code=404, detail="User not found.")
 
         user_doc = matches[0]
+        user_doc = self._ensure_updated_at(user_doc)
         self._set_cached_user(user_doc)
         return user_doc
 
@@ -190,7 +262,7 @@ class UserService:
         user_doc = firestore_store.get(USERS_COLLECTION, user_id)
         if not user_doc:
             raise HTTPException(status_code=404, detail="User not found.")
-        return user_doc
+        return self._ensure_updated_at(user_doc)
 
     def is_username_available(self, username: str, user_id: str | None = None) -> bool:
         candidate = normalize_slug(username or "")

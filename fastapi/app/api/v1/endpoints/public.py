@@ -12,9 +12,7 @@ def _public_user(user: dict) -> dict:
     masked = dict(user)
     masked["userId"] = None
     masked["email"] = None
-    masked["plan"] = None
     masked["preferences"] = None
-    masked["createdAt"] = None
     return masked
 
 
@@ -53,23 +51,12 @@ def get_public_profile(handle: str) -> dict:
 
 @router.get("/{handle}/papers/{paper_slug}")
 def get_public_paper_page_data(handle: str, paper_slug: str) -> dict:
-    user = user_service.get_by_username(handle)
-    paper = papers_service.find_by_slug(
-        slug=paper_slug,
-        owner_username=user.get("username"),
-        owner_id=user.get("userId"),
-        public=True,
-    )
+    paper = papers_service.get_by_slug(handle, paper_slug, public=True)
     if not paper:
         raise HTTPException(status_code=404, detail="Paper not found.")
 
     return {
         "paper": _public_paper(paper),
-        "author": {
-            "username": user.get("username"),
-            "displayName": user.get("displayName"),
-            "avatarUrl": user.get("avatarUrl"),
-        },
     }
 
 
