@@ -9,7 +9,8 @@ import { cn, copyToClipboardWithToast } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
 
-const BASE_API_URL = import.meta.env.PUBLIC_API_BASE_URL;
+const DEV_API_DOC_BASE_URL = String(import.meta.env.PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "");
+const DEV_API_PROXY_PREFIX = "/api/dev";
 
 // API endpoints configuration
 const ENDPOINTS = [
@@ -17,7 +18,7 @@ const ENDPOINTS = [
         id: "project",
         name: "Project details",
         method: "GET",
-        path: "/dev/project",
+        path: "/project",
         description: "Get project details, public collections, and published standalone papers",
         variables: [
             { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "your-api-key" },
@@ -25,7 +26,7 @@ const ENDPOINTS = [
         hasIdentifierOptions: false,
         identifierOptions: [],
         code: {
-            typescript: `const response = await fetch("${BASE_API_URL}/dev/project", {
+            typescript: `const response = await fetch("${DEV_API_DOC_BASE_URL}${DEV_API_PROXY_PREFIX}/project", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -35,7 +36,7 @@ const ENDPOINTS = [
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("${BASE_API_URL}/dev/project", headers={
+            python: `response = requests.get("${DEV_API_DOC_BASE_URL}${DEV_API_PROXY_PREFIX}/project", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -48,7 +49,7 @@ print(data)`,
         id: "collection",
         name: "Collection details",
         method: "GET",
-        path: "/dev/collection",
+        path: "/collection",
         description: "Get collection details and its published papers",
         hasIdentifierOptions: true,
         identifierOptions: [
@@ -60,7 +61,7 @@ print(data)`,
             { name: "identifier", label: "Collection ID", type: "text", required: true, placeholder: "collection-id" },
         ],
         code: {
-            typescript: `const response = await fetch("${BASE_API_URL}/dev/collection?id=COLLECTION_ID", {
+            typescript: `const response = await fetch("${DEV_API_DOC_BASE_URL}${DEV_API_PROXY_PREFIX}/collection?id=COLLECTION_ID", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -70,7 +71,7 @@ print(data)`,
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("${BASE_API_URL}/dev/collection?id=COLLECTION_ID", headers={
+            python: `response = requests.get("${DEV_API_DOC_BASE_URL}${DEV_API_PROXY_PREFIX}/collection?id=COLLECTION_ID", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -83,7 +84,7 @@ print(data)`,
         id: "paper",
         name: "Paper details",
         method: "GET",
-        path: "/dev/paper",
+        path: "/paper",
         description: "Get paper details with associated project and collection info (if public)",
         hasIdentifierOptions: true,
         identifierOptions: [
@@ -95,7 +96,7 @@ print(data)`,
             { name: "identifier", label: "Paper ID", type: "text", required: true, placeholder: "paper-id" },
         ],
         code: {
-            typescript: `const response = await fetch("${BASE_API_URL}/dev/paper?id=PAPER_ID", {
+            typescript: `const response = await fetch("${DEV_API_DOC_BASE_URL}${DEV_API_PROXY_PREFIX}/paper?id=PAPER_ID", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -105,7 +106,7 @@ print(data)`,
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("${BASE_API_URL}/dev/paper?id=PAPER_ID", headers={
+            python: `response = requests.get("${DEV_API_DOC_BASE_URL}${DEV_API_PROXY_PREFIX}/paper?id=PAPER_ID", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -254,9 +255,7 @@ export function ApiShowcase() {
         setResponse(null);
 
         try {
-            const BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
-            let url = `${BASE_URL}${selectedEndpoint.path}`;
-            console.log(url)
+            let url = `${DEV_API_PROXY_PREFIX}${selectedEndpoint.path}`;
             const headers: HeadersInit = {
                 "x-api-key": variables.apiKey,
                 "Content-Type": "application/json",

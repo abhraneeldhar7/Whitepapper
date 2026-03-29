@@ -12,6 +12,7 @@ DEFAULT_OG_WIDTH = 1200
 DEFAULT_OG_HEIGHT = 630
 DEFAULT_LANGUAGE = "en"
 DEFAULT_OG_LOCALE = "en_US"
+READING_SPEED_WPM = 220
 STOP_WORDS = {
     "a",
     "an",
@@ -40,17 +41,12 @@ def _strip_trailing_slash(value: str) -> str:
 
 def _normalize_site_url() -> str:
     settings = get_settings()
-    raw_candidates = [settings.public_site_url]
-
-    for candidate in raw_candidates:
-        value = (candidate or "").strip()
-        if not value:
-            continue
+    value = (settings.public_site_url or "").strip()
+    if value:
         parsed = urlsplit(value)
-        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-            continue
-        normalized = urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
-        return _strip_trailing_slash(normalized)
+        if parsed.scheme in {"http", "https"} and parsed.netloc:
+            normalized = urlunsplit((parsed.scheme, parsed.netloc, "", "", ""))
+            return _strip_trailing_slash(normalized)
 
     raise RuntimeError("PUBLIC_SITE_URL must be configured in FastAPI env.")
 
@@ -170,7 +166,7 @@ class PaperMetadataService:
 
         canonical = f"{site_url}/{username}/{slug}".rstrip("/")
         author_url = f"{site_url}/{username}"
-        image_url = thumbnail_url or embedded_image_url or ""
+        image_url = thumbnail_url or embedded_image_url or f"{site_url}/appLogo.png"
         created_at = _to_utc_iso8601(paper_doc.get("createdAt"))
         updated_at = _to_utc_iso8601(paper_doc.get("updatedAt"))
 
@@ -211,6 +207,7 @@ class PaperMetadataService:
 
         og_tags = _sanitize_tags((ai_payload or {}).get("ogTags"), f"{title} {article_section}")
         word_count = len(re.findall(r"\b\w+\b", plain_text_body))
+        reading_time_minutes = max(1, (max(word_count, 1) + READING_SPEED_WPM - 1) // READING_SPEED_WPM)
 
         meta_description = _safe_description(ai_meta_description, fallback=fallback_meta, max_len=160)
         og_description = _safe_description(ai_og_description, fallback=fallback_og, max_len=180)
@@ -219,7 +216,7 @@ class PaperMetadataService:
         robots = "index, follow" if status == "published" else "noindex, nofollow"
 
         return {
-            "title": f"{title} - by {display_name} | Whitepaper",
+            "title": f"{title} - by {display_name} | Whitepapper",
             "metaDescription": meta_description,
             "canonical": canonical,
             "robots": robots,
@@ -244,13 +241,17 @@ class PaperMetadataService:
             "keywords": ", ".join(og_tags),
             "articleSection": article_section,
             "wordCount": max(word_count, 0),
+            "readingTimeMinutes": reading_time_minutes,
             "inLanguage": DEFAULT_LANGUAGE,
             "datePublished": created_at,
             "dateModified": updated_at,
             "authorName": display_name,
+            "authorHandle": username,
             "authorUrl": author_url,
             "authorId": owner_id,
             "coverImageUrl": image_url,
+            "publisherName": "Whitepapper",
+            "publisherUrl": site_url,
             "isAccessibleForFree": True,
             "license": DEFAULT_LICENSE,
         }

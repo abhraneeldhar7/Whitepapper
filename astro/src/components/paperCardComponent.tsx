@@ -136,5 +136,5 @@ export default function PaperCardComponent({
                 </Popover>
             )}
         </div>
-    </div >)
+    </div>)
 }

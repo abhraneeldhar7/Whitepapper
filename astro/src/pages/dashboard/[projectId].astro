@@ -6,7 +6,7 @@ import { getProjectApiKey } from "@/lib/api/api_keys";
 import { createApiClient } from "@/lib/api/client";
 import { getProjectDashboardData } from "@/lib/api/projects";
 import { getCurrentUser } from "@/lib/api/users";
-import type { ApiKeyDoc, UserDoc } from "@/lib/types";
+import type { ApiKeySummary, UserDoc } from "@/lib/types";
 
 const { userId, getToken } = Astro.locals.auth();
 const projectId = Astro.params.projectId as string;
@@ -24,7 +24,7 @@ const serverClient = createApiClient(token);
 const [initialUser, projectData, initialApiDoc] = await Promise.all([
   getCurrentUser(serverClient).catch(() => null as UserDoc | null),
   getProjectDashboardData(projectId, serverClient).catch(() => null),
-  getProjectApiKey(projectId, serverClient).catch(() => null as ApiKeyDoc | null),
+  getProjectApiKey(projectId, serverClient).catch(() => null as ApiKeySummary | null),
 ]);
 
 if (!initialUser || !projectData) {

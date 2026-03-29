@@ -12,6 +12,7 @@ ROOT_RESERVED_PATHS = {
     "404",
     "components",
     "integrations",
+    "blog",
     "blogs",
     "privacy-policy",
     "terms-of-service",

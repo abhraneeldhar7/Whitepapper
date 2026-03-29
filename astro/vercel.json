@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/dev/:path*",
+      "destination": "http://127.0.0.1:8000/dev/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/dev/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=300, stale-while-revalidate=1800"
+        }
+      ]
+    }
+  ]
+}

@@ -147,13 +147,17 @@ class PaperMetadata(BaseModel):
     keywords: str
     articleSection: str
     wordCount: int
+    readingTimeMinutes: int = 1
     inLanguage: str
     datePublished: str
     dateModified: str
     authorName: str
+    authorHandle: str = ""
     authorUrl: str
     authorId: str
     coverImageUrl: str
+    publisherName: str = "Whitepapper"
+    publisherUrl: str = ""
     isAccessibleForFree: bool
     license: str
 

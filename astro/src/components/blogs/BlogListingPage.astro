@@ -1,0 +1,46 @@
+﻿---
+import BlogCard from "./BlogCard";
+import type { PaperDoc } from "@/lib/types";
+
+interface Props {
+  primaryTitle: string;
+  secondaryTitle?: string | null;
+  primaryBlogs: PaperDoc[];
+  secondaryBlogs: PaperDoc[];
+}
+
+const { primaryTitle, primaryBlogs, secondaryTitle, secondaryBlogs } =
+  Astro.props as Props;
+---
+
+<main class="mx-auto w-full max-w-[1200px] px-4 py-8 md:px-6 md:py-12">
+  <section aria-labelledby="blogs-latest-heading">
+    <h1
+      id="blogs-latest-heading"
+      class="text-[30px] font-[500] leading-[1.2em] md:text-[40px]"
+    >
+      {primaryTitle}
+    </h1>
+
+    <div class="mt-7 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+      {primaryBlogs.map((data) => <BlogCard blogData={data} />)}
+    </div>
+  </section>
+
+  <section class="mt-10 md:mt-14" aria-labelledby="blogs-resources-heading">
+    {
+      secondaryTitle && (
+        <h2
+          id="blogs-resources-heading"
+          class="text-[24px] font-[500] leading-[1.2em] md:text-[30px]"
+        >
+          {secondaryTitle}
+        </h2>
+      )
+    }
+
+    <div class="">
+      {secondaryBlogs.map((data) => <BlogCard blogData={data} />)}
+    </div>
+  </section>
+</main>

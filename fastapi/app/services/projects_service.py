@@ -25,6 +25,7 @@ PROJECT_ID_KEY = "projectId"
 PROJECT_SLUG_KEY = "slug"
 PROJECT_OWNER_KEY = "ownerId"
 PROJECT_PUBLIC_KEY = "isPublic"
+SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
 
 
 class ProjectsService:
@@ -262,7 +263,7 @@ class ProjectsService:
             max_width=MAX_PROJECT_LOGO_WIDTH,
             max_height=MAX_PROJECT_LOGO_HEIGHT,
             crop=True,
-            overwrite_name="logo.jpg",
+            overwrite_name="logo",
         )
         url = add_cache_buster(url)
         self.update(project_id, {"logoUrl": url})
@@ -287,7 +288,10 @@ class ProjectsService:
         owner_id = project.get(PROJECT_OWNER_KEY)
         if not owner_id:
             return False
-        deleted = storage_service.delete_first_existing([f"users/{owner_id}/projects/{project_id}/logo/logo.jpg"])
+        base = f"users/{owner_id}/projects/{project_id}/logo/logo"
+        deleted = storage_service.delete_first_existing(
+            [base, *[f"{base}{ext}" for ext in SUPPORTED_IMAGE_EXTENSIONS]]
+        )
         if deleted:
             self.update(project_id, {"logoUrl": None})
         return deleted

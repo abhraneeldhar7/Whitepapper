@@ -1,7 +1,7 @@
 import PaperCardComponent from "@/components/paperCardComponent";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import type { PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
+import type { PaperDoc, ProjectDoc, PublicProjectCollectionPapers, UserDoc } from "@/lib/types";
 import ProjectDescriptionViewer from "./ProjectDescriptionViewer";
 import ProjectCollectionsViewer from "./ProjectCollectionsViewer";
 
@@ -10,6 +10,7 @@ type PublicProjectPageProps = {
   project: ProjectDoc;
   papers: PaperDoc[];
   collections: any[];
+  collectionPapers?: PublicProjectCollectionPapers[];
   owner?: UserDoc | null;
   projectCreatedDate?: string | null;
   currentUserId?: string | null;
@@ -20,6 +21,7 @@ export default function PublicProjectPage({
   project,
   papers,
   collections,
+  collectionPapers = [],
   owner,
   projectCreatedDate,
   currentUserId,
@@ -99,6 +101,7 @@ export default function PublicProjectPage({
           <ProjectCollectionsViewer
             handle={handle}
             collections={collections}
+            collectionPapers={collectionPapers}
           />
         </div>
       </div>

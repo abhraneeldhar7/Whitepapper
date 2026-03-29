@@ -21,7 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createCollection } from "@/lib/api/collections";
-import { createApiKey, deleteApiKey, setApiKeyActive, type ApiKeyDoc, type ApiKeyCreateResponse } from "@/lib/api/api_keys";
+import { createApiKey, deleteApiKey, setApiKeyActive, type ApiKeySummary } from "@/lib/api/api_keys";
 import { createPaper } from "@/lib/api/papers";
 import {
   checkProjectSlugAvailable,
@@ -37,7 +37,7 @@ import {
   MAX_PROJECT_LOGO_WIDTH,
 } from "@/lib/constants";
 import type { CollectionDoc, PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
-import { compressImage, copyToClipboardWithToast, formatFirestoreDate } from "@/lib/utils";
+import { compressImage, copyToClipboardWithToast, formatFirestoreDate, isImageFile } from "@/lib/utils";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
 import ScrollToTop from "../scrollToTop";
@@ -49,7 +49,7 @@ type ProjectWorkspaceProps = {
   initialProject: ProjectDoc;
   initialPages: PaperDoc[];
   initialCollections: CollectionDoc[];
-  initialApiDoc: ApiKeyDoc | null;
+  initialApiDoc: ApiKeySummary | null;
   initialUser?: UserDoc | null;
 };
 
@@ -116,7 +116,7 @@ export default function ProjectWorkspace({
   const [isSlugAvailable, setIsSlugAvailable] = useState(true);
   const [slugCheckMessage, setSlugCheckMessage] = useState<string | null>(null);
   const [updatingProjectVisibility, setUpdatingProjectVisibility] = useState(false);
-  const [apiDoc, setApiDoc] = useState<ApiKeyDoc | null>(initialApiDoc);
+  const [apiDoc, setApiDoc] = useState<ApiKeySummary | null>(initialApiDoc);
   const [creatingApiKey, setCreatingApiKey] = useState(false);
   const [togglingApiKey, setTogglingApiKey] = useState(false);
   const [revokingApiKey, setRevokingApiKey] = useState(false);
@@ -304,26 +304,14 @@ export default function ProjectWorkspace({
     let localPreview: string | null = null;
 
     const uploadPromise = (async () => {
+      if (!isImageFile(file)) throw new Error('Only image files are allowed.');
       const compressed = await compressImage({
         file,
         maxWidth: MAX_PROJECT_LOGO_WIDTH,
         maxHeight: MAX_PROJECT_LOGO_HEIGHT,
         crop: true,
       });
-
-      const compressedBlob =
-        compressed instanceof Blob
-          ? compressed
-          : new Blob([new Uint8Array(compressed as unknown as ArrayBuffer)], { type: "image/jpeg" });
-
-      const uploadableFile =
-        compressedBlob instanceof File
-          ? compressedBlob
-          : new File([compressedBlob], file.name || "project-logo.jpg", {
-            type: "image/jpeg",
-            lastModified: Date.now(),
-          });
-
+      const uploadableFile = compressed instanceof File ? compressed : file;
       localPreview = URL.createObjectURL(uploadableFile);
       setTempUploadingProjectLogo(localPreview);
       return uploadProjectLogo(project.projectId, uploadableFile);
@@ -357,26 +345,14 @@ export default function ProjectWorkspace({
     setUploadingProjectEmbeddedCount((prev) => prev + 1);
 
     const uploadPromise = (async () => {
+      if (!isImageFile(file)) throw new Error('Only image files are allowed.');
       const compressed = await compressImage({
         file,
         maxWidth: MAX_EMBEDDED_WIDTH,
         maxHeight: MAX_EMBEDDED_HEIGHT,
         crop: false,
       });
-
-      const compressedBlob =
-        compressed instanceof Blob
-          ? compressed
-          : new Blob([new Uint8Array(compressed as unknown as ArrayBuffer)], { type: "image/jpeg" });
-
-      const uploadableFile =
-        compressedBlob instanceof File
-          ? compressedBlob
-          : new File([compressedBlob], file.name || "embedded.jpg", {
-            type: "image/jpeg",
-            lastModified: Date.now(),
-          });
-
+      const uploadableFile = compressed instanceof File ? compressed : file;
       return uploadProjectEmbeddedImage(project.projectId, uploadableFile);
     })();
 
@@ -450,19 +426,7 @@ export default function ProjectWorkspace({
 
     try {
       const response = await createApiKey({ projectId });
-      // FastAPI returns ApiKeyCreateResponse which extends ApiKeySummary + rawKey
-      // We need to reconstruct ApiKeyDoc with keyHash (which is not returned on creation)
-      const apiKeyDoc: ApiKeyDoc = {
-        keyId: response.keyId,
-        ownerId: response.ownerId,
-        projectId: response.projectId,
-        keyHash: "", // Empty on creation, will be populated from server
-        usage: response.usage,
-        limitPerMonth: response.limitPerMonth,
-        isActive: response.isActive,
-        createdAt: response.createdAt,
-      };
-      setApiDoc(apiKeyDoc);
+      setApiDoc(response);
       setCreatedApiKey(response.rawKey);
       setApiKeyDialogOpen(true);
     } catch (error) {
@@ -595,14 +559,12 @@ export default function ProjectWorkspace({
                     <Label>Project Logo</Label>
                     <div className="flex items-center gap-3 mt-3">
                       <div className="flex md:flex-col items-start gap-2">
-                        <button
-                          type="button"
-                          className="h-[90px] w-[90px] shrink-0 overflow-hidden rounded-md border"
+                        <div
+                          className="h-[90px] w-[90px] shrink-0"
                           onClick={() => {
                             if (!editingProject) return;
                             projectLogoInputRef.current?.click();
                           }}
-                          disabled={!editingProject}
                         >
                           {logoPreview ? (
                             <img
@@ -615,7 +577,7 @@ export default function ProjectWorkspace({
                               {project.name.slice(0, 1).toUpperCase() || "P"}
                             </div>
                           )}
-                        </button>
+                        </div>
                         {editingProject && project.logoUrl ? (
                           <Button
                             type="button"

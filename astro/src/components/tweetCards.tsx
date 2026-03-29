@@ -1,25 +1,4 @@
-import React, { useState, useEffect } from 'react';
 
-// --- Types ---
-interface Tweet {
-  id: string;
-  author: string;
-  handle: string;
-  content: string;
-  time: string;
-}
-
-// --- Mock Data ---
-const TWEETS_DATA: Tweet[] = Array.from({ length: 10 }).map((_, i) => ({
-  id: `tweet-${i}`,
-  author: `User ${i + 1}`,
-  handle: `@user${i + 1}_dev`,
-  content: `This is tweet number ${i + 1}. Building an awesome stacking card animation using pure React, Tailwind, and CSS transitions! 🚀`,
-  time: `${i + 1}h`,
-}));
-
-// --- Constants ---
-const MAX_VISIBLE_CARDS = 3; // Number of cards visible in the stack
 
 export default function TweetStack() {
   const [activeIndex, setActiveIndex] = useState(0);

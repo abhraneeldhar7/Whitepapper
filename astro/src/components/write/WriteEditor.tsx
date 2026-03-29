@@ -47,7 +47,7 @@ import {
   MAX_THUMBNAIL_WIDTH,
 } from "@/lib/constants";
 import type { PaperDoc, UserDoc } from "@/lib/types";
-import { compressImage, copyToClipboard } from "@/lib/utils";
+import { compressImage, copyToClipboard, isImageFile } from "@/lib/utils";
 import click1Sound from "@/assets/sounds/click1.mp3";
 import click2Sound from "@/assets/sounds/click2.mp3";
 import click3Sound from "@/assets/sounds/click3.mp3";
@@ -288,27 +288,16 @@ export default function WriteEditor({ initialPaper, initialUser }: WriteEditorPr
     setUploadingThumb(true);
     let localPreview: string | null = null;
     const uploadPromise = (async () => {
+      if (!isImageFile(file)) throw new Error('Only image files are allowed.');
       const compressed = await compressImage({
         file,
         maxWidth: MAX_THUMBNAIL_WIDTH,
         maxHeight: MAX_THUMBNAIL_HEIGHT,
         crop: false,
       });
-      const compressedBlob =
-        compressed instanceof Blob
-          ? compressed
-          : new Blob([new Uint8Array(compressed as unknown as ArrayBuffer)], { type: "image/jpeg" });
-      const uploadableFile =
-        compressedBlob instanceof File
-          ? compressedBlob
-          : new File([compressedBlob], file.name || "thumbnail.jpg", {
-            type: "image/jpeg",
-            lastModified: Date.now(),
-          });
-
+      const uploadableFile = compressed instanceof File ? compressed : file;
       localPreview = URL.createObjectURL(uploadableFile);
       setTempUploadingThumbnail(localPreview);
-
       return uploadThumbnail(paperId, uploadableFile);
     })();
 
@@ -335,23 +324,14 @@ export default function WriteEditor({ initialPaper, initialUser }: WriteEditorPr
   async function onEditorImageUpload(file: File): Promise<{ success: boolean; url?: string; message?: string }> {
     setUploadingEmbeddedCount((prev) => prev + 1);
     const uploadPromise = (async () => {
+      if (!isImageFile(file)) throw new Error('Only image files are allowed.');
       const compressed = await compressImage({
         file,
         maxWidth: MAX_EMBEDDED_WIDTH,
         maxHeight: MAX_EMBEDDED_HEIGHT,
         crop: false,
       });
-      const compressedBlob =
-        compressed instanceof Blob
-          ? compressed
-          : new Blob([new Uint8Array(compressed as unknown as ArrayBuffer)], { type: "image/jpeg" });
-      const uploadableFile =
-        compressedBlob instanceof File
-          ? compressedBlob
-          : new File([compressedBlob], file.name || "embedded.jpg", {
-            type: "image/jpeg",
-            lastModified: Date.now(),
-          });
+      const uploadableFile = compressed instanceof File ? compressed : file;
       return uploadEmbeddedImage(paperId, uploadableFile);
     })();
 

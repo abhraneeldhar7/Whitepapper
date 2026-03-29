@@ -1,0 +1,17 @@
+﻿---
+import Layout from "@/layouts/Layout.astro";
+import BlogListingPage from "@/components/blogs/BlogListingPage.astro";
+import type { PaperDoc } from "@/lib/types";
+
+const featuredCards: PaperDoc[] = [];
+const gridCards: PaperDoc[] = [];
+---
+
+<Layout title="Resources | Whitepapper Blogs">
+  <BlogListingPage
+    primaryTitle="Resources"
+    primaryBlogs={featuredCards}
+    secondaryBlogs={gridCards}
+    secondaryTitle="Resources"
+  />
+</Layout>

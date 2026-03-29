@@ -99,13 +99,17 @@ export type PaperMetadata = {
   keywords: string;
   articleSection: string;
   wordCount: number;
+  readingTimeMinutes: number;
   inLanguage: string;
   datePublished: string;
   dateModified: string;
   authorName: string;
+  authorHandle: string;
   authorUrl: string;
   authorId: string;
   coverImageUrl: string;
+  publisherName: string;
+  publisherUrl: string;
   isAccessibleForFree: boolean;
   license: string;
 };
@@ -120,19 +124,13 @@ export type PublicPaperPagePayload = {
   paper: PaperDoc;
 };
 
-export type PaperCreateResponse = {
-  paperId: string;
+export type PublicProjectCollectionPapers = {
+  collectionId: string;
+  papers: PaperDoc[];
 };
 
-export type ApiKeyDoc = {
-  keyId: string;
-  ownerId: string;
-  projectId: string;
-  keyHash: string;
-  usage: number;
-  limitPerMonth: number;
-  isActive: boolean;
-  createdAt: string;
+export type PaperCreateResponse = {
+  paperId: string;
 };
 
 export type ApiKeySummary = {
@@ -144,6 +142,8 @@ export type ApiKeySummary = {
   isActive: boolean;
   createdAt: string;
 };
+
+export type ApiKeyDoc = ApiKeySummary;
 
 export type ApiKeyCreateResponse = ApiKeySummary & {
   rawKey: string;

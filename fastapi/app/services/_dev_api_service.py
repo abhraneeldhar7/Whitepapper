@@ -19,11 +19,8 @@ API_KEY_HASH_KEY = "keyHash"
 
 
 class DevApiService:
-    def __init__(self) -> None:
-        self._cache_client = get_redis_client()
-
     def _redis(self) -> Redis | None:
-        return self._cache_client
+        return get_redis_client()
 
     def _doc_cache_key(self, key_hash: str) -> str:
         return f"{get_cache_prefix()}:api_keys:doc:{key_hash}"
@@ -102,6 +99,7 @@ class DevApiService:
             "createdAt": utc_now(),
         }
         firestore_store.create(API_KEYS_COLLECTION, created, doc_id=key_id)
+        self._write_cached_doc(created)
 
         public_doc = self._public_doc(created)
         public_doc["rawKey"] = raw_key
@@ -110,22 +108,17 @@ class DevApiService:
     def toggle_active(self, key_id: str, is_active: bool) -> dict:
         current = self.get_by_id(key_id)
         target = bool(is_active)
+        current["isActive"] = target
+        firestore_store.update(API_KEYS_COLLECTION, key_id, current)
+
         key_hash = current.get(API_KEY_HASH_KEY)
         client = self._redis()
         if client and key_hash:
-            cached_doc = self._read_cached_doc(key_hash, client=client)
-            merged_doc = dict(current)
-            if cached_doc:
-                merged_doc.update(cached_doc)
-            merged_doc["isActive"] = target
-            firestore_store.update(API_KEYS_COLLECTION, key_id, merged_doc)
             try:
                 client.delete(self._doc_cache_key(key_hash))
             except Exception:
                 logger.exception("API key cache delete failed for key_hash=%s", key_hash)
-        else:
-            firestore_store.update(API_KEYS_COLLECTION, key_id, {"isActive": target})
-        current["isActive"] = target
+
         return self._public_doc(current)
 
     def delete(self, key_id: str) -> dict[str, bool]:
@@ -148,18 +141,6 @@ class DevApiService:
             raise HTTPException(status_code=401, detail="Invalid API key.")
 
         if not key_doc.get("isActive", True):
-            if client:
-                try:
-                    cached_doc = self._read_cached_doc(key_hash, client=client)
-                    merged_doc = dict(key_doc)
-                    if cached_doc:
-                        merged_doc.update(cached_doc)
-                    key_id = merged_doc.get(API_KEY_ID_KEY)
-                    if key_id:
-                        firestore_store.update(API_KEYS_COLLECTION, key_id, merged_doc)
-                    client.delete(self._doc_cache_key(key_hash))
-                except Exception:
-                    logger.exception("API key cache delete failed for key_hash=%s", key_hash)
             raise HTTPException(status_code=403, detail="API key is inactive.")
 
         usage = int(key_doc.get("usage", 0))
@@ -176,7 +157,7 @@ class DevApiService:
         if not client:
             return
 
-        key_doc = self._read_doc_by_hash(key_hash, client=client)
+        key_doc = self._read_cached_doc(key_hash, client=client)
         if not key_doc:
             return
 
@@ -195,9 +176,11 @@ class DevApiService:
         key_hash = key_doc.get(API_KEY_HASH_KEY)
         client = self._redis()
         if key_hash:
-            cached_doc = self._read_doc_by_hash(key_hash, client=client)
+            cached_doc = self._read_cached_doc(key_hash, client=client)
             if cached_doc:
                 key_doc = cached_doc
+            else:
+                self._write_cached_doc(key_doc, client=client)
 
         return self._public_doc(key_doc)
 
@@ -206,23 +189,32 @@ class DevApiService:
         if not client:
             return 0
 
-        all_keys = firestore_store.list_all(API_KEYS_COLLECTION)
         synced = 0
-        for key_doc in all_keys:
-            key_hash = key_doc.get(API_KEY_HASH_KEY)
-            if not key_hash:
-                continue
-            cached_doc = self._read_cached_doc(key_hash, client=client)
-            merged_doc = dict(key_doc)
-            if cached_doc:
-                merged_doc.update(cached_doc)
-            key_id = merged_doc.get(API_KEY_ID_KEY)
-            if key_id:
-                firestore_store.update(API_KEYS_COLLECTION, key_id, merged_doc)
+        pattern = f"{get_cache_prefix()}:api_keys:doc:*"
+        for key in client.scan_iter(match=pattern):
             try:
-                client.delete(self._doc_cache_key(key_hash))
+                payload = client.get(key)
+                if payload is None:
+                    continue
+                cached_doc = pickle.loads(payload)
+                if not isinstance(cached_doc, dict):
+                    continue
             except Exception:
-                logger.exception("API key cache delete failed for key_hash=%s", key_hash)
+                logger.exception("API key cache read failed for key=%s", key)
+                continue
+
+            key_id = cached_doc.get(API_KEY_ID_KEY)
+            if not key_id:
+                continue
+            try:
+                firestore_store.update(
+                    API_KEYS_COLLECTION,
+                    key_id,
+                    {"usage": int(cached_doc.get("usage", 0))},
+                )
+            except Exception:
+                logger.exception("API key firestore sync failed for key_id=%s", key_id)
+                continue
             synced += 1
         return synced
 
@@ -231,29 +223,23 @@ class DevApiService:
         all_keys = firestore_store.list_all(API_KEYS_COLLECTION)
         count = 0
         for key in all_keys:
+            should_reset = int(key.get("usage", 0)) > 0
             key_hash = key.get(API_KEY_HASH_KEY)
-            if not key_hash:
-                continue
-            if int(key.get("usage", 0)) <= 0:
-                continue
-            if client:
+            if client and key_hash:
                 cached_doc = self._read_cached_doc(key_hash, client=client)
-                merged_doc = dict(key)
                 if cached_doc:
-                    merged_doc.update(cached_doc)
-                merged_doc["usage"] = 0
-                key_id = merged_doc.get(API_KEY_ID_KEY)
-                if key_id:
-                    firestore_store.update(API_KEYS_COLLECTION, key_id, merged_doc)
-                try:
-                    client.delete(self._doc_cache_key(key_hash))
-                except Exception:
-                    logger.exception("API key cache delete failed for key_hash=%s", key_hash)
-            else:
-                key_id = key.get(API_KEY_ID_KEY)
-                if key_id:
-                    firestore_store.update(API_KEYS_COLLECTION, key_id, {"usage": 0})
-            count += 1
+                    if int(cached_doc.get("usage", 0)) > 0:
+                        should_reset = True
+                    cached_doc["usage"] = 0
+                    self._write_cached_doc(cached_doc, client=client)
+
+            if not should_reset:
+                continue
+
+            key_id = key.get(API_KEY_ID_KEY)
+            if key_id:
+                firestore_store.update(API_KEYS_COLLECTION, key_id, {"usage": 0})
+                count += 1
         return count
 
 

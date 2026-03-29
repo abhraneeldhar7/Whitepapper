@@ -1,14 +1,13 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
-import type { ApiKeyDoc, ApiKeySummary, ApiKeyCreateResponse } from "@/lib/types";
+import type { ApiKeySummary, ApiKeyCreateResponse } from "@/lib/types";
 
-export type { ApiKeyDoc, ApiKeySummary, ApiKeyCreateResponse };
-
+export type { ApiKeySummary, ApiKeyCreateResponse };
 
 export async function getProjectApiKey(
   projectId: string,
   client: ApiClient = apiClient,
-): Promise<ApiKeyDoc | null> {
-  return client.get<ApiKeyDoc | null>(`/projects/${projectId}/api-key`);
+): Promise<ApiKeySummary | null> {
+  return client.get<ApiKeySummary | null>(`/projects/${projectId}/api-key`);
 }
 
 export async function createApiKey(
@@ -17,16 +16,15 @@ export async function createApiKey(
   },
   client: ApiClient = apiClient,
 ): Promise<ApiKeyCreateResponse> {
-  return client.post<ApiKeyCreateResponse>(`/projects/${input.projectId}/api-key`, {
-  });
+  return client.post<ApiKeyCreateResponse>(`/projects/${input.projectId}/api-key`, {});
 }
 
 export async function setApiKeyActive(
   keyId: string,
   isActive: boolean,
   client: ApiClient = apiClient,
-): Promise<ApiKeyDoc> {
-  return client.patch<ApiKeyDoc>(`/api-keys/${keyId}`, {
+): Promise<ApiKeySummary> {
+  return client.patch<ApiKeySummary>(`/api-keys/${keyId}`, {
     body: { isActive },
   });
 }

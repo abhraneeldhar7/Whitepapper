@@ -30,6 +30,7 @@ PAPER_PROJECT_KEY = "projectId"
 PAPER_COLLECTION_KEY = "collectionId"
 PAPER_STATUS_KEY = "status"
 PAPER_STATUS_PUBLISHED = "published"
+SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
 
 
 class PapersService:
@@ -235,6 +236,9 @@ class PapersService:
         if public:
             filters[PAPER_STATUS_KEY] = PAPER_STATUS_PUBLISHED
         return firestore_store.find_by_fields(PAPERS_COLLECTION, filters)
+
+    def list_all_public(self) -> list[dict]:
+        return firestore_store.find_by_fields(PAPERS_COLLECTION, {PAPER_STATUS_KEY: PAPER_STATUS_PUBLISHED})
 
     def get_by_id(self, paper_id: str, public: bool = False) -> dict | None:
         cached = self._load_cached_paper(self._paper_by_id_key(paper_id))
@@ -445,7 +449,7 @@ class PapersService:
             max_width=MAX_THUMBNAIL_WIDTH,
             max_height=MAX_THUMBNAIL_HEIGHT,
             crop=False,
-            overwrite_name="thumbnail.jpg",
+            overwrite_name="thumbnail",
         )
         url = add_cache_buster(url)
         self.update(paper_id, {"thumbnailUrl": url})
@@ -475,10 +479,9 @@ class PapersService:
         )
 
     def delete_thumbnail(self, owner_id: str, paper_id: str) -> bool:
+        base = f"users/{owner_id}/papers/{paper_id}/thumbnail/thumbnail"
         return storage_service.delete_first_existing(
-            [
-                f"users/{owner_id}/papers/{paper_id}/thumbnail/thumbnail.jpg",
-            ]
+            [base, *[f"{base}{ext}" for ext in SUPPORTED_IMAGE_EXTENSIONS]]
         )
 
     def delete_paper_assets(self, owner_id: str, paper_id: str) -> int:

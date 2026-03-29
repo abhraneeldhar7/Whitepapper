@@ -121,7 +121,7 @@ Add:
 - `astro/src/pages/robots.txt.ts`
 - `astro/src/pages/sitemap-index.xml.ts`
 - `astro/src/pages/sitemaps/public-pages.xml.ts`
-- `astro/src/pages/sitemaps/public-papers.xml.ts`
+- ~~`astro/src/pages/sitemaps/public-papers.xml.ts`~~
 - `astro/src/pages/sitemaps/public-projects.xml.ts`
 - `astro/src/pages/rss.xml.ts` (marketing/blog feed)
 
@@ -171,7 +171,7 @@ Current issues:
 Changes:
 - Include owner in project API payload; remove extra profile request.
 - Add `CollectionPage` schema and rich metadata.
-- Pre-render top papers and collection links server-side.
+- ~~Pre-render top papers and collection links server-side.~~
 - Add paginated collection pages if project is large.
 
 ### 4.3 `/[handle]/[slug]` paper page
@@ -181,10 +181,10 @@ Current issues:
 - Duplicate URL normalization risk.
 
 Changes:
-- Add `Article` JSON-LD and `BreadcrumbList`.
-- Add reading-time, updated-at, author link, related papers internal links.
-- Add canonical redirect rules for slug normalization.
-- Add server-side excerpt generation for description when missing.
+- ~~Add `Article` JSON-LD and `BreadcrumbList`.~~
+- ~~Add reading-time, updated-at, author link, related papers internal links.~~
+- ~~Add canonical redirect rules for slug normalization.~~
+- ~~Add server-side excerpt generation for description when missing.~~
 
 ## 5) Pages To Add and Modify
 
@@ -318,7 +318,7 @@ Success criteria:
 1. Implement metadata + JSON-LD for user/project/paper pages.
 2. Normalize URLs with redirect rules.
 3. Improve heading structure and on-page content snippets.
-4. Add related-content internal linking on paper pages.
+4. ~~Add related-content internal linking on paper pages.~~
 
 Success criteria:
 - Rich Results validation passes for article/profile pages.
@@ -409,7 +409,7 @@ GEO:
 7. Add normalized redirect logic for handle/slug variants.
 8. Extend public project API to include owner summary in one response.
 9. Add pagination params to public profile/project APIs.
-10. Add FastAPI compression and response cache headers for public endpoints.
+10. ~~Add FastAPI compression and response cache headers for public endpoints.~~
 
 ---
 

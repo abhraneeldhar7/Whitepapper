@@ -1,5 +1,12 @@
 import { apiClient } from "@/lib/api/client";
-import type { CollectionDoc, PaperDoc, ProjectDoc, PublicPaperPagePayload, UserDoc } from "@/lib/types";
+import type {
+  CollectionDoc,
+  PaperDoc,
+  ProjectDoc,
+  PublicPaperPagePayload,
+  PublicProjectCollectionPapers,
+  UserDoc,
+} from "@/lib/types";
 
 export type PublicProfileResponse = {
   user: UserDoc;
@@ -17,6 +24,7 @@ export type PublicProjectResponse = {
   project: ProjectDoc;
   collections: CollectionDoc[];
   papers: PaperDoc[];
+  collectionPapers: PublicProjectCollectionPapers[];
 };
 
 export async function getPublicProfile(handle: string): Promise<PublicProfileResponse> {

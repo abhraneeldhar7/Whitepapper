@@ -6,7 +6,7 @@ import { uploadProfileImage } from "@/lib/api/uploads";
 import { updateCurrentUser } from "@/lib/api/users";
 import { MAX_PROFILE_IMAGE_HEIGHT, MAX_PROFILE_IMAGE_WIDTH } from "@/lib/constants";
 import type { UserDoc } from "@/lib/types";
-import { compressImage } from "@/lib/utils";
+import { compressImage, isImageFile } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,24 +47,14 @@ export default function SettingsPage({ initialUser }: SettingsPageProps) {
     setUploadingAvatar(true);
 
     const uploadPromise = (async () => {
+      if (!isImageFile(file)) throw new Error('Only image files are allowed.');
       const compressed = await compressImage({
         file,
         maxWidth: MAX_PROFILE_IMAGE_WIDTH,
         maxHeight: MAX_PROFILE_IMAGE_HEIGHT,
         crop: true,
       });
-      const compressedBlob =
-        compressed instanceof Blob
-          ? compressed
-          : new Blob([new Uint8Array(compressed as unknown as ArrayBuffer)], { type: "image/jpeg" });
-      const uploadableFile =
-        compressedBlob instanceof File
-          ? compressedBlob
-          : new File([compressedBlob], file.name || "profile.jpg", {
-            type: "image/jpeg",
-            lastModified: Date.now(),
-          });
-
+      const uploadableFile = compressed instanceof File ? compressed : file;
       return uploadProfileImage(uploadableFile);
     })();
 

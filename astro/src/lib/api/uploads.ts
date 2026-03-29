@@ -1,6 +1,14 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
+import { isImageFile } from "@/lib/utils";
+
+function assertImageFile(file: File): void {
+  if (!isImageFile(file)) {
+    throw new Error("Only image files are allowed.");
+  }
+}
 
 function createUploadBody(file: File): FormData {
+  assertImageFile(file);
   const formData = new FormData();
   formData.append("file", file);
   return formData;

@@ -45,12 +45,22 @@ if (userId) {
 ---
 
 <Layout>
+  <section class="sr-only" aria-label="Project paper links">
+    {
+      (data.collectionPapers ?? []).flatMap((entry) =>
+        (entry.papers ?? []).map((paper) => (
+          <a href={`/${handle}/${paper.slug}`}>{paper.title}</a>
+        )),
+      )
+    }
+  </section>
   <PublicProjectPage
     client:load
     handle={handle}
     project={data.project}
     papers={data.papers ?? []}
     collections={data.collections ?? []}
+    collectionPapers={data.collectionPapers ?? []}
     owner={owner}
     projectCreatedDate={projectCreatedDate}
     currentUserId={currentUserId}
