@@ -9,6 +9,8 @@ import { cn, copyToClipboardWithToast } from "@/lib/utils";
 import { getDevCollection, getDevPaper, getDevProject } from "@/lib/api/dev";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
+const DEV_API_BASE_URL = `${String(import.meta.env.PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "")}/dev`;
+
 // API endpoints configuration
 const ENDPOINTS = [
     {
@@ -23,9 +25,7 @@ const ENDPOINTS = [
         hasIdentifierOptions: false,
         identifierOptions: [],
         code: {
-            typescript: `const API_BASE_URL = \`\${import.meta.env.PUBLIC_API_BASE_URL}/dev\`;
-
-const response = await fetch(\`\${API_BASE_URL}/project\`, {
+            typescript: `const response = await fetch("__DEV_API_BASE_URL__/project", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -35,12 +35,9 @@ const response = await fetch(\`\${API_BASE_URL}/project\`, {
 
 const data = await response.json();
 console.log(data);`,
-            python: `import os
-import requests
+            python: `import requests
 
-API_BASE_URL = f"{os.getenv('PUBLIC_API_BASE_URL')}/dev"
-
-response = requests.get(f"{API_BASE_URL}/project", headers={
+response = requests.get("__DEV_API_BASE_URL__/project", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -65,9 +62,7 @@ print(data)`,
             { name: "identifier", label: "Collection ID", type: "text", required: true, placeholder: "collection-id" },
         ],
         code: {
-            typescript: `const API_BASE_URL = \`\${import.meta.env.PUBLIC_API_BASE_URL}/dev\`;
-
-const response = await fetch(\`\${API_BASE_URL}/collection?QUERY_KEY=COLLECTION_ID\`, {
+            typescript: `const response = await fetch("__DEV_API_BASE_URL__/collection?QUERY_KEY=COLLECTION_ID", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -77,12 +72,9 @@ const response = await fetch(\`\${API_BASE_URL}/collection?QUERY_KEY=COLLECTION_
 
 const data = await response.json();
 console.log(data);`,
-            python: `import os
-import requests
+            python: `import requests
 
-API_BASE_URL = f"{os.getenv('PUBLIC_API_BASE_URL')}/dev"
-
-response = requests.get(f"{API_BASE_URL}/collection?QUERY_KEY=COLLECTION_ID", headers={
+response = requests.get("__DEV_API_BASE_URL__/collection?QUERY_KEY=COLLECTION_ID", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -107,9 +99,7 @@ print(data)`,
             { name: "identifier", label: "Paper ID", type: "text", required: true, placeholder: "paper-id" },
         ],
         code: {
-            typescript: `const API_BASE_URL = \`\${import.meta.env.PUBLIC_API_BASE_URL}/dev\`;
-
-const response = await fetch(\`\${API_BASE_URL}/paper?QUERY_KEY=PAPER_ID\`, {
+            typescript: `const response = await fetch("__DEV_API_BASE_URL__/paper?QUERY_KEY=PAPER_ID", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -119,12 +109,9 @@ const response = await fetch(\`\${API_BASE_URL}/paper?QUERY_KEY=PAPER_ID\`, {
 
 const data = await response.json();
 console.log(data);`,
-            python: `import os
-import requests
+            python: `import requests
 
-API_BASE_URL = f"{os.getenv('PUBLIC_API_BASE_URL')}/dev"
-
-response = requests.get(f"{API_BASE_URL}/paper?QUERY_KEY=PAPER_ID", headers={
+response = requests.get("__DEV_API_BASE_URL__/paper?QUERY_KEY=PAPER_ID", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -139,6 +126,8 @@ print(data)`,
 // Helper to replace placeholder in code
 const replaceCodePlaceholders = (code: string, variables: Record<string, string>, identifierType: string | null, identifierValue: string, endpointId: string) => {
     let updatedCode = code;
+
+    updatedCode = updatedCode.replace(/__DEV_API_BASE_URL__/g, DEV_API_BASE_URL);
 
     // Replace API_KEY placeholder
     if (variables.apiKey) {
