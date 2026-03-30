@@ -83,7 +83,7 @@ class DevApiService:
     def create(self, owner_id: str, project_id: str) -> dict:
         existing = firestore_store.find_by_fields(API_KEYS_COLLECTION, {"projectId": project_id})
         if existing:
-            raise HTTPException(status_code=409, detail="A key already exists for this project. Delete it first.")
+            raise HTTPException(status_code=409, detail="A key already exists for this project.")
 
         raw_key = f"wp_{uuid4().hex}"
         key_id = str(uuid4())
@@ -132,6 +132,32 @@ class DevApiService:
             except Exception:
                 logger.exception("API key cache delete failed for key_hash=%s", key_hash)
         return {"ok": True}
+
+    def reset(self, key_id: str) -> dict:
+        current = self.get_by_id(key_id)
+        old_hash = current.get(API_KEY_HASH_KEY)
+        client = self._redis()
+
+        # Prefer cache doc when present, then persist rotated hash to Firestore.
+        cached_doc = self._read_cached_doc(old_hash, client=client) if old_hash else None
+        next_doc = dict(cached_doc or current)
+
+        raw_key = f"wp_{uuid4().hex}"
+        next_doc[API_KEY_HASH_KEY] = self.hash_raw_key(raw_key)
+
+        firestore_store.update(API_KEYS_COLLECTION, key_id, next_doc)
+
+        if client and old_hash:
+            try:
+                client.delete(self._doc_cache_key(old_hash))
+            except Exception:
+                logger.exception("API key cache delete failed for key_hash=%s", old_hash)
+
+        self._write_cached_doc(next_doc, client=client)
+
+        public_doc = self._public_doc(next_doc)
+        public_doc["rawKey"] = raw_key
+        return public_doc
 
     def validate_key(self, raw_key: str) -> dict:
         key_hash = self.hash_raw_key(raw_key)

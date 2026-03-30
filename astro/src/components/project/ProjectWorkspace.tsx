@@ -21,7 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createCollection } from "@/lib/api/collections";
-import { createApiKey, deleteApiKey, setApiKeyActive, type ApiKeySummary } from "@/lib/api/api_keys";
+import { createApiKey, resetApiKey, setApiKeyActive, type ApiKeySummary } from "@/lib/api/api_keys";
 import { createPaper } from "@/lib/api/papers";
 import {
   checkProjectSlugAvailable,
@@ -119,9 +119,9 @@ export default function ProjectWorkspace({
   const [apiDoc, setApiDoc] = useState<ApiKeySummary | null>(initialApiDoc);
   const [creatingApiKey, setCreatingApiKey] = useState(false);
   const [togglingApiKey, setTogglingApiKey] = useState(false);
-  const [revokingApiKey, setRevokingApiKey] = useState(false);
+  const [resettingApiKey, setResettingApiKey] = useState(false);
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
-  const [revokeConfirmOpen, setRevokeConfirmOpen] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
   const projectLogoInputRef = useRef<HTMLInputElement>(null);
 
@@ -452,31 +452,32 @@ export default function ProjectWorkspace({
     }
   }
 
-  async function handleRevokeApiKey() {
-    if (!apiDoc || revokingApiKey) {
-      return;
-    }
-
-    setRevokingApiKey(true);
-    try {
-      await deleteApiKey(apiDoc.keyId);
-      setApiDoc(null);
-      setCreatedApiKey(null);
-      setRevokeConfirmOpen(false);
-      toast.success("API key revoked.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to revoke API key.");
-    } finally {
-      setRevokingApiKey(false);
-    }
-  }
-
   async function handleCopyCreatedApiKey() {
     if (!createdApiKey) {
       return;
     }
 
     await copyToClipboardWithToast(createdApiKey, "API key copied.", "Unable to copy API key.");
+  }
+
+  async function handleResetApiKey() {
+    if (!apiDoc || resettingApiKey) {
+      return;
+    }
+
+    setResettingApiKey(true);
+    try {
+      const response = await resetApiKey(apiDoc.keyId);
+      setApiDoc(response);
+      setCreatedApiKey(response.rawKey);
+      setApiKeyDialogOpen(true);
+      setResetConfirmOpen(false);
+      toast.success("API key reset.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to reset API key.");
+    } finally {
+      setResettingApiKey(false);
+    }
   }
 
 
@@ -912,18 +913,17 @@ export default function ProjectWorkspace({
                         void handleToggleApiKey(!apiDoc.isActive);
                       }}
                       loading={togglingApiKey}
-                      disabled={revokingApiKey}
+                      disabled={resettingApiKey}
                     >
                       {apiDoc.isActive ? "Disable" : "Enable"}
                     </Button>
                     <Button
                       type="button"
                       variant="destructive"
-                      onClick={() => setRevokeConfirmOpen(true)}
-                      loading={revokingApiKey}
-                      disabled={togglingApiKey}
+                      onClick={() => setResetConfirmOpen(true)}
+                      disabled={togglingApiKey || resettingApiKey}
                     >
-                      Revoke
+                      Reset
                     </Button>
                   </div>
                 </div>
@@ -951,44 +951,35 @@ export default function ProjectWorkspace({
               </DialogContent>
             </Dialog>
 
-            <Dialog open={revokeConfirmOpen} onOpenChange={setRevokeConfirmOpen}>
+            <Dialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Revoke API key?</DialogTitle>
+                  <DialogTitle>Reset API key?</DialogTitle>
                   <DialogDescription>
-                    This will permanently revoke access using this API key. This action cannot be undone.
+                    This will invalidate the current key and generate a new one.
                   </DialogDescription>
                 </DialogHeader>
-                {apiDoc && (
-                  <div className="grid gap-2 text-sm bg-muted/30 rounded-md p-3">
-                    <div className="flex items-center gap-3">
-                      <p className="text-muted-foreground">Key ID</p>
-                      <p className="font-mono text-xs break-all">{apiDoc.keyId}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <p className="text-muted-foreground">Status</p>
-                      <p className="font-[450]">{apiDoc.isActive ? "Active" : "Disabled"}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <p className="text-muted-foreground">Monthly Usage</p>
-                      <p className="font-[450]">{apiDoc.usage} / {apiDoc.limitPerMonth}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <p className="text-muted-foreground">Created</p>
-                      <p className="font-[450]">{formatFirestoreDate(apiDoc.createdAt)}</p>
-                    </div>
-                  </div>
-                )}
                 <DialogFooter>
-                  <Button type="button" variant="secondary" onClick={() => setRevokeConfirmOpen(false)} disabled={revokingApiKey}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setResetConfirmOpen(false)}
+                    disabled={resettingApiKey}
+                  >
                     Cancel
                   </Button>
-                  <Button type="button" variant="destructive" onClick={handleRevokeApiKey} loading={revokingApiKey}>
-                    Revoke
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleResetApiKey}
+                    loading={resettingApiKey}
+                  >
+                    Reset
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+
           </TabsContent>
         </Tabs>
       </div>

@@ -29,9 +29,9 @@ export async function setApiKeyActive(
   });
 }
 
-export async function deleteApiKey(
+export async function resetApiKey(
   keyId: string,
   client: ApiClient = apiClient,
-): Promise<void> {
-  await client.delete<{ ok: boolean }>(`/api-keys/${keyId}`);
+): Promise<ApiKeyCreateResponse> {
+  return client.post<ApiKeyCreateResponse>(`/api-keys/${keyId}/reset`, {});
 }

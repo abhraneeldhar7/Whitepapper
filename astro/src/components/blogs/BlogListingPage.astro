@@ -3,18 +3,37 @@ import BlogCard from "./BlogCard";
 import type { PaperDoc } from "@/lib/types";
 
 interface Props {
+  pageTitle: string;
   primaryTitle: string;
   secondaryTitle?: string | null;
   primaryBlogs: PaperDoc[];
   secondaryBlogs: PaperDoc[];
 }
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const { primaryTitle, primaryBlogs, secondaryTitle, secondaryBlogs } =
-  Astro.props as Props;
+const {
+  pageTitle,
+  primaryTitle,
+  primaryBlogs,
+  secondaryTitle,
+  secondaryBlogs,
+} = Astro.props as Props;
 ---
 
-<main class="mx-auto w-full max-w-[1200px] px-4 py-8 md:px-6 md:py-12">
+<main class="mx-auto w-full max-w-[1100px] px-4 pt-15 md:pt-24 pb-10">
   <section aria-labelledby="blogs-latest-heading">
+    <div class="h-[20px] mb-4">
+      {
+        pageTitle !== "blogs" && (
+          <a
+            href="/blogs"
+            class="text-[14px] w-fit text-muted-foreground hover:text-foreground flex items-center gap-1"
+          >
+            <ChevronLeft size={14} /> Blogs
+          </a>
+        )
+      }
+    </div>
     <h1
       id="blogs-latest-heading"
       class="text-[30px] font-[500] leading-[1.2em] md:text-[40px]"
@@ -22,12 +41,26 @@ const { primaryTitle, primaryBlogs, secondaryTitle, secondaryBlogs } =
       {primaryTitle}
     </h1>
 
-    <div class="mt-7 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+    <div class="mt-5 md:mt-7 grid grid-cols-1 gap-10 md:gap-15 md:grid-cols-2">
       {primaryBlogs.map((data) => <BlogCard blogData={data} />)}
     </div>
+
+    {
+      pageTitle == "blogs" && (
+        <div class="mt-6 flex justify-end items-center gap-1">
+          <a
+            class="text-[14px] w-fit text-muted-foreground hover:text-foreground "
+            href="/updates"
+          >
+            Updates
+          </a>{" "}
+          <ChevronRight size={14} />
+        </div>
+      )
+    }
   </section>
 
-  <section class="mt-10 md:mt-14" aria-labelledby="blogs-resources-heading">
+  <section class="mt-12" aria-labelledby="blogs-resources-heading">
     {
       secondaryTitle && (
         <h2
@@ -39,8 +72,25 @@ const { primaryTitle, primaryBlogs, secondaryTitle, secondaryBlogs } =
       )
     }
 
-    <div class="">
-      {secondaryBlogs.map((data) => <BlogCard blogData={data} />)}
+    <div class="mt-5 md:mt-7 grid grid-cols-1 gap-10 md:gap-15 md:grid-cols-3">
+      {
+        secondaryBlogs
+          .slice(0, 6)
+          .map((data) => <BlogCard blogData={data} showDesc={false} />)
+      }
     </div>
+    {
+      pageTitle == "blogs" && (
+        <div class="mt-8 flex justify-end items-center gap-1">
+          <a
+            class="text-[14px] w-fit text-muted-foreground hover:text-foreground "
+            href="/resources"
+          >
+            Resources
+          </a>{" "}
+          <ChevronRight size={14} />
+        </div>
+      )
+    }
   </section>
 </main>

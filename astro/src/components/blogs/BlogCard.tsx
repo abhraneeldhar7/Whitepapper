@@ -4,13 +4,15 @@ import abstractLightPic from "@/assets/abstract_light.jpg";
 import abstractDarkPic from "@/assets/abstract_dark.jpg";
 
 export default function BlogCard({
-    blogData
+    blogData,
+    showDesc = true
 }: {
-    blogData: PaperDoc
+    blogData: PaperDoc,
+    showDesc?: boolean
 }) {
     return (
         <a href={`/blogs/${blogData.slug}`} className="relative flex flex-col">
-            <div className="overflow-hidden aspect-3/4">
+            <div className="overflow-hidden aspect-5/3">
                 {
                     blogData.thumbnailUrl ?
                         <img className="w-full object-cover w-full h-full border rounded-[3px]" src={blogData.thumbnailUrl} />
@@ -21,8 +23,11 @@ export default function BlogCard({
                         </>
                 }
             </div>
-            <p className="mt-2 text-[16px] line-clamp-2">{blogData.title}</p>
-            <p className="text-[14px] md:text-[12px] text-muted-foreground mt-1" > {formatFirestoreDate(blogData.createdAt)}</p>
+            <p className="mt-4 text-[20px] font-[500] line-clamp-2">{blogData.title}</p>
+            {showDesc &&
+                <p className="mt-1 text-[15px] text-muted-foreground mb-auto">{blogData.metadata?.metaDescription}</p>
+            }
+            <p className="text-[14px] md:text-[12px] text-muted-foreground mt-3" > {formatFirestoreDate(blogData.createdAt)}</p>
         </a>
     )
 }

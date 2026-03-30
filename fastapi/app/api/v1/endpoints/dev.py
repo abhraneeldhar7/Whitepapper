@@ -205,9 +205,9 @@ def toggle_api_key(key_id: str, payload: ApiKeyToggle, user_id: CurrentUserIdDep
     return _dev_api_service.toggle_active(key_id, payload.isActive)
 
 
-@api_keys_router.delete("/api-keys/{key_id}")
-def delete_api_key(key_id: str, user_id: CurrentUserIdDep) -> dict[str, bool]:
+@api_keys_router.post("/api-keys/{key_id}/reset", response_model=ApiKeyCreateResponse)
+def reset_api_key(key_id: str, user_id: CurrentUserIdDep) -> ApiKeyCreateResponse:
     key_doc = _dev_api_service.get_by_id(key_id)
     if key_doc.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
-    return _dev_api_service.delete(key_id)
+    return _dev_api_service.reset(key_id)
