@@ -6,11 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn, copyToClipboardWithToast } from "@/lib/utils";
+import { getDevCollection, getDevPaper, getDevProject } from "@/lib/api/dev";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
-
-
-const DEV_API_DOC_BASE_URL = String(import.meta.env.PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "");
-const DEV_API_PROXY_PREFIX = "/api/dev";
 
 // API endpoints configuration
 const ENDPOINTS = [
@@ -26,7 +23,7 @@ const ENDPOINTS = [
         hasIdentifierOptions: false,
         identifierOptions: [],
         code: {
-            typescript: `const response = await fetch("${DEV_API_DOC_BASE_URL}${DEV_API_PROXY_PREFIX}/project", {
+            typescript: `const response = await fetch("/dev/project", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -36,7 +33,7 @@ const ENDPOINTS = [
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("${DEV_API_DOC_BASE_URL}${DEV_API_PROXY_PREFIX}/project", headers={
+            python: `response = requests.get("/dev/project", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -61,7 +58,7 @@ print(data)`,
             { name: "identifier", label: "Collection ID", type: "text", required: true, placeholder: "collection-id" },
         ],
         code: {
-            typescript: `const response = await fetch("${DEV_API_DOC_BASE_URL}${DEV_API_PROXY_PREFIX}/collection?id=COLLECTION_ID", {
+            typescript: `const response = await fetch("/dev/collection?id=COLLECTION_ID", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -71,7 +68,7 @@ print(data)`,
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("${DEV_API_DOC_BASE_URL}${DEV_API_PROXY_PREFIX}/collection?id=COLLECTION_ID", headers={
+            python: `response = requests.get("/dev/collection?id=COLLECTION_ID", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -96,7 +93,7 @@ print(data)`,
             { name: "identifier", label: "Paper ID", type: "text", required: true, placeholder: "paper-id" },
         ],
         code: {
-            typescript: `const response = await fetch("${DEV_API_DOC_BASE_URL}${DEV_API_PROXY_PREFIX}/paper?id=PAPER_ID", {
+            typescript: `const response = await fetch("/dev/paper?id=PAPER_ID", {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -106,7 +103,7 @@ print(data)`,
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("${DEV_API_DOC_BASE_URL}${DEV_API_PROXY_PREFIX}/paper?id=PAPER_ID", headers={
+            python: `response = requests.get("/dev/paper?id=PAPER_ID", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -255,39 +252,26 @@ export function ApiShowcase() {
         setResponse(null);
 
         try {
-            let url = `${DEV_API_PROXY_PREFIX}${selectedEndpoint.path}`;
-            const headers: HeadersInit = {
-                "x-api-key": variables.apiKey,
-                "Content-Type": "application/json",
-            };
+            let data: unknown;
 
-            // Handle identifier for collection and paper endpoints
-            if (selectedEndpoint.hasIdentifierOptions && variables.identifier) {
-                if (selectedEndpoint.id === "collection") {
-                    url += identifierType === "id"
-                        ? `?id=${encodeURIComponent(variables.identifier)}`
-                        : `?slug=${encodeURIComponent(variables.identifier)}`;
-                } else if (selectedEndpoint.id === "paper") {
-                    url += identifierType === "id"
-                        ? `?id=${encodeURIComponent(variables.identifier)}`
-                        : `?slug=${encodeURIComponent(variables.identifier)}`;
-                }
-            }
-
-            const res = await fetch(url, {
-                method: selectedEndpoint.method,
-                headers,
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                setResponse({ type: "error", data });
+            if (selectedEndpoint.id === "project") {
+                data = await getDevProject(variables.apiKey);
+            } else if (selectedEndpoint.id === "collection") {
+                data = await getDevCollection(variables.apiKey, identifierType, variables.identifier);
             } else {
-                setResponse({ type: "success", data });
+                data = await getDevPaper(variables.apiKey, identifierType, variables.identifier);
             }
-        } catch (error: any) {
-            setResponse({ type: "error", data: { error: error.message || "Network error occurred" } });
+
+            setResponse({ type: "success", data });
+        } catch (error) {
+            const errorMessage =
+                error instanceof Error ? error.message : "Network error occurred";
+            try {
+                const parsed = JSON.parse(errorMessage);
+                setResponse({ type: "error", data: parsed });
+            } catch {
+                setResponse({ type: "error", data: { error: errorMessage } });
+            }
         } finally {
             setIsLoading(false);
         }
@@ -421,7 +405,13 @@ export function ApiShowcase() {
                                     response.type === "error" && "text-destructive"
                                 )}
                             >
-                                {JSON.stringify(response.data, null, 2)}
+                                {(() => {
+                                    try {
+                                        return JSON.stringify(response.data ?? { message: "No response payload." }, null, 2);
+                                    } catch {
+                                        return String(response.data);
+                                    }
+                                })()}
                             </pre>
                         </div>
                     </div>
