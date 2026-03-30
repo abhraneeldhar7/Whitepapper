@@ -14,6 +14,8 @@ ROOT_RESERVED_PATHS = {
     "integrations",
     "blog",
     "blogs",
+    "updates",
+    "resources",
     "privacy-policy",
     "terms-of-service",
     "docs",
