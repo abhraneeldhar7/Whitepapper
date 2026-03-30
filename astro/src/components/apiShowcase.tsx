@@ -23,7 +23,9 @@ const ENDPOINTS = [
         hasIdentifierOptions: false,
         identifierOptions: [],
         code: {
-            typescript: `const response = await fetch("/dev/project", {
+            typescript: `const API_BASE_URL = \`\${import.meta.env.PUBLIC_API_BASE_URL}/dev\`;
+
+const response = await fetch(\`\${API_BASE_URL}/project\`, {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -33,7 +35,12 @@ const ENDPOINTS = [
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("/dev/project", headers={
+            python: `import os
+import requests
+
+API_BASE_URL = f"{os.getenv('PUBLIC_API_BASE_URL')}/dev"
+
+response = requests.get(f"{API_BASE_URL}/project", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -58,7 +65,9 @@ print(data)`,
             { name: "identifier", label: "Collection ID", type: "text", required: true, placeholder: "collection-id" },
         ],
         code: {
-            typescript: `const response = await fetch("/dev/collection?id=COLLECTION_ID", {
+            typescript: `const API_BASE_URL = \`\${import.meta.env.PUBLIC_API_BASE_URL}/dev\`;
+
+const response = await fetch(\`\${API_BASE_URL}/collection?QUERY_KEY=COLLECTION_ID\`, {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -68,7 +77,12 @@ print(data)`,
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("/dev/collection?id=COLLECTION_ID", headers={
+            python: `import os
+import requests
+
+API_BASE_URL = f"{os.getenv('PUBLIC_API_BASE_URL')}/dev"
+
+response = requests.get(f"{API_BASE_URL}/collection?QUERY_KEY=COLLECTION_ID", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -93,7 +107,9 @@ print(data)`,
             { name: "identifier", label: "Paper ID", type: "text", required: true, placeholder: "paper-id" },
         ],
         code: {
-            typescript: `const response = await fetch("/dev/paper?id=PAPER_ID", {
+            typescript: `const API_BASE_URL = \`\${import.meta.env.PUBLIC_API_BASE_URL}/dev\`;
+
+const response = await fetch(\`\${API_BASE_URL}/paper?QUERY_KEY=PAPER_ID\`, {
   method: "GET",
   headers: {
     "x-api-key": API_KEY,
@@ -103,7 +119,12 @@ print(data)`,
 
 const data = await response.json();
 console.log(data);`,
-            python: `response = requests.get("/dev/paper?id=PAPER_ID", headers={
+            python: `import os
+import requests
+
+API_BASE_URL = f"{os.getenv('PUBLIC_API_BASE_URL')}/dev"
+
+response = requests.get(f"{API_BASE_URL}/paper?QUERY_KEY=PAPER_ID", headers={
     "x-api-key": API_KEY,
     "Content-Type": "application/json",
 })
@@ -125,21 +146,25 @@ const replaceCodePlaceholders = (code: string, variables: Record<string, string>
     }
 
     // Replace identifier placeholder based on type
+    if (identifierType && (endpointId === "collection" || endpointId === "paper")) {
+        updatedCode = updatedCode.replace(/QUERY_KEY/g, identifierType === "id" ? "id" : "slug");
+    }
+
     if (identifierType && identifierValue) {
         if (endpointId === "collection") {
             if (identifierType === "id") {
-                updatedCode = updatedCode.replace(/id=COLLECTION_ID/g, `id=${identifierValue}`);
+                updatedCode = updatedCode.replace(/(id|slug)=COLLECTION_ID/g, `id=${identifierValue}`);
                 updatedCode = updatedCode.replace(/COLLECTION_ID/g, identifierValue);
             } else if (identifierType === "slug") {
-                updatedCode = updatedCode.replace(/id=COLLECTION_ID/g, `slug=${identifierValue}`);
+                updatedCode = updatedCode.replace(/(id|slug)=COLLECTION_ID/g, `slug=${identifierValue}`);
                 updatedCode = updatedCode.replace(/COLLECTION_ID/g, identifierValue);
             }
         } else if (endpointId === "paper") {
             if (identifierType === "id") {
-                updatedCode = updatedCode.replace(/id=PAPER_ID/g, `id=${identifierValue}`);
+                updatedCode = updatedCode.replace(/(id|slug)=PAPER_ID/g, `id=${identifierValue}`);
                 updatedCode = updatedCode.replace(/PAPER_ID/g, identifierValue);
             } else if (identifierType === "slug") {
-                updatedCode = updatedCode.replace(/id=PAPER_ID/g, `slug=${identifierValue}`);
+                updatedCode = updatedCode.replace(/(id|slug)=PAPER_ID/g, `slug=${identifierValue}`);
                 updatedCode = updatedCode.replace(/PAPER_ID/g, identifierValue);
             }
         }

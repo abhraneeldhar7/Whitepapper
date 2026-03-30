@@ -20,6 +20,8 @@ CurrentUserIdDep = Annotated[str, Depends(get_verified_id)]
 
 XApiKey = Annotated[str | None, Header(alias="x-api-key")]
 
+DEV_CACHE_CONTROL = "public, max-age=300, s-maxage=300, stale-while-revalidate=300"
+
 
 def _extract_api_key(api_key_header: str | None) -> str:
     value = (api_key_header or "").strip()
@@ -81,6 +83,11 @@ def _mask_owner_in_paper(paper: dict) -> dict:
     return masked
 
 
+def _set_dev_cache_headers(response: Response) -> None:
+    response.headers["Cache-Control"] = DEV_CACHE_CONTROL
+    response.headers["Vary"] = "x-api-key"
+
+
 
 @router.get("/project")
 async def get_project_bundle(
@@ -96,8 +103,7 @@ async def get_project_bundle(
         asyncio.to_thread(collections_service.list_project_collections, project_id, True),
     )
     _add_usage_increment(background_tasks, key_doc)
-    
-    response.headers["Cache-Control"] = "public, max-age=300, s-maxage=300, stale-while-revalidate=300"
+    _set_dev_cache_headers(response)
 
 
     return {
@@ -139,8 +145,7 @@ async def get_collection_bundle(
 
     _add_usage_increment(background_tasks, key_doc)
     papers = await asyncio.to_thread(papers_service.list_by_collection_id, collection.get("collectionId"), True)
-    
-    response.headers["Cache-Control"] = "public, max-age=300, s-maxage=300, stale-while-revalidate=300"
+    _set_dev_cache_headers(response)
 
 
     return {
@@ -162,8 +167,7 @@ async def get_paper(
     key_project_id = _extract_key_project_id(key_doc)
     paper = await asyncio.to_thread(_resolve_paper_for_project, key_project_id, paper_id, paper_slug)
     _add_usage_increment(background_tasks, key_doc)
-    
-    response.headers["Cache-Control"] = "public, max-age=300, s-maxage=300, stale-while-revalidate=300"
+    _set_dev_cache_headers(response)
 
 
     return {

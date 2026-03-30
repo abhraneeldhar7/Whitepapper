@@ -1,4 +1,3 @@
-import { apiClient, type ApiClient } from "@/lib/api/client";
 import type { CollectionDoc, PaperDoc, ProjectDoc } from "@/lib/types";
 
 type DevEntity<T> = Omit<T, "ownerId"> & {
@@ -28,39 +27,51 @@ function buildDevHeaders(apiKey: string): HeadersInit {
   };
 }
 
-export async function getDevProject(
+const DEV_API_BASE_URL = `${import.meta.env.PUBLIC_API_BASE_URL}/dev`;
+
+async function devGet<T>(
+  path: string,
   apiKey: string,
-  client: ApiClient = apiClient,
-): Promise<DevProjectResponse> {
-  return client.get<DevProjectResponse>("/dev/project", {
-    auth: "none",
+  query?: Record<string, string>,
+): Promise<T> {
+  const url = new URL(`${DEV_API_BASE_URL}${path}`);
+  if (query) {
+    for (const [key, value] of Object.entries(query)) {
+      url.searchParams.set(key, value);
+    }
+  }
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
     headers: buildDevHeaders(apiKey),
   });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Request failed with ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export async function getDevProject(
+  apiKey: string,
+): Promise<DevProjectResponse> {
+  return devGet<DevProjectResponse>("/project", apiKey);
 }
 
 export async function getDevCollection(
   apiKey: string,
   identifierType: IdentifierType,
   identifier: string,
-  client: ApiClient = apiClient,
 ): Promise<DevCollectionResponse> {
-  return client.get<DevCollectionResponse>("/dev/collection", {
-    auth: "none",
-    headers: buildDevHeaders(apiKey),
-    query: identifierType === "id" ? { id: identifier } : { slug: identifier },
-  });
+  return devGet<DevCollectionResponse>("/collection", apiKey, identifierType === "id" ? { id: identifier } : { slug: identifier });
 }
 
 export async function getDevPaper(
   apiKey: string,
   identifierType: IdentifierType,
   identifier: string,
-  client: ApiClient = apiClient,
 ): Promise<DevPaperResponse> {
-  return client.get<DevPaperResponse>("/dev/paper", {
-    auth: "none",
-    headers: buildDevHeaders(apiKey),
-    query: identifierType === "id" ? { id: identifier } : { slug: identifier },
-  });
+  return devGet<DevPaperResponse>("/paper", apiKey, identifierType === "id" ? { id: identifier } : { slug: identifier });
 }
-
