@@ -306,7 +306,7 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
       }
 
       let height = 'h-[1px]'
-      
+
       // Color based on active state
       let bgColor = 'bg-muted-foreground';
       if (isActiveHeading) {
@@ -327,19 +327,25 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
       lines.push(
         <div
           key={i}
-          className={`relative flex items-center transition-all duration-300 ease-in-out justify-end w-full group gap-5 ${isHeadingLine && isHeadingInHoverRadius ? 'py-[20px]' : 'py-[5px]'}`}
-                  >
+          className={`relative flex items-center transition-all duration-300 ease-in-out justify-end w-full group gap-5 ${isHeadingLine && isHeadingInHoverRadius ? 'py-[15px]' : 'py-[5px]'}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isHeadingLine && headings[closestHeadingIndex]) {
+              handleLineClick(i);
+            }
+          }}
+        >
           {/* Heading text on hover - with opacity transition */}
           <div
             ref={(el) => { lineRefs.current[i] = el; }}
             className={`
               cursor-pointer select-none
               absolute right-0 mr-[35px] 
-              max-w-[400px] truncate text-muted-foreground/80 group-hover:font-[400] group-hover:text-foreground 
+              max-w-[400px] truncate 
               transition-all duration-300 ease-in-out leading-[1em]
               ${isHeadingInHoverRadius
-                  ? 'text-[16px]'
-                  : 'text-[10px]'}
+                ? 'text-[18px] font-[450] text-foreground '
+                : 'text-[10px] text-muted-foreground/80'}
               ${isHeadingLine && headings[closestHeadingIndex]
                 ? isHovering
                   ? 'opacity-100 cursor-pointer'
@@ -347,12 +353,7 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
                 : 'opacity-0 pointer-events-none'
               }
             `}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (isHeadingLine && headings[closestHeadingIndex]) {
-                handleLineClick(i);
-              }
-            }}
+
           >
             {isHeadingLine && headings[closestHeadingIndex] && headings[closestHeadingIndex].text}
           </div>
