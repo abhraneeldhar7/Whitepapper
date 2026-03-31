@@ -1,28 +1,47 @@
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const target = env.CLOUD_RUN_URL;
-    const newUrl = target + url.pathname + url.search;
+    try {
+      const target = (env.CLOUD_RUN_URL || "").trim();
+      if (!target) {
+        return new Response("Missing CLOUD_RUN_URL", { status: 500 });
+      }
 
-    const cacheKey = new Request(newUrl, request);
-    const cache = caches.default;
+      const incomingUrl = new URL(request.url);
+      const upstreamBase = target.endsWith("/") ? target.slice(0, -1) : target;
+      const upstreamUrl = `${upstreamBase}${incomingUrl.pathname}${incomingUrl.search}`;
 
-    // return from cache if exists
-    let response = await cache.match(cacheKey);
-    if (response) return response;
+      const shouldUseCache = request.method === "GET";
+      const cache = caches.default;
+      const cacheKey = shouldUseCache ? new Request(upstreamUrl, request) : null;
 
-    // otherwise hit Cloud Run
-    const newRequest = new Request(newUrl, {
-      method: request.method,
-      headers: request.headers,
-      body: request.body
-    });
+      if (shouldUseCache && cacheKey) {
+        const cached = await cache.match(cacheKey);
+        if (cached) return cached;
+      }
 
-    response = await fetch(newRequest);
+      const upstreamHeaders = new Headers(request.headers);
+      upstreamHeaders.delete("host");
 
-    // cache it if FastAPI said s-maxage
-    ctx.waitUntil(cache.put(cacheKey, response.clone()));
+      const upstreamRequestInit = {
+        method: request.method,
+        headers: upstreamHeaders,
+      };
 
-    return response;
+      if (request.method !== "GET" && request.method !== "HEAD") {
+        upstreamRequestInit.body = request.body;
+      }
+
+      const upstreamRequest = new Request(upstreamUrl, upstreamRequestInit);
+      const response = await fetch(upstreamRequest);
+
+      if (shouldUseCache && cacheKey && response.ok) {
+        ctx.waitUntil(cache.put(cacheKey, response.clone()));
+      }
+
+      return response;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown Worker error";
+      return new Response(`Proxy error: ${message}`, { status: 502 });
+    }
   }
 }
