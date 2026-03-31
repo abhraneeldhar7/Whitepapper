@@ -33,6 +33,55 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function deepEqual(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) {
+    return true;
+  }
+
+  if (typeof a !== typeof b) {
+    return false;
+  }
+
+  if (a === null || b === null) {
+    return a === b;
+  }
+
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) {
+      return false;
+    }
+    for (let i = 0; i < a.length; i += 1) {
+      if (!deepEqual(a[i], b[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  if (typeof a === "object" && typeof b === "object") {
+    const objA = a as Record<string, unknown>;
+    const objB = b as Record<string, unknown>;
+    const keysA = Object.keys(objA);
+    const keysB = Object.keys(objB);
+
+    if (keysA.length !== keysB.length) {
+      return false;
+    }
+
+    for (const key of keysA) {
+      if (!Object.prototype.hasOwnProperty.call(objB, key)) {
+        return false;
+      }
+      if (!deepEqual(objA[key], objB[key])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  return false;
+}
+
 type FirestoreDateInput =
   | Date
   | string
@@ -199,21 +248,22 @@ export async function compressImage({ file, maxWidth, maxHeight, crop = false }:
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = "high";
           ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
+          const outputType = type || ("type" in file ? (file.type || "") : "");
           canvas.toBlob((blob) => {
             if (blob) {
               const fileName = "name" in file && file.name
                 ? file.name
-                : `optimized-image${ext || ".jpg"}`;
+                : `optimized-image${ext || ""}`;
               const optimizedFile = new File(
                 [blob],
                 fileName,
-                { type: type || "image/jpeg", lastModified: Date.now() },
+                { type: outputType, lastModified: Date.now() },
               );
               resolve(optimizedFile);
             } else {
               reject(new Error("Canvas to Blob failed"));
             }
-          }, type || "image/jpeg", 0.85);
+          }, outputType || undefined, 0.85);
         } else {
           reject(new Error("No canvas context"));
         }

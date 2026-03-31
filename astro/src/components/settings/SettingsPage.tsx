@@ -125,7 +125,7 @@ export default function SettingsPage({ initialUser }: SettingsPageProps) {
 
               <div className={`overflow-hidden flex gap-2 transition-all duration-300 ${hasChanges ? "opacity-100 h-full" : "opacity-0 h-0"}`} >
                 <Button variant="secondary" onClick={() => { setUserDetails(initialUser) }}><XIcon /></Button>
-                <Button type="button" onClick={onSave} disabled={!hasChanges || uploadingAvatar} loading={saving}>
+                <Button  onClick={onSave} disabled={!hasChanges || uploadingAvatar} loading={saving}>
                   <Save /> Save
                 </Button>
               </div>

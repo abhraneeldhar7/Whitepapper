@@ -22,6 +22,7 @@ import type { PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
 import FolderNotes from "../folderComponent";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
+import PaperPreviewSheet from "../paperPreviewSheet";
 import ScrollToTop from "../scrollToTop";
 import ProjectCard from "../project/ProjectCard";
 
@@ -78,6 +79,8 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
   const [pages, setPages] = useState<PaperDoc[]>(initialPages);
   const [creatingPage, setCreatingPage] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedPaper, setSelectedPaper] = useState<PaperDoc | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectPublic, setNewProjectPublic] = useState(true);
@@ -192,7 +195,10 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
                     key={page.paperId}
                     handle={initialUser?.username ?? "user"}
                     paperData={page}
-                    onDeleted={(paperId) => setPages((prev) => prev.filter((p) => p.paperId !== paperId))}
+                    onSelect={(paper) => {
+                      setSelectedPaper(paper);
+                      setPreviewOpen(true);
+                    }}
                   />
                 ))}
 
@@ -222,7 +228,7 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
                     {projects && projects.length > 0 && (
                       <div className="flex flex-col items-center">
                         <button
-                          type="button"
+                          
                           className="border-0 bg-transparent p-0 outline-0"
                           onClick={() => setCreateDialogOpen(true)}
                           aria-label="Create project"
@@ -275,14 +281,14 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
                     </div>
                     <DialogFooter>
                       <Button
-                        type="button"
+                        
                         variant="secondary"
                         onClick={() => setCreateDialogOpen(false)}
                         disabled={creatingProject}
                       >
                         Cancel
                       </Button>
-                      <Button type="button" onClick={handleCreateProject} loading={creatingProject}>
+                      <Button  onClick={handleCreateProject} loading={creatingProject}>
                         Create
                       </Button>
                     </DialogFooter>
@@ -297,6 +303,12 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
           <TabsContent value="settings" />
         </Tabs>
       </div>
+      <PaperPreviewSheet
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        paper={selectedPaper}
+        handle={initialUser?.username ?? "user"}
+      />
     </div>
   );
 }

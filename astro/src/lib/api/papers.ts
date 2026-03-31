@@ -1,5 +1,5 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
-import type { PaperCreateResponse, PaperDoc } from "@/lib/types";
+import type { PaperCreateResponse, PaperDoc, PaperMetadata } from "@/lib/types";
 
 type CreatePaperInput = {
   title?: string;
@@ -15,6 +15,7 @@ type UpdatePaperInput = {
   slug?: string;
   body?: string;
   status?: "draft" | "published" | "archived";
+  metadata?: PaperMetadata | null;
 };
 
 export async function listStandalonePapers(
@@ -56,6 +57,16 @@ export async function updatePaper(
   client: ApiClient = apiClient,
 ): Promise<PaperDoc> {
   return client.patch<PaperDoc>(`/papers/${paperId}`, {
+    body: input,
+  });
+}
+
+export async function generatePaperMetadata(
+  paperId: string,
+  input: UpdatePaperInput,
+  client: ApiClient = apiClient,
+): Promise<PaperMetadata> {
+  return client.post<PaperMetadata>(`/papers/${paperId}/metadata/generate`, {
     body: input,
   });
 }

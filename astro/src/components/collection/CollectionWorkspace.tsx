@@ -26,6 +26,7 @@ import {
 import type { CollectionDoc, PaperDoc, UserDoc } from "@/lib/types";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
+import PaperPreviewSheet from "../paperPreviewSheet";
 import ScrollToTop from "../scrollToTop";
 
 type CollectionWorkspaceProps = {
@@ -58,6 +59,8 @@ export default function CollectionWorkspace({
   const [collection, setCollection] = useState<CollectionDoc | null>(initialCollection);
   const [pages, setPages] = useState<PaperDoc[]>(initialPages);
   const [creatingPage, setCreatingPage] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedPaper, setSelectedPaper] = useState<PaperDoc | null>(null);
   const [editingCollection, setEditingCollection] = useState(false);
   const [savingCollection, setSavingCollection] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -285,7 +288,7 @@ export default function CollectionWorkspace({
               {editingCollection ? (
                 <>
                   <Button
-                    type="button"
+                    
                     variant="secondary"
                     onClick={() => {
                       setCollection(initialCollection);
@@ -297,7 +300,7 @@ export default function CollectionWorkspace({
                     <XIcon /> Cancel
                   </Button>
                   <Button
-                    type="button"
+                    
                     onClick={handleSaveCollectionDetails}
                     loading={savingCollection}
                     disabled={checkingSlug || !isSlugAvailable}
@@ -306,7 +309,7 @@ export default function CollectionWorkspace({
                   </Button>
                 </>
               ) : (
-                <Button type="button" onClick={() => setEditingCollection(true)}>
+                <Button  onClick={() => setEditingCollection(true)}>
                   <PencilIcon /> Edit
                 </Button>
               )}
@@ -319,7 +322,7 @@ export default function CollectionWorkspace({
                   <div className="flex items-center gap-4 justify-between">
                     <p className="text-sm font-mono text-muted-foreground break-all">{collection.collectionId}</p>
                     <Button
-                      type="button"
+                      
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => {
@@ -406,13 +409,13 @@ export default function CollectionWorkspace({
                     <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button type="button" variant="outline" size="icon" className="rounded-[50%]">
+                          <Button  variant="outline" size="icon" className="rounded-[50%]">
                             <Ellipsis className="text-destructive" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="end">
                           <Button
-                            type="button"
+                            
                             variant="ghost"
                             className="w-full text-destructive"
                             onClick={() => setDeleteOpen(true)}
@@ -430,10 +433,10 @@ export default function CollectionWorkspace({
                         </DialogHeader>
 
                         <DialogFooter>
-                          <Button type="button" variant="secondary" onClick={() => setDeleteOpen(false)} disabled={deleteLoading}>
+                          <Button  variant="secondary" onClick={() => setDeleteOpen(false)} disabled={deleteLoading}>
                             Cancel
                           </Button>
-                          <Button type="button" variant="destructive" onClick={handleDeleteCollection} loading={deleteLoading}>
+                          <Button  variant="destructive" onClick={handleDeleteCollection} loading={deleteLoading}>
                             Confirm delete
                           </Button>
                         </DialogFooter>
@@ -496,7 +499,10 @@ export default function CollectionWorkspace({
                       key={page.paperId}
                       handle={initialUser?.username ?? "user"}
                       paperData={page}
-                      onDeleted={(paperId) => setPages((prev) => prev.filter((p) => p.paperId !== paperId))}
+                      onSelect={(paper) => {
+                        setSelectedPaper(paper);
+                        setPreviewOpen(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -505,6 +511,12 @@ export default function CollectionWorkspace({
           </div>
         </div>
       </div>
+      <PaperPreviewSheet
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        paper={selectedPaper}
+        handle={initialUser?.username ?? "user"}
+      />
     </div>
   );
 }

@@ -323,14 +323,14 @@ export function ApiShowcase() {
                             ? "translate-y-[0px]"
                             : "translate-y-[-50px]")}>
                     <Button
-                        type="button"
+                        
                         variant={identifierType === "id" ? "default" : "outline"}
                         size="xs"
                         onClick={() => handleIdentifierTypeChange("id")}>
                         By ID
                     </Button>
                     <Button
-                        type="button"
+                        
                         variant={identifierType === "slug" ? "default" : "outline"}
                         size="xs"
                         onClick={() => handleIdentifierTypeChange("slug")}>

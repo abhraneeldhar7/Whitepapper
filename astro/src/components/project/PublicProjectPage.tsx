@@ -50,7 +50,7 @@ export default function PublicProjectPage({
             </div>
             {canManageProject && (
               <a href={`/dashboard/${project.projectId}`}>
-                <Button type="button">Open dashboard</Button>
+                <Button >Open dashboard</Button>
               </a>
             )}
           </div>

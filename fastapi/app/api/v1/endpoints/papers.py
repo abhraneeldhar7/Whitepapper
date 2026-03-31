@@ -3,7 +3,7 @@ import re
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 
 from app.services.auth_service import get_verified_id
-from app.schemas.entities import PaperCreate, PaperCreateResponse, PaperDoc, PaperUpdate
+from app.schemas.entities import PaperCreate, PaperCreateResponse, PaperDoc, PaperMetadata, PaperMetadataGenerate, PaperUpdate
 from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
@@ -65,6 +65,21 @@ async def upload_embedded_image(
     return await papers_service.upload_embedded_image(paper_id, file)
 
 
+@router.post("/papers/{paper_id}/metadata-image/{field}")
+async def upload_metadata_image(
+    paper_id: str,
+    field: str,
+    file: UploadFile = File(...),
+    user_id: str = Depends(get_verified_id),
+) -> dict[str, str]:
+    paper = papers_service.get_by_id(paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="Paper not found.")
+    if paper.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    return await papers_service.upload_metadata_image(paper_id, field, file)
+
+
 @router.post("/papers", response_model=PaperCreateResponse, status_code=201)
 def create_paper(payload: PaperCreate, user_id: str = Depends(get_verified_id)) -> PaperCreateResponse:
     if payload.projectId:
@@ -101,7 +116,23 @@ def patch_paper(
     if payload.body is not None:
         used_urls = _extract_image_urls(updated.get("body") or "")
         papers_service.delete_unused_embedded_images(user_id, paper_id, used_urls)
+    metadata_urls = papers_service.extract_metadata_image_urls(updated.get("metadata"))
+    papers_service.delete_unused_metadata_images(user_id, paper_id, metadata_urls)
     return updated
+
+
+@router.post("/papers/{paper_id}/metadata/generate", response_model=PaperMetadata)
+def generate_paper_metadata(
+    paper_id: str,
+    payload: PaperMetadataGenerate,
+    user_id: str = Depends(get_verified_id),
+) -> PaperMetadata:
+    paper = papers_service.get_by_id(paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="Paper not found.")
+    if paper.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    return papers_service.generate_metadata_preview(paper_id, payload.model_dump(exclude_unset=True))
 
 
 @router.get("/papers/slug/available")

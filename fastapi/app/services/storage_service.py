@@ -58,13 +58,12 @@ class StorageService:
         if not detected:
             raise HTTPException(status_code=400, detail="Unsupported image format.")
 
-        detected_type, detected_ext = detected
+        detected_type, _detected_ext = detected
         if detected_type not in ALLOWED_IMAGE_MIME_TYPES:
             raise HTTPException(status_code=400, detail="Unsupported image format.")
 
         source_ext = Path(file.filename or "").suffix.lower()
-        allowed_exts = IMAGE_MIME_TO_EXTENSIONS.get(detected_type, set())
-        extension = source_ext if source_ext in allowed_exts else detected_ext
+        extension = source_ext or ""
         return detected_type, extension, detected_format
 
     async def upload_image(
@@ -94,7 +93,7 @@ class StorageService:
             overwrite_path = Path(overwrite_name)
             filename = overwrite_name if overwrite_path.suffix else f"{overwrite_name}{ext}"
         else:
-            filename = f"{uuid4()}{ext}"
+            filename = f"{uuid4()}{ext}" if ext else str(uuid4())
         object_path = f"{path_prefix}/{filename}"
         blob = self._bucket().blob(object_path)
         blob.upload_from_string(content, content_type=content_type)

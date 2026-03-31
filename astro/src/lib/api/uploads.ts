@@ -34,6 +34,17 @@ export async function uploadEmbeddedImage(
   });
 }
 
+export async function uploadPaperMetadataImage(
+  paperId: string,
+  field: string,
+  file: File,
+  client: ApiClient = apiClient,
+): Promise<{ url: string }> {
+  return client.post<{ url: string }>(`/papers/${paperId}/metadata-image/${field}`, {
+    body: createUploadBody(file),
+  });
+}
+
 export async function uploadProfileImage(
   file: File,
   client: ApiClient = apiClient,

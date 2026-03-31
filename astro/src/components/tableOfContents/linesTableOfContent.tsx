@@ -17,12 +17,44 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeId, setActiveId] = useState<string>('');
   const [isHovering, setIsHovering] = useState<boolean>(false);
+  const [hoverY, setHoverY] = useState<number | null>(null);
   const tocRef = useRef<HTMLDivElement>(null);
+  const lineRefs = useRef<Array<HTMLDivElement | null>>([]);
   const lineCount: number = 40;
   const scrollRootRef = useRef<HTMLElement | Window | null>(null);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialActiveSetRef = useRef<boolean>(false);
   const headingLineMapRef = useRef<Map<number, number>>(new Map());
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      const distanceFromRight = window.innerWidth - event.clientX;
+
+      setIsHovering((prev) => {
+        const shouldExpand = prev ? distanceFromRight <= 400 : distanceFromRight <= 100;
+        return shouldExpand;
+      });
+
+      if (distanceFromRight <= 400) {
+        setHoverY(event.clientY);
+      } else {
+        setHoverY(null);
+      }
+    };
+
+    const handleMouseLeave = () => {
+      setIsHovering(false);
+      setHoverY(null);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    window.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, []);
 
   const getAbsoluteTop = useCallback((element: Element, root: HTMLElement | Window): number => {
     const rect = element.getBoundingClientRect();
@@ -96,12 +128,17 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
     if (headings.length === 0) return map;
 
     const maxLineIndex = lineCount - 1;
+    const requestedGap = 1;
+    const maxPossibleGap = headings.length > 1
+      ? Math.floor(maxLineIndex / (headings.length - 1))
+      : requestedGap;
+    const minLineGap = Math.max(1, Math.min(requestedGap, maxPossibleGap));
 
     for (let i = 0; i < headings.length; i++) {
       const heading = headings[i];
       const remainingHeadings = headings.length - i - 1;
-      const minAllowed = i === 0 ? 0 : (map.get(i - 1) ?? 0) + 1;
-      const maxAllowed = Math.max(minAllowed, maxLineIndex - remainingHeadings);
+      const minAllowed = i === 0 ? 0 : (map.get(i - 1) ?? 0) + minLineGap;
+      const maxAllowed = Math.max(minAllowed, maxLineIndex - (remainingHeadings * minLineGap));
 
       const rawLine = Math.round(heading.position * maxLineIndex);
       const lineIndex = Math.min(maxAllowed, Math.max(minAllowed, rawLine));
@@ -233,7 +270,7 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
     const rootTop = root instanceof Window ? 0 : root.getBoundingClientRect().top;
     const currentScroll = root instanceof Window ? window.scrollY : root.scrollTop;
     const elementTop = headingElement.getBoundingClientRect().top - rootTop + currentScroll;
-    const offset = 50;
+    const offset = 20;
 
     if (root instanceof Window) {
       window.scrollTo({ top: elementTop - offset, behavior: 'smooth' });
@@ -248,6 +285,14 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
     for (let i = 0; i < lineCount; i++) {
       const closestHeadingIndex = headingIndexForLine(i);
       const isHeadingLine = closestHeadingIndex !== -1;
+      const isHeadingInHoverRadius = isHovering &&
+        hoverY !== null &&
+        !!lineRefs.current[i] &&
+        Math.abs(
+          (lineRefs.current[i]?.getBoundingClientRect().top ?? 0) +
+          ((lineRefs.current[i]?.getBoundingClientRect().height ?? 0) / 2) -
+          hoverY
+        ) <= 20;
 
       // Check if this line corresponds to the active heading
       const isActiveHeading = isHeadingLine &&
@@ -282,18 +327,23 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
       lines.push(
         <div
           key={i}
-          className="relative flex items-center justify-end w-full"
-          style={{ height: '24px' }}
-        >
+          className={`relative flex items-center transition-all duration-300 ease-in-out justify-end w-full group gap-5 ${isHeadingLine && isHeadingInHoverRadius ? 'py-[20px]' : 'py-[5px]'}`}
+                  >
           {/* Heading text on hover - with opacity transition */}
           <div
+            ref={(el) => { lineRefs.current[i] = el; }}
             className={`
               cursor-pointer select-none
-              absolute right-0 mr-5 px-3 py-1.5 text-[15px] rounded-md 
-              max-w-[400px] truncate text-muted-foreground
-              transition-opacity duration-200
-              ${isHovering && isHeadingLine && headings[closestHeadingIndex]
-                ? 'opacity-100 cursor-pointer hover:text-foreground'
+              absolute right-0 mr-[35px] 
+              max-w-[400px] truncate text-muted-foreground/80 group-hover:font-[400] group-hover:text-foreground 
+              transition-all duration-300 ease-in-out leading-[1em]
+              ${isHeadingInHoverRadius
+                  ? 'text-[16px]'
+                  : 'text-[10px]'}
+              ${isHeadingLine && headings[closestHeadingIndex]
+                ? isHovering
+                  ? 'opacity-100 cursor-pointer'
+                  : 'opacity-0 pointer-events-none'
                 : 'opacity-0 pointer-events-none'
               }
             `}
@@ -311,7 +361,7 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
           <div
             className={`
               ${width} ${height} ${bgColor} rounded-full ${isHeadingLine ? 'cursor-pointer' : ''}
-              transition-all duration-200
+              transition-all ease-in-out duration-300
               ${isHeadingLine ? 'opacity-100' : 'opacity-80 hover:opacity-100'}
             `}
             onClick={(e) => {
@@ -332,15 +382,10 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
   return (
     <div
       ref={tocRef}
-      className="fixed right-0 top-0 h-screen flex items-center z-50"
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      className={`fixed right-0 top-0 h-screen flex justify-end items-center z-50 transition-all ease-in-out duration-300 ${isHovering ? 'w-[400px]' : 'w-[100px]'}`}
     >
-      {/* Hover detection area - 100px from right edge */}
-      <div className="absolute inset-y-0 left-0 w-[200px] -ml-[100px]" />
-
       {/* Table of contents */}
-      <div className="h-full flex flex-col justify-center py-8 pr-3">
+      <div className="h-full max-w-[400px] flex flex-col justify-center py-8 pr-3">
         <div className="flex flex-col justify-between h-full">
           {renderLines()}
         </div>

@@ -93,7 +93,7 @@ export const AnimatedThemeToggler = ({
 
   return (
     <button
-      type="button"
+      
       ref={buttonRef}
       onClick={toggleTheme}
       className={cn(className)}

@@ -31,6 +31,7 @@ PAPER_COLLECTION_KEY = "collectionId"
 PAPER_STATUS_KEY = "status"
 PAPER_STATUS_PUBLISHED = "published"
 SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
+METADATA_IMAGE_FIELDS = ("ogImage", "twitterImage", "coverImageUrl")
 
 
 class PapersService:
@@ -379,7 +380,7 @@ class PapersService:
         payload[PAPER_ID_KEY] = paper_id
         payload["createdAt"] = now
         payload["updatedAt"] = now
-        payload["metadata"] = self._build_metadata(payload)
+        payload["metadata"] = None
         firestore_store.create(PAPERS_COLLECTION, payload, doc_id=paper_id)
 
         if collection_id:
@@ -424,7 +425,16 @@ class PapersService:
                 owner_username = None
         payload["updatedAt"] = utc_now()
         merged_doc = {**current, **payload}
-        payload["metadata"] = self._build_metadata(merged_doc)
+        metadata_in_payload = "metadata" in payload
+
+        if force_metadata_refresh:
+            payload["metadata"] = self._build_metadata(merged_doc)
+        elif not metadata_in_payload:
+            next_status = merged_doc.get(PAPER_STATUS_KEY) or "draft"
+            metadata_value = merged_doc.get("metadata")
+            if next_status == PAPER_STATUS_PUBLISHED and not metadata_value:
+                payload["metadata"] = self._build_metadata(merged_doc)
+
         firestore_store.update(PAPERS_COLLECTION, paper_id, payload)
         current.update(payload)
         self.invalidate_paper(
@@ -434,6 +444,18 @@ class PapersService:
             project_id=previous_project_id,
         )
         return current
+
+    def generate_metadata_preview(self, paper_id: str, payload: dict) -> dict:
+        current = firestore_store.get(PAPERS_COLLECTION, paper_id)
+        if not current:
+            raise HTTPException(status_code=404, detail="Paper not found.")
+
+        preview_payload = dict(payload)
+        if preview_payload.get("slug"):
+            preview_payload["slug"] = normalize_slug(preview_payload["slug"])
+
+        merged_doc = {**current, **preview_payload}
+        return self._build_metadata(merged_doc)
 
     async def upload_thumbnail(self, paper_id: str, file: UploadFile) -> dict[str, str]:
         paper = self.get_by_id(paper_id)
@@ -454,6 +476,27 @@ class PapersService:
         url = add_cache_buster(url)
         self.update(paper_id, {"thumbnailUrl": url})
         return {"url": url}
+
+    async def upload_metadata_image(self, paper_id: str, field: str, file: UploadFile) -> dict[str, str]:
+        paper = self.get_by_id(paper_id)
+        if not paper:
+            raise HTTPException(status_code=404, detail="Paper not found.")
+        owner_id = paper.get(PAPER_OWNER_KEY)
+        if not owner_id:
+            raise HTTPException(status_code=400, detail="Paper owner is missing.")
+
+        if field not in METADATA_IMAGE_FIELDS:
+            raise HTTPException(status_code=400, detail="Unsupported metadata image field.")
+
+        url = await storage_service.upload_image(
+            f"users/{owner_id}/papers/{paper_id}/metadata",
+            file,
+            max_width=500,
+            max_height=500,
+            crop=False,
+            overwrite_name=field,
+        )
+        return {"url": add_cache_buster(url)}
 
     async def upload_embedded_image(self, paper_id: str, file: UploadFile) -> dict[str, str]:
         paper = self.get_by_id(paper_id)
@@ -482,6 +525,23 @@ class PapersService:
         base = f"users/{owner_id}/papers/{paper_id}/thumbnail/thumbnail"
         return storage_service.delete_first_existing(
             [base, *[f"{base}{ext}" for ext in SUPPORTED_IMAGE_EXTENSIONS]]
+        )
+
+    @staticmethod
+    def extract_metadata_image_urls(metadata: dict | None) -> set[str]:
+        if not isinstance(metadata, dict):
+            return set()
+        used_urls: set[str] = set()
+        for field in METADATA_IMAGE_FIELDS:
+            value = metadata.get(field)
+            if isinstance(value, str) and value.strip():
+                used_urls.add(value.strip())
+        return used_urls
+
+    def delete_unused_metadata_images(self, owner_id: str, paper_id: str, used_urls: set[str]) -> int:
+        return storage_service.delete_unreferenced_blobs(
+            f"users/{owner_id}/papers/{paper_id}/metadata/",
+            used_urls,
         )
 
     def delete_paper_assets(self, owner_id: str, paper_id: str) -> int:

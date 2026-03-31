@@ -20,6 +20,7 @@ import DashboardPic from "@/assets/landingPage/dashboardPic.png";
 import MobileToc from "@/assets/landingPage/mobileToc.png";
 import DesktopToc from "@/assets/landingPage/desktopLinesToc.png";
 import MarkdownRender from "@/assets/landingPage/markdownRender.png";
+import { Button } from "@/components/ui/button";
 
 const integrationLogoList = [
 	{ src: LinkedinLogo, alt: "LinkedIn" },
@@ -45,37 +46,45 @@ const navButtonsList = [
 <Layout>
 	<div class="relative mb-20 overflow-hidden">
 		<div
-			class="fixed left-0 top-0 z-[10] flex w-full items-center justify-between gap-5 px-2 py-2 md:backdrop-blur-[20px]"
+			class="fixed left-0 top-0 z-[10] flex w-full items-center justify-center gap-5 px-4 py-2 backdrop-blur-[20px] bg-background/80 border-b border-border/50"
 		>
-			<div></div>
-
-			<div class="hidden gap-5 text-[14px] leading-[1em] md:flex">
-				{
-					navButtonsList.map((button) => (
-						<a
-							href={button.href}
-							class="group flex cursor-pointer gap-2 p-3 font-[350] opacity-[0.8] transition-all duration-300 hover:opacity-[1]"
-						>
-							{button.title}
-							<ArrowUpRight className="size-[14px] opacity-[0.7] transition-all duration-300 group-hover:opacity-[1]" />
-						</a>
-					))
-				}
-			</div>
-
-			<a
-				href="/sign-up"
-				class="hidden h-[35px] w-[70px] items-center justify-center rounded-sm bg-primary text-sm text-primary-foreground transition-all duration-300 hover:bg-primary/80 md:flex"
+			<div
+				class="max-w-[1200px] w-full flex items-center justify-between gap-10"
 			>
-				Join
-			</a>
+				<div>
+					<img src="/appLogo.png" height="30" width="30" class="md:hidden"/>
+				</div>
 
-			<div class="md:hidden">
-				<LandingMobileMenu client:load navButtons={navButtonsList} />
+				<div class="hidden gap-5 text-[14px] leading-[1em] md:flex">
+					{
+						navButtonsList.map((button) => (
+							<a
+								href={button.href}
+								class="group flex cursor-pointer gap-2 p-3 dark:font-[350] font-[400] opacity-[0.8] transition-all duration-300 hover:opacity-[1]"
+							>
+								{button.title}
+								<ArrowUpRight className="size-[14px] opacity-[0.7] transition-all duration-300 group-hover:opacity-[1]" />
+							</a>
+						))
+					}
+				</div>
+
+				<div class="flex gap-4">
+					<a href="/sign-up">
+						<Button className="w-[80px]"> Login </Button>
+					</a>
+					
+					<div class="md:hidden">
+						<LandingMobileMenu
+						client:load
+						navButtons={navButtonsList}
+						/>
+					</div>
+				</div>
 			</div>
 		</div>
 
-		<div class="mx-auto w-full font-[Satoshi]">
+		<div class="mx-auto w-full">
 			<div
 				class="absolute left-[-80%] top-[3%] z-[-1] h-[10px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-30%] md:top-[-2%]"
 			>
@@ -86,9 +95,17 @@ const navButtonsList = [
 			</div>
 
 			<div
-				class="relative flex h-[100svh] flex-col items-center justify-start overflow-hidden pt-20 md:pt-40"
+				class="relative flex h-[100svh] flex-col items-start justify-start overflow-hidden px-5 md:px-15 pt-28 md:pt-30"
 			>
-				<div
+				<h1
+					class="heroText text-[50px] md:text-[60px] flex md:flex-row flex-col"
+				>
+					<span>SEO first</span><span> content engine</span>
+				</h1>
+				
+				<p class="heroText text-[17px] text-muted-foreground my-4 md:w-[600px]" style="animation-delay: 0.25s;"> Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quibusdam, dolore quam consectetur quisquam officiis voluptatem! </p>
+
+				<!-- <div
 					class="heroText group relative flex cursor-pointer gap-2 overflow-hidden rounded-[20px] border bg-muted px-[15px] pb-[7px] pt-[8px] text-[12px] leading-[1em]"
 					style="animation-delay: 0.65s;"
 				>
@@ -183,11 +200,11 @@ const navButtonsList = [
 					Whitepapper is <span class="font-[450] underline"
 						>open-sourced</span
 					> for schizo writers
-				</p>
+				</p> -->
 
 				<div
-					class="heroText absolute bottom-0 left-[50%] z-[-1] h-[110vw] w-[200vw] translate-x-[-50%] translate-y-[54%] overflow-hidden rounded-[50%] md:w-[150vw] md:translate-y-[85%]"
-					style="animation-delay: 0.3s;"
+					class="heroText absolute bottom-0 left-[50%] z-[-1] h-[110vw] w-[200vw] translate-x-[-50%] translate-y-[54%] overflow-hidden rounded-[50%] md:w-[150vw] md:translate-y-[85%] ease-in"
+					style="animation-delay: 0.5s;"
 				>
 					<div
 						class="h-[110vw] w-full rounded-[50%] border-[5px] border-foreground/50 blur-[20px]"
