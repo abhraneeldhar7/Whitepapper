@@ -11,8 +11,60 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
 const DEV_API_BASE_URL = `${String(import.meta.env.PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "")}/dev`;
 
-// API endpoints configuration
-const ENDPOINTS = [
+type IdentifierType = "id" | "slug";
+type Language = "typescript" | "python";
+
+type EndpointVariable = {
+    name: string;
+    label: string;
+    type: string;
+    required: boolean;
+    placeholder: string;
+};
+
+type EndpointConfig = {
+    id: "project" | "collection" | "paper";
+    name: string;
+    method: "GET";
+    path: string;
+    description: string;
+    hasIdentifierOptions: boolean;
+    identifierOptions: Array<{ value: IdentifierType; label: string }>;
+    variables: EndpointVariable[];
+    sampleVariables: Record<string, string>;
+    code: Record<Language, string>;
+};
+
+function getEndpointVariables(endpoint: EndpointConfig, identifierType: IdentifierType): EndpointVariable[] {
+    return endpoint.variables.map((variable) => {
+        if (variable.name !== "identifier") {
+            return variable;
+        }
+
+        if (endpoint.id === "collection") {
+            return identifierType === "slug"
+                ? { ...variable, label: "Collection Slug", placeholder: "getting-started" }
+                : { ...variable, label: "Collection ID", placeholder: "collection-id" };
+        }
+
+        if (endpoint.id === "paper") {
+            return identifierType === "slug"
+                ? { ...variable, label: "Paper Slug", placeholder: "introducing-whitepapper" }
+                : { ...variable, label: "Paper ID", placeholder: "paper-id" };
+        }
+
+        return variable;
+    });
+}
+
+function getInitialVariables(endpoint: EndpointConfig): Record<string, string> {
+    return endpoint.variables.reduce<Record<string, string>>((accumulator, variable) => {
+        accumulator[variable.name] = endpoint.sampleVariables[variable.name] ?? "";
+        return accumulator;
+    }, {});
+}
+
+const ENDPOINTS: EndpointConfig[] = [
     {
         id: "project",
         name: "Project details",
@@ -22,6 +74,9 @@ const ENDPOINTS = [
         variables: [
             { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "your-api-key" },
         ],
+        sampleVariables: {
+            apiKey: "wp_live_your_project_key",
+        },
         hasIdentifierOptions: false,
         identifierOptions: [],
         code: {
@@ -61,6 +116,10 @@ print(data)`,
             { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "your-api-key" },
             { name: "identifier", label: "Collection ID", type: "text", required: true, placeholder: "collection-id" },
         ],
+        sampleVariables: {
+            apiKey: "wp_live_your_project_key",
+            identifier: "getting-started",
+        },
         code: {
             typescript: `const response = await fetch("__DEV_API_BASE_URL__/collection?QUERY_KEY=COLLECTION_ID", {
   method: "GET",
@@ -98,6 +157,10 @@ print(data)`,
             { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "your-api-key" },
             { name: "identifier", label: "Paper ID", type: "text", required: true, placeholder: "paper-id" },
         ],
+        sampleVariables: {
+            apiKey: "wp_live_your_project_key",
+            identifier: "introducing-whitepapper",
+        },
         code: {
             typescript: `const response = await fetch("__DEV_API_BASE_URL__/paper?QUERY_KEY=PAPER_ID", {
   method: "GET",
@@ -162,65 +225,46 @@ const replaceCodePlaceholders = (code: string, variables: Record<string, string>
     return updatedCode;
 };
 
-export function ApiShowcase() {
-    const [selectedEndpoint, setSelectedEndpoint] = useState<(typeof ENDPOINTS)[0]>(ENDPOINTS[0]);
-    const [language, setLanguage] = useState<"typescript" | "python">("typescript");
-    const [identifierType, setIdentifierType] = useState<"id" | "slug">("id");
-    const [variables, setVariables] = useState<Record<string, string>>({});
+type ApiShowcaseProps = {
+    hideRunSection?: boolean;
+};
+
+export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
+    const [selectedEndpoint, setSelectedEndpoint] = useState<EndpointConfig>(ENDPOINTS[0]);
+    const [language, setLanguage] = useState<Language>("typescript");
+    const [identifierType, setIdentifierType] = useState<IdentifierType>("id");
+    const [variables, setVariables] = useState<Record<string, string>>(() => getInitialVariables(ENDPOINTS[0]));
     const [response, setResponse] = useState<{ type: "success" | "error"; data: any } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+    const visibleVariables = getEndpointVariables(selectedEndpoint, identifierType);
 
-    // Initialize variables when endpoint changes
-    const handleEndpointChange = (endpoint: (typeof ENDPOINTS)[0]) => {
+    const handleEndpointChange = (endpoint: EndpointConfig) => {
         setSelectedEndpoint(endpoint);
-        const initialVars: Record<string, string> = {};
-        endpoint.variables.forEach((v) => {
-            initialVars[v.name] = "";
-        });
+        const initialVars = getInitialVariables(endpoint);
         setVariables(initialVars);
         setResponse(null);
-        // Reset identifier type to default (id)
         if (endpoint.hasIdentifierOptions) {
             setIdentifierType("id");
-            // Update variable label based on identifier type
-            const updatedVariables = [...endpoint.variables];
-            const identifierVar = updatedVariables.find(v => v.name === "identifier");
-            if (identifierVar) {
-                identifierVar.label = endpoint.id === "collection" ? "Collection ID" : "Paper ID";
-                identifierVar.placeholder = endpoint.id === "collection" ? "collection-id" : "paper-id";
-            }
-            endpoint.variables = updatedVariables;
         }
     };
 
-    // Handle identifier type change
-    const handleIdentifierTypeChange = (type: "id" | "slug") => {
+    const handleIdentifierTypeChange = (type: IdentifierType) => {
         setIdentifierType(type);
-        // Update the variable label and placeholder
-        const updatedVariables = [...selectedEndpoint.variables];
-        const identifierVar = updatedVariables.find(v => v.name === "identifier");
-        if (identifierVar) {
-            if (type === "id") {
-                identifierVar.label = selectedEndpoint.id === "collection" ? "Collection ID" : "Paper ID";
-                identifierVar.placeholder = selectedEndpoint.id === "collection" ? "collection-id" : "paper-id";
-            } else {
-                identifierVar.label = selectedEndpoint.id === "collection" ? "Collection Slug" : "Paper Slug";
-                identifierVar.placeholder = selectedEndpoint.id === "collection" ? "collection-slug" : "paper-slug";
-            }
-        }
-        setSelectedEndpoint({ ...selectedEndpoint, variables: updatedVariables });
+        setVariables((prev) => ({
+            ...prev,
+            identifier: type === "slug"
+                ? selectedEndpoint.sampleVariables.identifier ?? prev.identifier ?? ""
+                : prev.identifier ?? "",
+        }));
     };
 
-    // Handle variable input change
     const handleVariableChange = (name: string, value: string) => {
         setVariables((prev) => ({ ...prev, [name]: value }));
     };
 
-    // Copy code snippet
     const handleCopyCode = async () => {
         let code = selectedEndpoint.code[language];
-        // Replace placeholders for copy
         code = replaceCodePlaceholders(
             code,
             variables,
@@ -235,7 +279,6 @@ export function ApiShowcase() {
         }
     };
 
-    // Get the current code with replaced placeholders for display
     const getCurrentCode = () => {
         let code = selectedEndpoint.code[language];
         code = replaceCodePlaceholders(
@@ -248,10 +291,8 @@ export function ApiShowcase() {
         return code;
     };
 
-    // Make API request
     const handleRunRequest = async () => {
-        // Validate required variables
-        const missingVars = selectedEndpoint.variables.filter(
+        const missingVars = visibleVariables.filter(
             (v) => v.required && !variables[v.name]
         );
         if (missingVars.length > 0) {
@@ -295,8 +336,6 @@ export function ApiShowcase() {
 
     return (
         <div className="w-full">
-            {/* Endpoint Pills with Identifier Options */}
-
             <div className="flex flex-wrap items-center gap-2">
                 {ENDPOINTS.map((endpoint) => (
                     <Button
@@ -310,12 +349,13 @@ export function ApiShowcase() {
                 ))}
             </div>
 
-
-
-            {/* Code Section */}
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+                <span className="rounded-full border border-border bg-background px-2.5 py-1 font-medium">{selectedEndpoint.method}</span>
+                <span className="rounded-full border border-border bg-background px-2.5 py-1 font-medium">{selectedEndpoint.path}</span>
+            </div>
+            <p className="mt-3 max-w-[720px] text-sm leading-6 text-muted-foreground">{selectedEndpoint.description}</p>
 
             <div className={`overflow-hidden relative rounded-lg border bg-muted mt-2 ${language == "typescript" ? "h-[260px]" : "h-[200px]"} transition-all duration-300`}>
-                {/* Identifier Type Buttons - appears only for collection/paper with transition */}
                 <div
                     className={cn(
                         "flex gap-1 transition-all duration-300 ease-in-out absolute top-2 left-2 z-2",
@@ -339,10 +379,8 @@ export function ApiShowcase() {
 
                 </div>
 
-
                 <ScrollArea>
                     <ScrollBar orientation="horizontal" />
-                    {/* Copy Button */}
                     <Button
                         variant="ghost"
                         size="icon-sm"
@@ -352,7 +390,6 @@ export function ApiShowcase() {
                         {copied ? <Check className="p-[1px]" /> : <Copy className="p-[1px]" />}
                     </Button>
 
-                    {/* Code Snippet */}
                     <pre className="p-4 pt-12 overflow-x-auto text-sm">
                         <code>{currentCode}</code>
                     </pre>
@@ -364,73 +401,69 @@ export function ApiShowcase() {
                 <Button variant={language == "python" ? "secondary" : "ghost"} onClick={() => { setLanguage("python") }}>Python</Button>
             </div>
 
-
-            {/* Variables Section - Vercel style */}
-            <div className="space-y-4 mt-5">
-                <h3 className="text-sm font-semibold text-foreground">Variables</h3>
-                <div className="space-y-3">
-                    {selectedEndpoint.variables.map((variable) => (
-                        <div
-                            key={variable.name}
-                            className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center"
-                        >
-                            <Label htmlFor={variable.name} className="text-sm font-medium text-muted-foreground">
-                                {variable.label}
-                                {variable.required && <span className="text-destructive ml-1">*</span>}
-                            </Label>
-                            <div className="md:col-span-2">
-                                <Input
-                                    id={variable.name}
-                                    type={variable.type}
-                                    placeholder={variable.placeholder}
-                                    value={variables[variable.name] || ""}
-                                    onChange={(e) => handleVariableChange(variable.name, e.target.value)}
-                                    className="font-mono text-sm"
-                                />
+            {!hideRunSection && (
+                <div className="space-y-4 mt-5">
+                    <h3 className="text-sm font-semibold text-foreground">Variables</h3>
+                    <div className="space-y-3">
+                        {visibleVariables.map((variable) => (
+                            <div
+                                key={variable.name}
+                                className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center"
+                            >
+                                <Label htmlFor={variable.name} className="text-sm font-medium text-muted-foreground">
+                                    {variable.label}
+                                    {variable.required && <span className="text-destructive ml-1">*</span>}
+                                </Label>
+                                <div className="md:col-span-2">
+                                    <Input
+                                        id={variable.name}
+                                        type={variable.type}
+                                        placeholder={variable.placeholder}
+                                        value={variables[variable.name] || ""}
+                                        onChange={(e) => handleVariableChange(variable.name, e.target.value)}
+                                        className="font-mono text-sm"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
 
-                {/* Run Button */}
-                <div className="mt-10 flex justify-end">
-                    <Button loading={isLoading} onClick={handleRunRequest} disabled={isLoading} className="w-full md:w-auto">
-                        <PlayIcon /> Run
-                    </Button>
+                    <div className="mt-10 flex justify-end">
+                        <Button loading={isLoading} onClick={handleRunRequest} disabled={isLoading} className="w-full md:w-auto">
+                            <PlayIcon /> Run
+                        </Button>
+                    </div>
                 </div>
-            </div>
+            )}
 
-            {/* Response Section */}
-            {
-                response && (
-                    <div className="space-y-2">
-                        <h3 className="text-sm font-semibold text-foreground">Response</h3>
-                        <div
+            {!hideRunSection && response && (
+                <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-foreground">Response</h3>
+                    <div
+                        className={cn(
+                            "rounded-lg border p-4 overflow-x-auto",
+                            response.type === "error"
+                                ? "bg-destructive/10 border-destructive/30"
+                                : "bg-muted/30"
+                        )}
+                    >
+                        <pre
                             className={cn(
-                                "rounded-lg border p-4 overflow-x-auto",
-                                response.type === "error"
-                                    ? "bg-destructive/10 border-destructive/30"
-                                    : "bg-muted/30"
+                                "text-sm font-mono whitespace-pre-wrap break-words",
+                                response.type === "error" && "text-destructive"
                             )}
                         >
-                            <pre
-                                className={cn(
-                                    "text-sm font-mono whitespace-pre-wrap break-words",
-                                    response.type === "error" && "text-destructive"
-                                )}
-                            >
-                                {(() => {
-                                    try {
-                                        return JSON.stringify(response.data ?? { message: "No response payload." }, null, 2);
-                                    } catch {
-                                        return String(response.data);
-                                    }
-                                })()}
-                            </pre>
-                        </div>
+                            {(() => {
+                                try {
+                                    return JSON.stringify(response.data ?? { message: "No response payload." }, null, 2);
+                                } catch {
+                                    return String(response.data);
+                                }
+                            })()}
+                        </pre>
                     </div>
-                )
-            }
+                </div>
+            )}
         </div >
     );
 }

@@ -1,7 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import LandingMobileMenu from "@/components/landing/LandingMobileMenu";
-import { ArrowUpRight, RadioIcon, SlidersHorizontal } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 import LinkedinLogo from "@/assets/logos/linkedinLogo.png";
 import PeerlistLogo from "@/assets/logos/peerList.webp";
@@ -16,11 +16,14 @@ import ThreadsLogo from "@/assets/logos/threadsLogo.png";
 import GreenPattern from "@/assets/landingPage/greenPattern.jpg";
 import EditorPage from "@/assets/landingPage/editor_light.png";
 import BlogSite from "@/assets/landingPage/blogSite.png";
-import DashboardPic from "@/assets/landingPage/dashboardPic.png";
+
 import MobileToc from "@/assets/landingPage/mobileToc.png";
 import DesktopToc from "@/assets/landingPage/desktopLinesToc.png";
-import MarkdownRender from "@/assets/landingPage/markdownRender.png";
 import { Button } from "@/components/ui/button";
+
+import HeroDashboardLight from "@/assets/landingPage/hero_light.png";
+import MetatagsEditorLight from "@/assets/landingPage/metatags_editor_light.png";
+import BlueBgPattern from "@/assets/landingPage/blueBgPattern.jpg";
 
 const integrationLogoList = [
 	{ src: LinkedinLogo, alt: "LinkedIn" },
@@ -41,6 +44,12 @@ const navButtonsList = [
 	{ title: "Components", href: "/components" },
 	{ title: "Pricing", href: "/pricing" },
 ];
+
+import TeslaLogo from "@/assets/logos/bullshi/tesla_logo.png";
+import AudiLogo from "@/assets/logos/bullshi/audi_logo.png";
+import GoogleLogo from "@/assets/logos/bullshi/google_logo.webp";
+import OpenAILogo from "@/assets/logos/bullshi/openai_logo.png";
+import CursorLogo from "@/assets/logos/bullshi/cursor_logo.png";
 ---
 
 <Layout>
@@ -52,7 +61,12 @@ const navButtonsList = [
 				class="max-w-[1200px] w-full flex items-center justify-between gap-10"
 			>
 				<div>
-					<img src="/appLogo.png" height="30" width="30" class="md:hidden"/>
+					<img
+						src="/appLogo.png"
+						height="30"
+						width="30"
+						class="md:hidden"
+					/>
 				</div>
 
 				<div class="hidden gap-5 text-[14px] leading-[1em] md:flex">
@@ -73,18 +87,18 @@ const navButtonsList = [
 					<a href="/sign-up">
 						<Button className="w-[80px]"> Login </Button>
 					</a>
-					
+
 					<div class="md:hidden">
 						<LandingMobileMenu
-						client:load
-						navButtons={navButtonsList}
+							client:load
+							navButtons={navButtonsList}
 						/>
 					</div>
 				</div>
 			</div>
 		</div>
 
-		<div class="mx-auto w-full">
+		<div class="mx-auto w-full max-w-[1600px] px-5 md:px-15">
 			<div
 				class="absolute left-[-80%] top-[3%] z-[-1] h-[10px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-30%] md:top-[-2%]"
 			>
@@ -95,113 +109,51 @@ const navButtonsList = [
 			</div>
 
 			<div
-				class="relative flex h-[100svh] flex-col items-start justify-start overflow-hidden px-5 md:px-15 pt-28 md:pt-30"
+				class="relative flex flex-col items-start justify-start pt-28 md:pt-30"
 			>
 				<h1
-					class="heroText text-[50px] md:text-[60px] flex md:flex-row flex-col"
+					class="heroText text-[50px] md:text-[60px] flex md:flex-row flex-col md:gap-4 font-[450]"
 				>
 					<span>SEO first</span><span> content engine</span>
 				</h1>
-				
-				<p class="heroText text-[17px] text-muted-foreground my-4 md:w-[600px]" style="animation-delay: 0.25s;"> Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quibusdam, dolore quam consectetur quisquam officiis voluptatem! </p>
-
-				<!-- <div
-					class="heroText group relative flex cursor-pointer gap-2 overflow-hidden rounded-[20px] border bg-muted px-[15px] pb-[7px] pt-[8px] text-[12px] leading-[1em]"
-					style="animation-delay: 0.65s;"
-				>
-					<div
-						class="absolute left-[-60%] top-[-20px] h-[10px] w-full rotate-[40deg] rounded-[50%] bg-foreground/40 blur-[20px] transition-all duration-300 group-hover:left-[5%] group-active:left-[5%] dark:bg-foreground"
-					>
-					</div>
-					<RadioIcon className="z-2 size-3 text-primary" />
-					<p class="z-2">Developers API</p>
-					<ArrowUpRight className="size-[14px]" />
-				</div>
-
-				<div
-					class="group mt-6 flex flex-col items-center gap-5 px-[15px] font-[500] md:mt-10 md:flex-row"
-				>
-					<div
-						class="heroText flex items-center gap-4 text-[60px] md:text-[50px]"
-					>
-						<h1>SEO</h1>
-						<h1>first</h1>
-					</div>
-					<div
-						class="heroText flex items-center gap-4 text-[50px]"
-						style="animation-delay: 0.2s;"
-					>
-						<img
-							src="/appLogo.png"
-							class="h-[50px] w-[50px] rotate-[-6deg] transition-all duration-300 ease-in-out group-hover:scale-[1.05] group-hover:rotate-0"
-							height="40"
-							width="40"
-							alt="Whitepapper"
-						/>
-						<h1>CMS</h1>
-						<h1>engine</h1>
-					</div>
-				</div>
-
-				<div
-					class="heroText mt-5 flex flex-col gap-6 px-[15px] text-[20px] md:flex-row md:gap-4"
-					style="animation-delay: 0.5s;"
-				>
-					<p class="font-[350]">
-						<span class="opacity-[0.8]">Write</span>
-						<span class="text-[22px] font-[550]"> once </span>
-						<span class="opacity-[0.8]">distribute everywhere</span>
-					</p>
-					<div class="flex items-center justify-center gap-2">
-						{
-							integrationLogoList
-								.slice(0, 3)
-								.map((logo, index) => (
-									<img
-										src={logo.src.src}
-										alt={logo.alt}
-										width="30"
-										height="30"
-										class="heroText h-[30px] w-[30px] shrink-0 rounded-[5px] transition-all duration-300 hover:translate-y-[-6px] md:h-[27px] md:w-[27px]"
-										style={`animation-delay: ${0.5 + (index * 2) / 10}s;`}
-										loading="eager"
-										fetchpriority="high"
-									/>
-								))
-						}
-						<p class="ml-2 text-[15px] hover:underline">
-							+ 6 more <span class="md:hidden">integrations</span>
-						</p>
-					</div>
-				</div>
-
-				<div
-					class="heroText mt-10 flex w-full gap-3 px-[15px] md:w-[350px]"
-					style="animation-delay: 0.6s;"
-				>
-					<a
-						href="/dashboard"
-						class="flex h-12 flex-1 items-center justify-center rounded-sm border border-border bg-transparent text-[17px] leading-[1em] transition-all duration-300 hover:bg-muted"
-					>
-						Playground
-					</a>
-					<a
-						href="/sign-up"
-						class="flex h-12 flex-1 items-center justify-center rounded-sm bg-primary text-[17px] leading-[1em] text-primary-foreground transition-all duration-300 hover:bg-primary/80"
-					>
-						Get started
-					</a>
-				</div>
 
 				<p
-					class="heroText absolute bottom-7 text-center text-[15px]"
-					style="animation-delay: 0.4s;"
+					class="heroText text-[17px] text-muted-foreground my-4 md:w-[600px]"
+					style="animation-delay: 0.25s;"
 				>
-					Whitepapper is <span class="font-[450] underline"
-						>open-sourced</span
-					> for schizo writers
-				</p> -->
+					Lorem ipsum dolor, sit amet consectetur adipisicing elit.
+					Quibusdam, dolore quam consectetur quisquam officiis
+					voluptatem!
+				</p>
 
+				<!-- <div class="flex gap-2 items-center justify-center w-full mt-5">
+					<p class="text-[12px]">Not backed by</p>
+					<div
+						class="bg-[#fb6518] text-[white] text-[11px] font-[400] leading-[12px] w-[20px] h-[20px] flex items-center justify-center"
+					>
+						Y
+					</div>
+				</div> -->
+
+				<div
+					class="heroText mt-8 md:mt-15 relative p-3 md:p-10 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
+					style="animation-delay: 0.3s; animation-duration: 0.8s;"
+				>
+					<img
+						src={BlueBgPattern.src}
+						alt="Green pattern background"
+						class="absolute left-0 top-0 z-[-1] h-full w-full"
+						loading="lazy"
+						decoding="async"
+					/>
+					<img
+						src={HeroDashboardLight.src}
+						alt=""
+						class="h-fit w-full rounded-[10px] border"
+					/>
+				</div>
+
+				
 				<div
 					class="heroText absolute bottom-0 left-[50%] z-[-1] h-[110vw] w-[200vw] translate-x-[-50%] translate-y-[54%] overflow-hidden rounded-[50%] md:w-[150vw] md:translate-y-[85%] ease-in"
 					style="animation-delay: 0.5s;"
@@ -213,59 +165,44 @@ const navButtonsList = [
 				</div>
 			</div>
 
-			<div
-				class="mx-auto mt-25 flex w-full max-w-[1400px] flex-col gap-15 md:gap-40"
+			<p class="text-center text-[15px] my-10" >
+				Whitepapper is <a href="https://github.com/abhraneeldhar7/Whitepapper" target="_blank" class="font-[450] underline"
+					>open-sourced</a> for schizo writers
+			</p>
+
+			<!-- <div
+				class="my-15 md:my-20 flex flex-col items-center md:gap-7 gap-5"
 			>
+				<h2 class="text-[20px]">Look at these logos lmfao</h2>
 				<div
-					class="flex w-full flex-col gap-6 px-5 md:flex-row md:items-end md:gap-20"
+					class="flex gap-x-7 gap-y-5 grayscale opacity-[0.5] flex-wrap justify-center items-center"
 				>
-					<div class="md:flex-1">
-						<h1 class="text-[30px] font-[450]">
-							Content engine for your business
-						</h1>
-						<p class="mt-3 text-[16px]">
-							Lorem ipsum dolor sit amet consectetur adipisicing
-							elit. Ex, earum. Nostrum, nihil sapiente sint
-							tempore quam expedita et id in officia eos
-							consequuntur esse repudiandae perspiciatis explicabo
-							unde nesciunt quo!
-						</p>
-					</div>
+					<img src={OpenAILogo.src} class="h-[30px] w-fit" />
+					<img src={GoogleLogo.src} class="h-[30px] w-fit" />
+					<img src={AudiLogo.src} class="h-[30px] w-fit" />
+					<img src={CursorLogo.src} class="h-[30px] w-fit" />
+					<img src={TeslaLogo.src} class="h-[30px] w-fit" />
+				</div>
+			</div> -->
+
+			<div class="mx-auto flex w-full flex-col gap-15 md:gap-40">
+				<div
+					class="flex w-full flex-col-reverse gap-6 md:flex-row md:items-end md:gap-20"
+				>
 					<div
-						class="relative w-full overflow-hidden rounded-[20px] md:flex-1"
+						class="relative flex-1 overflow-hidden rounded-[18px] md:rounded-[30px] p-3 md:p-8"
 					>
 						<img
-							src={GreenPattern.src}
+							src={BlueBgPattern.src}
 							alt="Green pattern background"
 							class="absolute left-0 top-0 z-[-1] h-full w-full"
 							loading="lazy"
 							decoding="async"
 						/>
 						<img
-							src={BlogSite.src}
-							alt="Blog publishing preview"
-							class="h-full w-full -translate-x-10 translate-y-10 rounded-tr-[10px] object-cover md:-translate-x-15 md:translate-y-15"
-							loading="lazy"
-							decoding="async"
-						/>
-					</div>
-				</div>
-
-				<div
-					class="flex w-full flex-col-reverse gap-6 px-5 md:flex-row md:items-end md:gap-20"
-				>
-					<div class="relative flex-1 overflow-hidden rounded-[20px]">
-						<img
-							src={GreenPattern.src}
-							alt="Green pattern background"
-							class="absolute left-0 top-0 z-[-1] h-full w-full"
-							loading="lazy"
-							decoding="async"
-						/>
-						<img
-							src={EditorPage.src}
+							src={MetatagsEditorLight.src}
 							alt="Editor preview"
-							class="h-full w-full translate-x-10 translate-y-10 rounded-tl-[10px] object-cover md:translate-x-15 md:translate-y-15"
+							class="h-full w-full object-cover rounded-[8px] md:rounded-[15px]"
 							loading="lazy"
 							decoding="async"
 						/>
@@ -273,9 +210,9 @@ const navButtonsList = [
 
 					<div class="md:flex-1">
 						<h1 class="text-[30px] font-[450]">
-							Integrated text editor
+							Auto generated metatags for better SEO
 						</h1>
-						<p class="mt-1 text-[16px]">
+						<p class="mt-1 text-[16px] font-[350]">
 							Lorem ipsum dolor sit amet consectetur adipisicing
 							elit. Ex, earum. Nostrum, nihil sapiente sint
 							tempore quam expedita et id in officia eos
@@ -285,102 +222,7 @@ const navButtonsList = [
 					</div>
 				</div>
 
-				<div class="flex flex-col gap-6 px-5 md:gap-8">
-					<div>
-						<h1 class="text-[30px] font-[450]">
-							Perfect wallet for attention economy
-						</h1>
-						<p class="mt-2 text-[16px]">
-							Lorem ipsum dolor sit amet consectetur adipisicing
-							elit. Ex, earum. Nostrum, nihil sapiente sint
-							tempore quam expedita et id in officia eos
-							consequuntur esse repudiandae perspiciatis explicabo
-							unde nesciunt quo!
-						</p>
-					</div>
-					<div
-						class="relative w-full overflow-hidden rounded-[20px] px-4 md:px-15"
-					>
-						<img
-							src={GreenPattern.src}
-							alt="Green pattern background"
-							class="absolute left-0 top-0 z-[-1] h-full w-full"
-							loading="lazy"
-							decoding="async"
-						/>
-						<img
-							src={DashboardPic.src}
-							alt="Dashboard preview"
-							class="h-full w-full translate-y-4 rounded-[10px] object-contain md:translate-y-15"
-							loading="lazy"
-							decoding="async"
-						/>
-					</div>
-				</div>
-
-				<div class="w-full px-5">
-					<h1 class="text-[30px] font-[450]">Free components</h1>
-					<p class="mt-2 text-[16px] md:w-[400px]">
-						Make your own content engine
-					</p>
-
-					<div class="mt-6 flex w-full flex-col gap-5 md:flex-row">
-						<div
-							class="relative h-[200px] overflow-hidden rounded-[10px] px-4 md:h-[300px] md:flex-1 md:px-8"
-						>
-							<img
-								src={GreenPattern.src}
-								alt="Green pattern background"
-								class="absolute left-0 top-0 z-[-1] h-full w-full"
-								loading="lazy"
-								decoding="async"
-							/>
-							<img
-								src={MobileToc.src}
-								alt="Mobile table of contents component"
-								class="h-full w-full -translate-y-4 rounded-[15px] border border-[4px] object-cover object-bottom md:-translate-y-8"
-								loading="lazy"
-								decoding="async"
-							/>
-						</div>
-						<div
-							class="relative h-[200px] overflow-hidden rounded-[10px] md:h-[300px] md:flex-1"
-						>
-							<img
-								src={GreenPattern.src}
-								alt="Green pattern background"
-								class="absolute left-0 top-0 z-[-1] h-full w-full"
-								loading="lazy"
-								decoding="async"
-							/>
-							<img
-								src={DesktopToc.src}
-								alt="Desktop table of contents component"
-								class="h-full w-full -translate-x-8 translate-y-8 rounded-[8px] object-cover object-[right_top]"
-								loading="lazy"
-								decoding="async"
-							/>
-						</div>
-						<div
-							class="relative h-[200px] overflow-hidden rounded-[10px] px-4 md:h-[300px] md:flex-1 md:px-8"
-						>
-							<img
-								src={GreenPattern.src}
-								alt="Green pattern background"
-								class="absolute left-0 top-0 z-[-1] h-full w-full"
-								loading="lazy"
-								decoding="async"
-							/>
-							<img
-								src={MarkdownRender.src}
-								alt="Markdown render component"
-								class="h-full w-full translate-y-4 rounded-[15px] object-cover object-top md:translate-y-8"
-								loading="lazy"
-								decoding="async"
-							/>
-						</div>
-					</div>
-				</div>
+				
 			</div>
 		</div>
 	</div>
@@ -388,7 +230,7 @@ const navButtonsList = [
 
 <style>
 	.heroText {
-		animation: fadeInUp 0.4s ease-out forwards;
+		animation: fadeInUp 0.5s ease-out forwards;
 		animation-fill-mode: both;
 	}
 

@@ -47,7 +47,7 @@ export default function PaperPreviewSheet({
       <SheetContent
         showCloseButton={false}
         side={isMobile ? "bottom" : "right"}
-        className="md:m-2 border-[2px] rounded-[8px] gap-0 p-0 data-[side=bottom]:h-[90vh] data-[side=bottom]:w-full data-[side=right]:w-full md:data-[side=right]:w-[500px] data-[side=right]:sm:max-w-[500px]"
+        className="md:m-2 border-[2px] rounded-[8px] gap-0 p-0 data-[side=bottom]:h-[80vh] data-[side=bottom]:w-full data-[side=right]:w-full md:data-[side=right]:w-[500px] data-[side=right]:sm:max-w-[500px]"
       >
         <div className="flex items-center justify-between border-b p-[6px]">
           <div className="flex items-center gap-2">
