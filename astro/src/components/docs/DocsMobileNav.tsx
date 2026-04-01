@@ -17,9 +17,8 @@ export default function DocsMobileNav({ navItems, currentPath }: DocsMobileNavPr
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <MenuIcon className="size-4" />
-          Docs Menu
+        <Button variant="ghost">
+          <MenuIcon />
         </Button>
       </SheetTrigger>
 
