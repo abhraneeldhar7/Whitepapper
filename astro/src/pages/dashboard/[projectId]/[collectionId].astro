@@ -47,7 +47,7 @@ const initialProjectName = await getProjectById(projectId, serverClient)
   .catch(() => "Project");
 ---
 
-<Layout>
+<Layout showSiteNav={false}>
   <CollectionWorkspaceSkeleton />
   <div class="collection-shell-app">
     <CollectionWorkspace

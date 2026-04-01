@@ -1,5 +1,8 @@
 ---
+import Layout from "@/layouts/Layout.astro";
 import { AuthenticateWithRedirectCallback } from '@clerk/astro/components';
 ---
 
-<AuthenticateWithRedirectCallback />
+<Layout title="SSO Callback | Whitepapper" noindex={true} hideFooter={true} showSiteNav={false}>
+	<AuthenticateWithRedirectCallback />
+</Layout>

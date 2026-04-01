@@ -1,0 +1,77 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import PostRender from "@/components/pre_made_components/render/postPreview";
+import DocsCopyButton from "@/components/docs/DocsCopyButton";
+import DocsMobileNav from "@/components/docs/DocsMobileNav";
+import { cn } from "@/lib/utils";
+
+type Props = {
+  markdown: string;
+  currentPath: "/docs" | "/docs/best-practices" | "/docs/advanced";
+};
+
+type NavItem = {
+  title: string;
+  href: "/docs" | "/docs/best-practices" | "/docs/advanced";
+};
+
+const { markdown, currentPath } = Astro.props as Props;
+
+const navItems: NavItem[] = [
+  { title: "Quickstart", href: "/docs" },
+  { title: "Best practices", href: "/docs/best-practices" },
+  { title: "Advanced", href: "/docs/advanced" },
+];
+
+const lines = markdown.split("\n");
+const firstLine = lines[0]?.trim() ?? "";
+const headingMatch = firstLine.match(/^#\s+(.+)$/);
+const pageTitle = headingMatch?.[1]?.trim() || "Docs";
+const bodyMarkdown = headingMatch ? lines.slice(1).join("\n").trimStart() : markdown;
+---
+
+<Layout title={`${pageTitle} | Whitepapper`} description={`${pageTitle} documentation for Whitepapper.`}>
+  <div class="mx-auto w-full max-w-[1400px] px-4 py-8 md:px-6 md:py-10">
+    <div class="grid grid-cols-1 gap-8 md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[220px_minmax(0,1fr)_220px]">
+      <aside class="hidden md:block">
+        <nav class="sticky top-6" aria-label="Documentation navigation">
+          <ul class="space-y-2">
+            {navItems.map((item) => {
+              const isActive = item.href === currentPath;
+              return (
+                <li>
+                  <a
+                    href={item.href}
+                    class={cn(
+                      "block rounded-md px-3 py-2 text-sm transition-colors",
+                      isActive
+                        ? "bg-muted text-foreground font-medium"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                    )}
+                  >
+                    {item.title}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </aside>
+
+      <main class="min-w-0" aria-label={`${pageTitle} documentation content`}>
+        <div class="mb-6 flex items-center justify-between gap-3 md:hidden">
+          <DocsMobileNav client:load navItems={navItems} currentPath={currentPath} />
+        </div>
+
+        <div class="mb-8 flex items-center justify-between gap-4 border-b pb-4">
+          <h1 class="text-3xl font-semibold tracking-tight md:text-4xl">{pageTitle}</h1>
+          <DocsCopyButton client:load markdown={markdown} />
+        </div>
+
+        <PostRender content={bodyMarkdown} />
+      </main>
+
+      <aside class="hidden lg:block" aria-hidden="true"></aside>
+    </div>
+  </div>
+</Layout>

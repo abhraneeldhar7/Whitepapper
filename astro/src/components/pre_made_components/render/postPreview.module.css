@@ -2,13 +2,14 @@
 .markdownDiv {
     word-break: break-word;
     font-family: var(--font-satoshi, var(--font-sans));
+    font-size: 17px;
+    font-weight: 400;
 }
 
 .markdownDiv p {
-    font-size: 17px;
+    /* font-size: 17px; */
     line-height: 2;
     margin: 0 0 0.9em;
-    font-weight: 435;
     /* opacity: 0.8; */
     color: var(--muted-foreground, #1a1a1a);
 }
@@ -177,21 +178,22 @@
 
 /* Inline Code - code elements NOT inside pre tags */
 .markdownDiv code:not(pre code) {
-    font-size: 16px;
+    font-size: 0.85em;
+    font-weight: 450;
     background-color: var(--muted) !important;
     color: var(--foreground, #1a1a1a) !important;
     padding: 0.2em 0.4em;
     border-radius: 4px;
-    font-family: var(--font-mono, 'SF Mono', Monaco, 'Cascadia Mono', monospace);
-    font-weight: 400;
     margin: 0 2px;
 }
 
 /* Code Blocks - pre elements that contain code */
 .markdownDiv pre {
     background-color: var(--muted) !important;
-    font-size: 17px;
+    /* font-size: 17px; */
     margin: 1.5em 0;
+    font-size: 0.85em;
+    font-weight: 400;
     border-radius: 8px;
     overflow: hidden;
     color: var(--muted-foreground);
@@ -203,7 +205,8 @@
 .markdownDiv pre code {
     background-color: var(--card) !important;
     font-family: var(--font-mono, 'SF Mono', Monaco, 'Cascadia Mono', monospace);
-    font-size: 17px;
+    /* font-size: 17px; */
+    /* font-size: 0.85em; */
     line-height: 1.5;
     display: block;
     padding: 1em;
@@ -418,11 +421,12 @@
 /* Mobile optimizations */
 @media (max-width: 600px) {
     .markdownDiv {
+        font-size: 16px;
         padding: 0 0.5em;
     }
 
     .markdownDiv p {
-        font-size: 17px;
+        /* font-size: 17px; */
         /* font-weight: 400; */
         line-height: 1.95;
     }

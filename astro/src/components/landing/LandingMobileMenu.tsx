@@ -16,7 +16,7 @@ export default function LandingMobileMenu({ navButtons }: LandingMobileMenuProps
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" aria-label="Open navigation menu">
           <MenuIcon className="size-5" />
         </Button>
 
@@ -40,13 +40,13 @@ export default function LandingMobileMenu({ navButtons }: LandingMobileMenuProps
           Login
         </a>
 
-        <div className="mt-10 flex flex-col gap-2">
+        <nav className="mt-10 flex flex-col gap-2" aria-label="Mobile navigation">
           {navButtons.map((button) => (
             <a key={button.href} href={button.href} className="w-full text-[50px] font-[500]">
               {button.title}
             </a>
           ))}
-        </div>
+        </nav>
 
         <p className="mt-auto text-center text-[14px]">Antkin Studios</p>
       </SheetContent>

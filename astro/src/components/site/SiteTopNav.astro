@@ -1,0 +1,49 @@
+---
+import LandingMobileMenu from "@/components/landing/LandingMobileMenu";
+import { ArrowUpRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const navButtonsList = [
+  { title: "Docs", href: "/docs" },
+  { title: "Integrations", href: "/integrations" },
+  { title: "Blog", href: "/blogs" },
+];
+---
+
+<header
+  class="fixed left-0 top-0 z-[10] flex w-full items-center justify-center gap-5 border-b border-border/50 bg-background/80 px-4 py-2 backdrop-blur-[20px]"
+>
+  <nav class="max-w-[1200px] w-full flex items-center justify-between gap-10" aria-label="Primary">
+    <div>
+      <a href="/" aria-label="Whitepapper home">
+        <img src="/appLogo.png" height="30" width="30" class="md:hidden" alt="Whitepapper" />
+      </a>
+    </div>
+
+    <ul class="hidden gap-5 text-[14px] leading-[1em] md:flex" role="list">
+      {
+        navButtonsList.map((button) => (
+          <li>
+            <a
+              href={button.href}
+              class="group flex cursor-pointer gap-2 p-3 opacity-[0.8] transition-all duration-300 hover:opacity-[1] dark:font-[350] font-[400]"
+            >
+              {button.title}
+              <ArrowUpRight className="size-[14px] opacity-[0.7] transition-all duration-300 group-hover:opacity-[1]" />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="flex gap-4">
+      <a href="/sign-up">
+        <Button className="w-[80px]"> Login </Button>
+      </a>
+
+      <div class="md:hidden">
+        <LandingMobileMenu client:load navButtons={navButtonsList} />
+      </div>
+    </div>
+  </nav>
+</header>

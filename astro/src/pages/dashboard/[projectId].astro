@@ -34,7 +34,7 @@ if (!initialUser || !projectData) {
 const { project: initialProject, collections: initialCollections, papers: initialPages } = projectData;
 ---
 
-<Layout>
+<Layout showSiteNav={false}>
   <ProjectWorkspaceSkeleton />
   <div class="project-shell-app">
     <ProjectWorkspace

@@ -19,7 +19,7 @@ if (!dashboardData) {
 const { user: initialUser, projects: initialProjects, papers: initialPages } = dashboardData;
 ---
 
-<Layout>
+<Layout showSiteNav={false}>
   <DashboardApp
     client:only="react"
     initialProjects={initialProjects}

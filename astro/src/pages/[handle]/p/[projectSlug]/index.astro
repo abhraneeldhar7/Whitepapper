@@ -44,7 +44,7 @@ if (userId) {
 }
 ---
 
-<Layout>
+<Layout showSiteNav={false}>
   <section class="sr-only" aria-label="Project paper links">
     {
       (data.collectionPapers ?? []).flatMap((entry) =>

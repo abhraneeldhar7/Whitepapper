@@ -13,11 +13,13 @@ Astro.response.headers.set(
 
 ---
 
-<Layout title="Latest at Whitepapper | Blogs">
+<Layout title="Updates | Whitepapper" description="Product updates and release notes from Whitepapper.">
+  <main aria-label="Updates listing">
     <BlogListingPage
-        pageTitle="updates"
-        primaryTitle="Updates"
-        primaryBlogs={updateBlogs.papers.slice(0, 4)}
-        secondaryBlogs={updateBlogs.papers.slice(5, updateBlogs.papers.length)}
+      pageTitle="updates"
+      primaryTitle="Updates"
+      primaryBlogs={updateBlogs.papers.slice(0, 4)}
+      secondaryBlogs={updateBlogs.papers.slice(5, updateBlogs.papers.length)}
     />
+  </main>
 </Layout>

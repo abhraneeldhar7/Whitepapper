@@ -1,1 +1,39 @@
-Privacy Policy
+---
+import Layout from "@/layouts/Layout.astro";
+import LegalDocument from "@/components/legal-document";
+
+const sections = [
+	{
+		title: "What we collect",
+		content:
+			"We collect account details, project content, and usage analytics required to operate Whitepapper.",
+	},
+	{
+		title: "How we use data",
+		content:
+			"We use data to power content workflows, API features, and platform reliability. We do not sell personal data.",
+	},
+	{
+		title: "Data retention",
+		content:
+			"Data is retained while your account is active and for a limited period after deletion for recovery and compliance.",
+	},
+	{
+		title: "Contact",
+		content:
+			"For privacy requests, contact support and include your account email and project identifier.",
+	},
+];
+---
+
+<Layout title="Privacy Policy | Whitepapper" description="Privacy policy for Whitepapper.">
+	<LegalDocument
+		title="Privacy Policy"
+		eyebrow="Legal"
+		summary="This is a simple starter privacy policy for Whitepapper and will be expanded later."
+		effectiveDate="April 2, 2026"
+		sections={sections}
+		altHref="/terms-of-service"
+		altLabel="Terms of Service"
+	/>
+</Layout>

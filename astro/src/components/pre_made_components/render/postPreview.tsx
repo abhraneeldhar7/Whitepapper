@@ -3,6 +3,8 @@ import styles from "./postPreview.module.css";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useId } from "react";
+import { CopyIcon } from "lucide-react";
+import PostPreviewCopyIsland from "./PostPreviewCopyIsland";
 
 type PostRenderProps = {
     content: string
@@ -88,10 +90,25 @@ export default function PostRender({ content, contentContainerId }: PostRenderPr
                         ),
                         code: ({ node, className, children, ...props }) => {
                             return (
-                                <code {...props}>
+                                <code {...props} >
                                     {children}
                                 </code>
                             );
+                        },
+                        pre: ({ node, className, children, ...props }) => {
+                            return (
+                                <pre {...props} className="relative">
+                                    <button
+                                        type="button"
+                                        data-copy-button
+                                        aria-label="Copy code"
+                                        className="absolute top-2 p-[5px] rounded-sm right-2 z-2 hover:bg-muted-foreground hover:text-background trasnition-all duration-100"
+                                    >
+                                        <CopyIcon size={14} />
+                                    </button>
+                                    {children}
+                                </pre>
+                            )
                         },
                         // mark: ({ node, children, ...props }) => (
                         //     <div className={styles.highlightedText}>
@@ -105,5 +122,6 @@ export default function PostRender({ content, contentContainerId }: PostRenderPr
                         ),
                     }} />
             </div>
+            <PostPreviewCopyIsland contentContainerId={resolvedContentContainerId} />
         </div>)
 }

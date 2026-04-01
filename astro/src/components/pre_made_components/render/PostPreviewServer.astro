@@ -1,5 +1,6 @@
 ---
 import PostPreviewTocIsland from "./PostPreviewTocIsland";
+import PostPreviewCopyIsland from "./PostPreviewCopyIsland";
 import PostRender from "./postPreview";
 
 type Props = {
@@ -12,4 +13,5 @@ const contentContainerId = `post-preview-${Math.random().toString(36).slice(2, 1
 ---
 
 <PostRender content={content || ""} contentContainerId={contentContainerId} />
+<PostPreviewCopyIsland client:idle contentContainerId={contentContainerId} />
 {showTOC ? <PostPreviewTocIsland client:idle contentContainerId={contentContainerId} /> : null}

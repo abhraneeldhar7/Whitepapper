@@ -12,12 +12,14 @@ Astro.response.headers.set(
 
 ---
 
-<Layout title="Blogs">
-  <BlogListingPage
-    pageTitle="blogs"
-    primaryTitle="Latest at Whitepapper"
-    secondaryTitle="Resources"
-    primaryBlogs={updateBlogs.papers}
-    secondaryBlogs={resourcesBlogs.papers}
-  />
+<Layout title="Blogs | Whitepapper" description="Latest updates and resources from Whitepapper.">
+  <main aria-label="Blogs listing">
+    <BlogListingPage
+      pageTitle="blogs"
+      primaryTitle="Latest at Whitepapper"
+      secondaryTitle="Resources"
+      primaryBlogs={updateBlogs.papers}
+      secondaryBlogs={resourcesBlogs.papers}
+    />
+  </main>
 </Layout>

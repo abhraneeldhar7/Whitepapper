@@ -1,1 +1,39 @@
-Terms of Service
+---
+import Layout from "@/layouts/Layout.astro";
+import LegalDocument from "@/components/legal-document";
+
+const sections = [
+	{
+		title: "Use of service",
+		content:
+			"You may use Whitepapper for lawful content creation and publishing workflows under your account.",
+	},
+	{
+		title: "Account responsibilities",
+		content:
+			"You are responsible for account security, API key handling, and all actions performed under your account.",
+	},
+	{
+		title: "Content and integrations",
+		content:
+			"You are responsible for the content you publish and for compliance with policies of third-party integrations.",
+	},
+	{
+		title: "Changes",
+		content:
+			"We may update these terms as the product evolves. Continued use means you accept the latest terms.",
+	},
+];
+---
+
+<Layout title="Terms of Service | Whitepapper" description="Terms of service for Whitepapper.">
+	<LegalDocument
+		title="Terms of Service"
+		eyebrow="Legal"
+		summary="This is a simple starter terms document for Whitepapper and will be expanded later."
+		effectiveDate="April 2, 2026"
+		sections={sections}
+		altHref="/privacy-policy"
+		altLabel="Privacy Policy"
+	/>
+</Layout>

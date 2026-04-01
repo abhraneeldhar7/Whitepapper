@@ -1,7 +1,5 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import LandingMobileMenu from "@/components/landing/LandingMobileMenu";
-import { ArrowUpRight } from "lucide-react";
 
 import LinkedinLogo from "@/assets/logos/linkedinLogo.png";
 import PeerlistLogo from "@/assets/logos/peerList.webp";
@@ -13,11 +11,16 @@ import HashnodeLogo from "@/assets/logos/hashnodeLogo.png";
 import SubstackLogo from "@/assets/logos/substackLogo.png";
 import ThreadsLogo from "@/assets/logos/threadsLogo.png";
 
-import { Button } from "@/components/ui/button";
 
 import HeroDashboardLight from "@/assets/landingPage/hero_light.png";
 import MetatagsEditorLight from "@/assets/landingPage/metatags_editor_light.png";
 import BlueBgPattern from "@/assets/landingPage/blueBgPattern.jpg";
+import LandingArticleList from "@/components/landing/LandingArticleList.astro";
+
+import IntegrationsSection from "@/components/integrations-4";
+
+import BlogsPageImg from "@/assets/landingPage/blogsPage.png";
+
 
 const integrationLogoList = [
 	{ src: LinkedinLogo, alt: "LinkedIn" },
@@ -31,12 +34,10 @@ const integrationLogoList = [
 	{ src: ThreadsLogo, alt: "Threads" },
 ];
 
-const navButtonsList = [
-	{ title: "Docs", href: "/docs" },
-	{ title: "Integrations", href: "/int" },
-	{ title: "Blog", href: "/blog" },
-	{ title: "Components", href: "/components" },
-	{ title: "Pricing", href: "/pricing" },
+const featuredArticles = [
+	{ title: "How whitepapper handles SEO", readTime: "6 min read", href: "" },
+	{ title: "How whitepapper handles SEO", readTime: "6 min read", href: "" },
+	{ title: "How whitepapper handles SEO", readTime: "6 min read", href: "" },
 ];
 
 import TeslaLogo from "@/assets/logos/bullshi/tesla_logo.png";
@@ -45,154 +46,67 @@ import GoogleLogo from "@/assets/logos/bullshi/google_logo.webp";
 import OpenAILogo from "@/assets/logos/bullshi/openai_logo.png";
 import CursorLogo from "@/assets/logos/bullshi/cursor_logo.png";
 
+import CarImg from "@/assets/landingPage/carImg.jpg";
+
 Astro.response.headers.set(
 	"Cache-Control",
 	"public, max-age=600, s-maxage=600, stale-while-revalidate=600",
 );
 ---
 
-<Layout>
-	<div class="relative mb-20 overflow-hidden">
-		<div
-			class="fixed left-0 top-0 z-[10] flex w-full items-center justify-center gap-5 px-4 py-2 backdrop-blur-[20px] bg-background/80 border-b border-border/50"
-		>
-			<div
-				class="max-w-[1200px] w-full flex items-center justify-between gap-10"
-			>
-				<div>
-					<img
-						src="/appLogo.png"
-						height="30"
-						width="30"
-						class="md:hidden"
-					/>
-				</div>
-
-				<div class="hidden gap-5 text-[14px] leading-[1em] md:flex">
-					{
-						navButtonsList.map((button) => (
-							<a
-								href={button.href}
-								class="group flex cursor-pointer gap-2 p-3 dark:font-[350] font-[400] opacity-[0.8] transition-all duration-300 hover:opacity-[1]"
-							>
-								{button.title}
-								<ArrowUpRight className="size-[14px] opacity-[0.7] transition-all duration-300 group-hover:opacity-[1]" />
-							</a>
-						))
-					}
-				</div>
-
-				<div class="flex gap-4">
-					<a href="/sign-up">
-						<Button className="w-[80px]"> Login </Button>
-					</a>
-
-					<div class="md:hidden">
-						<LandingMobileMenu
-							client:load
-							navButtons={navButtonsList}
-						/>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="mx-auto w-full max-w-[1600px] px-5 md:px-15">
+<Layout
+	title="Whitepapper"
+	description="SEO-first content engine to create, optimize, and distribute content with fast delivery and integration workflows."
+	reserveNavSpace={false}
+>
+	<main class="relative mb-20 overflow-hidden" aria-label="Whitepapper home">
+		<div class="mx-auto w-full">
 			<div
 				class="absolute left-[-80%] top-[3%] z-[-1] h-[10px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-30%] md:top-[-2%]"
+				aria-hidden="true"
 			>
 			</div>
 			<div
 				class="absolute left-[-45%] top-[0%] z-[-1] h-[8px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-50%] md:top-[-3%]"
+				aria-hidden="true"
 			>
 			</div>
 
+			<section
+				class="relative flex flex-col items-start justify-start pt-28 md:pt-30 h-full overflow-hidden"
+				aria-labelledby="home-hero-title"
+			>
+				<div
+					class="px-5 md:px-15 pb-[50px] mx-auto w-full max-w-[1500px]"
+				>
+					<h1
+						id="home-hero-title"
+						class="heroText text-[50px] md:text-[60px] flex md:flex-row flex-col md:gap-4 font-[450]"
+					>
+						<span>SEO first</span><span> content engine</span>
+					</h1>
+
+					<p
+						class="heroText text-[17px] text-muted-foreground my-4 md:w-[600px]"
+						style="animation-delay: 0.25s;"
+					>
+						Lorem ipsum dolor, sit amet consectetur adipisicing
+						elit. Quibusdam, dolore quam consectetur quisquam
+						officiis voluptatem!
+					</p>
+
+					<!-- <div class="flex gap-2 items-center justify-center w-full mt-5">
+			<p class="text-[12px]">Not backed by</p>
 			<div
-				class="relative flex flex-col items-start justify-start pt-28 md:pt-30"
+			class="bg-[#fb6518] text-[white] text-[11px] font-[400] leading-[12px] w-[20px] h-[20px] flex items-center justify-center"
 			>
-				<h1
-					class="heroText text-[50px] md:text-[60px] flex md:flex-row flex-col md:gap-4 font-[450]"
-				>
-					<span>SEO first</span><span> content engine</span>
-				</h1>
-
-				<p
-					class="heroText text-[17px] text-muted-foreground my-4 md:w-[600px]"
-					style="animation-delay: 0.25s;"
-				>
-					Lorem ipsum dolor, sit amet consectetur adipisicing elit.
-					Quibusdam, dolore quam consectetur quisquam officiis
-					voluptatem!
-				</p>
-
-				<!-- <div class="flex gap-2 items-center justify-center w-full mt-5">
-					<p class="text-[12px]">Not backed by</p>
-					<div
-						class="bg-[#fb6518] text-[white] text-[11px] font-[400] leading-[12px] w-[20px] h-[20px] flex items-center justify-center"
-					>
-						Y
-					</div>
-				</div> -->
-
-				
-				<div
-					class="heroText mt-8 md:mt-15 relative p-3 md:p-10 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
-					style="animation-delay: 0.3s; animation-duration: 0.8s;"
-				>
-					<img
-						src={BlueBgPattern.src}
-						alt="Green pattern background"
-						class="absolute left-0 top-0 z-[-1] h-full w-full"
-						loading="lazy"
-						decoding="async"
-					/>
-					<img
-						src={HeroDashboardLight.src}
-						alt=""
-						class="h-fit w-full rounded-[10px] border"
-					/>
-				</div>
-
-				<div
-					class="heroText absolute bottom-0 left-[50%] z-[-1] h-[110vw] w-[200vw] translate-x-[-50%] translate-y-[54%] overflow-hidden rounded-[50%] md:w-[150vw] md:translate-y-[85%] ease-in"
-					style="animation-delay: 0.5s;"
-				>
-					<div
-						class="h-[110vw] w-full rounded-[50%] border-[5px] border-foreground/50 blur-[20px]"
-					>
-					</div>
-				</div>
+			Y
 			</div>
-
-			<p class="text-center text-[15px] my-10">
-				Whitepapper is <a
-					href="https://github.com/abhraneeldhar7/Whitepapper"
-					target="_blank"
-					class="font-[450] underline">open-sourced</a
-				> for schizo writers
-			</p>
-
-			<!-- <div
-				class="my-15 md:my-20 flex flex-col items-center md:gap-7 gap-5"
-			>
-				<h2 class="text-[20px]">Look at these logos lmfao</h2>
-				<div
-					class="flex gap-x-7 gap-y-5 grayscale opacity-[0.5] flex-wrap justify-center items-center"
-				>
-					<img src={OpenAILogo.src} class="h-[30px] w-fit" />
-					<img src={GoogleLogo.src} class="h-[30px] w-fit" />
-					<img src={AudiLogo.src} class="h-[30px] w-fit" />
-					<img src={CursorLogo.src} class="h-[30px] w-fit" />
-					<img src={TeslaLogo.src} class="h-[30px] w-fit" />
-				</div>
 			</div> -->
 
-			<div class="mx-auto flex w-full flex-col gap-15 md:gap-40">
-				<div
-					class="flex w-full flex-col-reverse gap-6 md:flex-row md:items-end md:gap-20"
-				>
 					<div
-						class="relative flex-1 overflow-hidden rounded-[18px] md:rounded-[30px] p-3 md:p-8"
+						class="heroText mt-8 md:mt-15 relative p-3 md:p-10 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
+						style="animation-delay: 0.3s; animation-duration: 0.8s;"
 					>
 						<img
 							src={BlueBgPattern.src}
@@ -202,30 +116,166 @@ Astro.response.headers.set(
 							decoding="async"
 						/>
 						<img
-							src={MetatagsEditorLight.src}
-							alt="Editor preview"
-							class="h-full w-full object-cover rounded-[8px] md:rounded-[15px]"
-							loading="lazy"
-							decoding="async"
+							src={HeroDashboardLight.src}
+							alt="Whitepapper dashboard preview"
+							class="h-fit w-full rounded-[10px] border"
+						/>
+					</div>
+				</div>
+
+				<div
+					class="heroText absolute bottom-[5%] md:bottom-[25%] left-[50%] z-[-1] h-[110vw] w-[200vw] translate-x-[-50%] translate-y-[54%] overflow-hidden rounded-[50%] md:w-[150vw] md:translate-y-[85%] ease-in"
+					style="animation-delay: 0.5s;"
+				>
+					<div
+						class="h-[110vw] w-full rounded-[50%] border-[5px] border-foreground/80 blur-[20px]"
+						aria-hidden="true"
+					>
+					</div>
+				</div>
+			</section>
+
+			<!-- <p class="text-center text-[15px] my-10">
+				Whitepapper is <a
+					href="https://github.com/abhraneeldhar7/Whitepapper"
+					target="_blank"
+					class="font-[450] underline">open-sourced</a
+				> for schizo writers
+			</p> -->
+
+			<section class="mt-[20px] mb-[70px] flex flex-col items-center gap-6" aria-labelledby="home-trusted-logos">
+				<h2 class="text-[19px] text-muted-foreground">
+					<span id="home-trusted-logos">Look at these logos lmfao</span>
+				</h2>
+				<div
+					class="flex gap-x-7 gap-y-5 grayscale flex-wrap justify-center items-center dark:invert"
+				>
+					<img
+						src={OpenAILogo.src}
+						alt="OpenAI logo"
+						class="h-[30px] w-fit opacity-[0.5]"
+					/>
+					<img src={GoogleLogo.src} alt="Google logo" class="h-[30px] w-fit" />
+					<img
+						src={AudiLogo.src}
+						alt="Audi logo"
+						class="h-[30px] w-fit opacity-[0.5]"
+					/>
+					<img
+						src={CursorLogo.src}
+						alt="Cursor logo"
+						class="h-[30px] w-fit opacity-[0.5]"
+					/>
+					<img
+						src={TeslaLogo.src}
+						alt="Tesla logo"
+						class="h-[30px] w-fit opacity-[0.5]"
+					/>
+				</div>
+			</section>
+
+			<section
+				class="mt-20 mx-auto flex w-full max-w-[1500px] flex-col gap-15 md:gap-40 px-5 md:px-15"
+				aria-label="Product highlights"
+			>
+				<div
+					class="flex w-full flex-col-reverse gap-6 md:flex-row md:items-start md:gap-20"
+				>
+					<div class="flex-1">
+						<div
+							class="relative h-full w-full overflow-hidden rounded-[18px] md:rounded-[30px] p-3 md:p-8"
+						>
+							<img
+								src={BlueBgPattern.src}
+								alt="Green pattern background"
+								class="absolute left-0 top-0 z-[-1] h-full w-full"
+								loading="lazy"
+								decoding="async"
+							/>
+							<img
+								src={MetatagsEditorLight.src}
+								alt="Editor preview"
+								class="h-full w-full object-cover rounded-[8px] md:rounded-[15px]"
+								loading="lazy"
+								decoding="async"
+							/>
+						</div>
+
+						<LandingArticleList
+							items={featuredArticles}
+							className="md:hidden mt-5"
 						/>
 					</div>
 
 					<div class="md:flex-1">
-						<h1 class="text-[30px] font-[450]">
-							Auto generated metatags for better SEO
-						</h1>
-						<p class="mt-1 text-[16px] font-[350]">
-							Lorem ipsum dolor sit amet consectetur adipisicing
-							elit. Ex, earum. Nostrum, nihil sapiente sint
-							tempore quam expedita et id in officia eos
-							consequuntur esse repudiandae perspiciatis explicabo
-							unde nesciunt quo!
+						<div>
+							<h2 class="text-[30px] font-[450]">
+								Auto generated metatags for better SEO
+							</h2>
+							<p class="mt-1 text-[16px] text-muted-foreground">
+								Lorem ipsum dolor sit amet consectetur
+								adipisicing elit. Ex, earum. Nostrum, nihil
+								sapiente sint tempore quam expedita et id in
+								officia eos consequuntur esse repudiandae
+								perspiciatis explicabo unde nesciunt quo!
+							</p>
+						</div>
+						<LandingArticleList
+							items={featuredArticles}
+							className="mt-65 hidden md:block"
+						/>
+					</div>
+				</div>
+
+				<div
+					class="flex md:flex-row flex-col gap-5 md:gap-10 my-5 items-center mx-auto max-w-[600px]"
+				>
+					<div class="flex-1 flex flex-col items-center text-center">
+						<h3 class="font-[600] text-[40px]">~ 100ms</h3>
+						<p class="text-[16px] text-muted-foreground">
+							Accross the globe
+						</p>
+					</div>
+					<div
+						class="h-[80px] hidden md:block w-[1px] bg-foreground/50"
+					>
+					</div>
+					<div class="flex-1">
+						<p class="text-center text-[18px]">
+							With active local CDN cache, any content is
+							delivered to your users fastest.
 						</p>
 					</div>
 				</div>
-			</div>
+
+				<div class="">
+					<div class="flex md:flex-row flex-col gap-3 justify-between items-start">
+						<h2 class="md:flex-1 text-[30px] md:text-[40px] font-[450]">Make your sites searchable</h2>
+						<p class="md:flex-1 text-muted-foreground md:text-[20px] text-[16px]">Lorem ipsum dolor sit amet consectetur adipisicing elit. Assumenda, est. Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequatur, voluptates.</p>
+					</div>
+					<div
+						class="mt-8 md:mt-15 relative p-3 md:p-10 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
+					>
+						<img
+							src={BlueBgPattern.src}
+							alt="Green pattern background"
+							class="absolute left-0 top-0 z-[-1] h-full w-full"
+							loading="lazy"
+							decoding="async"
+						/>
+						<img
+							src={BlogsPageImg.src}
+								alt="Blogs page preview"
+							class="h-fit w-full rounded-[10px] border"
+						/>
+					</div>
+					<p class="text-[14px] text-muted-foreground my-4 text-center">Lorem ipsum dolor sit amet consectetur adipisicing elit. Delectus, magni!</p>
+				</div>
+
+				<IntegrationsSection />
+			</section>
 		</div>
-	</div>
+	</main>
 </Layout>
 
 <style>
