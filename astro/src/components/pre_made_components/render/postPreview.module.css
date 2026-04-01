@@ -2,8 +2,9 @@
 .markdownDiv {
     word-break: break-word;
     font-family: var(--font-satoshi, var(--font-sans));
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 400;
+    color: var(--muted-foreground, #1a1a1a);
 }
 
 .markdownDiv p {
@@ -11,13 +12,13 @@
     line-height: 2;
     margin: 0 0 0.9em;
     /* opacity: 0.8; */
-    color: var(--muted-foreground, #1a1a1a);
 }
 
 
 /* Headers */
 .markdownDiv h1 {
-    font-size: clamp(2.3rem, 4vw, 2.9rem);
+    color: var(--foreground, #1a1a1a);
+    font-size: 2.4em;
     font-weight: 550;
     line-height: 1.12;
     letter-spacing: -0.035em;
@@ -25,7 +26,8 @@
 }
 
 .markdownDiv h2 {
-    font-size: clamp(1.85rem, 3vw, 2.3rem);
+    color: var(--foreground, #1a1a1a);
+    font-size: 2em;
     font-weight: 540;
     line-height: 1.16;
     letter-spacing: -0.03em;
@@ -33,7 +35,8 @@
 }
 
 .markdownDiv h3 {
-    font-size: clamp(1.5rem, 2.4vw, 1.8rem);
+    color: var(--foreground, #1a1a1a);
+    font-size: 1.8em;
     font-weight: 530;
     line-height: 1.22;
     letter-spacing: -0.022em;
@@ -41,7 +44,7 @@
 }
 
 .markdownDiv h4 {
-    font-size: 1.28rem;
+    font-size: 1.6em;
     font-weight: 525;
     line-height: 1.3;
     letter-spacing: -0.015em;
@@ -49,14 +52,14 @@
 }
 
 .markdownDiv h5 {
-    font-size: 1.08rem;
+    font-size: 1.4em;
     font-weight: 525;
     line-height: 1.35;
     margin: 1.15em 0 0.4em;
 }
 
 .markdownDiv h6 {
-    font-size: 1em;
+    font-size: 1.2em;
     font-weight: 600;
     line-height: 1.4;
     letter-spacing: 0.01em;
@@ -83,11 +86,10 @@
 
 /* Horizontal Rule */
 .markdownDiv hr {
-    height: 1px;
+    height: 0px;
     margin: 30px 0;
-    opacity: 0.2;
-    background-color: var(--foreground);
-    border: none;
+    opacity: 0.4;
+    border: 1px solid var(--border);
 }
 
 /* Lists */
@@ -95,7 +97,6 @@
     list-style-type: disc;
     padding-left: 1.5em;
     margin: 0 0 1.1em;
-    color: var(--foreground, #1a1a1a);
 }
 
 .markdownDiv ul ul {
@@ -111,7 +112,6 @@
     list-style-type: decimal;
     padding-left: 1.5em;
     margin: 0 0 1.1em;
-    color: var(--foreground, #1a1a1a);
 }
 
 .markdownDiv ol ol {
@@ -198,7 +198,6 @@
     overflow: hidden;
     color: var(--muted-foreground);
     border: 1px solid var(--border);
-
 }
 
 /* Code inside pre tags (code blocks) */
@@ -423,49 +422,6 @@
     .markdownDiv {
         font-size: 16px;
         padding: 0 0.5em;
-    }
-
-    .markdownDiv p {
-        /* font-size: 17px; */
-        /* font-weight: 400; */
-        line-height: 1.95;
-    }
-
-    .markdownDiv h1 {
-        font-size: 2.1rem;
-        line-height: 1.12;
-    }
-
-    .markdownDiv h2 {
-        font-size: 1.8rem;
-        line-height: 1.16;
-    }
-
-    .markdownDiv h3 {
-        font-size: 1.5rem;
-        line-height: 1.22;
-    }
-
-    .markdownDiv h4 {
-        font-size: 1.22rem;
-    }
-
-    .markdownDiv h5 {
-        font-size: 1.04rem;
-    }
-
-    .markdownDiv pre {
-        border-radius: 6px;
-    }
-
-    .markdownDiv pre code {
-        padding: 0.75em;
-        font-size: 0.85em;
-    }
-
-    .markdownDiv table {
-        display: block;
-        overflow-x: auto;
     }
 }
 

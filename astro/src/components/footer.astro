@@ -1,10 +1,11 @@
 ---
 import { FooterThemeToggler } from "./FooterThemeToggler";
+import { Label } from "./ui/label";
 ---
 
 <div class="h-fit w-full flex flex-col justify-between text-[15px]">
   <div
-    class="md:p-[30px] p-[15px] flex justify-between gap-[50px] md:flex-row flex-col"
+    class="md:p-[30px] p-[15px] flex md:justify-between gap-[50px] md:flex-row flex-col"
   >
     <div>
       <a href="/" class="flex items-center gap-[15px]">
@@ -22,22 +23,41 @@ import { FooterThemeToggler } from "./FooterThemeToggler";
       </p>
     </div>
 
-    <div
-      class="flex flex-col gap-[10px] md:text-right md:items-end text-[14px]"
-    >
-      <!--
-      <a class="w-fit" href="/terms-of-service">Terms of Service</a>
-      <a class="w-fit" href="/privacy-policy">Privacy Policy</a>
-      <a class="w-fit" href="/changelogs">Changelogs</a>
-      <a class="w-fit" href="/contact">Contact</a>
-      -->
+    <div class="grid md:gap-12 gap-6 md:grid-cols-4 grid-cols-2">
+      <div class="flex flex-col gap-1">
+        <Label className="mb-1">Blogs</Label>
+        <a href="/updates">Updates</a>
+        <a href="/resources">Resources</a>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <Label className="mb-1">Legal</Label>
+        <a href="/terms-of-service">Terms of service</a>
+        <a href="/privacy-policy">Privacy policy</a>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <Label className="mb-1">Docs</Label>
+        <a href="/docs">Quick start</a>
+        <a href="/docs/best-practices">Privacy policy</a>
+        <a href="/docs/advanced">Advanced</a>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <Label className="mb-1">Site</Label>
+        <a href="/about">About us</a>
+        <a href="/integrations">Integrations</a>
+        <a href="/contact">Contact</a>
+      </div>
     </div>
   </div>
 
   <div class="mt-[30px] relative overflow-hidden md:h-[200px] h-[200px]">
     <div class="absolute bottom-0 translate-y-[32%] left-0 right-0">
       <div class="relative flex justify-center items-baseline">
-        <h2 class="md:text-[150px] leading-[1.45em] text-[120px] flex items-baseline font-[Geist]">
+        <h2
+          class="md:text-[150px] leading-[1.45em] text-[120px] flex items-baseline font-[Geist]"
+        >
           <span>Antk</span>
           <span class="relative inline-block">
             i
@@ -57,4 +77,3 @@ import { FooterThemeToggler } from "./FooterThemeToggler";
     </div>
   </div>
 </div>
-

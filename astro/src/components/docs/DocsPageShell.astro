@@ -31,10 +31,10 @@ const bodyMarkdown = headingMatch ? lines.slice(1).join("\n").trimStart() : mark
 ---
 
 <Layout title={`${pageTitle} | Whitepapper`} description={`${pageTitle} documentation for Whitepapper.`}>
-  <div class="mx-auto w-full max-w-[1400px] px-4 py-8 md:px-6 md:py-10">
-    <div class="grid grid-cols-1 gap-8 md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[220px_minmax(0,1fr)_220px]">
-      <aside class="hidden md:block">
-        <nav class="sticky top-6" aria-label="Documentation navigation">
+  <div class="py-10 px-5">
+    <div class="flex gap-10 justify-between">
+      <aside class="hidden md:block w-[200px]">
+        <nav class="sticky top-24" aria-label="Documentation navigation">
           <ul class="space-y-2">
             {navItems.map((item) => {
               const isActive = item.href === currentPath;
@@ -58,20 +58,20 @@ const bodyMarkdown = headingMatch ? lines.slice(1).join("\n").trimStart() : mark
         </nav>
       </aside>
 
-      <main class="min-w-0" aria-label={`${pageTitle} documentation content`}>
+      <main class="max-w-[700px] w-full" aria-label={`${pageTitle} documentation content`}>
         <div class="mb-6 flex items-center justify-between gap-3 md:hidden">
           <DocsMobileNav client:load navItems={navItems} currentPath={currentPath} />
         </div>
 
-        <div class="mb-8 flex items-center justify-between gap-4 border-b pb-4">
-          <h1 class="text-3xl font-semibold tracking-tight md:text-4xl">{pageTitle}</h1>
+        <div class="flex justify-between mb-10">
+          <h1 class="text-[32px] font-[500]">{pageTitle}</h1>
           <DocsCopyButton client:load markdown={markdown} />
         </div>
 
         <PostRender content={bodyMarkdown} />
       </main>
 
-      <aside class="hidden lg:block" aria-hidden="true"></aside>
+      <aside class="hidden lg:block w-[200px]" aria-hidden="true"></aside>
     </div>
   </div>
 </Layout>
