@@ -13,12 +13,6 @@ import HashnodeLogo from "@/assets/logos/hashnodeLogo.png";
 import SubstackLogo from "@/assets/logos/substackLogo.png";
 import ThreadsLogo from "@/assets/logos/threadsLogo.png";
 
-import GreenPattern from "@/assets/landingPage/greenPattern.jpg";
-import EditorPage from "@/assets/landingPage/editor_light.png";
-import BlogSite from "@/assets/landingPage/blogSite.png";
-
-import MobileToc from "@/assets/landingPage/mobileToc.png";
-import DesktopToc from "@/assets/landingPage/desktopLinesToc.png";
 import { Button } from "@/components/ui/button";
 
 import HeroDashboardLight from "@/assets/landingPage/hero_light.png";
@@ -50,6 +44,11 @@ import AudiLogo from "@/assets/logos/bullshi/audi_logo.png";
 import GoogleLogo from "@/assets/logos/bullshi/google_logo.webp";
 import OpenAILogo from "@/assets/logos/bullshi/openai_logo.png";
 import CursorLogo from "@/assets/logos/bullshi/cursor_logo.png";
+
+Astro.response.headers.set(
+	"Cache-Control",
+	"public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+);
 ---
 
 <Layout>
@@ -153,7 +152,6 @@ import CursorLogo from "@/assets/logos/bullshi/cursor_logo.png";
 					/>
 				</div>
 
-				
 				<div
 					class="heroText absolute bottom-0 left-[50%] z-[-1] h-[110vw] w-[200vw] translate-x-[-50%] translate-y-[54%] overflow-hidden rounded-[50%] md:w-[150vw] md:translate-y-[85%] ease-in"
 					style="animation-delay: 0.5s;"
@@ -165,9 +163,12 @@ import CursorLogo from "@/assets/logos/bullshi/cursor_logo.png";
 				</div>
 			</div>
 
-			<p class="text-center text-[15px] my-10" >
-				Whitepapper is <a href="https://github.com/abhraneeldhar7/Whitepapper" target="_blank" class="font-[450] underline"
-					>open-sourced</a> for schizo writers
+			<p class="text-center text-[15px] my-10">
+				Whitepapper is <a
+					href="https://github.com/abhraneeldhar7/Whitepapper"
+					target="_blank"
+					class="font-[450] underline">open-sourced</a
+				> for schizo writers
 			</p>
 
 			<!-- <div
@@ -221,8 +222,6 @@ import CursorLogo from "@/assets/logos/bullshi/cursor_logo.png";
 						</p>
 					</div>
 				</div>
-
-				
 			</div>
 		</div>
 	</div>
