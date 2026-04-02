@@ -1,39 +1,62 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import LegalDocument from "@/components/legal-document";
+import LegalDocument from "@/components/legal-document.astro";
 
-const sections = [
-	{
-		title: "What we collect",
-		content:
-			"We collect account details, project content, and usage analytics required to operate Whitepapper.",
-	},
-	{
-		title: "How we use data",
-		content:
-			"We use data to power content workflows, API features, and platform reliability. We do not sell personal data.",
-	},
-	{
-		title: "Data retention",
-		content:
-			"Data is retained while your account is active and for a limited period after deletion for recovery and compliance.",
-	},
-	{
-		title: "Contact",
-		content:
-			"For privacy requests, contact support and include your account email and project identifier.",
-	},
-];
+const privacyPolicyProps = {
+  title: 'Privacy Policy',
+  summary: 'This Privacy Policy describes how Whitepapper ("we," "us," or "our") collects, uses, and discloses your information when you use our website, application, and services (the "Service"). It explains your privacy rights and how the law protects you.',
+  effectiveDate: 'April 2, 2026',
+  sections: [
+    {
+      title: 'Information We Collect',
+      content: 'We collect information you provide directly to us, such as when you create an account, manage a project, or write content. This includes: Account Information: Name, email address, and authentication credentials (managed securely via Clerk). User Content: The content you create, including papers (markdown), metadata, thumbnails, and project structures. Project and Workspace Data: Information about your projects, collections, API key usage, and distribution settings. We also automatically collect certain information when you access or use our Service, such as usage data, IP addresses, browser type, and referring URLs to help us improve performance and security.'
+    },
+    {
+      title: 'How We Use Your Information',
+      content: 'We use the information we collect to: Provide, operate, and maintain the Whitepapper content operating system. Enable content workflows: Allow you to create, edit, publish, and distribute your content across multi-channel surfaces. Manage your account and projects: Provide access to your workspace, API keys, and team settings. Improve and develop our Service: Analyze usage trends to enhance our SEO-first editor, API, and distribution features. Communicate with you: Send service updates, technical notices, and support messages relevant to your content operations. Ensure security: Verify user identity, manage API access, and prevent unauthorized activity.'
+    },
+    {
+      title: 'API and Developer Access',
+      content: 'Whitepapper provides API access for developer workflows. If you generate a project-scoped API key, it enables programmatic access to read-oriented content endpoints. You are responsible for maintaining the confidentiality of your API keys. We use these keys only to authenticate requests to our backend (FastAPI) and Cloudflare Proxy layer. We do not use your API data for any purpose beyond delivering the Service you have configured.'
+    },
+    {
+      title: 'Data Sharing and Disclosure',
+      content: 'We do not sell your personal information. We may share information in the following limited circumstances: With your consent: When you direct us to share data, such as when configuring multi-channel distribution to platforms like Hashnode, Dev.to, or LinkedIn. Service Providers: We engage third-party companies (e.g., Clerk for authentication, Firebase for storage, Redis for caching) to perform functions on our behalf. They are contractually obligated to protect your data. Legal Requirements: If required by law or in response to valid requests by public authorities. Business Transfers: In connection with a merger, sale of company assets, or acquisition, your information may be transferred as part of that transaction.'
+    },
+    {
+      title: 'Data Security and Storage',
+      content: 'We use industry-standard security measures to protect your data. Our infrastructure leverages Firebase for storage, Redis for session management, and Cloudflare for edge caching and DDoS protection. While we strive to protect your information, no method of transmission over the internet is 100 percent secure. We retain your data as long as your account is active or as needed to provide you with the Service. You may delete your projects and papers at any time from your dashboard.'
+    },
+    {
+      title: 'Your Rights and Choices',
+      content: 'Depending on your location (e.g., under GDPR or CCPA), you may have certain rights regarding your personal data, including: Access and Portability: Request a copy of your data. Correction: Update your account information. Deletion: Request deletion of your account and associated content. To exercise these rights, please contact us via the support channels in your dashboard. You can also manage your profile and API keys directly within the Whitepapper workspace.'
+    },
+    {
+      title: 'Children\'s Privacy',
+      content: 'Our Service is not intended for children under the age of 13. We do not knowingly collect personal information from children under 13. If we become aware that we have collected such information, we will take steps to delete it.'
+    },
+    {
+      title: 'Changes to This Privacy Policy',
+      content: 'We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the effective date. We encourage you to review this policy periodically for any changes. Changes are effective immediately when they are posted.'
+    },
+    {
+      title: 'Contact Us',
+      content: 'If you have any questions about this Privacy Policy or our data practices, please contact us at: Whitepapper Email: legal@whitepapper.com Or via our support channels in the dashboard.'
+    }
+  ],
+  eyebrow: 'Effective Date',
+  altHref: '/terms-of-service',
+  altLabel: 'View Terms of Service'
+};
+
+
 ---
 
 <Layout title="Privacy Policy | Whitepapper" description="Privacy policy for Whitepapper.">
 	<LegalDocument
-		title="Privacy Policy"
-		eyebrow="Legal"
-		summary="This is a simple starter privacy policy for Whitepapper and will be expanded later."
-		effectiveDate="April 2, 2026"
-		sections={sections}
-		altHref="/terms-of-service"
-		altLabel="Terms of Service"
+		title={privacyPolicyProps.title}
+		summary={privacyPolicyProps.summary}
+		effectiveDate={privacyPolicyProps.effectiveDate}
+		sections={privacyPolicyProps.sections}
 	/>
 </Layout>

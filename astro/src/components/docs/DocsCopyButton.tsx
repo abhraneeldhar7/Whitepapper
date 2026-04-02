@@ -21,8 +21,8 @@ export default function DocsCopyButton({ markdown }: DocsCopyButtonProps) {
   };
 
   return (
-    <Button type="button" variant="secondary"  onClick={handleCopy} className="gap-2">
-      {copied ? <CheckIcon /> : <CopyIcon className="size-4" />}
+    <Button type="button" variant="secondary" size="sm"  onClick={handleCopy} className="gap-2">
+      {copied ? <CheckIcon /> : <CopyIcon />}
       {copied ? "Copied" : "Copy Page"}
     </Button>
   );

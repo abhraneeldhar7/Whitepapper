@@ -1,39 +1,108 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import LegalDocument from "@/components/legal-document";
+import LegalDocument from "@/components/legal-document.astro";
 
-const sections = [
-	{
-		title: "Use of service",
-		content:
-			"You may use Whitepapper for lawful content creation and publishing workflows under your account.",
-	},
-	{
-		title: "Account responsibilities",
-		content:
-			"You are responsible for account security, API key handling, and all actions performed under your account.",
-	},
-	{
-		title: "Content and integrations",
-		content:
-			"You are responsible for the content you publish and for compliance with policies of third-party integrations.",
-	},
-	{
-		title: "Changes",
-		content:
-			"We may update these terms as the product evolves. Continued use means you accept the latest terms.",
-	},
-];
+const termsOfServiceProps = {
+	title: "Terms of Service",
+	summary:
+		'These Terms of Service ("Terms") govern your access to and use of Whitepapper, including our website, application, programming interface, and related services (collectively, the "Service"). By using Whitepapper, you agree to be bound by these Terms.',
+	effectiveDate: "April 2, 2026",
+	sections: [
+		{
+			title: "Acceptance of Terms",
+			content:
+				"By creating an account, accessing our dashboard, or using our API, you acknowledge that you have read, understood, and agree to be bound by these Terms. If you are using the Service on behalf of an organization, you represent that you have authority to bind that organization to these Terms. If you do not agree to these Terms, you may not access or use Whitepapper.",
+		},
+		{
+			title: "Account Registration and Security",
+			content:
+				"To use Whitepapper, you must create an account via our Clerk-based authentication system. You are responsible for maintaining the security of your account credentials and for all activities that occur under your account. You agree to immediately notify us of any unauthorized use of your account. Whitepapper reserves the right to suspend or terminate accounts that violate these Terms or pose a security risk to our infrastructure.",
+		},
+		{
+			title: "User Content and Ownership",
+			content:
+				'You retain all ownership rights to the content you create, including papers, metadata, thumbnails, and project structures (collectively, "Your Content"). By submitting Your Content to Whitepapper, you grant us a limited license to host, store, display, and distribute Your Content solely as necessary to provide the Service to you. This license includes the ability to render your markdown content, generate SEO metadata, and facilitate distribution to connected platforms you authorize. You represent and warrant that you have all necessary rights to Your Content and that it does not violate any third-party rights or applicable laws.',
+		},
+		{
+			title: "Project and Workspace Structure",
+			content:
+				"Whitepapper organizes content into Projects, Collections, and Papers. As the account owner, you control access to your workspace and are responsible for managing API keys and member permissions. You agree not to use Whitepapper to store or distribute illegal content, malware, or material that infringes on intellectual property rights. We reserve the right to remove content that violates these Terms or poses a risk to our platform.",
+		},
+		{
+			title: "API Access and Developer Use",
+			content:
+				"Whitepapper provides project-scoped API keys for developer access. You may use our API in accordance with these Terms and any technical documentation provided. API keys are confidential and must not be shared publicly. We currently offer read-oriented API endpoints, and we may expand API functionality over time. We reserve the right to throttle or restrict API access if usage exceeds reasonable limits or compromises Service stability. Abuse of our API, including excessive requests or attempts to bypass security measures, may result in immediate key revocation.",
+		},
+		{
+			title: "Multi-Channel Distribution",
+			content:
+				"Whitepapper includes features to distribute your content to third-party platforms such as Hashnode, Dev.to, LinkedIn, X (Twitter), and others. By using these distribution features, you authorize Whitepapper to transmit Your Content to those platforms on your behalf. You are responsible for complying with the terms of service of each third-party platform you connect. Whitepapper is not liable for how third-party platforms handle your content after distribution.",
+		},
+		{
+			title: "Pricing and Subscription",
+			content:
+				"Whitepapper offers tiered plans for individuals, teams, and agencies. Pricing and feature details are available on our website. We reserve the right to change pricing with reasonable notice. If you are on a paid plan, fees are billed in advance on a recurring basis. Cancellations take effect at the end of your current billing cycle. We do not provide refunds for partial billing periods unless required by applicable law. Failure to pay may result in suspension of your account and access to your content.",
+		},
+		{
+			title: "Service Availability and Modifications",
+			content:
+				"We strive to keep Whitepapper reliable and available, but we do not guarantee uninterrupted access. We may perform maintenance, updates, or modifications to the Service. We reserve the right to add, modify, or remove features, including API endpoints, at our discretion. While we aim to provide advance notice for material changes, we may make urgent updates without prior notice when necessary for security or operational stability.",
+		},
+		{
+			title: "Intellectual Property",
+			content:
+				"Whitepapper owns all rights to the Service software, design, branding, and infrastructure. This includes the Astro-based frontend, FastAPI backend, Cloudflare proxy, and associated code. You may not copy, reverse engineer, or resell any part of Whitepapper unless explicitly permitted by these Terms or separate written agreement. Our name, logo, and product branding are trademarks of Whitepapper and may not be used without permission.",
+		},
+		{
+			title: "Termination",
+			content:
+				"You may stop using Whitepapper at any time. We may suspend or terminate your access to the Service at our discretion, including if we believe you have violated these Terms or if your account remains inactive for an extended period. Upon termination, you will lose access to your account, projects, and content. You are responsible for exporting Your Content before termination. We may retain backup copies for a reasonable period but are not obligated to do so.",
+		},
+		{
+			title: "Disclaimer of Warranties",
+			content:
+				'Whitepapper is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not warrant that the Service will be uninterrupted, error-free, or secure. We disclaim all implied warranties, including merchantability, fitness for a particular purpose, and non-infringement. We do not guarantee that content published through Whitepapper will achieve specific SEO rankings or distribution outcomes. Your use of the Service is at your sole risk.',
+		},
+		{
+			title: "Limitation of Liability",
+			content:
+				"To the maximum extent permitted by law, Whitepapper and its affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or goodwill, arising out of or related to your use of the Service. Our total liability shall not exceed the amount you paid us during the twelve months preceding the claim. Some jurisdictions do not allow limitations on liability, so this limitation may not apply to you.",
+		},
+		{
+			title: "Indemnification",
+			content:
+				"You agree to indemnify, defend, and hold harmless Whitepapper and its employees, contractors, and affiliates from any claims, damages, losses, or expenses arising out of your use of the Service, Your Content, your violation of these Terms, or your violation of any third-party rights.",
+		},
+		{
+			title: "Governing Law and Dispute Resolution",
+			content:
+				"These Terms shall be governed by the laws of the jurisdiction where Whitepapper operates, without regard to conflict of law principles. Any disputes arising from these Terms or your use of the Service shall be resolved through binding arbitration or small claims court, at our discretion. You agree to waive the right to participate in class actions or class-wide arbitration.",
+		},
+		{
+			title: "Changes to These Terms",
+			content:
+				"We may update these Terms from time to time. We will notify you of material changes by posting the updated Terms on our website or sending a notice via email or dashboard notification. Your continued use of Whitepapper after the effective date constitutes acceptance of the revised Terms. If you do not agree to the changes, you must stop using the Service.",
+		},
+		{
+			title: "Contact Information",
+			content:
+				"If you have any questions about these Terms, please contact us at: Whitepapper Email: legal@whitepapper.com Or via our support channels in the dashboard.",
+		},
+	],
+	eyebrow: "Effective Date",
+	altHref: "/privacy-policy",
+	altLabel: "View Privacy Policy",
+};
 ---
 
-<Layout title="Terms of Service | Whitepapper" description="Terms of service for Whitepapper.">
+<Layout
+	title="Terms of Service | Whitepapper"
+	description="Terms of service for Whitepapper."
+>
 	<LegalDocument
-		title="Terms of Service"
-		eyebrow="Legal"
-		summary="This is a simple starter terms document for Whitepapper and will be expanded later."
-		effectiveDate="April 2, 2026"
-		sections={sections}
-		altHref="/privacy-policy"
-		altLabel="Privacy Policy"
+		title={termsOfServiceProps.title}
+		summary={termsOfServiceProps.summary}
+		effectiveDate={termsOfServiceProps.effectiveDate}
+		sections={termsOfServiceProps.sections}
 	/>
 </Layout>

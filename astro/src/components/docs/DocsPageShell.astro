@@ -31,6 +31,7 @@ const pageTitle = headingMatch?.[1]?.trim() || "Docs";
 const bodyMarkdown = headingMatch
   ? lines.slice(1).join("\n").trimStart()
   : markdown;
+
 ---
 
 <Layout
@@ -84,7 +85,6 @@ const bodyMarkdown = headingMatch
             </div>
             <h1 class="text-[20px] md:text-[32px] font-[500]">{pageTitle}</h1>
           </div>
-
 
           <DocsCopyButton client:load markdown={markdown} />
         </div>

@@ -22,11 +22,8 @@ export default function DocsMobileNav({ navItems, currentPath }: DocsMobileNavPr
         </Button>
       </SheetTrigger>
 
-      <SheetContent side="left" className="w-[300px] p-0">
-        <SheetHeader className="border-b p-4 text-left">
-          <SheetTitle>Docs</SheetTitle>
-        </SheetHeader>
-
+      <SheetContent side="left" className="w-[300px] p-0 pt-10">
+        
         <nav className="p-4">
           <ul className="space-y-2">
             {navItems.map((item) => {
