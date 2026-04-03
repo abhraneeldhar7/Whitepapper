@@ -19,11 +19,12 @@ export type UserDoc = {
 };
 
 export type HashnodeDistribution = {
-  accessToken: string;
+  accessToken?: string | null;
+  publicationId?: string | null;
 };
 
 export type DevtoDistribution = {
-  accessToken: string;
+  accessToken?: string | null;
 };
 
 export type DistributionDoc = {
@@ -112,6 +113,22 @@ export type PaperMetadata = {
   publisherUrl: string;
   isAccessibleForFree: boolean;
   license: string;
+};
+
+export type DistributionPublishInput = {
+  paperId: string;
+  title: string;
+  slug: string;
+  body: string;
+  thumbnailUrl?: string | null;
+  metadata?: PaperMetadata | null;
+  accessToken?: string | null;
+};
+
+export type DistributionPublishResult = {
+  platform: "hashnode" | "devto";
+  postId: string;
+  url?: string | null;
 };
 
 export type PublicAuthorSummary = {

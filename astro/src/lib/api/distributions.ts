@@ -1,5 +1,11 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
-import type { DevtoDistribution, HashnodeDistribution, UserDoc } from "@/lib/types";
+import type {
+  DevtoDistribution,
+  DistributionPublishInput,
+  DistributionPublishResult,
+  HashnodeDistribution,
+  UserDoc,
+} from "@/lib/types";
 
 export interface HashnodeDistributionUpsertInput {
   accessToken: string;
@@ -26,6 +32,15 @@ export async function saveHashnodeDistribution(
 
 export async function revokeHashnodeDistribution(client: ApiClient = apiClient): Promise<UserDoc> {
   return client.delete<UserDoc>("/distributions/hashnode");
+}
+
+export async function publishHashnodeDistribution(
+  input: DistributionPublishInput,
+  client: ApiClient = apiClient,
+): Promise<DistributionPublishResult> {
+  return client.post<DistributionPublishResult>("/distributions/hashnode/publish", {
+    body: input,
+  });
 }
 
 export async function getDevtoDistribution(client: ApiClient = apiClient): Promise<DevtoDistribution | null> {
@@ -65,6 +80,24 @@ export async function revokeDevtoDistribution(client: ApiClient = apiClient): Pr
       throw error;
     }
     return client.delete<UserDoc>("/distributions/devto");
+  }
+}
+
+export async function publishDevtoDistribution(
+  input: DistributionPublishInput,
+  client: ApiClient = apiClient,
+): Promise<DistributionPublishResult> {
+  try {
+    return await client.post<DistributionPublishResult>("/distributions/devto/publish", {
+      body: input,
+    });
+  } catch (error) {
+    if (!isNotFoundError(error)) {
+      throw error;
+    }
+    return client.post<DistributionPublishResult>("/distributions/devto/publish", {
+      body: input,
+    });
   }
 }
 

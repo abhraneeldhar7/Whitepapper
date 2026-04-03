@@ -33,10 +33,8 @@ class UserDoc(BaseModel):
 
 
 class HashnodeDistribution(BaseModel):
-    accessToken: str
-
-
-
+    accessToken: str | None = None
+    publicationId: str | None = None
 
 class HashnodeDistributionUpsert(BaseModel):
     accessToken: str = Field(min_length=1)
@@ -44,7 +42,7 @@ class HashnodeDistributionUpsert(BaseModel):
 
 
 class DevtoDistribution(BaseModel):
-    accessToken: str
+    accessToken: str | None = None
 
 
 class DevtoDistributionUpsert(BaseModel):
@@ -214,6 +212,22 @@ class PaperMetadataGenerate(BaseModel):
     body: str | None = None
     status: Literal["draft", "published", "archived"] | None = None
     thumbnailUrl: str | None = None
+
+
+class DistributionPublishInput(BaseModel):
+    paperId: str
+    title: str = Field(min_length=1, max_length=200)
+    slug: str = Field(min_length=1, max_length=120)
+    body: str = Field(min_length=1)
+    thumbnailUrl: str | None = None
+    metadata: PaperMetadata | None = None
+    accessToken: str | None = None
+
+
+class DistributionPublishResult(BaseModel):
+    platform: Literal["hashnode", "devto"]
+    postId: str
+    url: str | None = None
 
 
 class PaperCreateResponse(BaseModel):

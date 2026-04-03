@@ -50,6 +50,7 @@ import {
 } from "@/lib/constants";
 import type { PaperDoc, PaperMetadata, UserDoc } from "@/lib/types";
 import { compressImage, copyToClipboard, deepEqual, isImageFile } from "@/lib/utils";
+import { resolveIntegrationBaseUrl } from "@/lib/integrationBaseUrl";
 import click1Sound from "@/assets/sounds/click1.mp3";
 import click2Sound from "@/assets/sounds/click2.mp3";
 import click3Sound from "@/assets/sounds/click3.mp3";
@@ -61,10 +62,12 @@ import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";
 import { Switch } from "../ui/switch";
 import { Textarea } from "../ui/textarea";
+import DistributionDialog from "./DistributionDialog";
 
 type WriteEditorProps = {
   initialPaper: PaperDoc;
   initialUser?: UserDoc | null;
+  integrationBaseUrl?: string;
 };
 
 type UiStatus = "draft" | "public";
@@ -119,7 +122,7 @@ const metadataFieldConfig: Array<{ key: keyof PaperMetadata; type: "text" | "num
   { key: "license", type: "text" },
 ];
 
-export default function WriteEditor({ initialPaper, initialUser }: WriteEditorProps) {
+export default function WriteEditor({ initialPaper, initialUser, integrationBaseUrl }: WriteEditorProps) {
   const [user, setUser] = useState<UserDoc | null>(initialUser ?? null);
   const paperId = initialPaper.paperId;
   const [paperDoc, setPaperDoc] = useState<PaperDoc>(() => ({
@@ -136,6 +139,7 @@ export default function WriteEditor({ initialPaper, initialUser }: WriteEditorPr
   const [slugChecking, setSlugChecking] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [distributionDialogOpen, setDistributionDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [uploadingEmbeddedCount, setUploadingEmbeddedCount] = useState(0);
@@ -509,9 +513,9 @@ export default function WriteEditor({ initialPaper, initialUser }: WriteEditorPr
   };
 
   const handleShare = async () => {
-    const baseUrl = import.meta.env.PUBLIC_SITE_URL;
+    const baseUrl = resolveIntegrationBaseUrl(integrationBaseUrl);
     if (!baseUrl) {
-      toast.error("PUBLIC_SITE_URL is not configured.");
+      toast.error("PUBLIC_SITE_URL/PRODUCTION_BASE_URL is not configured.");
       return;
     }
     if (!slugValue) {
@@ -858,6 +862,14 @@ export default function WriteEditor({ initialPaper, initialUser }: WriteEditorPr
                       <DownloadIcon /> Export
                     </Button>
                   </div>
+
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => setDistributionDialogOpen(true)}
+                  >
+                    <RssIcon /> Distribute
+                  </Button>
 
                   <div className="space-y-2">
                     <Label>Metadata</Label>
@@ -1316,6 +1328,20 @@ export default function WriteEditor({ initialPaper, initialUser }: WriteEditorPr
           )}
         </DialogContent>
       </Dialog>
+
+      <DistributionDialog
+        open={distributionDialogOpen}
+        onOpenChange={setDistributionDialogOpen}
+        user={user}
+        paperId={paperId}
+        title={title}
+        slug={slug}
+        body={body}
+        status={pageDetails.status}
+        integrationBaseUrl={integrationBaseUrl}
+        thumbnailUrl={paperDoc.thumbnailUrl || null}
+        metadata={metadata}
+      />
 
     </div>
   );
