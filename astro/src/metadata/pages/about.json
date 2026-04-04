@@ -13,7 +13,7 @@
   "ogTitle": "About",
   "ogDescription": "Learn why Whitepapper was built: one content source for developers to write in markdown, distribute across platforms, and power portfolio sites via API.",
   "ogUrl": "/about",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "About Whitepapper | Built for Developer Content Workflows social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "About",
@@ -28,3 +28,4 @@
     "description": "Story and mission behind Whitepapper."
   }
 }
+

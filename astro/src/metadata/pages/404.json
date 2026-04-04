@@ -13,7 +13,7 @@
   "ogTitle": "404",
   "ogDescription": "The page you requested could not be found. Explore Whitepapper docs, blogs, or return to the homepage.",
   "ogUrl": "/404",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Page Not Found | Whitepapper social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "404",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/404"
   }
 }
+

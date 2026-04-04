@@ -2,6 +2,7 @@
 import Footer from "@/components/footer.astro";
 import SiteTopNav from "@/components/site/SiteTopNav.astro";
 import { getPageSeoConfig } from "@/metadata/pages";
+import ogImageAsset from "@/assets/ogImage.png";
 import { Toaster } from "@/components/ui/sonner";
 import "../styles/global.css";
 
@@ -46,6 +47,13 @@ const pathToTitle = (path: string) => {
 const resolveAbsoluteUrl = (value?: string | null) => {
   const raw = String(value || "").trim();
   if (!raw) return "";
+
+  const normalizedRaw = raw.replace(/^\/+/, "");
+  if (normalizedRaw === "src/assets/orgImage.png" || normalizedRaw === "src/assets/ogImage.png") {
+    const origin = Astro.url.origin.replace(/\/+$/, "");
+    return `${origin}${ogImageAsset.src.startsWith("/") ? "" : "/"}${ogImageAsset.src}`;
+  }
+
   if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
   const origin = Astro.url.origin.replace(/\/+$/, "");
   return `${origin}${raw.startsWith("/") ? "" : "/"}${raw}`;

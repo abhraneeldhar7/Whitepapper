@@ -13,7 +13,7 @@
   "ogTitle": "Updates",
   "ogDescription": "Track Whitepapper product updates, release notes, and feature improvements for the developer content platform.",
   "ogUrl": "/updates",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Whitepapper Updates | Product Changelog and Releases social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Updates",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/updates"
   }
 }
+

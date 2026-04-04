@@ -13,7 +13,7 @@
   "ogTitle": "Integrations",
   "ogDescription": "Connect Whitepapper with Dev.to, Hashnode, and Medium to publish once and distribute across your developer channels.",
   "ogUrl": "/integrations",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Whitepapper Integrations | Dev.to, Hashnode, Medium social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Integrations",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/integrations"
   }
 }
+

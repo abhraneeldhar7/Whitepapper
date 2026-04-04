@@ -13,7 +13,7 @@
   "ogTitle": "Resources",
   "ogDescription": "Browse practical resources on developer content strategy, API-first publishing, SEO workflows, and multi-channel distribution.",
   "ogUrl": "/resources",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Whitepapper Resources | Developer Content Playbooks social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Resources",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/resources"
   }
 }
+

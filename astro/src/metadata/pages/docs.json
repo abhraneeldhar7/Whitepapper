@@ -13,7 +13,7 @@
   "ogTitle": "Docs",
   "ogDescription": "Read Whitepapper documentation for setup, API usage, publishing workflows, and advanced implementation guidance.",
   "ogUrl": "/docs",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Whitepapper Docs | Quickstart, Best Practices, Advanced social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Docs",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/docs"
   }
 }
+

@@ -13,7 +13,7 @@
   "ogTitle": "Page Title",
   "ogDescription": "Open Graph description aligned with the page intent and target keyword.",
   "ogUrl": "/example-page",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Page social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Page Title",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/example-page"
   }
 }
+

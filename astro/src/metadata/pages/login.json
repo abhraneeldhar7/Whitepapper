@@ -13,7 +13,7 @@
   "ogTitle": "Login",
   "ogDescription": "Sign in to Whitepapper to manage your content workspace, SEO metadata, and publishing integrations.",
   "ogUrl": "/login",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Login | Whitepapper social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Login",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/login"
   }
 }
+

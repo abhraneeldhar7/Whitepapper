@@ -13,7 +13,7 @@
   "ogTitle": "Welcome",
   "ogDescription": "Complete onboarding and set up your first Whitepapper project to start writing, organizing, and distributing content.",
   "ogUrl": "/welcome",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Welcome to Whitepapper social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Welcome",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/welcome"
   }
 }
+

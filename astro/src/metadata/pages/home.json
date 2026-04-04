@@ -13,8 +13,8 @@
   "ogTitle": "Home",
   "ogDescription": "Whitepapper is a markdown-first CMS for developers to write once, publish to Dev.to, Hashnode, and Medium, and serve content through a fast read API.",
   "ogUrl": "/",
-  "ogImage": "/appLogo.png",
-  "ogImageAlt": "Whitepapper | SEO-First Content OS for Developers social preview",
+  "ogImage": "src/assets/orgImage.png",
+  "ogImageAlt": "Whitepapper | SEO-First CMS engine",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Home",
   "twitterDescription": "Whitepapper is a markdown-first CMS for developers to write once, publish to Dev.to, Hashnode, and Medium, and serve content through a fast read API.",
@@ -37,3 +37,4 @@
     }
   ]
 }
+

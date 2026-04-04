@@ -13,7 +13,7 @@
   "ogTitle": "Contact",
   "ogDescription": "Get in touch with Whitepapper for support, product feedback, or collaboration requests. We reply quickly and keep communication builder-focused.",
   "ogUrl": "/contact",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Contact Whitepapper | Support, Feedback, Partnerships social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Contact",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/contact"
   }
 }
+

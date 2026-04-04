@@ -13,7 +13,7 @@
   "ogTitle": "Dashboard",
   "ogDescription": "Manage projects, collections, papers, API keys, and publishing distribution from your Whitepapper dashboard.",
   "ogUrl": "/dashboard",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Dashboard | Whitepapper Workspace social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Dashboard",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/dashboard"
   }
 }
+

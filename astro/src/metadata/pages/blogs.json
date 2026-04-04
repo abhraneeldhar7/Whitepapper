@@ -13,7 +13,7 @@
   "ogTitle": "Blogs",
   "ogDescription": "Explore Whitepapper articles on developer SEO, headless blog APIs, markdown publishing, and practical workflows for shipping content faster.",
   "ogUrl": "/blogs",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Whitepapper Blog | SEO, API, and Publishing Guides social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Blogs",
@@ -28,3 +28,4 @@
     "description": "Guides and updates for developer content operations."
   }
 }
+

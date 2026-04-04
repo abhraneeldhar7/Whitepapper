@@ -13,7 +13,7 @@
   "ogTitle": "Unauthorized",
   "ogDescription": "This Whitepapper page requires access permissions. Sign in with the correct account to continue.",
   "ogUrl": "/unauthorized",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Unauthorized | Whitepapper social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Unauthorized",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/unauthorized"
   }
 }
+

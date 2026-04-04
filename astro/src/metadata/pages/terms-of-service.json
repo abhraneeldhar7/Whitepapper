@@ -13,7 +13,7 @@
   "ogTitle": "Terms of Service",
   "ogDescription": "Review the Whitepapper Terms of Service, including usage rules, platform responsibilities, and legal conditions.",
   "ogUrl": "/terms-of-service",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Terms of Service | Whitepapper social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Terms of Service",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/terms-of-service"
   }
 }
+

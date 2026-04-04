@@ -13,7 +13,7 @@
   "ogTitle": "Write",
   "ogDescription": "Use the Whitepapper markdown editor to draft papers, manage SEO metadata, and prepare content for multi-platform distribution.",
   "ogUrl": "/write",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Write | Whitepapper Editor social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Write",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/write"
   }
 }
+

@@ -13,7 +13,7 @@
   "ogTitle": "Privacy Policy",
   "ogDescription": "Read the Whitepapper Privacy Policy to understand what data we collect, how we use it, and how we protect your information.",
   "ogUrl": "/privacy-policy",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Privacy Policy | Whitepapper social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Privacy Policy",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/privacy-policy"
   }
 }
+

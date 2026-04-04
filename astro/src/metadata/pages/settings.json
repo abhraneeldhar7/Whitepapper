@@ -13,7 +13,7 @@
   "ogTitle": "Settings",
   "ogDescription": "Update your Whitepapper account and workspace settings, including profile details, project configuration, and access controls.",
   "ogUrl": "/settings",
-  "ogImage": "/appLogo.png",
+  "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Settings | Whitepapper Account social preview",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Settings",
@@ -27,3 +27,4 @@
     "url": "https://whitepapper.antk.in/settings"
   }
 }
+
