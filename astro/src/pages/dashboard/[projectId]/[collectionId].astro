@@ -14,12 +14,12 @@ const projectId = Astro.params.projectId as string;
 const collectionId = Astro.params.collectionId as string;
 
 if (!userId) {
-  return Astro.redirect("/sign-in");
+  return Astro.redirect("/login");
 }
 
 const token = await getToken();
 if (!token) {
-  return Astro.redirect("/sign-in");
+  return Astro.redirect("/login");
 }
 
 const serverClient = createApiClient(token);

@@ -63,6 +63,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Switch } from "../ui/switch";
 import { Textarea } from "../ui/textarea";
 import DistributionDialog from "./DistributionDialog";
+import IntegrationsSection from "../integrations-4";
 
 type WriteEditorProps = {
   initialPaper: PaperDoc;
@@ -736,227 +737,239 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
               </SheetTrigger>
               <SheetContent
                 side={isMobile ? "bottom" : "right"}
-                className="p-0 pb-10"
+                className="p-0 pb-10 data-[side=right]:h-full data-[side=bottom]:h-[80vh] "
                 data-editor-overlay
               >
                 <SheetHeader className="p-4 pb-2">
-                  <SheetTitle>Page settings</SheetTitle>
+                  <SheetTitle>Paper settings</SheetTitle>
                 </SheetHeader>
-                <div className="flex flex-col gap-5 px-[15px] text-sm">
-                  <div className="space-y-2">
-                    <Label>Visibility</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            className="items-center flex-1"
-                            variant={pageDetails.status == "draft" ? "outline" : "default"}
-                            disabled={saving || isAssetUploading}
+                <ScrollArea className="h-full">
+                  <div className="flex flex-col gap-5 px-[15px] text-sm">
+                    <div className="space-y-2">
+                      <Label>Visibility</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              className="items-center flex-1"
+                              variant={pageDetails.status == "draft" ? "outline" : "default"}
+                              disabled={saving || isAssetUploading}
+                            >
+                              {pageDetails.status == "draft" ?
+                                <LockIcon /> :
+                                <RssIcon />
+                              }
+                              {pageDetails.status.toUpperCase()}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="p-[3px] w-[100px] space-y-[3px]"
+                            data-editor-overlay
                           >
-                            {pageDetails.status == "draft" ?
-                              <LockIcon /> :
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              variant={pageDetails.status == "draft" ? "outline" : "ghost"}
+                              disabled={saving || isAssetUploading}
+                              onClick={() => handleSaveWithStatus("draft")}
+                            >
+                              <LockIcon />
+                              Draft
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={pageDetails.status == "public" ? "outline" : "ghost"}
+                              className="w-full"
+                              disabled={saving || isAssetUploading}
+                              onClick={() => handleSaveWithStatus("public")}
+                            >
                               <RssIcon />
-                            }
-                            {pageDetails.status.toUpperCase()}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="p-[3px] w-[100px] space-y-[3px]"
-                          data-editor-overlay
-                        >
-                          <Button
-                            size="sm"
-                            className="w-full"
-                            variant={pageDetails.status == "draft" ? "outline" : "ghost"}
-                            disabled={saving || isAssetUploading}
-                            onClick={() => handleSaveWithStatus("draft")}
-                          >
-                            <LockIcon />
-                            Draft
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={pageDetails.status == "public" ? "outline" : "ghost"}
-                            className="w-full"
-                            disabled={saving || isAssetUploading}
-                            onClick={() => handleSaveWithStatus("public")}
-                          >
-                            <RssIcon />
-                            Public
-                          </Button>
-                        </PopoverContent>
-                      </Popover>
-                      {pageDetails.status == "public" ? (
-                        user?.username ? (
-                          <a href={`/${user.username}/${pageDetails.lastSavedSlug || slug}`} className="flex-1 flex" target="_blank">
-                            <Button variant="outline" className="flex-1"><ArrowUpRightFromSquare /> Open</Button>
-                          </a>
-                        ) : (
-                          <Button variant="outline" className="flex-1" disabled>
-                            <ArrowUpRightFromSquare /> Open
-                          </Button>
-                        )
-                      ) : null}
+                              Public
+                            </Button>
+                          </PopoverContent>
+                        </Popover>
+                        {pageDetails.status == "public" ? (
+                          user?.username ? (
+                            <a href={`/${user.username}/${pageDetails.lastSavedSlug || slug}`} className="flex-1 flex" target="_blank">
+                              <Button variant="outline" className="flex-1"><ArrowUpRightFromSquare /> Open</Button>
+                            </a>
+                          ) : (
+                            <Button variant="outline" className="flex-1" disabled>
+                              <ArrowUpRightFromSquare /> Open
+                            </Button>
+                          )
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
 
 
-                  <div className="space-y-2">
-                    <Label>Page ID</Label>
-                    <div className="flex gap-2 items-center">
-                      <Input value={paperId} disabled />
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="h-[34px] w-[34px] items-center justify-center"
-                        onClick={handleCopyPageId}
-                        disabled={saving}
-                      >
-                        <CopyIcon />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Custom URL</Label>
-                    <form onSubmit={(e) => {
-                      e.preventDefault()
-                      handleCheckSlug()
-                    }} className="flex gap-2 items-center">
-                      <Input
-                        className="flex-1"
-                        spellCheck={false}
-                        value={slug}
-                        onChange={(event) => setPaperDoc((prev) => ({ ...prev, slug: event.target.value }))}
-                      />
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        type="submit"
-                        disabled={!slugValue || !isSlugValid || !isSlugDirty || slugChecking || isAssetUploading}
-                        loading={slugChecking}
-                      >
-                        Check
-                      </Button>
-                    </form>
-                  </div>
-
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="secondary"
-                      className="flex-1"
-                      onClick={handleShare}
-                      disabled={shareLoading}
-                      loading={shareLoading}
-                    >
-                      <ForwardIcon /> Share
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      className="flex-1"
-                      onClick={handleExport}
-                      disabled={exportLoading}
-                      loading={exportLoading}
-                    >
-                      <DownloadIcon /> Export
-                    </Button>
-                  </div>
-
-                  <Button
-                    variant="secondary"
-                    className="w-full"
-                    onClick={() => setDistributionDialogOpen(true)}
-                  >
-                    <RssIcon /> Distribute
-                  </Button>
-
-                  <div className="space-y-2">
-                    <Label>Metadata</Label>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="bg-card px-2 py-1 rounded-[4px] border text-[12px]">{metadata ? "Generated" : "Empty"}</p>
-                      {metadata ? (
-                        <Button type="button" variant="secondary" onClick={handleOpenMetadataDialog}>
-                          Details
-                        </Button>
-                      ) : (
+                    <div className="space-y-2">
+                      <Label>Page ID</Label>
+                      <div className="flex gap-2 items-center">
+                        <Input value={paperId} disabled />
                         <Button
-                          type="button"
                           variant="secondary"
-                          onClick={handleGenerateMetadataFromSheet}
-                          loading={metadataGenerating}
+                          size="sm"
+                          className="h-[34px] w-[34px] items-center justify-center"
+                          onClick={handleCopyPageId}
+                          disabled={saving}
                         >
-                          Generate
+                          <CopyIcon />
                         </Button>
-                      )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label>Preferences</Label>
-                    <div className="p-3 space-y-6">
-                      <div className="flex justify-between">
-                        <div className="flex gap-2 items-center">
-                          {keyboardEffectEnabled ? <KeyboardIcon size={17} /> : <KeyboardOffIcon size={17} />}
-                          <p>Enable keyboard effect</p>
-                        </div>
-                        <Switch checked={keyboardEffectEnabled} onCheckedChange={handleToggleKeyboardEffect} />
-                      </div>
-                      <div className="flex justify-between">
-                        <div className="flex gap-2 items-center">
-                          {typingSoundEnabled ? <Volume2Icon size={17} /> : <VolumeOffIcon size={17} />}
-                          <p>Enable typing sound</p>
-                        </div>
-                        <Switch checked={typingSoundEnabled} onCheckedChange={handleToggleTypingSound} />
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <p>Theme</p>
-                        <Button variant="secondary" size="icon">
-                          <AnimatedThemeToggler size={18} />
+                    <div className="space-y-2">
+                      <Label>Custom URL</Label>
+                      <form onSubmit={(e) => {
+                        e.preventDefault()
+                        handleCheckSlug()
+                      }} className="flex gap-2 items-center">
+                        <Input
+                          className="flex-1"
+                          spellCheck={false}
+                          value={slug}
+                          onChange={(event) => setPaperDoc((prev) => ({ ...prev, slug: event.target.value }))}
+                        />
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          type="submit"
+                          disabled={!slugValue || !isSlugValid || !isSlugDirty || slugChecking || isAssetUploading}
+                          loading={slugChecking}
+                        >
+                          Check
                         </Button>
+                      </form>
+                    </div>
+
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="secondary"
+                        className="flex-1"
+                        onClick={handleShare}
+                        disabled={shareLoading}
+                        loading={shareLoading}
+                      >
+                        <ForwardIcon /> Share
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="flex-1"
+                        onClick={handleExport}
+                        disabled={exportLoading}
+                        loading={exportLoading}
+                      >
+                        <DownloadIcon /> Export
+                      </Button>
+                    </div>
+
+
+                    <div className="space-y-2">
+                      <Label>Metadata</Label>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="bg-card px-2 py-1 rounded-[4px] border text-[12px]">{metadata ? "Generated" : "Empty"}</p>
+                        {metadata ? (
+                          <Button type="button" variant="secondary" onClick={handleOpenMetadataDialog}>
+                            Details
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={handleGenerateMetadataFromSheet}
+                            loading={metadataGenerating}
+                          >
+                            Generate
+                          </Button>
+                        )}
                       </div>
-                      <div className="flex justify-between items-center">
-                        <p>Delete</p>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="destructive" disabled={deleteLoading} size="icon"><Trash2Icon /></Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Delete Page</DialogTitle>
-                            </DialogHeader>
-                            <p>{title}</p>
-                            {pageDetails.thumbnailUrl && (
-                              <img
-                                src={pageDetails.thumbnailUrl}
-                                alt={title || "Thumbnail"}
-                                className="w-full h-[200px] rounded-md border object-cover"
-                              />
-                            )}
-                            <DialogFooter>
-                              <DialogClose asChild>
-                                <Button variant="secondary" >
-                                  Cancel
+                    </div>
+
+
+
+                    <div className="relative mt-5">
+                      <IntegrationsSection hideText />
+                      <div className="absolute bottom-[-2px] left-0 right-0 h-full bg-gradient-to-t from-background to-transparent from-[10%] z-2" />
+
+
+                      <Button
+                        className="w-full absolute z-3 bottom-2"
+                        onClick={() => setDistributionDialogOpen(true)}
+                      >
+                        <RssIcon /> Distribute
+                      </Button>
+                    </div>
+
+
+
+                    <div className="space-y-2">
+                      <Label>Preferences</Label>
+                      <div className="p-3 space-y-6">
+                        <div className="flex justify-between">
+                          <div className="flex gap-2 items-center">
+                            {keyboardEffectEnabled ? <KeyboardIcon size={17} /> : <KeyboardOffIcon size={17} />}
+                            <p>Enable keyboard effect</p>
+                          </div>
+                          <Switch checked={keyboardEffectEnabled} onCheckedChange={handleToggleKeyboardEffect} />
+                        </div>
+                        <div className="flex justify-between">
+                          <div className="flex gap-2 items-center">
+                            {typingSoundEnabled ? <Volume2Icon size={17} /> : <VolumeOffIcon size={17} />}
+                            <p>Enable typing sound</p>
+                          </div>
+                          <Switch checked={typingSoundEnabled} onCheckedChange={handleToggleTypingSound} />
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <p>Theme</p>
+                          <Button variant="secondary" size="icon">
+                            <AnimatedThemeToggler size={18} />
+                          </Button>
+                        </div>
+                        <div className="flex justify-between items-center mb-20">
+                          <p>Delete</p>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="destructive" disabled={deleteLoading} size="icon"><Trash2Icon /></Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Delete Page</DialogTitle>
+                              </DialogHeader>
+                              <p>{title}</p>
+                              {pageDetails.thumbnailUrl && (
+                                <img
+                                  src={pageDetails.thumbnailUrl}
+                                  alt={title || "Thumbnail"}
+                                  className="w-full h-[200px] rounded-md border object-cover"
+                                />
+                              )}
+                              <DialogFooter>
+                                <DialogClose asChild>
+                                  <Button variant="secondary" >
+                                    Cancel
+                                  </Button>
+                                </DialogClose>
+                                <Button
+                                  className="w-[100px]"
+                                  variant="destructive"
+                                  onClick={handleDelete}
+                                  disabled={deleteLoading}
+                                  loading={deleteLoading}
+                                >
+                                  <Trash2Icon /> Delete
                                 </Button>
-                              </DialogClose>
-                              <Button
-                                className="w-[100px]"
-                                variant="destructive"
-                                onClick={handleDelete}
-                                disabled={deleteLoading}
-                                loading={deleteLoading}
-                              >
-                                <Trash2Icon /> Delete
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </ScrollArea>
                 {hasSheetChanges ? (
-                  <SheetFooter className="p-2 absolute left-0 bottom-0 w-full border-t">
+                  <SheetFooter className="p-2 z-2 absolute left-0 bottom-0 w-full border-t bg-background">
                     <div className="flex justify-end">
                       <Button
                         disabled={isAssetUploading}
@@ -1049,8 +1062,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
             </div>
             <div className="absolute top-2 right-2">
               <Button
-
-                size="lg"
+                size="icon"
                 variant="destructive"
                 className="z-2 md:opacity-0 group-hover:opacity-100"
                 onClick={(event) => {

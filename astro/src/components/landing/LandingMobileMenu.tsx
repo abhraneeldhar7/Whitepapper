@@ -34,7 +34,7 @@ export default function LandingMobileMenu({ navButtons }: LandingMobileMenuProps
         </SheetHeader>
 
         <a
-          href="/sign-in"
+          href="/login"
           className="mt-7 inline-flex h-12 w-fit items-center justify-center rounded-sm bg-primary px-5 text-[17px] text-primary-foreground transition-all duration-300 hover:bg-primary/80 w-full"
         >
           Login

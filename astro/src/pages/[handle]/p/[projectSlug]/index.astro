@@ -5,9 +5,14 @@ import { createApiClient } from '@/lib/api/client';
 import { getPublicProjectBySlug, getPublicProfile } from '@/lib/api/public';
 import { getCurrentUser } from '@/lib/api/users';
 import { formatFirestoreDate } from '@/lib/utils';
+import { isReservedUsername } from '@/lib/reservedPaths';
 
 const { handle: routeHandle, projectSlug } = Astro.params;
 const handle = (routeHandle as string).replace(/^@+/, '').trim().toLowerCase();
+
+if (!handle || isReservedUsername(handle)) {
+  return Astro.redirect('/404', 302);
+}
 
 let data: Awaited<ReturnType<typeof getPublicProjectBySlug>>;
 try {

@@ -1,18 +1,42 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/astro/server";
 
 const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/write(.*)", "/settings(.*)"]);
-const isLoginRoute = createRouteMatcher(["/sign-in", "/sign-up"]);
+const isLoginRoute = createRouteMatcher(["/login"]);
+const isNoIndexRoute = createRouteMatcher([
+  "/dashboard(.*)",
+  "/write(.*)",
+  "/settings(.*)",
+  "/login(.*)",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/sso-callback(.*)",
+  "/unauthorized(.*)",
+]);
 
-export const onRequest = clerkMiddleware((auth, context, next) => {
-  const { isAuthenticated, redirectToSignIn } = auth();
+export const onRequest = clerkMiddleware(async (auth, context, next) => {
+  const { isAuthenticated } = auth();
+  const noIndexValue = "noindex, nofollow, noarchive";
 
   if (!isAuthenticated && isProtectedRoute(context.request)) {
-    return redirectToSignIn({ returnBackUrl: context.request.url });
-  }
-  if (isAuthenticated && isLoginRoute(context.request)) {
-    const url = new URL("/dashboard", context.request.url);
-    return Response.redirect(url, 302);
+    const loginUrl = new URL("/login", context.request.url);
+    loginUrl.searchParams.set("redirect_url", context.request.url);
+    const redirectResponse = Response.redirect(loginUrl, 302);
+    redirectResponse.headers.set("X-Robots-Tag", noIndexValue);
+    return redirectResponse;
   }
 
-  return next();
+  if (isAuthenticated && isLoginRoute(context.request)) {
+    const url = new URL("/dashboard", context.request.url);
+    const redirectResponse = Response.redirect(url, 302);
+    redirectResponse.headers.set("X-Robots-Tag", noIndexValue);
+    return redirectResponse;
+  }
+
+  const response = await next();
+
+  if (isNoIndexRoute(context.request)) {
+    response.headers.set("X-Robots-Tag", noIndexValue);
+  }
+
+  return response;
 });

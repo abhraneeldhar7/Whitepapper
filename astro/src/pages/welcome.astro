@@ -1,0 +1,27 @@
+---
+import SSOCardStack from "@/components/auth/ssoCardStack";
+import Layout from "@/layouts/Layout.astro";
+import { AuthenticateWithRedirectCallback } from "@clerk/astro/components";
+import { LoaderCircle } from "lucide-react";
+---
+
+<Layout
+	title="Welcome"
+	noindex={true}
+	hideFooter={true}
+	showSiteNav={false}
+>
+	<div
+		class="h-screen w-screen flex flex-col items-center justify-center gap-10 overflow-hidden"
+	>
+		<div class="flex items-center gap-4">
+			<LoaderCircle size={18} className="animate-spin" />
+			<h2 class="text-[22px]">Setting up your workspace</h2>
+		</div>
+		<SSOCardStack client:load />
+		<p class="mt-5 text-[15px] font-[400] text-center">
+			Do not exit this screen
+		</p>
+	</div>
+	<AuthenticateWithRedirectCallback />
+</Layout>

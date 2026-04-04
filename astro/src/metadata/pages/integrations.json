@@ -1,0 +1,29 @@
+{
+  "path": "/integrations",
+  "title": "Integrations",
+  "description": "Connect Whitepapper with Dev.to, Hashnode, and Medium to publish once and distribute across your developer channels.",
+  "canonical": "/integrations",
+  "image": "/appLogo.png",
+  "keywords": "whitepapper integrations, devto integration, hashnode integration, medium import workflow",
+  "robots": "index, follow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Integrations",
+  "ogDescription": "Connect Whitepapper with Dev.to, Hashnode, and Medium to publish once and distribute across your developer channels.",
+  "ogUrl": "/integrations",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Whitepapper Integrations | Dev.to, Hashnode, Medium social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Integrations",
+  "twitterDescription": "Connect Whitepapper with Dev.to, Hashnode, and Medium to publish once and distribute across your developer channels.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Whitepapper Integrations | Dev.to, Hashnode, Medium social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Whitepapper Integrations",
+    "url": "https://whitepapper.antk.in/integrations"
+  }
+}

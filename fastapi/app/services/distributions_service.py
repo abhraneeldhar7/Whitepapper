@@ -5,6 +5,7 @@ from urllib import error as urllib_error
 from urllib import request as urllib_request
 
 from fastapi import HTTPException
+import httpx
 
 from app.core.firestore_store import firestore_store
 
@@ -296,50 +297,49 @@ class DistributionsService:
             raise HTTPException(status_code=502, detail="Hashnode did not return a published post.")
         return post
 
-    def publish_devto_article(self, access_token: str, article_payload: dict[str, Any]) -> dict[str, Any]:
+    async def publish_devto_article(self, access_token: str, final_payload: dict[str, Any]) -> dict[str, Any]:
         headers = {
             "api-key": access_token,
             "Content-Type": "application/json",
-            "Accept": "application/vnd.forem.api-v1+json",
-            # Dev.to bot detection can reject requests without a user agent.
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36"
-            ),
-            "Accept-Language": "en-US,en;q=0.9",
-            "Referer": "https://dev.to/",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
         }
-        request_body = {"article": article_payload}
 
         try:
-            response = self._request_json(
-                DEVTO_ARTICLES_URL,
-                headers=headers,
-                body=request_body,
-            )
-        except ExternalDistributionError as exc:
-            tags = article_payload.get("tags")
-            if exc.status_code == 422 and isinstance(tags, list) and tags:
-                retry_payload = {
-                    **article_payload,
-                    "tags": ",".join(tags),
-                }
-                try:
-                    response = self._request_json(
-                        DEVTO_ARTICLES_URL,
-                        headers=headers,
-                        body={"article": retry_payload},
-                    )
-                except ExternalDistributionError as retry_exc:
-                    raise HTTPException(status_code=retry_exc.status_code, detail=retry_exc.detail) from retry_exc
-            else:
-                raise HTTPException(status_code=exc.status_code, detail=exc.detail) from exc
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    DEVTO_ARTICLES_URL,
+                    json=final_payload,
+                    headers=headers,
+                )
+        except httpx.RequestError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail="Unable to reach the external distribution service right now.",
+            ) from exc
 
-        article_id = response.get("id")
+        if response.is_error:
+            parsed_payload: Any
+            try:
+                parsed_payload = response.json()
+            except ValueError:
+                parsed_payload = response.text
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=self._extract_error_message(parsed_payload, response.text or "Dev.to request failed."),
+            )
+
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise HTTPException(status_code=502, detail="Received an invalid response from Dev.to.") from exc
+
+        if not isinstance(payload, dict):
+            raise HTTPException(status_code=502, detail="Received an unexpected response from Dev.to.")
+
+        article_id = payload.get("id")
         if article_id is None:
             raise HTTPException(status_code=502, detail="Dev.to did not return a published article.")
-        return response
+        return payload
 
 
 distributions_service = DistributionsService()

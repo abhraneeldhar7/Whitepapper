@@ -1,0 +1,29 @@
+{
+  "path": "/write",
+  "title": "Write",
+  "description": "Use the Whitepapper markdown editor to draft papers, manage SEO metadata, and prepare content for multi-platform distribution.",
+  "canonical": "/write",
+  "image": "/appLogo.png",
+  "keywords": "whitepapper editor, markdown writing tool, SEO metadata editor, content drafting workspace",
+  "robots": "noindex, nofollow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Write",
+  "ogDescription": "Use the Whitepapper markdown editor to draft papers, manage SEO metadata, and prepare content for multi-platform distribution.",
+  "ogUrl": "/write",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Write | Whitepapper Editor social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Write",
+  "twitterDescription": "Use the Whitepapper markdown editor to draft papers, manage SEO metadata, and prepare content for multi-platform distribution.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Write | Whitepapper Editor social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Editor",
+    "url": "https://whitepapper.antk.in/write"
+  }
+}

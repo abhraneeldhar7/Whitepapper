@@ -69,7 +69,7 @@ export default function UserPopover({ user }: UserPopoverProps) {
             </Button>
           </a>
 
-          <SignOutButton>
+          <SignOutButton redirectUrl="/login">
             <Button variant="ghost" className="w-full justify-start">
               <div className="w-full justify-start flex items-center gap-[15px] text-destructive">
                 <LogOutIcon size={16} /> Logout

@@ -344,18 +344,16 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
                         variant={endpoint.id == selectedEndpoint.id ? "default" : "ghost"}
                         onClick={() => handleEndpointChange(endpoint)}
                     >
-                        {endpoint.name}
+                        {endpoint.name.split(" ")[0]}
+                     <span className="md:block hidden">{endpoint.name.split(" ")[1]}</span>
                     </Button>
                 ))}
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-                <span className="rounded-full border border-border bg-background px-2.5 py-1 font-medium">{selectedEndpoint.method}</span>
-                <span className="rounded-full border border-border bg-background px-2.5 py-1 font-medium">{selectedEndpoint.path}</span>
-            </div>
+
             <p className="mt-3 max-w-[720px] text-sm leading-6 text-muted-foreground">{selectedEndpoint.description}</p>
 
-            <div className={`overflow-hidden relative rounded-lg border bg-muted mt-2 ${language == "typescript" ? "h-[260px]" : "h-[200px]"} transition-all duration-300`}>
+            <div className={`overflow-hidden relative rounded-lg border bg-muted mt-2 ${language == "typescript" ? "h-[260px]" : "h-[240px]"} transition-all duration-300`}>
                 <div
                     className={cn(
                         "flex gap-1 transition-all duration-300 ease-in-out absolute top-2 left-2 z-2",
@@ -363,15 +361,15 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
                             ? "translate-y-[0px]"
                             : "translate-y-[-50px]")}>
                     <Button
-                        
-                        variant={identifierType === "id" ? "default" : "outline"}
+
+                        variant={identifierType === "id" ? "default" : "secondary"}
                         size="xs"
                         onClick={() => handleIdentifierTypeChange("id")}>
                         By ID
                     </Button>
                     <Button
-                        
-                        variant={identifierType === "slug" ? "default" : "outline"}
+
+                        variant={identifierType === "slug" ? "default" : "secondary"}
                         size="xs"
                         onClick={() => handleIdentifierTypeChange("slug")}>
                         By Slug

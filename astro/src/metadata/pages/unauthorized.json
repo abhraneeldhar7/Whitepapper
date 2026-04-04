@@ -1,0 +1,29 @@
+{
+  "path": "/unauthorized",
+  "title": "Unauthorized",
+  "description": "This Whitepapper page requires access permissions. Sign in with the correct account to continue.",
+  "canonical": "/unauthorized",
+  "image": "/appLogo.png",
+  "keywords": "whitepapper unauthorized, access denied, authentication required",
+  "robots": "noindex, nofollow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Unauthorized",
+  "ogDescription": "This Whitepapper page requires access permissions. Sign in with the correct account to continue.",
+  "ogUrl": "/unauthorized",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Unauthorized | Whitepapper social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Unauthorized",
+  "twitterDescription": "This Whitepapper page requires access permissions. Sign in with the correct account to continue.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Unauthorized | Whitepapper social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Unauthorized",
+    "url": "https://whitepapper.antk.in/unauthorized"
+  }
+}

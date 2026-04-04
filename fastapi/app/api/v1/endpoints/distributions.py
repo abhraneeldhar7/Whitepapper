@@ -23,13 +23,9 @@ router = APIRouter(prefix="/distributions", tags=["distributions"])
 
 def _build_public_article_url(username: str, slug: str) -> str:
     settings = get_settings()
-    environment = str(settings.environment or "").strip().lower()
-    if environment.startswith("dev"):
-        base_url = str(settings.production_base_url or "").strip().rstrip("/")
-    else:
-        base_url = str(settings.public_site_url or settings.production_base_url or "").strip().rstrip("/")
+    base_url = str(settings.public_site_url or "").strip().rstrip("/")
     if not base_url:
-        raise HTTPException(status_code=500, detail="PUBLIC_SITE_URL/PRODUCTION_BASE_URL is not configured.")
+        raise HTTPException(status_code=500, detail="PUBLIC_SITE_URL is not configured.")
     return f"{base_url}/{username}/{slug}"
 
 
@@ -63,6 +59,31 @@ def _extract_description(metadata: Any) -> str:
         if resolved:
             return resolved
     return ""
+
+
+def _metadata_to_dict(metadata: Any) -> dict[str, Any]:
+    if not metadata:
+        return {}
+    if isinstance(metadata, dict):
+        return metadata
+    if hasattr(metadata, "model_dump"):
+        dumped = metadata.model_dump(exclude_none=True)
+        if isinstance(dumped, dict):
+            return dumped
+    return {}
+
+
+def _resolve_publish_content(payload: DistributionPublishInput, paper_doc: dict[str, Any]) -> tuple[str, str, str, dict[str, Any]]:
+    payload_metadata = _metadata_to_dict(payload.metadata)
+    paper_metadata = _metadata_to_dict(paper_doc.get("metadata"))
+    merged_metadata = {**paper_metadata, **payload_metadata}
+
+    title = str(payload.title or "").strip() or str(paper_doc.get("title") or "").strip() or str(merged_metadata.get("title") or "").strip()
+    body = str(payload.body or "").strip() or str(paper_doc.get("body") or "").strip()
+    slug_candidate = str(payload.slug or "").strip() or str(paper_doc.get("slug") or "").strip() or str(merged_metadata.get("slug") or "").strip() or title
+    slug = normalize_slug(slug_candidate)
+
+    return title, body, slug, merged_metadata
 
 
 def _extract_thumbnail_url(payload: DistributionPublishInput, paper_doc: dict[str, Any] | None = None) -> str | None:
@@ -171,9 +192,7 @@ def publish_hashnode_distribution(
     paper_doc = _require_owned_paper(user_id, payload)
     user_doc = user_service.get_by_id(user_id)
     username = str(user_doc.get("username") or "").strip()
-    slug = normalize_slug(payload.slug)
-    title = payload.title.strip()
-    body = payload.body.strip()
+    title, body, slug, merged_metadata = _resolve_publish_content(payload, paper_doc)
 
     if not username:
         raise HTTPException(status_code=400, detail="User handle is missing.")
@@ -197,20 +216,22 @@ def publish_hashnode_distribution(
             "slug": normalize_slug(tag),
             "name": tag,
         }
-        for tag in _extract_tags(payload.metadata)
+        for tag in _extract_tags(merged_metadata)
     ]
+    description = _extract_description(merged_metadata)
 
     post = distributions_service.publish_hashnode_post(
         access_token,
         {
             "title": title,
             "publicationId": publication_id,
-            "contentMarkdown": payload.body,
+            "contentMarkdown": body,
             "slug": slug,
             "settings": {
                 "enableTableOfContent": False,
             },
             "originalArticleURL": article_url,
+            **({"subtitle": description} if description else {}),
             **({"tags": hashnode_tags} if hashnode_tags else {}),
             **({"coverImageOptions": {"coverImageURL": thumbnail_url}} if thumbnail_url else {}),
         },
@@ -302,45 +323,40 @@ def revoke_devto_distribution_dash(user_id: str = Depends(get_verified_id)) -> U
 
 
 @router.post("/devto/publish", response_model=DistributionPublishResult)
-def publish_devto_distribution(
+async def publish_devto_distribution(
     payload: DistributionPublishInput,
     user_id: str = Depends(get_verified_id),
 ) -> DistributionPublishResult:
     paper_doc = _require_owned_paper(user_id, payload)
     user_doc = user_service.get_by_id(user_id)
     username = str(user_doc.get("username") or "").strip()
-    slug = normalize_slug(payload.slug)
-    title = payload.title.strip()
-    body = payload.body.strip()
+    title, body, slug, merged_metadata = _resolve_publish_content(payload, paper_doc)
 
-    if not username:
-        raise HTTPException(status_code=400, detail="User handle is missing.")
-    if not slug:
-        raise HTTPException(status_code=400, detail="Paper slug is required before distributing.")
     if not title:
         raise HTTPException(status_code=400, detail="Paper title is required before distributing.")
     if not body:
         raise HTTPException(status_code=400, detail="Paper body is required before distributing.")
 
     access_token = _resolve_distribution_access_token("devto", user_id, payload.accessToken)
-    metadata_tags = _extract_tags(payload.metadata)
+    metadata_tags = _extract_tags(merged_metadata)
     devto_tags = [normalize_slug(tag) for tag in metadata_tags if normalize_slug(tag)][:4]
-    article_url = _build_public_article_url(username, slug)
-    description = _extract_description(payload.metadata) or title
     thumbnail_url = _extract_thumbnail_url(payload, paper_doc)
+    description = _extract_description(merged_metadata) or title
+    article_url = _build_public_article_url(username, slug) if username and slug else None
 
-    article_payload: dict[str, Any] = {
-        "title": title,
-        "body_markdown": payload.body,
-        "published": True,
-        "canonical_url": article_url,
-        "description": description,
-        **({"tags": devto_tags} if devto_tags else {}),
+    final_payload: dict[str, Any] = {
+        "article": {
+            "title": title,
+            "body_markdown": body,
+            "published": True,
+            "description": description,
+            **({"tags": devto_tags} if devto_tags else {}),
+            **({"main_image": thumbnail_url} if thumbnail_url else {}),
+            **({"canonical_url": article_url} if article_url else {}),
+        }
     }
-    if thumbnail_url:
-        article_payload["main_image"] = thumbnail_url
 
-    article = distributions_service.publish_devto_article(access_token, article_payload)
+    article = await distributions_service.publish_devto_article(access_token, final_payload)
     article_url_response = str(article.get("url") or "").strip()
     if not article_url_response:
         path = str(article.get("path") or "").strip()

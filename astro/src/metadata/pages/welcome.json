@@ -1,0 +1,29 @@
+{
+  "path": "/welcome",
+  "title": "Welcome",
+  "description": "Complete onboarding and set up your first Whitepapper project to start writing, organizing, and distributing content.",
+  "canonical": "/welcome",
+  "image": "/appLogo.png",
+  "keywords": "whitepapper onboarding, welcome setup, first project guide",
+  "robots": "noindex, nofollow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Welcome",
+  "ogDescription": "Complete onboarding and set up your first Whitepapper project to start writing, organizing, and distributing content.",
+  "ogUrl": "/welcome",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Welcome to Whitepapper social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Welcome",
+  "twitterDescription": "Complete onboarding and set up your first Whitepapper project to start writing, organizing, and distributing content.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Welcome to Whitepapper social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Welcome",
+    "url": "https://whitepapper.antk.in/welcome"
+  }
+}

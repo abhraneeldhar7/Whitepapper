@@ -1,0 +1,29 @@
+{
+  "path": "/contact",
+  "title": "Contact",
+  "description": "Get in touch with Whitepapper for support, product feedback, or collaboration requests. We reply quickly and keep communication builder-focused.",
+  "canonical": "/contact",
+  "image": "/appLogo.png",
+  "keywords": "contact whitepapper, whitepapper support, partnership inquiries, developer platform help",
+  "robots": "index, follow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Contact",
+  "ogDescription": "Get in touch with Whitepapper for support, product feedback, or collaboration requests. We reply quickly and keep communication builder-focused.",
+  "ogUrl": "/contact",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Contact Whitepapper | Support, Feedback, Partnerships social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Contact",
+  "twitterDescription": "Get in touch with Whitepapper for support, product feedback, or collaboration requests. We reply quickly and keep communication builder-focused.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Contact Whitepapper | Support, Feedback, Partnerships social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "name": "Contact Whitepapper",
+    "url": "https://whitepapper.antk.in/contact"
+  }
+}

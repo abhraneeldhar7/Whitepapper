@@ -3,9 +3,14 @@ import ProfilePage from "@/components/profilePage";
 import Layout from "@/layouts/Layout.astro";
 import { getPublicProfile } from "@/lib/api/public";
 import styles from "@/components/profile.module.css";
+import { isReservedUsername } from "@/lib/reservedPaths";
 
 const routeHandle = Astro.params.handle as string;
 const handle = routeHandle.replace(/^@+/, "").trim().toLowerCase();
+
+if (!handle || isReservedUsername(handle)) {
+  return Astro.redirect("/404", 302);
+}
 
 
 Astro.response.headers.set(

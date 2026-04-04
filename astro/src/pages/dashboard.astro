@@ -13,7 +13,7 @@ const serverClient = createApiClient(token);
 const dashboardData = await getDashboardData(serverClient).catch(() => null);
 
 if (!dashboardData) {
-  return Astro.redirect("/sign-in");
+  return Astro.redirect("/login");
 }
 
 const { user: initialUser, projects: initialProjects, papers: initialPages } = dashboardData;

@@ -1,0 +1,29 @@
+{
+  "path": "/login",
+  "title": "Login",
+  "description": "Sign in to Whitepapper to manage your content workspace, SEO metadata, and publishing integrations.",
+  "canonical": "/login",
+  "image": "/appLogo.png",
+  "keywords": "whitepapper login, account access, content dashboard sign in",
+  "robots": "noindex, nofollow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Login",
+  "ogDescription": "Sign in to Whitepapper to manage your content workspace, SEO metadata, and publishing integrations.",
+  "ogUrl": "/login",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Login | Whitepapper social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Login",
+  "twitterDescription": "Sign in to Whitepapper to manage your content workspace, SEO metadata, and publishing integrations.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Login | Whitepapper social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Login",
+    "url": "https://whitepapper.antk.in/login"
+  }
+}

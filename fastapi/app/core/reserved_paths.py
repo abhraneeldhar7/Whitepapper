@@ -7,7 +7,7 @@ ROOT_RESERVED_PATHS = {
     "settings",
     "sign-in",
     "sign-up",
-    "sso-callback",
+    "welcome",
     "unauthorized",
     "404",
     "components",

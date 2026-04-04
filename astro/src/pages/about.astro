@@ -1,9 +1,51 @@
 ---
 import AboutImg from "@/assets/aboutsImg.jpg";
+import PostRender from "@/components/pre_made_components/render/postPreview";
 import Layout from "@/layouts/Layout.astro";
+
+const aboutContent = [
+    {
+        title: "Why Whitepapper exists",
+        content:
+            "I built Whitepaper because I needed one place to document my projects, feed my portfolio blog, and push content out to Dev.to, Hashnode, and Medium without doing the same thing three times.\n\nThe tools I tried were either too heavy, too expensive, or just not built for developers who write. So I built my own.",
+    },
+    {
+        title: "A developer API that fits your stack",
+        content:
+            "Every project on Whitepapper gets a scoped API key. That key lets you query your entire content hierarchy: project details, collections, and individual papers.\n\nThe structure is simple: a **project** is your top-level workspace. Inside it, you can group content into **collections**. Each piece of writing is a **paper**. Papers can also live standalone, inside or outside a project, whatever fits how you think.\n\nYou can pull any of this into your own site, portfolio, or app. The API is read-oriented by design, so it is safe to use in public-facing frontends without exposing write access.",
+    },
+    {
+        title: "Fast by default",
+        content:
+            "The developer API and all public pages are cached at the edge using Cloudflare Workers. Responses come back in under 100ms regardless of where your readers are.\n\nInternally, project, collection, and paper data is also cached in Redis so the dashboard never feels sluggish. You get fast reads everywhere: at the edge for public traffic, and in-memory for your own session.\n\nDashboards always show live data. The cache is for your readers, not you.",
+    },
+    {
+        title: "Distribute once, publish everywhere",
+        content:
+            "Writing the same post for five platforms is a waste of time. Whitepapper handles distribution from the same content source.\n\n**Hashnode** and **Dev.to** support direct publishing via their APIs. One click and your paper goes out.\n\n**Medium** works via their Import Tool: Whitepapper gives you the right URL and Medium pulls the content in, preserving formatting.\n\nIf you prefer to own the process, export to markdown is always available.\n\nThreads, Reddit, and LinkedIn distribution are in the pipeline, pending platform approvals.",
+    },
+    {
+        title: "Built to stay out of your way",
+        content:
+            "The editor is markdown-first. No formatting toolbars fighting for attention, no modal overload, no settings buried three levels deep.\n\nYou open a paper and write. The sidebar keeps your project structure visible without cluttering the writing surface. SEO metadata, thumbnails, and visibility controls are there when you need them and hidden when you do not.\n\nThe goal is zero cognitive overhead between having an idea and publishing it.",
+    },
+    {
+        title: "The stack, if you are curious",
+        content:
+            "The frontend is built with **Astro**, which ships almost zero JavaScript to the browser by default. Pages load fast and score well on Core Web Vitals without any extra work.\n\nThe backend is **FastAPI**, deployed on **Google Cloud Run**. It scales to zero when idle and spins up fast when needed.\n\nContent is stored in **Firestore**, cached in **Redis**, and served through a **Cloudflare Worker** at the edge.",
+    },
+    {
+        title: "Made by",
+        content:
+            "Whitepapper is built and maintained by **Abhraneel Dhar**, an indie developer from Kolkata, India.\n\nIf you want to say hi or report something broken: [mail me](mailto:abhraneeldhar@gmail.com)",
+    },
+];
 ---
 
-<Layout title="About | Whitepapper" description="Learn about Whitepapper, our mission, and the platform we are building.">
+<Layout
+    title="About | Whitepapper"
+    description="Learn about Whitepapper, our mission, and the platform we are building."
+>
     <main class="max-w-[900px] mx-auto w-full]" aria-label="About Whitepapper">
         <section class="relative" aria-labelledby="about-title">
             <h1
@@ -19,71 +61,30 @@ import Layout from "@/layouts/Layout.astro";
             />
         </section>
 
-        <section class="mt-10 px-4 flex flex-col gap-5" aria-label="About details">
-            <article class="flex gap-3 md:gap-5 md:flex-row flex-col">
-                <h2 class="text-[20px] md:text-[24px] md:flex-1">
-                    What is Whitepapper
-                </h2>
-                <div class="md:flex-1">
-                    <p class="text-[15px] text-muted-foreground">
-                        Lorem ipsum dolor sit amet consectetur, adipisicing
-                        elit. Maxime illum sunt debitis, numquam nam eum quaerat
-                        architecto nostrum sit sint. Lorem ipsum dolor sit amet
-                        consectetur adipisicing elit. Ex hic odio mollitia
-                        laudantium? Nulla odio incidunt fugit quas voluptatum
-                        rem!
-                    </p>
-                </div>
-            </article>
-            <div class="w-full border my-4" aria-hidden="true"></div>
-            <article class="flex gap-3 md:gap-5 md:flex-row flex-col">
-                <h2 class="text-[20px] md:text-[24px] md:flex-1">
-                    What is Whitepapper
-                </h2>
-                <div class="md:flex-1">
-                    <p class="text-[15px] text-muted-foreground">
-                        Lorem ipsum dolor sit amet consectetur, adipisicing
-                        elit. Maxime illum sunt debitis, numquam nam eum quaerat
-                        architecto nostrum sit sint. Lorem ipsum dolor sit amet
-                        consectetur adipisicing elit. Ex hic odio mollitia
-                        laudantium? Nulla odio incidunt fugit quas voluptatum
-                        rem!
-                    </p>
-                </div>
-            </article>
-            <div class="w-full border my-4" aria-hidden="true"></div>
-            <article class="flex gap-3 md:gap-5 md:flex-row flex-col">
-                <h2 class="text-[20px] md:text-[24px] md:flex-1">
-                    What is Whitepapper
-                </h2>
-                <div class="md:flex-1">
-                    <p class="text-[15px] text-muted-foreground">
-                        Lorem ipsum dolor sit amet consectetur, adipisicing
-                        elit. Maxime illum sunt debitis, numquam nam eum quaerat
-                        architecto nostrum sit sint. Lorem ipsum dolor sit amet
-                        consectetur adipisicing elit. Ex hic odio mollitia
-                        laudantium? Nulla odio incidunt fugit quas voluptatum
-                        rem!
-                    </p>
-                </div>
-            </article>
-            <div class="w-full border my-4" aria-hidden="true"></div>
-            <article class="flex gap-3 md:gap-5 md:flex-row flex-col">
-                <h2 class="text-[20px] md:text-[24px] md:flex-1">
-                    What is Whitepapper
-                </h2>
-                <div class="md:flex-1">
-                    <p class="text-[15px] text-muted-foreground">
-                        Lorem ipsum dolor sit amet consectetur, adipisicing
-                        elit. Maxime illum sunt debitis, numquam nam eum quaerat
-                        architecto nostrum sit sint. Lorem ipsum dolor sit amet
-                        consectetur adipisicing elit. Ex hic odio mollitia
-                        laudantium? Nulla odio incidunt fugit quas voluptatum
-                        rem!
-                    </p>
-                </div>
-            </article>
-            <div class="w-full border my-4" aria-hidden="true"></div>
+        <section
+            class="mt-10 px-4 flex flex-col gap-5"
+            aria-label="About details"
+        >
+            {
+                aboutContent.map((section, index) => (
+                    <>
+                        <article class="flex gap-3 md:gap-5 md:flex-row flex-col">
+                            <h2 class="text-[20px] md:text-[24px] md:flex-1">
+                                {section.title}
+                            </h2>
+                            <div class="md:flex-1">
+                                <PostRender content={section.content} />
+                            </div>
+                        </article>
+                        {index <= aboutContent.length && (
+                            <div
+                                class="w-full border my-4"
+                                aria-hidden="true"
+                            />
+                        )}
+                    </>
+                ))
+            }
         </section>
     </main>
 </Layout>

@@ -1,5 +1,6 @@
 import logging
 import pickle
+import threading
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
@@ -118,7 +119,6 @@ class ProjectsService:
 
     def _propagate_project_visibility(self, project_id: str, is_public: bool) -> None:
         from app.services.collections_service import collections_service
-        from app.services.papers_service import papers_service
 
         collections = firestore_store.find_by_fields("collections", {"projectId": project_id})
         for collection in collections:
@@ -127,21 +127,35 @@ class ProjectsService:
             collection_id = collection.get("collectionId")
             if not collection_id:
                 continue
-            collections_service.update(collection_id, {"isPublic": is_public})
+            # Waterfall propagation: project -> collection -> papers.
+            collections_service.set_visibility(collection_id, is_public, background=False)
 
-        papers = papers_service.list_by_project_id(project_id)
-        target_status = "published" if is_public else "draft"
-        for paper in papers:
-            current_status = paper.get("status") or "draft"
-            if current_status == "archived" or current_status == target_status:
-                continue
-            paper_id = paper.get("paperId")
-            if not paper_id:
-                continue
-            papers_service.update(
-                paper_id,
-                {"status": target_status},
+    def _run_project_visibility_propagation(self, project_id: str, is_public: bool) -> None:
+        try:
+            self._propagate_project_visibility(project_id, is_public)
+        except Exception:
+            logger.exception(
+                "Project visibility propagation failed for project_id=%s is_public=%s",
+                project_id,
+                is_public,
             )
+
+    def _set_visibility_only(self, project_id: str, is_public: bool) -> dict:
+        current = self.get_by_id(project_id)
+        target_visibility = bool(is_public)
+        if bool(current.get("isPublic", False)) == target_visibility:
+            return current
+
+        previous_slug = current.get(PROJECT_SLUG_KEY)
+        owner_username = self._get_owner_username(current.get(PROJECT_OWNER_KEY))
+        visibility_patch = {
+            "isPublic": target_visibility,
+            "updatedAt": utc_now(),
+        }
+        firestore_store.update(PROJECTS_COLLECTION, project_id, visibility_patch)
+        current.update(visibility_patch)
+        self.invalidate_project(project_id=project_id, owner_username=owner_username, slug=previous_slug)
+        return current
 
     def list_owned(self, owner_id: str, public: bool = False) -> list[dict]:
         filters: dict[str, object] = {PROJECT_OWNER_KEY: owner_id}
@@ -305,14 +319,20 @@ class ProjectsService:
     def delete_project_assets(self, owner_id: str, project_id: str) -> int:
         return storage_service.delete_by_prefix(f"users/{owner_id}/projects/{project_id}/")
 
-    def set_visibility(self, project_id: str, is_public: bool) -> dict:
-        current = self.get_by_id(project_id)
-        target_visibility = bool(is_public)
-        if bool(current.get("isPublic", False)) == target_visibility:
-            return current
+    def set_visibility(self, project_id: str, is_public: bool, *, background: bool = True) -> dict:
+        updated = self._set_visibility_only(project_id, is_public)
+        target_visibility = bool(updated.get("isPublic", False))
 
-        updated = self.update(project_id, {"isPublic": target_visibility})
-        self._propagate_project_visibility(project_id, target_visibility)
+        if background:
+            worker = threading.Thread(
+                target=self._run_project_visibility_propagation,
+                args=(project_id, target_visibility),
+                daemon=True,
+            )
+            worker.start()
+        else:
+            self._run_project_visibility_propagation(project_id, target_visibility)
+
         return updated
 
     def delete(self, project_id: str) -> dict[str, bool]:

@@ -316,7 +316,7 @@ export default function DistributionDialog({
                       src={platform.logoSrc}
                       width={30}
                       height={30}
-                      className={`h-[30px] w-[30px] shrink-0 object-contain ${platform.logoClassName ?? ""}`}
+                      className={`h-[30px] w-[30px] shrink-0 object-contain rounded-[5px] ${platform.logoClassName ?? ""}`}
                     />
                     <div className="min-w-0">
                       <p className="text-[14px] font-[500] leading-none">{platform.name}</p>
@@ -373,16 +373,16 @@ export default function DistributionDialog({
 
                 {showMediumExpanded ? (
                   <div className="pl-[42px] pr-1">
-                    <p className="text-[12px] text-muted-foreground">
+                    <p className="text-[14px] text-center text-muted-foreground">
                       Url copied, now paste this into medium
                     </p>
                     <a
                       href={mediumImportUrl || "#"}
                       target="_blank"
                       rel="noreferrer noopener"
-                      className="inline-flex mt-2"
+                      className="inline-flex mt-2 w-full"
                     >
-                      <Button>
+                      <Button className="w-full" size="lg">
                         Continue
                       </Button>
                     </a>

@@ -1,7 +1,9 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import { formatFirestoreDate } from "@/lib/utils";
-import PostPreviewServer from "@/components/pre_made_components/render/PostPreviewServer.astro";
+import PostRender from "@/components/pre_made_components/render/postPreview";
+import PostPreviewDesktopToc from "@/components/pre_made_components/render/PostPreviewDesktopToc";
+import PostPreviewMobileToc from "@/components/pre_made_components/render/PostPreviewMobileToc";
 import type { PaperMetadata } from "@/lib/types";
 import { ChevronLeft, DotIcon } from "lucide-react";
 import { getSiteBlogPaperBySlug } from "@/lib/api/site_blogs";
@@ -11,6 +13,8 @@ const normalizedSlug = pageSlug.trim().toLowerCase();
 const siteUrl = String(import.meta.env.PUBLIC_SITE_URL ?? "")
     .trim()
     .replace(/\/+$/, "");
+const userAgent = Astro.request.headers.get("user-agent") ?? "";
+const isDesktopUA = !/Mobi|Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile|WPDesktop/i.test(userAgent);
 
 if (pageSlug !== normalizedSlug) {
     return Astro.redirect(`/blogs/${normalizedSlug}`, 301);
@@ -22,6 +26,7 @@ Astro.response.headers.set(
 );
 
 const { paper } = await getSiteBlogPaperBySlug(normalizedSlug);
+const contentContainerId = `post-preview-${paper.paperId || normalizedSlug}`;
 const updatedDate = formatFirestoreDate(paper.updatedAt);
 const metadataInput = paper.metadata;
 const resolvedSiteUrl = siteUrl || Astro.url.origin.replace(/\/+$/, "");
@@ -34,7 +39,6 @@ const isBlogCanonical = /\/blogs\/[^/]+\/?$/i.test(canonicalCandidate);
 const fallbackCanonical = `${resolvedSiteUrl}/blogs/${paper.slug}`;
 const fallbackAuthorUrl = `${resolvedSiteUrl}/blogs`;
 const fallbackImage = paper.thumbnailUrl || `${resolvedSiteUrl}/appLogo.png`;
-const fallbackIso = new Date().toISOString();
 const metadata: PaperMetadata = {
     title: metadataInput?.title || `${paper.title} | Whitepapper Blog`,
     metaDescription: metadataInput?.metaDescription || paper.title,
@@ -55,11 +59,11 @@ const metadata: PaperMetadata = {
     ogPublishedTime:
         metadataInput?.ogPublishedTime ||
         metadataInput?.datePublished ||
-        fallbackIso,
+        paper.createdAt,
     ogModifiedTime:
         metadataInput?.ogModifiedTime ||
         metadataInput?.dateModified ||
-        fallbackIso,
+        paper.updatedAt,
     ogAuthorUrl:
         metadataInput?.ogAuthorUrl ||
         metadataInput?.authorUrl ||
@@ -88,11 +92,11 @@ const metadata: PaperMetadata = {
     datePublished:
         metadataInput?.datePublished ||
         metadataInput?.ogPublishedTime ||
-        fallbackIso,
+        paper.createdAt,
     dateModified:
         metadataInput?.dateModified ||
         metadataInput?.ogModifiedTime ||
-        fallbackIso,
+        paper.updatedAt,
     authorName: metadataInput?.authorName || authorHandle,
     authorHandle: authorHandle,
     authorUrl: metadataInput?.authorUrl || fallbackAuthorUrl,
@@ -323,7 +327,14 @@ const breadcrumbJsonLd = {
                 aria-label="Article content"
                 itemprop="articleBody"
             >
-                <PostPreviewServer content={paper.body} showTOC={true} />
+                <PostRender content={paper.body || ""} contentContainerId={contentContainerId} />
+                {
+                    isDesktopUA ? (
+                        <PostPreviewDesktopToc client:idle contentContainerId={contentContainerId} />
+                    ) : (
+                        <PostPreviewMobileToc client:idle contentContainerId={contentContainerId} />
+                    )
+                }
             </section>
         </article>
     </main>

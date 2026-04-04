@@ -1,0 +1,29 @@
+{
+  "path": "/settings",
+  "title": "Settings",
+  "description": "Update your Whitepapper account and workspace settings, including profile details, project configuration, and access controls.",
+  "canonical": "/settings",
+  "image": "/appLogo.png",
+  "keywords": "whitepapper settings, account configuration, workspace settings, profile management",
+  "robots": "noindex, nofollow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Settings",
+  "ogDescription": "Update your Whitepapper account and workspace settings, including profile details, project configuration, and access controls.",
+  "ogUrl": "/settings",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Settings | Whitepapper Account social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Settings",
+  "twitterDescription": "Update your Whitepapper account and workspace settings, including profile details, project configuration, and access controls.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Settings | Whitepapper Account social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Settings",
+    "url": "https://whitepapper.antk.in/settings"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "path": "/example-page",
+  "title": "Page Title",
+  "description": "Use this template to create unique, keyword-aligned metadata for each Whitepapper page.",
+  "canonical": "/example-page",
+  "image": "/appLogo.png",
+  "keywords": "primary keyword, secondary keyword, whitepapper",
+  "robots": "index, follow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Page Title",
+  "ogDescription": "Open Graph description aligned with the page intent and target keyword.",
+  "ogUrl": "/example-page",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Page social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Page Title",
+  "twitterDescription": "Twitter description aligned with search intent and click-through context.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Page social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Example page",
+    "url": "https://whitepapper.antk.in/example-page"
+  }
+}

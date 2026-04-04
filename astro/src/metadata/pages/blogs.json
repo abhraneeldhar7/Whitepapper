@@ -1,0 +1,30 @@
+{
+  "path": "/blogs",
+  "title": "Blogs",
+  "description": "Explore Whitepapper articles on developer SEO, headless blog APIs, markdown publishing, and practical workflows for shipping content faster.",
+  "canonical": "/blogs",
+  "image": "/appLogo.png",
+  "keywords": "developer SEO blog, headless blog API guides, markdown publishing tips, content workflow tutorials",
+  "robots": "index, follow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Blogs",
+  "ogDescription": "Explore Whitepapper articles on developer SEO, headless blog APIs, markdown publishing, and practical workflows for shipping content faster.",
+  "ogUrl": "/blogs",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Whitepapper Blog | SEO, API, and Publishing Guides social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Blogs",
+  "twitterDescription": "Explore Whitepapper articles on developer SEO, headless blog APIs, markdown publishing, and practical workflows for shipping content faster.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Whitepapper Blog | SEO, API, and Publishing Guides social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "name": "Whitepapper Blog",
+    "url": "https://whitepapper.antk.in/blogs",
+    "description": "Guides and updates for developer content operations."
+  }
+}

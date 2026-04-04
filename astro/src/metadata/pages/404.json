@@ -1,0 +1,29 @@
+{
+  "path": "/404",
+  "title": "404",
+  "description": "The page you requested could not be found. Explore Whitepapper docs, blogs, or return to the homepage.",
+  "canonical": "/404",
+  "image": "/appLogo.png",
+  "keywords": "404 whitepapper, page not found, whitepapper error page",
+  "robots": "noindex, nofollow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "404",
+  "ogDescription": "The page you requested could not be found. Explore Whitepapper docs, blogs, or return to the homepage.",
+  "ogUrl": "/404",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Page Not Found | Whitepapper social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "404",
+  "twitterDescription": "The page you requested could not be found. Explore Whitepapper docs, blogs, or return to the homepage.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Page Not Found | Whitepapper social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper 404",
+    "url": "https://whitepapper.antk.in/404"
+  }
+}

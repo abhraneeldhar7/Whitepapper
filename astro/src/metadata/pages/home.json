@@ -1,0 +1,39 @@
+{
+  "path": "/",
+  "title": "Home",
+  "description": "Whitepapper is a markdown-first CMS for developers to write once, publish to Dev.to, Hashnode, and Medium, and serve content through a fast read API.",
+  "canonical": "/",
+  "image": "/appLogo.png",
+  "keywords": "developer CMS, markdown publishing platform, headless blog API, content API for portfolio, SEO content workflow, multi-channel content distribution",
+  "robots": "index, follow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Home",
+  "ogDescription": "Whitepapper is a markdown-first CMS for developers to write once, publish to Dev.to, Hashnode, and Medium, and serve content through a fast read API.",
+  "ogUrl": "/",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Whitepapper | SEO-First Content OS for Developers social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Home",
+  "twitterDescription": "Whitepapper is a markdown-first CMS for developers to write once, publish to Dev.to, Hashnode, and Medium, and serve content through a fast read API.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Whitepapper | SEO-First Content OS for Developers social preview",
+  "jsonLd": [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Whitepapper",
+      "url": "https://whitepapper.antk.in/",
+      "description": "SEO-first content operating system for developers."
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Whitepapper",
+      "url": "https://whitepapper.antk.in/",
+      "founder": "Abhraneel Dhar"
+    }
+  ]
+}

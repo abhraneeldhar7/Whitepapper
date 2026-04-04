@@ -1,5 +1,6 @@
 import logging
 import pickle
+import threading
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -104,6 +105,36 @@ class CollectionsService:
                 continue
             papers_service.update(paper["paperId"], {"status": target_status})
 
+    def _run_collection_visibility_propagation(self, collection_id: str, is_public: bool) -> None:
+        try:
+            self._propagate_collection_visibility(collection_id, is_public)
+        except Exception:
+            logger.exception(
+                "Collection visibility propagation failed for collection_id=%s is_public=%s",
+                collection_id,
+                is_public,
+            )
+
+    def _set_visibility_only(self, collection_id: str, is_public: bool) -> dict:
+        current = self.get_by_id(collection_id)
+        target_visibility = bool(is_public)
+        if bool(current.get("isPublic", False)) == target_visibility:
+            return current
+
+        previous_slug = current.get(COLLECTION_SLUG_KEY)
+        visibility_patch = {
+            "isPublic": target_visibility,
+            "updatedAt": utc_now(),
+        }
+        firestore_store.update(COLLECTIONS_COLLECTION, collection_id, visibility_patch)
+        current.update(visibility_patch)
+        self.invalidate_collection(
+            collection_id=collection_id,
+            project_id=current.get(COLLECTION_PROJECT_KEY),
+            slug=previous_slug,
+        )
+        return current
+
     @staticmethod
     def _is_public_collection(collection: dict | None) -> bool:
         return bool(collection) and bool(collection.get(COLLECTION_PUBLIC_KEY))
@@ -186,14 +217,20 @@ class CollectionsService:
         )
         return current
 
-    def set_visibility(self, collection_id: str, is_public: bool) -> dict:
-        current = self.get_by_id(collection_id)
-        target_visibility = bool(is_public)
-        if bool(current.get("isPublic", False)) == target_visibility:
-            return current
+    def set_visibility(self, collection_id: str, is_public: bool, *, background: bool = True) -> dict:
+        updated = self._set_visibility_only(collection_id, is_public)
+        target_visibility = bool(updated.get("isPublic", False))
 
-        updated = self.update(collection_id, {"isPublic": target_visibility})
-        self._propagate_collection_visibility(collection_id, target_visibility)
+        if background:
+            worker = threading.Thread(
+                target=self._run_collection_visibility_propagation,
+                args=(collection_id, target_visibility),
+                daemon=True,
+            )
+            worker.start()
+        else:
+            self._run_collection_visibility_propagation(collection_id, target_visibility)
+
         return updated
 
     def delete(self, collection_id: str) -> dict[str, bool]:

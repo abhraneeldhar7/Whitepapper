@@ -8,12 +8,12 @@ import type { UserDoc } from "@/lib/types";
 const { userId, getToken } = Astro.locals.auth();
 
 if (!userId) {
-  return Astro.redirect("/sign-in");
+  return Astro.redirect("/login");
 }
 
 const token = await getToken();
 if (!token) {
-  return Astro.redirect("/sign-in");
+  return Astro.redirect("/login");
 }
 
 const serverClient = createApiClient(token);

@@ -8,7 +8,7 @@ import DevtoLogo from '@/assets/logos/devto.webp'
 import HashnodeLogo from '@/assets/logos/hashnodeLogo.png'
 
 
-export default function IntegrationsSection() {
+export default function IntegrationsSection({ hideText = false }: { hideText?: boolean }) {
     return (
         <section>
             <div className="">
@@ -26,7 +26,7 @@ export default function IntegrationsSection() {
                             </IntegrationCard>
                         </div>
                         <div className="mx-auto my-2 flex w-fit justify-center gap-2">
-                            <div className="bg-muted relative z-20 rounded-2xl border p-1">
+                            <div className="bg-muted relative z-2 rounded-2xl border p-1">
                                 <IntegrationCard
                                     className="shadow-black-950/10 dark:bg-background size-16 border-black/25 shadow-xl dark:border-white/25 dark:shadow-white/10"
                                     isCenter={true}>
@@ -50,17 +50,21 @@ export default function IntegrationsSection() {
                             </IntegrationCard>
                         </div>
                     </div>
-                    <div className="mx-auto mt-12 max-w-lg space-y-6 text-center">
-                        <h2 className="text-balance text-3xl font-semibold md:text-4xl">Write once, distribute everywhere</h2>
-                        <p className="text-muted-foreground">Connect Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet.</p>
+                    {!hideText &&
+                        <div className="mx-auto mt-12 max-w-lg space-y-6 text-center">
+                            <h2 className="text-balance text-3xl font-semibold md:text-4xl">Write once, distribute everywhere</h2>
+                            <p className="text-muted-foreground">One source, every platform you write on.<br/>
+                            Write it. Ship it. Own it.
+                            </p>
 
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            asChild>
-                            <a href="/integrations">Integrations</a>
-                        </Button>
-                    </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                asChild>
+                                <a href="/integrations">Integrations</a>
+                            </Button>
+                        </div>
+                    }
                 </div>
             </div>
         </section>
@@ -70,11 +74,11 @@ export default function IntegrationsSection() {
 const IntegrationCard = ({ children, className, position, isCenter = false }: { children: React.ReactNode; className?: string; position?: 'left-top' | 'left-middle' | 'left-bottom' | 'right-top' | 'right-middle' | 'right-bottom'; isCenter?: boolean }) => {
     return (
         <div className={cn('bg-background relative flex size-12 rounded-xl border dark:bg-transparent', className)}>
-            <div className={cn('relative z-20 m-auto size-fit *:size-6', isCenter && '*:size-8')}>{children}</div>
+            <div className={cn('relative z-2 m-auto size-fit *:size-6', isCenter && '*:size-8')}>{children}</div>
             {position && !isCenter && (
                 <div
                     className={cn(
-                        'bg-linear-to-r to-muted-foreground/25 absolute z-10 h-px',
+                        'bg-linear-to-r to-muted-foreground/25 absolute z-1 h-px',
                         position === 'left-top' && 'left-full top-1/2 w-[130px] origin-left rotate-[25deg]',
                         position === 'left-middle' && 'left-full top-1/2 w-[120px] origin-left',
                         position === 'left-bottom' && 'left-full top-1/2 w-[130px] origin-left rotate-[-25deg]',

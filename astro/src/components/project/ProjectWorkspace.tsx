@@ -44,6 +44,7 @@ import PaperPreviewSheet from "../paperPreviewSheet";
 import ScrollToTop from "../scrollToTop";
 import { ApiShowcase } from "../apiShowcase";
 import ProjectCard from "./ProjectCard";
+import { Progress } from "../ui/progress";
 
 type ProjectWorkspaceProps = {
   projectId: string;
@@ -529,7 +530,7 @@ export default function ProjectWorkspace({
                   {editingProject ? (
                     <>
                       <Button
-                        
+
                         variant="secondary"
                         onClick={() => {
                           setProject(initialProject);
@@ -541,7 +542,7 @@ export default function ProjectWorkspace({
                         <XIcon /> Cancel
                       </Button>
                       <Button
-                        
+
                         onClick={handleSaveProjectDetails}
                         loading={savingProject}
                         disabled={isProjectAssetUploading || checkingSlug || !isSlugAvailable}
@@ -550,7 +551,7 @@ export default function ProjectWorkspace({
                       </Button>
                     </>
                   ) : (
-                    <Button  onClick={() => setEditingProject(true)}>
+                    <Button onClick={() => setEditingProject(true)}>
                       <PencilIcon /> Edit
                     </Button>
                   )}
@@ -584,7 +585,7 @@ export default function ProjectWorkspace({
                         </div>
                         {editingProject && project.logoUrl ? (
                           <Button
-                            
+
                             variant="destructive"
                             className="md:w-full"
                             onClick={() => setProject((prev) => ({ ...prev, logoUrl: null }))}
@@ -694,13 +695,13 @@ export default function ProjectWorkspace({
                         <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button  variant="outline" size="icon" className="rounded-[50%]">
+                              <Button variant="outline" size="icon" className="rounded-[50%]">
                                 <Ellipsis className="text-destructive" />
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="end">
                               <Button
-                                
+
                                 variant="ghost"
                                 className="w-full text-destructive"
                                 onClick={() => setDeleteOpen(true)}
@@ -718,10 +719,10 @@ export default function ProjectWorkspace({
                             </DialogHeader>
 
                             <DialogFooter>
-                              <Button  variant="secondary" onClick={() => setDeleteOpen(false)} disabled={deleteLoading}>
+                              <Button variant="secondary" onClick={() => setDeleteOpen(false)} disabled={deleteLoading}>
                                 Cancel
                               </Button>
-                              <Button  variant="destructive" onClick={handleDeleteProject} loading={deleteLoading}>
+                              <Button variant="destructive" onClick={handleDeleteProject} loading={deleteLoading}>
                                 Confirm delete
                               </Button>
                             </DialogFooter>
@@ -817,7 +818,7 @@ export default function ProjectWorkspace({
                       <div className="grid grid-cols-2 gap-5">
                         <div className="flex flex-col items-center">
                           <button
-                            
+
                             className="border-0 bg-transparent p-0 outline-0"
                             onClick={() => setCreateDialogOpen(true)}
                             aria-label="Create collection"
@@ -865,14 +866,14 @@ export default function ProjectWorkspace({
                       </div>
                       <DialogFooter>
                         <Button
-                          
+
                           variant="secondary"
                           onClick={() => setCreateDialogOpen(false)}
                           disabled={creatingCollection}
                         >
                           Cancel
                         </Button>
-                        <Button  onClick={handleCreateCollection} loading={creatingCollection}>
+                        <Button onClick={handleCreateCollection} loading={creatingCollection}>
                           Create
                         </Button>
                       </DialogFooter>
@@ -890,16 +891,19 @@ export default function ProjectWorkspace({
               {!apiDoc ? (
                 <div className="rounded-md border p-4 space-y-4">
                   <p className="text-sm text-muted-foreground">No API key created for this project.</p>
-                  <Button  onClick={handleCreateApiKey} loading={creatingApiKey}>
+                  <Button onClick={handleCreateApiKey} loading={creatingApiKey}>
                     Create API key
                   </Button>
                 </div>
               ) : (
                 <div className="rounded-md border p-4 space-y-4">
                   <div className="grid gap-2 text-sm">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start gap-4">
                       <p className="text-muted-foreground">Monthly Usage</p>
-                      <p className="font-[450]">{apiDoc.usage} / {apiDoc.limitPerMonth}</p>
+                      <div className="flex flex-col gap-2 flex-1">
+                        <p className="font-[450] text-[12px]">{apiDoc.usage} / {apiDoc.limitPerMonth}</p>
+                        <Progress className="w-full" value={apiDoc.usage / apiDoc.limitPerMonth} />
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <p className="text-muted-foreground">Status</p>
@@ -913,7 +917,7 @@ export default function ProjectWorkspace({
 
                   <div className="flex justify-end gap-2">
                     <Button
-                      
+
                       variant={apiDoc.isActive ? "secondary" : "default"}
                       onClick={() => {
                         void handleToggleApiKey(!apiDoc.isActive);
@@ -924,7 +928,7 @@ export default function ProjectWorkspace({
                       {apiDoc.isActive ? "Disable" : "Enable"}
                     </Button>
                     <Button
-                      
+
                       variant="destructive"
                       onClick={() => setResetConfirmOpen(true)}
                       disabled={togglingApiKey || resettingApiKey}
@@ -950,7 +954,7 @@ export default function ProjectWorkspace({
                   {createdApiKey}
                 </div>
                 <DialogFooter>
-                  <Button  onClick={handleCopyCreatedApiKey}>
+                  <Button onClick={handleCopyCreatedApiKey}>
                     Copy key
                   </Button>
                 </DialogFooter>
@@ -967,7 +971,7 @@ export default function ProjectWorkspace({
                 </DialogHeader>
                 <DialogFooter>
                   <Button
-                    
+
                     variant="secondary"
                     onClick={() => setResetConfirmOpen(false)}
                     disabled={resettingApiKey}
@@ -975,7 +979,7 @@ export default function ProjectWorkspace({
                     Cancel
                   </Button>
                   <Button
-                    
+
                     variant="destructive"
                     onClick={handleResetApiKey}
                     loading={resettingApiKey}

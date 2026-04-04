@@ -20,7 +20,6 @@ class Settings(BaseSettings):
     redis_prefix: str = "whitepapper"
     cors_origins: str = "https://whitepapper.antk.in,http://localhost:4321"
     public_site_url: str | None = None
-    production_base_url: str | None = None
 
     clerk_webhook_signing_secret: str | None = None
     clerk_secret_key: str | None = None

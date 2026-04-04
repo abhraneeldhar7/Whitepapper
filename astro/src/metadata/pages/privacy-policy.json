@@ -1,0 +1,29 @@
+{
+  "path": "/privacy-policy",
+  "title": "Privacy Policy",
+  "description": "Read the Whitepapper Privacy Policy to understand what data we collect, how we use it, and how we protect your information.",
+  "canonical": "/privacy-policy",
+  "image": "/appLogo.png",
+  "keywords": "whitepapper privacy policy, data protection policy, platform privacy terms",
+  "robots": "index, follow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "article",
+  "ogTitle": "Privacy Policy",
+  "ogDescription": "Read the Whitepapper Privacy Policy to understand what data we collect, how we use it, and how we protect your information.",
+  "ogUrl": "/privacy-policy",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Privacy Policy | Whitepapper social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Privacy Policy",
+  "twitterDescription": "Read the Whitepapper Privacy Policy to understand what data we collect, how we use it, and how we protect your information.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Privacy Policy | Whitepapper social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Privacy Policy",
+    "url": "https://whitepapper.antk.in/privacy-policy"
+  }
+}

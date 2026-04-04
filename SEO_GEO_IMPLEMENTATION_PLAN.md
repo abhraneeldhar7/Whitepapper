@@ -7,11 +7,11 @@ Scope: Maximize traditional SEO (Google/Bing) and GEO (AI search visibility) for
 
 Current state has critical crawl/index/content gaps:
 
-- No SEO metadata system (titles, descriptions, canonicals, OG/Twitter tags) in shared layout.
-- No sitemap, no robots strategy, no structured data.
-- Important nav links point to missing routes (`/blog`, `/pricing`, `/int`), causing internal crawl waste.
-- Multiple thin pages with placeholder text only (`docs`, `blogs`, `integrations`, `components`, `privacy-policy`, `terms-of-service`).
-- Public content discoverability is weak: collection papers are mostly hidden behind client interactions and no sitemap.
+- ~~No SEO metadata system (titles, descriptions, canonicals, OG/Twitter tags) in shared layout.~~
+- ~~No sitemap, no robots strategy, no structured data.~~
+- ~~Important nav links point to missing routes (`/blog`, `/pricing`, `/int`), causing internal crawl waste.~~
+- ~~Multiple thin pages with placeholder text only (`docs`, `blogs`, `integrations`, `components`, `privacy-policy`, `terms-of-service`).~~
+- ~~Public content discoverability is weak: collection papers are mostly hidden behind client interactions and no sitemap.~~
 - Public pages have duplicate URL risk due handle/slug normalization without canonical redirects.
 - Public API payload/query patterns can be faster (redundant calls, no pagination, no response caching headers at API layer).
 
@@ -19,23 +19,23 @@ Current state has critical crawl/index/content gaps:
 
 ### Critical
 
-1. No global metadata framework
-- File: `astro/src/layouts/Layout.astro`
-- Only `<title>` exists; no meta description, canonical, robots, OG, Twitter, JSON-LD support.
+1. ~~No global metadata framework~~
+- ~~File: `astro/src/layouts/Layout.astro`~~
+- ~~Only `<title>` exists; no meta description, canonical, robots, OG, Twitter, JSON-LD support.~~
 
-2. Broken internal links in home nav
-- File: `astro/src/pages/index.astro`
-- Links currently include `/int`, `/blog`, `/pricing` but these pages do not exist.
+2. ~~Broken internal links in home nav~~
+- ~~File: `astro/src/pages/index.astro`~~
+- ~~Links currently include `/int`, `/blog`, `/pricing` but these pages do not exist.~~
 
-3. Thin/placeholder pages are indexable quality risk
-- Files:
-  - `astro/src/pages/blogs.astro`
-  - `astro/src/pages/docs.astro`
-  - `astro/src/pages/integrations.astro`
-  - `astro/src/pages/components.astro`
-  - `astro/src/pages/privacy-policy.astro`
-  - `astro/src/pages/terms-of-service.astro`
-- Each file currently contains only 1 line of plain text.
+3. ~~Thin/placeholder pages are indexable quality risk~~
+- ~~Files:~~
+  - ~~`astro/src/pages/blogs.astro`~~
+  - ~~`astro/src/pages/docs.astro`~~
+  - ~~`astro/src/pages/integrations.astro`~~
+  - ~~`astro/src/pages/components.astro`~~
+  - ~~`astro/src/pages/privacy-policy.astro`~~
+  - ~~`astro/src/pages/terms-of-service.astro`~~
+- ~~Each file currently contains only 1 line of plain text.~~
 
 4. Soft-404 behavior risk from redirects to `/404`
 - Files:
@@ -43,10 +43,10 @@ Current state has critical crawl/index/content gaps:
   - `astro/src/pages/[handle]/p/[projectSlug]/index.astro`
 - Not-found cases use redirects instead of direct 404 response rendering.
 
-5. No sitemap/robots endpoints or config
-- File: `astro/astro.config.mjs`
-- No `site` config and no sitemap integration.
-- No robots page/file in `astro/src/pages`.
+5. ~~No sitemap/robots endpoints or config~~
+- ~~File: `astro/astro.config.mjs`~~
+- ~~No `site` config and no sitemap integration.~~
+- ~~No robots page/file in `astro/src/pages`.~~
 
 ### High
 
@@ -61,9 +61,9 @@ Current state has critical crawl/index/content gaps:
   - `astro/src/pages/[handle]/p/[projectSlug]/index.astro`
 - `@handle`, uppercase handles, and slug variants resolve to same content but are not canonically redirected.
 
-8. Collection paper discovery is weak for bots
-- File: `astro/src/components/project/ProjectCollectionsViewer.tsx`
-- Collection papers are fetched only on accordion interaction, limiting crawl discovery without strong sitemap support.
+8. ~~Collection paper discovery is weak for bots~~
+- ~~File: `astro/src/components/project/ProjectCollectionsViewer.tsx`~~
+- ~~Collection papers are fetched only on accordion interaction, limiting crawl discovery without strong sitemap support.~~
 
 9. Public pages hydrate large React islands
 - Files:
@@ -90,35 +90,35 @@ Current state has critical crawl/index/content gaps:
   - `fastapi/app/core/firestore_store.py`
 - `find_by_fields(...).stream()` without cursor pagination or ordering for public feed endpoints.
 
-13. Missing API-level response caching/compression headers
-- Files:
-  - `fastapi/app/main.py`
-  - `fastapi/app/api/v1/endpoints/public.py`
-- No gzip middleware and no public endpoint cache-control/etag policy.
+13. ~~Missing API-level response caching/compression headers~~
+- ~~Files:~~
+  - ~~`fastapi/app/main.py`~~
+  - ~~`fastapi/app/api/v1/endpoints/public.py`~~
+- ~~No gzip middleware and no public endpoint cache-control/etag policy.~~
 
 ## 3) Target SEO + GEO Architecture
 
 ### 3.1 Metadata + Canonical System (Global)
 
-Implement a shared SEO props model in layout:
+~~Implement a shared SEO props model in layout:~~
 
-- `title`
-- `description`
-- `canonical`
-- `robots`
-- `ogType`, `ogImage`, `ogSiteName`
-- `twitterCard`, `twitterSite`
-- `jsonLd` (array support)
+- ~~`title`~~
+- ~~`description`~~
+- ~~`canonical`~~
+- ~~`robots`~~
+- ~~`ogType`, `ogImage`, `ogSiteName`~~
+- ~~`twitterCard`, `twitterSite`~~
+- ~~`jsonLd` (array support)~~
 
 Files to change:
-- `astro/src/layouts/Layout.astro`
+- ~~`astro/src/layouts/Layout.astro`~~
 - New helper: `astro/src/lib/seo.ts`
 
 ### 3.2 Robots + Sitemap + Feeds
 
 Add:
 
-- `astro/src/pages/robots.txt.ts`
+- ~~`astro/src/pages/robots.txt.ts`~~
 - `astro/src/pages/sitemap-index.xml.ts`
 - `astro/src/pages/sitemaps/public-pages.xml.ts`
 - ~~`astro/src/pages/sitemaps/public-papers.xml.ts`~~
@@ -131,17 +131,17 @@ Use segmented sitemaps for scaling and easier monitoring.
 
 Add JSON-LD by page type:
 
-- Homepage: `Organization`, `WebSite`
+- ~~Homepage: `Organization`, `WebSite`~~
 - User page: `Person`, `ProfilePage`
 - Project page: `CollectionPage` or `CreativeWorkSeries`
-- Paper page: `Article` + `BreadcrumbList`
+- ~~Paper page: `Article` + `BreadcrumbList`~~
 - Blog post pages: `BlogPosting`
 
 ### 3.4 GEO (AI Search) Layer
 
 Add:
 
-- `/llms.txt` (concise map of high-value URLs + product definition)
+- ~~`/llms.txt` (concise map of high-value URLs + product definition)~~
 - `/llms-full.txt` (expanded, machine-friendly knowledge document)
 - Q&A blocks on key pages (problem -> approach -> examples -> constraints)
 - Strong author/entity signals (real author cards, updated dates, source citations)
@@ -197,18 +197,18 @@ Changes:
 5. `/use-cases/[segment]` (at least 4 initial segments)
 6. `/compare/[alternative]` (at least 3 initial alternatives)
 7. `/changelog`
-8. `/about`
-9. `/contact`
-10. `/llms.txt`
+8. ~~`/about`~~
+9. ~~`/contact`~~
+10. ~~`/llms.txt`~~
 11. `/llms-full.txt`
-12. `/robots.txt`
+12. ~~`/robots.txt`~~
 13. Sitemap endpoints (index + segmented maps)
 
 ### 5.2 Must Fix Existing Routes
 
-1. `index.astro` nav links (`/int`, `/blog`, `/pricing`) -> valid URLs.
-2. Expand all one-line thin pages or set temporary `noindex` until complete.
-3. Footer must expose crawlable legal/support links.
+1. ~~`index.astro` nav links (`/int`, `/blog`, `/pricing`) -> valid URLs.~~
+2. ~~Expand all one-line thin pages or set temporary `noindex` until complete.~~
+3. ~~Footer must expose crawlable legal/support links.~~
 4. Reserve new root paths in:
 - `astro/src/lib/reservedPaths.ts`
 - `fastapi/app/core/reserved_paths.py`
@@ -284,7 +284,7 @@ Best for editorial versioning and static pre-render speed.
 
 1. Remove redundant API calls on project page by extending one backend payload.
 2. Convert large public pages to mostly server-rendered HTML with small client islands.
-3. Avoid loading collection papers only after click if discoverability matters; render crawlable links.
+3. ~~Avoid loading collection papers only after click if discoverability matters; render crawlable links.~~
 4. Add image optimization strategy (dimensions, modern format, priority only for LCP image).
 5. Add explicit cache policy per route and avoid inconsistent headers.
 
@@ -295,17 +295,17 @@ Best for editorial versioning and static pre-render speed.
 - `/public/{handle}/projects/{project_slug}?...`
 2. Add pre-sorted query support in store layer (`order_by`, `limit`, `start_after`).
 3. Add aggregate cache keys for public profile/project payloads.
-4. Add response compression middleware.
-5. Add `Cache-Control` and optional `ETag` on public responses.
+4. ~~Add response compression middleware.~~
+5. ~~Add `Cache-Control` and optional `ETag` on public responses.~~
 6. Add lightweight list DTOs for cards (avoid large body fields unless needed).
 
 ## 9) Phase-by-Phase Implementation
 
 ### Phase 0 (Day 1-2): Critical crawl/index foundation
 
-1. Build global SEO metadata system in layout.
-2. Add robots + sitemap endpoints.
-3. Fix nav links and route mismatches.
+1. ~~Build global SEO metadata system in layout.~~
+2. ~~Add robots + sitemap endpoints.~~
+3. ~~Fix nav links and route mismatches.~~
 4. Decide canonical host and enforce HTTPS/non-www policy.
 5. Replace 302-to-404 pattern with proper 404 responses.
 
@@ -397,17 +397,17 @@ GEO:
 
 ## 12) Immediate Next 10 Engineering Tasks
 
-1. Implement SEO prop contract in `Layout.astro`.
+1. ~~Implement SEO prop contract in `Layout.astro`.~~
 2. Add `seo.ts` helper to generate canonical/meta defaults.
-3. Create `robots.txt.ts` and sitemap routes.
-4. Fix broken nav URLs in `index.astro`.
-5. Replace one-line thin pages with real content or temporary `noindex`.
+3. ~~Create `robots.txt.ts` and sitemap routes.~~
+4. ~~Fix broken nav URLs in `index.astro`.~~
+5. ~~Replace one-line thin pages with real content or temporary `noindex`.~~
 6. Add page metadata + JSON-LD to:
 - `[handle]/index.astro`
 - `[handle]/p/[projectSlug]/index.astro`
 - ~~`[handle]/[slug].astro`~~
 7. Add normalized redirect logic for handle/slug variants.
-8. Extend public project API to include owner summary in one response.
+8. ~~Extend public project API to include owner summary in one response.~~
 9. Add pagination params to public profile/project APIs.
 10. ~~Add FastAPI compression and response cache headers for public endpoints.~~
 

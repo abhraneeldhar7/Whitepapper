@@ -1,0 +1,30 @@
+{
+  "path": "/about",
+  "title": "About",
+  "description": "Learn why Whitepapper was built: one content source for developers to write in markdown, distribute across platforms, and power portfolio sites via API.",
+  "canonical": "/about",
+  "image": "/appLogo.png",
+  "keywords": "about whitepapper, developer content workflow, markdown CMS, content distribution platform",
+  "robots": "index, follow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "About",
+  "ogDescription": "Learn why Whitepapper was built: one content source for developers to write in markdown, distribute across platforms, and power portfolio sites via API.",
+  "ogUrl": "/about",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "About Whitepapper | Built for Developer Content Workflows social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "About",
+  "twitterDescription": "Learn why Whitepapper was built: one content source for developers to write in markdown, distribute across platforms, and power portfolio sites via API.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "About Whitepapper | Built for Developer Content Workflows social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "About Whitepapper",
+    "url": "https://whitepapper.antk.in/about",
+    "description": "Story and mission behind Whitepapper."
+  }
+}

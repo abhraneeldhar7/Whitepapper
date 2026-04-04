@@ -2,9 +2,12 @@
 import Layout from "@/layouts/Layout.astro";
 import { getPublicPaperPageData } from "@/lib/api/public";
 import { formatFirestoreDate } from "@/lib/utils";
-import PostPreviewServer from "@/components/pre_made_components/render/PostPreviewServer.astro";
+import PostRender from "@/components/pre_made_components/render/postPreview";
+import PostPreviewDesktopToc from "@/components/pre_made_components/render/PostPreviewDesktopToc";
+import PostPreviewMobileToc from "@/components/pre_made_components/render/PostPreviewMobileToc";
 import type { PaperDoc, PaperMetadata } from "@/lib/types";
 import { DotIcon } from "lucide-react";
+import { isReservedUsername } from "@/lib/reservedPaths";
 
 const handle = Astro.params.handle as string;
 const pageSlug = Astro.params.slug as string;
@@ -13,6 +16,12 @@ const normalizedSlug = pageSlug.trim().toLowerCase();
 const siteUrl = String(import.meta.env.PUBLIC_SITE_URL ?? "")
   .trim()
   .replace(/\/+$/, "");
+const userAgent = Astro.request.headers.get("user-agent") ?? "";
+const isDesktopUA = !/Mobi|Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile|WPDesktop/i.test(userAgent);
+
+if (!normalizedHandle || isReservedUsername(normalizedHandle)) {
+  return Astro.redirect("/404", 302);
+}
 
 if (handle !== normalizedHandle || pageSlug !== normalizedSlug) {
   return Astro.redirect(`/${normalizedHandle}/${normalizedSlug}`, 301);
@@ -24,7 +33,16 @@ Astro.response.headers.set(
 );
 
 let paper: PaperDoc;
-({ paper } = await getPublicPaperPageData(normalizedHandle, normalizedSlug));
+try {
+  ({ paper } = await getPublicPaperPageData(normalizedHandle, normalizedSlug));
+} catch (error) {
+  const message = error instanceof Error ? error.message : "";
+  return Astro.redirect(
+    message.includes("403") || message.includes("Not allowed") ? "/unauthorized" : "/404",
+    302,
+  );
+}
+const contentContainerId = `post-preview-${paper.paperId || normalizedSlug}`;
 const updatedDate = formatFirestoreDate(paper.updatedAt);
 const metadataInput = paper.metadata;
 const resolvedSiteUrl = siteUrl || Astro.url.origin.replace(/\/+$/, "");
@@ -35,7 +53,6 @@ const authorHandle = (metadataInput?.authorHandle || normalizedHandle)
 const fallbackCanonical = `${resolvedSiteUrl}/${normalizedHandle}/${paper.slug}`;
 const fallbackAuthorUrl = `${resolvedSiteUrl}/${authorHandle}`;
 const fallbackImage = paper.thumbnailUrl || `${resolvedSiteUrl}/appLogo.png`;
-const fallbackIso = new Date().toISOString();
 const metadata: PaperMetadata = {
   title: metadataInput?.title || `${paper.title} | Whitepapper`,
   metaDescription: metadataInput?.metaDescription || paper.title,
@@ -56,9 +73,9 @@ const metadata: PaperMetadata = {
   ogPublishedTime:
     metadataInput?.ogPublishedTime ||
     metadataInput?.datePublished ||
-    fallbackIso,
+    paper.createdAt,
   ogModifiedTime:
-    metadataInput?.ogModifiedTime || metadataInput?.dateModified || fallbackIso,
+    metadataInput?.ogModifiedTime || metadataInput?.dateModified || paper.updatedAt,
   ogAuthorUrl:
     metadataInput?.ogAuthorUrl || metadataInput?.authorUrl || fallbackAuthorUrl,
   ogTags: Array.isArray(metadataInput?.ogTags) ? metadataInput.ogTags : [],
@@ -83,9 +100,9 @@ const metadata: PaperMetadata = {
   datePublished:
     metadataInput?.datePublished ||
     metadataInput?.ogPublishedTime ||
-    fallbackIso,
+    paper.createdAt,
   dateModified:
-    metadataInput?.dateModified || metadataInput?.ogModifiedTime || fallbackIso,
+    metadataInput?.dateModified || metadataInput?.ogModifiedTime || paper.updatedAt,
   authorName: metadataInput?.authorName || authorHandle,
   authorHandle: authorHandle,
   authorUrl: metadataInput?.authorUrl || fallbackAuthorUrl,
@@ -163,7 +180,7 @@ const breadcrumbJsonLd = {
       "@type": "ListItem",
       position: 1,
       name: metadata.authorName || authorHandle,
-      item: authorHref,
+      item: metadata.authorUrl,
     },
     {
       "@type": "ListItem",
@@ -285,7 +302,14 @@ const breadcrumbJsonLd = {
       }
 
       <section class="mt-6" aria-label="Article content" itemprop="articleBody">
-        <PostPreviewServer content={paper.body} showTOC={true} />
+        <PostRender content={paper.body || ""} contentContainerId={contentContainerId} />
+        {
+          isDesktopUA ? (
+            <PostPreviewDesktopToc client:idle contentContainerId={contentContainerId} />
+          ) : (
+            <PostPreviewMobileToc client:idle contentContainerId={contentContainerId} />
+          )
+        }
       </section>
     </article>
   </main>

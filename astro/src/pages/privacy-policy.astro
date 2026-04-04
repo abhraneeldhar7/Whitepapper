@@ -3,51 +3,56 @@ import Layout from "@/layouts/Layout.astro";
 import LegalDocument from "@/components/legal-document.astro";
 
 const privacyPolicyProps = {
-  title: 'Privacy Policy',
-  summary: 'This Privacy Policy describes how Whitepapper ("we," "us," or "our") collects, uses, and discloses your information when you use our website, application, and services (the "Service"). It explains your privacy rights and how the law protects you.',
-  effectiveDate: 'April 2, 2026',
-  sections: [
+  "title": "Privacy Policy",
+  "summary": "This Privacy Policy explains what information Whitepapper collects when you use the platform, how it is stored and protected, and your rights over that data. Whitepapper is operated by an independent developer based in Kolkata, India.",
+  "effectiveDate": "April 2, 2026",
+  "sections": [
     {
-      title: 'Information We Collect',
-      content: 'We collect information you provide directly to us, such as when you create an account, manage a project, or write content. This includes: Account Information: Name, email address, and authentication credentials (managed securely via Clerk). User Content: The content you create, including papers (markdown), metadata, thumbnails, and project structures. Project and Workspace Data: Information about your projects, collections, API key usage, and distribution settings. We also automatically collect certain information when you access or use our Service, such as usage data, IP addresses, browser type, and referring URLs to help us improve performance and security.'
+      "title": "Who We Are",
+      "content": "Whitepapper is a content management platform available at whitepapper.antk.in, operated independently by an indie developer based in Kolkata, India. If you have any questions about this policy, you can reach out via the contact page at antk.in."
     },
     {
-      title: 'How We Use Your Information',
-      content: 'We use the information we collect to: Provide, operate, and maintain the Whitepapper content operating system. Enable content workflows: Allow you to create, edit, publish, and distribute your content across multi-channel surfaces. Manage your account and projects: Provide access to your workspace, API keys, and team settings. Improve and develop our Service: Analyze usage trends to enhance our SEO-first editor, API, and distribution features. Communicate with you: Send service updates, technical notices, and support messages relevant to your content operations. Ensure security: Verify user identity, manage API access, and prevent unauthorized activity.'
+      "title": "What Information We Collect",
+      "content": "We collect the following information when you use Whitepapper:\n\n**Account Information:** When you sign up, we collect your name, email address, and authentication details. Sign-in and sign-up is handled through Clerk, a third-party authentication service.\n\n**Content You Create:** Any projects, collections, and papers (your written content, titles, metadata, and thumbnails) that you create on Whitepapper are stored on our servers and linked to your account.\n\n**API Keys:** If you generate API keys for your projects, these are stored securely and scoped to your project.\n\n**Usage Data:** We may collect basic usage information such as which pages you visit and actions you take within the platform, to help us improve the product."
     },
     {
-      title: 'API and Developer Access',
-      content: 'Whitepapper provides API access for developer workflows. If you generate a project-scoped API key, it enables programmatic access to read-oriented content endpoints. You are responsible for maintaining the confidentiality of your API keys. We use these keys only to authenticate requests to our backend (FastAPI) and Cloudflare Proxy layer. We do not use your API data for any purpose beyond delivering the Service you have configured.'
+      "title": "How We Use Your Information",
+      "content": "We use the information we collect solely to:\n\n- Provide and operate the Whitepapper platform\n- Associate your content with your account and keep it accessible to you\n- Allow you to control visibility of your content (public vs. private)\n- Improve and debug the platform\n- Respond to support or contact requests\n\nWe do not sell your data. We do not use your content for advertising."
     },
     {
-      title: 'Data Sharing and Disclosure',
-      content: 'We do not sell your personal information. We may share information in the following limited circumstances: With your consent: When you direct us to share data, such as when configuring multi-channel distribution to platforms like Hashnode, Dev.to, or LinkedIn. Service Providers: We engage third-party companies (e.g., Clerk for authentication, Firebase for storage, Redis for caching) to perform functions on our behalf. They are contractually obligated to protect your data. Legal Requirements: If required by law or in response to valid requests by public authorities. Business Transfers: In connection with a merger, sale of company assets, or acquisition, your information may be transferred as part of that transaction.'
+      "title": "Content Visibility and Access Control",
+      "content": "Whitepapper gives you full control over your content's visibility:\n\n- **Private papers** are only accessible to you as the owner. They are never shown to unauthenticated users or other accounts.\n- **Public papers** are accessible to anyone, including non-logged-in visitors and via the developer API.\n\nYou are responsible for choosing the correct visibility setting for your content before publishing."
     },
     {
-      title: 'Data Security and Storage',
-      content: 'We use industry-standard security measures to protect your data. Our infrastructure leverages Firebase for storage, Redis for session management, and Cloudflare for edge caching and DDoS protection. While we strive to protect your information, no method of transmission over the internet is 100 percent secure. We retain your data as long as your account is active or as needed to provide you with the Service. You may delete your projects and papers at any time from your dashboard.'
+      "title": "Third-Party Services",
+      "content": "Whitepapper uses the following third-party services that may process some of your data as part of normal platform operation:\n\n- **Clerk** — handles user authentication (sign up, sign in, session management)\n- **Google Firebase / Firestore** — used for data storage\n- **Google Cloud Run** — used to run the backend API\n- **Groq** — may be used for AI-assisted features within the platform\n\nEach of these services has its own privacy policy. By using Whitepapper, you acknowledge that your data may be processed by these services as described in their respective policies."
     },
     {
-      title: 'Your Rights and Choices',
-      content: 'Depending on your location (e.g., under GDPR or CCPA), you may have certain rights regarding your personal data, including: Access and Portability: Request a copy of your data. Correction: Update your account information. Deletion: Request deletion of your account and associated content. To exercise these rights, please contact us via the support channels in your dashboard. You can also manage your profile and API keys directly within the Whitepapper workspace.'
+      "title": "Data Storage and Security",
+      "content": "Your data is stored on Google Cloud infrastructure. We take reasonable precautions to protect your account and content, including:\n\n- Project-scoped API keys to limit unauthorized access\n- Authentication-gated access to private content\n- HTTPS across all platform surfaces\n\nHowever, no system is completely secure. We cannot guarantee absolute security and will not be liable for unauthorized access beyond our reasonable control."
     },
     {
-      title: 'Children\'s Privacy',
-      content: 'Our Service is not intended for children under the age of 13. We do not knowingly collect personal information from children under 13. If we become aware that we have collected such information, we will take steps to delete it.'
+      "title": "Data Retention",
+      "content": "Your data is retained as long as your account is active. If you wish to delete your account or specific content, you can do so from the dashboard or by contacting us. Upon deletion, your content and associated data will be removed from our active systems."
     },
     {
-      title: 'Changes to This Privacy Policy',
-      content: 'We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the effective date. We encourage you to review this policy periodically for any changes. Changes are effective immediately when they are posted.'
+      "title": "Your Rights",
+      "content": "As a user, you have the right to:\n\n- Access the data associated with your account\n- Correct inaccurate account information\n- Delete your content or your account at any time\n- Request a copy of your data by contacting us\n\nTo exercise any of these rights, please reach out through the contact page at antk.in."
     },
     {
-      title: 'Contact Us',
-      content: 'If you have any questions about this Privacy Policy or our data practices, please contact us at: Whitepapper Email: legal@whitepapper.com Or via our support channels in the dashboard.'
+      "title": "Children's Privacy",
+      "content": "Whitepapper is a general-purpose content management platform with no age restriction. We do not knowingly collect data from children under the age of 13 without parental consent. If you believe a minor has created an account without consent, please contact us and we will remove the data promptly."
+    },
+    {
+      "title": "Changes to This Policy",
+      "content": "We may update this Privacy Policy from time to time. When we do, the effective date at the top of this page will be updated. Continued use of Whitepapper after changes are posted constitutes your acceptance of the revised policy. We recommend reviewing this page periodically."
+    },
+    {
+      "title": "Contact",
+      "content": "If you have any questions, concerns, or requests regarding this Privacy Policy, please reach out to [abhraneeldhar](mailto:abhraneeldhar@gmail.com)."
     }
-  ],
-  eyebrow: 'Effective Date',
-  altHref: '/terms-of-service',
-  altLabel: 'View Terms of Service'
-};
+  ]
+}
 
 
 ---

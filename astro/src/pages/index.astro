@@ -1,17 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
 
-import LinkedinLogo from "@/assets/logos/linkedinLogo.png";
-import PeerlistLogo from "@/assets/logos/peerList.webp";
-import XLogo from "@/assets/logos/xLogo.jpg";
-import MediumLogo from "@/assets/logos/mediumLogo.jpeg";
-import RedditLogo from "@/assets/logos/redditLogo.jpeg";
-import DevtoLogo from "@/assets/logos/devto.webp";
-import HashnodeLogo from "@/assets/logos/hashnodeLogo.png";
-import SubstackLogo from "@/assets/logos/substackLogo.png";
-import ThreadsLogo from "@/assets/logos/threadsLogo.png";
-
-
 import HeroDashboardLight from "@/assets/landingPage/hero_light.png";
 import MetatagsEditorLight from "@/assets/landingPage/metatags_editor_light.png";
 import BlueBgPattern from "@/assets/landingPage/blueBgPattern.jpg";
@@ -20,19 +9,6 @@ import LandingArticleList from "@/components/landing/LandingArticleList.astro";
 import IntegrationsSection from "@/components/integrations-4";
 
 import BlogsPageImg from "@/assets/landingPage/blogsPage.png";
-
-
-const integrationLogoList = [
-	{ src: LinkedinLogo, alt: "LinkedIn" },
-	{ src: MediumLogo, alt: "Medium" },
-	{ src: XLogo, alt: "X" },
-	{ src: PeerlistLogo, alt: "Peerlist" },
-	{ src: RedditLogo, alt: "Reddit" },
-	{ src: DevtoLogo, alt: "Dev.to" },
-	{ src: HashnodeLogo, alt: "Hashnode" },
-	{ src: SubstackLogo, alt: "Substack" },
-	{ src: ThreadsLogo, alt: "Threads" },
-];
 
 const featuredArticles = [
 	{ title: "How whitepapper handles SEO", readTime: "6 min read", href: "" },
@@ -45,8 +21,6 @@ import AudiLogo from "@/assets/logos/bullshi/audi_logo.png";
 import GoogleLogo from "@/assets/logos/bullshi/google_logo.webp";
 import OpenAILogo from "@/assets/logos/bullshi/openai_logo.png";
 import CursorLogo from "@/assets/logos/bullshi/cursor_logo.png";
-
-import CarImg from "@/assets/landingPage/carImg.jpg";
 
 Astro.response.headers.set(
 	"Cache-Control",
@@ -86,14 +60,16 @@ Astro.response.headers.set(
 						<span>SEO first</span><span> content engine</span>
 					</h1>
 
-					<p
-						class="heroText text-[17px] text-muted-foreground my-4 md:w-[600px]"
-						style="animation-delay: 0.25s;"
+					<div
+						class="my-4 space-y-2 text-[18px] text-muted-foreground md:w-[600px]"
 					>
-						Lorem ipsum dolor, sit amet consectetur adipisicing
-						elit. Quibusdam, dolore quam consectetur quisquam
-						officiis voluptatem!
-					</p>
+						<p class="heroText" style="animation-delay: 0.25s;">
+							Own everything, distribute everywhere.
+						</p>
+						<p class="heroText" style="animation-delay: 0.30s;">
+							The internet was yours first.
+						</p>
+					</div>
 
 					<!-- <div class="flex gap-2 items-center justify-center w-full mt-5">
 			<p class="text-[12px]">Not backed by</p>
@@ -143,9 +119,14 @@ Astro.response.headers.set(
 				> for schizo writers
 			</p> -->
 
-			<section class="mt-[20px] mb-[70px] flex flex-col items-center gap-6" aria-labelledby="home-trusted-logos">
+			<section
+				class="mt-[20px] mb-[70px] flex flex-col items-center gap-6"
+				aria-labelledby="home-trusted-logos"
+			>
 				<h2 class="text-[19px] text-muted-foreground">
-					<span id="home-trusted-logos">Look at these logos lmfao</span>
+					<span id="home-trusted-logos"
+						>Look at these logos lmfao</span
+					>
 				</h2>
 				<div
 					class="flex gap-x-7 gap-y-5 grayscale flex-wrap justify-center items-center dark:invert"
@@ -155,7 +136,11 @@ Astro.response.headers.set(
 						alt="OpenAI logo"
 						class="h-[30px] w-fit opacity-[0.5]"
 					/>
-					<img src={GoogleLogo.src} alt="Google logo" class="h-[30px] w-fit" />
+					<img
+						src={GoogleLogo.src}
+						alt="Google logo"
+						class="h-[30px] w-fit"
+					/>
 					<img
 						src={AudiLogo.src}
 						alt="Audi logo"
@@ -210,14 +195,20 @@ Astro.response.headers.set(
 					<div class="md:flex-1">
 						<div>
 							<h2 class="text-[30px] font-[450]">
-								Auto generated metatags for better SEO
+								SEO defaults, out of the box
 							</h2>
-							<p class="mt-1 text-[16px] text-muted-foreground">
-								Lorem ipsum dolor sit amet consectetur
-								adipisicing elit. Ex, earum. Nostrum, nihil
-								sapiente sint tempore quam expedita et id in
-								officia eos consequuntur esse repudiandae
-								perspiciatis explicabo unde nesciunt quo!
+							<p
+								class="mt-1 text-[17px] text-muted-foreground leading-[1.7em]"
+							>
+								Every paper you publish on Whitepapper gets
+								title tags, meta descriptions, canonical URLs,
+								and Open Graph metadata generated automatically.
+								No SEO plugin, no manual fields, no forgetting.
+								Your content is search-ready from the moment you
+								hit publish.<br />
+								<span class="font-[550]">
+									The algorithm never believed in you, we do.
+								</span>
 							</p>
 						</div>
 						<LandingArticleList
@@ -228,9 +219,15 @@ Astro.response.headers.set(
 				</div>
 
 				<div
-					class="flex md:flex-row flex-col gap-5 md:gap-10 my-5 items-center mx-auto max-w-[600px]"
+					class="flex md:flex-row flex-col gap-5 md:gap-10 my-5 items-center mx-auto max-w-[800px]"
 				>
-					<div class="flex-1 flex flex-col items-center text-center">
+					<div
+						class="flex-1 flex flex-col items-center text-center relative"
+					>
+						<div
+							class="h-[35px] dark:h-[12px] w-[300px] rotate-[-10deg] rounded-[50%] bg-[#faae40] dark:blur-[40px] blur-[45px] absolute z-[-1] top-2"
+						>
+						</div>
 						<h3 class="font-[600] text-[40px]">~ 100ms</h3>
 						<p class="text-[16px] text-muted-foreground">
 							Accross the globe
@@ -242,16 +239,32 @@ Astro.response.headers.set(
 					</div>
 					<div class="flex-1">
 						<p class="text-center text-[18px]">
-							With active local CDN cache, any content is
-							delivered to your users fastest.
+							Whitepapper's API and public pages are cached at the
+							edge using Cloudflare Workers. Whether your reader
+							is in Mumbai or Munich, content loads in under
+							100ms. No configurations needed.
 						</p>
 					</div>
 				</div>
 
 				<div class="">
-					<div class="flex md:flex-row flex-col gap-3 justify-between items-start">
-						<h2 class="md:flex-1 text-[30px] md:text-[40px] font-[450]">Make your sites searchable</h2>
-						<p class="md:flex-1 text-muted-foreground md:text-[20px] text-[16px]">Lorem ipsum dolor sit amet consectetur adipisicing elit. Assumenda, est. Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequatur, voluptates.</p>
+					<div
+						class="flex md:flex-row flex-col gap-3 justify-between items-start"
+					>
+						<h2
+							class="md:flex-1 text-[30px] md:text-[40px] font-[450]"
+						>
+							Make your sites searchable
+						</h2>
+						<p
+							class="md:flex-1 text-muted-foreground md:text-[20px] text-[16px]"
+						>
+							Every project gets a scoped API key. Use it to pull
+							your papers, collections, and project data directly
+							into your portfolio, personal site, or any frontend
+							you're building. Read-only, fast, and safe to expose
+							publicly.
+						</p>
 					</div>
 					<div
 						class="mt-8 md:mt-15 relative p-3 md:p-10 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
@@ -265,11 +278,17 @@ Astro.response.headers.set(
 						/>
 						<img
 							src={BlogsPageImg.src}
-								alt="Blogs page preview"
+							alt="Blogs page preview"
 							class="h-fit w-full rounded-[10px] border"
 						/>
 					</div>
-					<p class="text-[14px] text-muted-foreground my-4 text-center">Lorem ipsum dolor sit amet consectetur adipisicing elit. Delectus, magni!</p>
+					<a href="/docs" class="w-fit">
+						<p
+							class="text-[14px] text-muted-foreground my-4 text-center"
+						>
+							Read the API docs
+						</p>
+					</a>
 				</div>
 
 				<IntegrationsSection />

@@ -166,7 +166,7 @@
 }
 
 .markdownDiv a:hover {
-    color: var(--primary, #3b82f6) !important;
+    color: var(--primary-foreground) !important;
 }
 
 .markdownDiv a strong {
@@ -233,14 +233,6 @@
 
 
 /* Highlighted Text */
-.highlightedText {
-    background-color: var(--primary);
-    color: var(--primary-foreground);
-    padding: 5px;
-    font-weight: 450;
-    line-height: 1.5em;
-    border-radius: 3px;
-}
 
 .markdownDiv mark {
     background-color: var(--primary, #3b82f6);

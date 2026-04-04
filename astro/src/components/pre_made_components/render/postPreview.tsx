@@ -1,10 +1,8 @@
-"use client"
 import styles from "./postPreview.module.css";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useId } from "react";
 import { CopyIcon } from "lucide-react";
-import PostPreviewCopyIsland from "./PostPreviewCopyIsland";
 
 type PostRenderProps = {
     content: string
@@ -116,12 +114,11 @@ export default function PostRender({ content, contentContainerId }: PostRenderPr
                         //     </div>
                         // ),
                         mark: ({ node, children, ...props }) => (
-                            <mark {...props} className={styles.highlightedText}>
+                            <mark {...props}>
                                 {children}
                             </mark>
                         ),
                     }} />
             </div>
-            <PostPreviewCopyIsland contentContainerId={resolvedContentContainerId} />
         </div>)
 }

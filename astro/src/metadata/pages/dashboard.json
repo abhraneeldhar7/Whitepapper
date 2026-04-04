@@ -1,0 +1,29 @@
+{
+  "path": "/dashboard",
+  "title": "Dashboard",
+  "description": "Manage projects, collections, papers, API keys, and publishing distribution from your Whitepapper dashboard.",
+  "canonical": "/dashboard",
+  "image": "/appLogo.png",
+  "keywords": "whitepapper dashboard, content workspace, project management, publishing dashboard",
+  "robots": "noindex, nofollow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Dashboard",
+  "ogDescription": "Manage projects, collections, papers, API keys, and publishing distribution from your Whitepapper dashboard.",
+  "ogUrl": "/dashboard",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Dashboard | Whitepapper Workspace social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Dashboard",
+  "twitterDescription": "Manage projects, collections, papers, API keys, and publishing distribution from your Whitepapper dashboard.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Dashboard | Whitepapper Workspace social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Dashboard",
+    "url": "https://whitepapper.antk.in/dashboard"
+  }
+}

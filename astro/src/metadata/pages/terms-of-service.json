@@ -1,0 +1,29 @@
+{
+  "path": "/terms-of-service",
+  "title": "Terms of Service",
+  "description": "Review the Whitepapper Terms of Service, including usage rules, platform responsibilities, and legal conditions.",
+  "canonical": "/terms-of-service",
+  "image": "/appLogo.png",
+  "keywords": "whitepapper terms of service, platform terms, legal usage policy",
+  "robots": "index, follow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "article",
+  "ogTitle": "Terms of Service",
+  "ogDescription": "Review the Whitepapper Terms of Service, including usage rules, platform responsibilities, and legal conditions.",
+  "ogUrl": "/terms-of-service",
+  "ogImage": "/appLogo.png",
+  "ogImageAlt": "Terms of Service | Whitepapper social preview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Terms of Service",
+  "twitterDescription": "Review the Whitepapper Terms of Service, including usage rules, platform responsibilities, and legal conditions.",
+  "twitterImage": "/appLogo.png",
+  "twitterImageAlt": "Terms of Service | Whitepapper social preview",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Terms of Service",
+    "url": "https://whitepapper.antk.in/terms-of-service"
+  }
+}
