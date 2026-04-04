@@ -4,12 +4,18 @@ import Layout from "@/layouts/Layout.astro";
 import { getPublicProfile } from "@/lib/api/public";
 import styles from "@/components/profile.module.css";
 import { isReservedUsername } from "@/lib/reservedPaths";
+import { excerpt, fallbackDescription, resolveSiteUrl } from "@/lib/seo";
 
 const routeHandle = Astro.params.handle as string;
-const handle = routeHandle.replace(/^@+/, "").trim().toLowerCase();
+const rawHandle = routeHandle.trim();
+const handle = rawHandle.toLowerCase();
 
-if (!handle || isReservedUsername(handle)) {
-  return Astro.redirect("/404", 302);
+if (!handle || rawHandle.includes("@") || isReservedUsername(handle)) {
+  return new Response(null, { status: 404 });
+}
+
+if (rawHandle !== handle) {
+  return Astro.redirect(`/${handle}`, 301);
 }
 
 
@@ -23,11 +29,10 @@ try {
   userData = await getPublicProfile(handle);
 } catch (error) {
   const message = error instanceof Error ? error.message : "";
-  return Astro.redirect(
-    message.includes("403") || message.includes("Not allowed")
-      ? "/unauthorized"
-      : "/404",
-  );
+  if (message.includes("403") || message.includes("Not allowed")) {
+    return Astro.redirect("/unauthorized", 302);
+  }
+  return new Response(null, { status: 404 });
 }
 
 // Get current user ID from Clerk
@@ -35,9 +40,55 @@ const { userId } = Astro.locals.auth();
 
 // Filter to only show published standalone papers (not in collections) for public profile
 const publishedPapers = userData.papers.filter((p) => p.status === "published" && !p.collectionId);
+const siteUrl = resolveSiteUrl(import.meta.env.PUBLIC_SITE_URL, Astro.url.origin);
+const displayName = (userData.user.displayName || userData.user.username || handle).trim();
+const profileDescription = (userData.user.description || "").trim();
+const seoDescription = excerpt(
+  fallbackDescription(profileDescription, `${displayName}'s public profile on Whitepapper.`),
+);
+const canonical = `${siteUrl}/${handle}`;
+const avatarUrl = String(userData.user.avatarUrl || "").trim() || `${siteUrl}/appLogo.png`;
+const profileJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  name: `${displayName} | Whitepapper`,
+  description: seoDescription,
+  url: canonical,
+  mainEntity: {
+    "@type": "Person",
+    name: displayName,
+    alternateName: userData.user.username || handle,
+    url: canonical,
+    description: seoDescription,
+    image: avatarUrl,
+    sameAs: [canonical],
+  },
+};
 ---
 
-<Layout showSiteNav={false}>
+<Layout
+  showSiteNav={false}
+  title={`${displayName} | Whitepapper`}
+  description={seoDescription}
+>
+  <Fragment slot="head">
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="profile" />
+    <meta property="og:title" content={`${displayName} | Whitepapper`} />
+    <meta property="og:description" content={seoDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={avatarUrl} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={`${displayName} | Whitepapper`} />
+    <meta name="twitter:description" content={seoDescription} />
+    <meta name="twitter:image" content={avatarUrl} />
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(profileJsonLd)}
+    />
+  </Fragment>
   <div class="min-h-screen w-full mx-auto max-w-[600px] px-[15px] py-10">
     <div class="flex gap-5 items-end">
       <div class="flex-1 h-full w-full">
@@ -62,6 +113,10 @@ const publishedPapers = userData.papers.filter((p) => p.status === "published" &
               src={userData.user.avatarUrl}
               class={`md:w-[100px] md:h-[100px] w-[80px] h-[80px] shadow rounded-[14px] border-[4px] border-card rotate-[1deg] ${styles.heroText}`}
               style="animation-delay: 0.5s;"
+              alt={userData.user.displayName || userData.user.username}
+              width={100}
+              height={100}
+              decoding="async"
             />
           )
         }
@@ -82,7 +137,7 @@ const publishedPapers = userData.papers.filter((p) => p.status === "published" &
     </p>
 
     <ProfilePage
-      client:load
+      client:idle
       user={userData.user}
       papers={publishedPapers}
       projects={userData.projects}

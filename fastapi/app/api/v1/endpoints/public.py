@@ -90,6 +90,54 @@ async def get_public_papers_for_sitemap(request: Request) -> Response:
     return _public_response({"papers": payload_items}, request)
 
 
+@router.get("/seo/profiles-projects")
+async def get_public_profiles_projects_for_sitemap(request: Request) -> Response:
+    projects = await asyncio.to_thread(projects_service.list_all_public)
+
+    owner_cache: dict[str, dict] = {}
+    profiles: dict[str, dict] = {}
+    payload_projects: list[dict] = []
+
+    for project in projects:
+        owner_id = project.get("ownerId")
+        if not owner_id:
+            continue
+
+        owner = owner_cache.get(owner_id)
+        if owner is None:
+            try:
+                owner = await asyncio.to_thread(user_service.get_by_id, owner_id)
+            except HTTPException:
+                owner = {}
+            owner_cache[owner_id] = owner
+
+        owner_handle = (owner.get("username") or "").strip().lower()
+        project_slug = (project.get("slug") or "").strip()
+        if not owner_handle or not project_slug:
+            continue
+
+        profile_last_modified = owner.get("updatedAt") or owner.get("createdAt")
+        profiles[owner_handle] = {
+            "url": f"/{owner_handle}",
+            "lastModified": profile_last_modified,
+        }
+
+        payload_projects.append(
+            {
+                "url": f"/{owner_handle}/p/{project_slug}",
+                "lastModified": project.get("updatedAt"),
+            }
+        )
+
+    return _public_response(
+        {
+            "profiles": list(profiles.values()),
+            "projects": payload_projects,
+        },
+        request,
+    )
+
+
 @router.get("/{handle}")
 async def get_public_profile(handle: str, request: Request) -> Response:
     user = await asyncio.to_thread(user_service.get_by_username, handle)

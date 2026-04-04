@@ -91,6 +91,13 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
     setPages(initialPages);
   }, [initialProjects, initialPages]);
 
+  useEffect(() => {
+    document.documentElement.dataset.dashboardReady = "true";
+    return () => {
+      delete document.documentElement.dataset.dashboardReady;
+    };
+  }, []);
+
 
 
 

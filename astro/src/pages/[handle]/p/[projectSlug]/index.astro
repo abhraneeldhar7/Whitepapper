@@ -2,16 +2,22 @@
 import Layout from '@/layouts/Layout.astro';
 import PublicProjectPage from '@/components/project/PublicProjectPage';
 import { createApiClient } from '@/lib/api/client';
-import { getPublicProjectBySlug, getPublicProfile } from '@/lib/api/public';
+import { getPublicProjectBySlug } from '@/lib/api/public';
 import { getCurrentUser } from '@/lib/api/users';
 import { formatFirestoreDate } from '@/lib/utils';
 import { isReservedUsername } from '@/lib/reservedPaths';
+import { excerpt, fallbackDescription, resolveSiteUrl } from '@/lib/seo';
 
 const { handle: routeHandle, projectSlug } = Astro.params;
-const handle = (routeHandle as string).replace(/^@+/, '').trim().toLowerCase();
+const rawHandle = (routeHandle as string).trim();
+const handle = rawHandle.toLowerCase();
 
-if (!handle || isReservedUsername(handle)) {
-  return Astro.redirect('/404', 302);
+if (!handle || rawHandle.includes("@") || isReservedUsername(handle)) {
+  return new Response(null, { status: 404 });
+}
+
+if (rawHandle !== handle) {
+  return Astro.redirect(`/${handle}/p/${projectSlug}`, 301);
 }
 
 let data: Awaited<ReturnType<typeof getPublicProjectBySlug>>;
@@ -19,22 +25,47 @@ try {
   data = await getPublicProjectBySlug(handle, projectSlug as string);
 } catch (error) {
   const message = error instanceof Error ? error.message : "";
-  return Astro.redirect(message.includes("403") || message.includes("Not allowed") ? "/unauthorized" : "/404");
+  if (message.includes("403") || message.includes("Not allowed")) {
+    return Astro.redirect("/unauthorized", 302);
+  }
+  return new Response(null, { status: 404 });
 }
 
 if (!data?.project) {
-  return Astro.redirect("/404");
+  return new Response(null, { status: 404 });
 }
 
-let ownerData = null;
-try {
-  ownerData = await getPublicProfile(handle);
-} catch {
-  // Owner data is optional, continue without it
-}
-
-const owner = ownerData?.user ?? null;
+const owner = data.user ?? null;
 const projectCreatedDate = data.project.createdAt ? formatFirestoreDate(data.project.createdAt) : null;
+const siteUrl = resolveSiteUrl(import.meta.env.PUBLIC_SITE_URL, Astro.url.origin);
+const canonical = `${siteUrl}/${handle}/p/${data.project.slug}`;
+const ownerName = (owner?.displayName || owner?.username || handle).trim();
+const description = excerpt(
+  fallbackDescription(data.project.description, `${data.project.name} project page on Whitepapper.`),
+);
+const logoUrl = String(data.project.logoUrl || '').trim() || `${siteUrl}/appLogo.png`;
+const standalonePapers = (data.papers ?? []).filter((paper) => !paper.collectionId);
+const collectionPageJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: data.project.name,
+  description,
+  url: canonical,
+  creator: {
+    "@type": "Person",
+    name: ownerName,
+    url: `${siteUrl}/${handle}`,
+  },
+  image: logoUrl,
+  dateCreated: data.project.createdAt,
+  dateModified: data.project.updatedAt,
+  hasPart: standalonePapers.slice(0, 20).map((paper) => ({
+    "@type": "Article",
+    headline: paper.title,
+    url: `${siteUrl}/${handle}/${paper.slug}`,
+    dateModified: paper.updatedAt,
+  })),
+};
 
 const { userId, getToken } = Astro.locals.auth();
 
@@ -49,7 +80,29 @@ if (userId) {
 }
 ---
 
-<Layout showSiteNav={false}>
+<Layout
+  showSiteNav={false}
+  title={`${data.project.name} | ${ownerName} | Whitepapper`}
+  description={description}
+>
+  <Fragment slot="head">
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={`${data.project.name} | Whitepapper`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={logoUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${data.project.name} | Whitepapper`} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={logoUrl} />
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(collectionPageJsonLd)}
+    />
+  </Fragment>
   <section class="sr-only" aria-label="Project paper links">
     {
       (data.collectionPapers ?? []).flatMap((entry) =>
@@ -60,7 +113,7 @@ if (userId) {
     }
   </section>
   <PublicProjectPage
-    client:load
+    client:idle
     handle={handle}
     project={data.project}
     papers={data.papers ?? []}

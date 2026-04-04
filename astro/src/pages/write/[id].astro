@@ -34,11 +34,12 @@ const integrationBaseUrl = resolveIntegrationBaseUrl();
 ---
 
 <Layout showSiteNav={false} noindex={true}>
-  <WriteEditorSkeleton />
   <WriteEditorRoot
     client:only="react"
     initialPaper={initialPaper}
     initialUser={initialUser}
     integrationBaseUrl={integrationBaseUrl}
-  />
+  >
+    <WriteEditorSkeleton slot="fallback" />
+  </WriteEditorRoot>
 </Layout>

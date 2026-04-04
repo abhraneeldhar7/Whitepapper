@@ -24,4 +24,7 @@ export default defineConfig({
       allowedHosts: ["yearlong-jon-patrilineal.ngrok-free.dev"]
     },
   },
+  prefetch: {
+    prefetchAll: true
+  }
 });

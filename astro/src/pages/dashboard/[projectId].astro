@@ -35,16 +35,15 @@ const { project: initialProject, collections: initialCollections, papers: initia
 ---
 
 <Layout showSiteNav={false}>
-  <ProjectWorkspaceSkeleton />
-  <div class="project-shell-app">
-    <ProjectWorkspace
-      client:only="react"
-      projectId={projectId}
-      initialProject={initialProject}
-      initialPages={initialPages}
-      initialCollections={initialCollections}
-      initialApiDoc={initialApiDoc}
-      initialUser={initialUser}
-    />
-  </div>
+  <ProjectWorkspace
+    client:only="react"
+    projectId={projectId}
+    initialProject={initialProject}
+    initialPages={initialPages}
+    initialCollections={initialCollections}
+    initialApiDoc={initialApiDoc}
+    initialUser={initialUser}
+  >
+    <ProjectWorkspaceSkeleton slot="fallback" />
+  </ProjectWorkspace>
 </Layout>

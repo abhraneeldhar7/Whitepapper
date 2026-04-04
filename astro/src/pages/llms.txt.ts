@@ -21,7 +21,12 @@ export const GET: APIRoute = ({ site, url }) => {
     "Allow: /",
     ...RESTRICTED_PATHS.map((path) => `Disallow: ${path}`),
     "",
+    `Reference: ${baseUrl}/llms-full.txt`,
+    "",
     `Sitemap: ${baseUrl}/sitemap.xml`,
+    `Sitemap: ${baseUrl}/sitemap-index.xml`,
+    `Sitemap: ${baseUrl}/sitemaps/public-pages.xml`,
+    `Sitemap: ${baseUrl}/sitemaps/public-projects.xml`,
     `Sitemap: ${baseUrl}/sitemaps/public-papers.xml`,
   ].join("\n");
 

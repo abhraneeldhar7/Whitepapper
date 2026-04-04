@@ -46,9 +46,9 @@ class PapersService:
 
     @staticmethod
     def _normalize_owner_username(owner_username: str | None) -> str:
-        resolved = (owner_username or "").strip()
-        if resolved.startswith("@"):
-            resolved = resolved[1:]
+        resolved = (owner_username or "").strip().lower()
+        if "@" in resolved:
+            return ""
         return resolved
 
     @staticmethod

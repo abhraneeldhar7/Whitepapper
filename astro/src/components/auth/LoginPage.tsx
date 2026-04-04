@@ -1,6 +1,4 @@
-"use client";
-
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { EyeIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,7 +33,7 @@ function NewAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
 
     const isDisabled = loading || globalLoading;
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
         if (isDisabled) return;
@@ -81,7 +79,7 @@ function NewAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
         }
     };
 
-    const onVerify = async (e: React.FormEvent) => {
+    const onVerify = async (e: FormEvent) => {
         e.preventDefault();
 
         if (isDisabled) return;
@@ -269,7 +267,7 @@ function OldAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
 
     const isDisabled = loading || globalLoading;
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
         if (isDisabled) return;

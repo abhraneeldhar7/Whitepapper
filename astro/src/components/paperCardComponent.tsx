@@ -45,11 +45,35 @@ export default function PaperCardComponent({
             <div className="overflow-hidden md:h-[170px] h-[125px]">
                 {
                     paperData.thumbnailUrl ?
-                        <img className="w-full object-cover w-full h-full border rounded-[3px]" src={paperData.thumbnailUrl} />
+                        <img
+                            className="w-full object-cover w-full h-full border rounded-[3px]"
+                            src={paperData.thumbnailUrl}
+                            alt={`Cover image for ${paperData.title}`}
+                            width={640}
+                            height={360}
+                            loading="lazy"
+                            decoding="async"
+                        />
                         :
                         <>
-                            <img className="dark:hidden w-full object-cover border w-full h-full opacity-[0.7] rounded-[3px]" src={abstractLightPic.src} />
-                            <img className="hidden dark:block w-full object-cover w-full h-full border opacity-[0.4] rounded-[3px]" src={abstractDarkPic.src} />
+                            <img
+                                className="dark:hidden w-full object-cover border w-full h-full opacity-[0.7] rounded-[3px]"
+                                src={abstractLightPic.src}
+                                alt=""
+                                width={640}
+                                height={360}
+                                loading="lazy"
+                                decoding="async"
+                            />
+                            <img
+                                className="hidden dark:block w-full object-cover w-full h-full border opacity-[0.4] rounded-[3px]"
+                                src={abstractDarkPic.src}
+                                alt=""
+                                width={640}
+                                height={360}
+                                loading="lazy"
+                                decoding="async"
+                            />
                         </>
                 }
             </div>

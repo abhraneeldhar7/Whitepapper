@@ -1,5 +1,20 @@
 import type { APIRoute } from "astro";
 
+const PUBLIC_STATIC_PATHS = [
+  "/",
+  "/about",
+  "/blogs",
+  "/contact",
+  "/docs",
+  "/integrations",
+  "/privacy-policy",
+  "/resources",
+  "/terms-of-service",
+  "/updates",
+  "/llms.txt",
+  "/llms-full.txt",
+];
+
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -11,17 +26,15 @@ function escapeXml(value: string): string {
 
 export const GET: APIRoute = ({ site, url }) => {
   const baseUrl = (site?.toString() || url.origin).replace(/\/+$/, "");
-  const sitemapEntries = [
-    `${baseUrl}/sitemap-index.xml`,
-    `${baseUrl}/sitemaps/public-pages.xml`,
-    `${baseUrl}/sitemaps/public-projects.xml`,
-    `${baseUrl}/sitemaps/public-papers.xml`,
-  ];
+  const urlEntries = PUBLIC_STATIC_PATHS.map((path) => {
+    const absolute = `${baseUrl}${path === "/" ? "" : path}`;
+    return `<url><loc>${escapeXml(absolute)}</loc></url>`;
+  }).join("\n");
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${sitemapEntries.map((loc) => `<sitemap><loc>${escapeXml(loc)}</loc></sitemap>`).join("\n")}
-</sitemapindex>`;
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urlEntries}
+</urlset>`;
 
   return new Response(xml, {
     headers: {

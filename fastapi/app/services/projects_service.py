@@ -163,6 +163,9 @@ class ProjectsService:
             filters[PROJECT_PUBLIC_KEY] = True
         return firestore_store.find_by_fields(PROJECTS_COLLECTION, filters)
 
+    def list_all_public(self) -> list[dict]:
+        return firestore_store.find_by_fields(PROJECTS_COLLECTION, {PROJECT_PUBLIC_KEY: True})
+
     def get_by_id(self, project_id: str, public: bool = False) -> dict:
         cached = self._load_cached_project(self._project_by_id_key(project_id))
         if cached:

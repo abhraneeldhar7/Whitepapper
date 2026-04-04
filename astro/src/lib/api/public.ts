@@ -21,6 +21,7 @@ export type PublicCollectionResponse = {
 };
 
 export type PublicProjectResponse = {
+  user: UserDoc;
   project: ProjectDoc;
   collections: CollectionDoc[];
   papers: PaperDoc[];

@@ -4,9 +4,12 @@ import { formatFirestoreDate } from "@/lib/utils";
 import PostRender from "@/components/pre_made_components/render/postPreview";
 import PostPreviewDesktopToc from "@/components/pre_made_components/render/PostPreviewDesktopToc";
 import PostPreviewMobileToc from "@/components/pre_made_components/render/PostPreviewMobileToc";
-import type { PaperMetadata } from "@/lib/types";
+import type { PaperDoc, PaperMetadata } from "@/lib/types";
 import { ChevronLeft, DotIcon } from "lucide-react";
-import { getSiteBlogPaperBySlug } from "@/lib/api/site_blogs";
+
+type SiteBlogPaperResponse = {
+    paper: PaperDoc;
+};
 
 const pageSlug = Astro.params.slug as string;
 const normalizedSlug = pageSlug.trim().toLowerCase();
@@ -25,13 +28,37 @@ Astro.response.headers.set(
     "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
 );
 
-const { paper } = await getSiteBlogPaperBySlug(normalizedSlug);
+const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
+    .trim()
+    .replace(/\/+$/, "");
+const whitepapperApiKey = String(import.meta.env.WHITEPAPPER_API_KEY ?? "").trim();
+
+if (!apiBaseUrl || !whitepapperApiKey) {
+    throw new Error("PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.");
+}
+
+const paperResponse = await fetch(
+    `${apiBaseUrl}/dev/paper?slug=${encodeURIComponent(normalizedSlug)}`,
+    {
+        method: "GET",
+        headers: {
+            accept: "application/json",
+            "x-api-key": whitepapperApiKey,
+        },
+    },
+);
+
+if (!paperResponse.ok) {
+    const message = await paperResponse.text();
+    throw new Error(message || `Upstream request failed with ${paperResponse.status}`);
+}
+
+const { paper } = (await paperResponse.json()) as SiteBlogPaperResponse;
 const contentContainerId = `post-preview-${paper.paperId || normalizedSlug}`;
 const updatedDate = formatFirestoreDate(paper.updatedAt);
 const metadataInput = paper.metadata;
 const resolvedSiteUrl = siteUrl || Astro.url.origin.replace(/\/+$/, "");
 const authorHandle = (metadataInput?.authorHandle || "whitepapper")
-    .replace(/^@+/, "")
     .trim()
     .toLowerCase();
 const canonicalCandidate = String(metadataInput?.canonical || "").trim();
@@ -125,7 +152,7 @@ if (paper.slug !== normalizedSlug) {
 
 const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": "BlogPosting",
     headline: metadata.headline,
     description: metadata.metaDescription,
     abstract: metadata.abstract,
@@ -195,7 +222,7 @@ const breadcrumbJsonLd = {
         <meta name="robots" content={metadata.robots} />
         <link rel="canonical" href={metadata.canonical} />
 
-        <meta property="og:type" content="article" />
+    <meta property="og:type" content="article" />
         <meta property="og:site_name" content={metadata.publisherName} />
         <meta property="og:title" content={metadata.ogTitle} />
         <meta property="og:description" content={metadata.ogDescription} />

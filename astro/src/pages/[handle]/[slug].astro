@@ -11,7 +11,8 @@ import { isReservedUsername } from "@/lib/reservedPaths";
 
 const handle = Astro.params.handle as string;
 const pageSlug = Astro.params.slug as string;
-const normalizedHandle = handle.replace(/^@+/, "").trim().toLowerCase();
+const rawHandle = handle.trim();
+const normalizedHandle = rawHandle.toLowerCase();
 const normalizedSlug = pageSlug.trim().toLowerCase();
 const siteUrl = String(import.meta.env.PUBLIC_SITE_URL ?? "")
   .trim()
@@ -19,11 +20,11 @@ const siteUrl = String(import.meta.env.PUBLIC_SITE_URL ?? "")
 const userAgent = Astro.request.headers.get("user-agent") ?? "";
 const isDesktopUA = !/Mobi|Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile|WPDesktop/i.test(userAgent);
 
-if (!normalizedHandle || isReservedUsername(normalizedHandle)) {
-  return Astro.redirect("/404", 302);
+if (!normalizedHandle || rawHandle.includes("@") || isReservedUsername(normalizedHandle)) {
+  return new Response(null, { status: 404 });
 }
 
-if (handle !== normalizedHandle || pageSlug !== normalizedSlug) {
+if (rawHandle !== normalizedHandle || pageSlug !== normalizedSlug) {
   return Astro.redirect(`/${normalizedHandle}/${normalizedSlug}`, 301);
 }
 
@@ -37,17 +38,16 @@ try {
   ({ paper } = await getPublicPaperPageData(normalizedHandle, normalizedSlug));
 } catch (error) {
   const message = error instanceof Error ? error.message : "";
-  return Astro.redirect(
-    message.includes("403") || message.includes("Not allowed") ? "/unauthorized" : "/404",
-    302,
-  );
+  if (message.includes("403") || message.includes("Not allowed")) {
+    return Astro.redirect("/unauthorized", 302);
+  }
+  return new Response(null, { status: 404 });
 }
 const contentContainerId = `post-preview-${paper.paperId || normalizedSlug}`;
 const updatedDate = formatFirestoreDate(paper.updatedAt);
 const metadataInput = paper.metadata;
 const resolvedSiteUrl = siteUrl || Astro.url.origin.replace(/\/+$/, "");
 const authorHandle = (metadataInput?.authorHandle || normalizedHandle)
-  .replace(/^@+/, "")
   .trim()
   .toLowerCase();
 const fallbackCanonical = `${resolvedSiteUrl}/${normalizedHandle}/${paper.slug}`;

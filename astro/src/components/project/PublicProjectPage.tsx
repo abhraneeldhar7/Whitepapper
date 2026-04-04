@@ -39,7 +39,14 @@ export default function PublicProjectPage({
             <div className="flex items-center gap-3">
               <div className="h-[56px] w-[56px] shrink-0 overflow-hidden rounded-md border">
                 {project.logoUrl ? (
-                  <img src={project.logoUrl} alt={project.name} className="h-full w-full object-cover" />
+                  <img
+                    src={project.logoUrl}
+                    alt={project.name}
+                    className="h-full w-full object-cover"
+                    width={56}
+                    height={56}
+                    decoding="async"
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-[20px] font-semibold text-muted-foreground">
                     {project.name.slice(0, 1).toUpperCase() || "P"}
@@ -66,6 +73,8 @@ export default function PublicProjectPage({
                     src={owner.avatarUrl||""}
                     className="rounded-[6px] h-full w-full object-cover"
                     alt={owner.displayName ?? owner.username}
+                    width={28}
+                    height={28}
                     loading="lazy"
                     decoding="async"
                   />

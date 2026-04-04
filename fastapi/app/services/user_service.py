@@ -237,9 +237,9 @@ class UserService:
         return current
 
     def get_by_username(self, username: str) -> dict:
-        value = (username or "").strip()
-        if value.startswith("@"):
-            value = value[1:]
+        value = (username or "").strip().lower()
+        if "@" in value:
+            raise HTTPException(status_code=404, detail="User not found.")
         if not value:
             raise HTTPException(status_code=404, detail="User not found.")
 

@@ -34,6 +34,28 @@
       "name": "Whitepapper",
       "url": "https://whitepapper.antk.in/",
       "founder": "Abhraneel Dhar"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Whitepapper?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Whitepapper is an SEO-first content engine for developers to publish and distribute technical content."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Whitepapper improve SEO and GEO?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Whitepapper provides canonical metadata defaults, structured data, sitemap endpoints, robots controls, and LLM-focused context documents."
+          }
+        }
+      ]
     }
   ]
 }

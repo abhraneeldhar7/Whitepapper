@@ -12,7 +12,6 @@ function escapeXml(value: string): string {
 export const GET: APIRoute = ({ site, url }) => {
   const baseUrl = (site?.toString() || url.origin).replace(/\/+$/, "");
   const sitemapEntries = [
-    `${baseUrl}/sitemap-index.xml`,
     `${baseUrl}/sitemaps/public-pages.xml`,
     `${baseUrl}/sitemaps/public-projects.xml`,
     `${baseUrl}/sitemaps/public-papers.xml`,

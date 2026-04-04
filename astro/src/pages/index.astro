@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { Image } from "astro:assets";
 
 import HeroDashboardLight from "@/assets/landingPage/hero_light.png";
 import MetatagsEditorLight from "@/assets/landingPage/metatags_editor_light.png";
@@ -84,17 +85,19 @@ Astro.response.headers.set(
 						class="heroText mt-8 md:mt-15 relative p-3 md:p-10 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
 						style="animation-delay: 0.3s; animation-duration: 0.8s;"
 					>
-						<img
-							src={BlueBgPattern.src}
+						<Image
+							src={BlueBgPattern}
 							alt="Green pattern background"
 							class="absolute left-0 top-0 z-[-1] h-full w-full"
 							loading="lazy"
 							decoding="async"
 						/>
-						<img
-							src={HeroDashboardLight.src}
+						<Image
+							src={HeroDashboardLight}
 							alt="Whitepapper dashboard preview"
 							class="h-fit w-full rounded-[10px] border"
+							loading="eager"
+							decoding="async"
 						/>
 					</div>
 				</div>
@@ -131,30 +134,40 @@ Astro.response.headers.set(
 				<div
 					class="flex gap-x-7 gap-y-5 grayscale flex-wrap justify-center items-center dark:invert"
 				>
-					<img
-						src={OpenAILogo.src}
+					<Image
+						src={OpenAILogo}
 						alt="OpenAI logo"
 						class="h-[30px] w-fit opacity-[0.5]"
+						loading="lazy"
+						decoding="async"
 					/>
-					<img
-						src={GoogleLogo.src}
+					<Image
+						src={GoogleLogo}
 						alt="Google logo"
 						class="h-[30px] w-fit"
+						loading="lazy"
+						decoding="async"
 					/>
-					<img
-						src={AudiLogo.src}
+					<Image
+						src={AudiLogo}
 						alt="Audi logo"
 						class="h-[30px] w-fit opacity-[0.5]"
+						loading="lazy"
+						decoding="async"
 					/>
-					<img
-						src={CursorLogo.src}
+					<Image
+						src={CursorLogo}
 						alt="Cursor logo"
 						class="h-[30px] w-fit opacity-[0.5]"
+						loading="lazy"
+						decoding="async"
 					/>
-					<img
-						src={TeslaLogo.src}
+					<Image
+						src={TeslaLogo}
 						alt="Tesla logo"
 						class="h-[30px] w-fit opacity-[0.5]"
+						loading="lazy"
+						decoding="async"
 					/>
 				</div>
 			</section>
@@ -170,15 +183,15 @@ Astro.response.headers.set(
 						<div
 							class="relative h-full w-full overflow-hidden rounded-[18px] md:rounded-[30px] p-3 md:p-8"
 						>
-							<img
-								src={BlueBgPattern.src}
+							<Image
+								src={BlueBgPattern}
 								alt="Green pattern background"
 								class="absolute left-0 top-0 z-[-1] h-full w-full"
 								loading="lazy"
 								decoding="async"
 							/>
-							<img
-								src={MetatagsEditorLight.src}
+							<Image
+								src={MetatagsEditorLight}
 								alt="Editor preview"
 								class="h-full w-full object-cover rounded-[8px] md:rounded-[15px]"
 								loading="lazy"
@@ -269,17 +282,19 @@ Astro.response.headers.set(
 					<div
 						class="mt-8 md:mt-15 relative p-3 md:p-10 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
 					>
-						<img
-							src={BlueBgPattern.src}
+						<Image
+							src={BlueBgPattern}
 							alt="Green pattern background"
 							class="absolute left-0 top-0 z-[-1] h-full w-full"
 							loading="lazy"
 							decoding="async"
 						/>
-						<img
-							src={BlogsPageImg.src}
+						<Image
+							src={BlogsPageImg}
 							alt="Blogs page preview"
 							class="h-fit w-full rounded-[10px] border"
+							loading="lazy"
+							decoding="async"
 						/>
 					</div>
 					<a href="/docs" class="w-fit">

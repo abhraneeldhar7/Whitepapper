@@ -1,9 +1,42 @@
 ﻿---
 import BlogListingPage from "@/components/blogs/BlogListingPage.astro";
 import Layout from "@/layouts/Layout.astro";
-import { getSiteBlogCollectionBySlug } from "@/lib/api/site_blogs";
+import type { PaperDoc } from "@/lib/types";
 
-const resourcesBlogs = await getSiteBlogCollectionBySlug("resources");
+type SiteBlogCollectionResponse = {
+  papers: PaperDoc[];
+};
+
+const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
+  .trim()
+  .replace(/\/+$/, "");
+const whitepapperApiKey = String(import.meta.env.WHITEPAPPER_API_KEY ?? "").trim();
+
+if (!apiBaseUrl || !whitepapperApiKey) {
+  throw new Error("PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.");
+}
+
+async function fetchSiteBlogCollectionBySlug(slug: string): Promise<SiteBlogCollectionResponse> {
+  const response = await fetch(
+    `${apiBaseUrl}/dev/collection?slug=${encodeURIComponent(slug)}`,
+    {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        "x-api-key": whitepapperApiKey,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Upstream request failed with ${response.status}`);
+  }
+
+  return response.json() as Promise<SiteBlogCollectionResponse>;
+}
+
+const resourcesBlogs = await fetchSiteBlogCollectionBySlug("resources");
 
 
 Astro.response.headers.set(

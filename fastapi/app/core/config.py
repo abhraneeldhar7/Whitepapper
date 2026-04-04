@@ -38,8 +38,6 @@ class Settings(BaseSettings):
     valkey_user: str | None = None
     valkey_password: str | None = None
     groq_api_key: str | None = None
-    whitepapper_api_url: str | None = None
-    whitepapper_api_key: str | None = None
 
 
 @lru_cache
