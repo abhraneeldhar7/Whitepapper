@@ -16,7 +16,7 @@ const DEFAULT_REDIRECT_PATH = "/dashboard";
 
 type NewAccountFormProps = {
     redirectUrl: string;
-    getClerk: () => any | null;
+    getClerk: () => Promise<any | null>;
     globalLoading: boolean;
     onLoadingChange: (loading: boolean) => void;
 };
@@ -45,7 +45,7 @@ function NewAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
             return;
         }
 
-        const clerk = getClerk();
+        const clerk = await getClerk();
         if (!clerk) {
             toast.error("Auth is still loading. Please try again.");
             return;
@@ -91,7 +91,7 @@ function NewAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
             return;
         }
 
-        const clerk = getClerk();
+        const clerk = await getClerk();
         if (!clerk) {
             toast.error("Auth is still loading. Please try again.");
             return;
@@ -257,7 +257,7 @@ function NewAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
 
 type OldAccountFormProps = {
     redirectUrl: string;
-    getClerk: () => any | null;
+    getClerk: () => Promise<any | null>;
     globalLoading: boolean;
     onLoadingChange: (loading: boolean) => void;
 };
@@ -279,7 +279,7 @@ function OldAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
             return;
         }
 
-        const clerk = getClerk();
+        const clerk = await getClerk();
         if (!clerk) {
             toast.error("Auth is still loading. Please try again.");
             return;
@@ -370,12 +370,21 @@ export default function LoginPage() {
 
     const isAnyLoading = oauthLoading || signInLoading || signUpLoading;
 
-    const getClerk = () => {
+    const getClerk = async () => {
         if (typeof window === "undefined") return null;
         const clerk = (window as { Clerk?: any }).Clerk;
+        if (!clerk) {
+            return null;
+        }
+
+        if (!clerk.loaded) {
+            await clerk.load?.();
+        }
+
         if (!clerk?.loaded || !clerk?.client) {
             return null;
         }
+
         return clerk;
     };
 
@@ -396,7 +405,7 @@ export default function LoginPage() {
     }, []);
 
     const handleGoogleAuthClick = async () => {
-        const clerk = getClerk();
+        const clerk = await getClerk();
         if (!clerk) {
             toast.error("Auth is still loading. Please try again.");
             return;
