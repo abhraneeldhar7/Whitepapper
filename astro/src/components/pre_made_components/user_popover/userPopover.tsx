@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LogOutIcon, SettingsIcon, UserIcon } from "lucide-react";
+import { LaptopIcon, LogOutIcon, SettingsIcon, UserIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { SignOutButton } from "@clerk/astro/react";
@@ -58,6 +58,13 @@ export default function UserPopover({ user }: UserPopoverProps) {
             <Button variant="ghost" className="w-full justify-start">
               <div className="w-full justify-start flex items-center gap-[15px]">
                 <UserIcon size={16} /> Profile
+              </div>
+            </Button>
+          </a>
+          <a className="w-full" href="/dashboard">
+            <Button variant="ghost" className="w-full justify-start">
+              <div className="w-full justify-start flex items-center gap-[15px]">
+                <LaptopIcon size={16} /> Dashboard
               </div>
             </Button>
           </a>

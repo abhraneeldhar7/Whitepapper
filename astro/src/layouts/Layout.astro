@@ -13,6 +13,7 @@ interface Props {
   description?: string;
   image?: string;
   seo?: PageSeoConfig | null;
+  clientUserData?: unknown | null;
   noindex?: boolean;
   showSiteNav?: boolean;
   reserveNavSpace?: boolean;
@@ -24,6 +25,7 @@ const {
   description,
   image,
   seo = null,
+  clientUserData = null,
   noindex = false,
   showSiteNav = true,
   reserveNavSpace = true,
@@ -33,6 +35,7 @@ const isDarkTheme = themeCookie === "dark";
 const pathname = Astro.url.pathname;
 const routeSeoConfig = getPageSeoConfig(pathname);
 const pageSeoConfig = seo ?? routeSeoConfig;
+const shouldBindCopyButtons = pathname === "/docs" || pathname.startsWith("/docs/") || pathname === "/blogs" || pathname.startsWith("/blogs/");
 
 const pathToTitle = (path: string) => {
   if (path === "/") return "Whitepapper";
@@ -189,66 +192,70 @@ const jsonLdItems = Array.isArray(pageSeoConfig?.jsonLd)
         }
       })();
     </script>
-    <script>
-      import { toast } from "sonner";
+    {
+      shouldBindCopyButtons ? (
+        <script>
+          import { toast } from "sonner";
 
-      (() => {
-        const BOUND_ATTR = "data-copy-bound";
+          (() => {
+            const BOUND_ATTR = "data-copy-bound";
 
-        const bindCopyButtons = () => {
-          const buttons = document.querySelectorAll("button[data-copy-button]");
+            const bindCopyButtons = () => {
+              const buttons = document.querySelectorAll("button[data-copy-button]");
 
-          for (const button of buttons) {
-            if (!(button instanceof HTMLButtonElement)) continue;
-            if (button.hasAttribute(BOUND_ATTR)) continue;
+              for (const button of buttons) {
+                if (!(button instanceof HTMLButtonElement)) continue;
+                if (button.hasAttribute(BOUND_ATTR)) continue;
 
-            const pre = button.closest("pre");
-            const codeEl = pre?.querySelector("code");
-            if (!codeEl) continue;
+                const pre = button.closest("pre");
+                const codeEl = pre?.querySelector("code");
+                if (!codeEl) continue;
 
-            button.setAttribute(BOUND_ATTR, "true");
-            button.addEventListener("click", async () => {
-              const text = codeEl.textContent ?? "";
-              if (!text.trim()) return;
+                button.setAttribute(BOUND_ATTR, "true");
+                button.addEventListener("click", async () => {
+                  const text = codeEl.textContent ?? "";
+                  if (!text.trim()) return;
 
-              try {
-                await navigator.clipboard.writeText(text);
-                toast.success("Copied");
-              } catch {
-                // Clipboard may be blocked in some contexts.
+                  try {
+                    await navigator.clipboard.writeText(text);
+                    toast.success("Copied");
+                  } catch {
+                    // Clipboard may be blocked in some contexts.
+                  }
+                });
               }
-            });
-          }
-        };
+            };
 
-        if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", () => bindCopyButtons());
-        } else {
-          bindCopyButtons();
-        }
-
-        const observer = new MutationObserver((mutations) => {
-          for (const mutation of mutations) {
-            for (const node of mutation.addedNodes) {
-              if (!(node instanceof HTMLElement)) continue;
+            if (document.readyState === "loading") {
+              document.addEventListener("DOMContentLoaded", () => bindCopyButtons());
+            } else {
               bindCopyButtons();
             }
-          }
-        });
 
-        observer.observe(document.documentElement, {
-          childList: true,
-          subtree: true,
-        });
-      })();
-    </script>
+            const observer = new MutationObserver((mutations) => {
+              for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                  if (!(node instanceof HTMLElement)) continue;
+                  bindCopyButtons();
+                }
+              }
+            });
+
+            observer.observe(document.documentElement, {
+              childList: true,
+              subtree: true,
+            });
+          })();
+        </script>
+      ) : null
+    }
   </head>
   <body>
-    {showSiteNav && <SiteTopNav />}
+    {showSiteNav && <SiteTopNav clientUserData={clientUserData} />}
     {showSiteNav && reserveNavSpace && <div class="h-[58px] w-full"></div>}
     <slot />
     {!hideFooter && <Footer />}
-    <Toaster client:load   />
+    <Toaster client:idle  />
   </body>
 </html>
 

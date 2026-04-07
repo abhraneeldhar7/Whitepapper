@@ -2,6 +2,8 @@ import { MenuIcon } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "../ui/button";
+import UserPopover from "../pre_made_components/user_popover/userPopover";
+import type { UserDoc } from "@/lib/types";
 
 type NavButton = {
   title: string;
@@ -10,9 +12,10 @@ type NavButton = {
 
 type LandingMobileMenuProps = {
   navButtons: NavButton[];
+  clientUserData?: UserDoc | null;
 };
 
-export default function LandingMobileMenu({ navButtons }: LandingMobileMenuProps) {
+export default function LandingMobileMenu({ navButtons, clientUserData }: LandingMobileMenuProps) {
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -24,23 +27,30 @@ export default function LandingMobileMenu({ navButtons }: LandingMobileMenuProps
 
       <SheetContent
         side="right"
-        className="z-50 h-full data-[side=right]:w-full border-none bg-background sm:max-w-none"
+        className="z-50 h-full data-[side=right]:w-full border-none bg-background sm:max-w-none p-5"
       >
         <SheetHeader className="items-start p-0 text-left">
-          <div className="flex items-center gap-2 text-[18px] leading-[1em]">
+          <div className="flex items-center gap-3 text-[18px] leading-[1em]">
             <img src="/appLogo.png" height="30" width="30" alt="Whitepapper" />
-            <SheetTitle className="text-background">Whitepapper</SheetTitle>
+            <SheetTitle className="font-[400]">Whitepapper</SheetTitle>
           </div>
         </SheetHeader>
 
-        <a
-          href="/login"
-          className="mt-7 inline-flex h-12 w-fit items-center justify-center rounded-sm bg-primary px-5 text-[17px] text-primary-foreground transition-all duration-300 hover:bg-primary/80 w-full"
-        >
-          Login
-        </a>
+        {clientUserData ?
+          <div className="flex gap-4 items-center my-3">
+            <a href="/dashboard" className="w-full">
+            <Button className="w-full" size="lg">Go to Dashboard</Button></a>
+            <div className="shrink-0">
+            <UserPopover user={clientUserData} />
+            </div>
+          </div>
+          :
+          <a href="/login" className="w-full my-3" >
+            <Button className="w-full" size="lg">Login</Button>
+          </a>
+        }
 
-        <nav className="mt-10 flex flex-col gap-2" aria-label="Mobile navigation">
+        <nav className="flex flex-col gap-2" aria-label="Mobile navigation">
           {navButtons.map((button) => (
             <a key={button.href} href={button.href} className="w-full text-[50px] font-[500]">
               {button.title}

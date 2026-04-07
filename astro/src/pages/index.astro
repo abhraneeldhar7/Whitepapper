@@ -1,6 +1,8 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { Image } from "astro:assets";
+import { createApiClient } from "@/lib/api/client";
+import { getCurrentUser } from "@/lib/api/users";
 
 import HeroDashboardLight from "@/assets/landingPage/hero_light.png";
 import MetatagsEditorLight from "@/assets/landingPage/metatags_editor_light.png";
@@ -22,14 +24,27 @@ import AudiLogo from "@/assets/logos/bullshi/audi_logo.png";
 import GoogleLogo from "@/assets/logos/bullshi/google_logo.webp";
 import OpenAILogo from "@/assets/logos/bullshi/openai_logo.png";
 import CursorLogo from "@/assets/logos/bullshi/cursor_logo.png";
+import type { UserDoc } from "@/lib/types";
 
 Astro.response.headers.set(
 	"Cache-Control",
-	"public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+	"public, max-age=600, s-maxage=3600, stale-while-revalidate=86400",
 );
+
+const { getToken } = Astro.locals.auth();
+let clientUserData: UserDoc | null = null;
+try {
+	const token = await getToken();
+	if (token) {
+		const serverClient = createApiClient(token);
+		clientUserData = await getCurrentUser(serverClient).catch(() => null);
+	}
+} catch {
+	clientUserData = null;
+}
 ---
 
-<Layout reserveNavSpace={false}>
+<Layout reserveNavSpace={false} clientUserData={clientUserData}>
 	<main class="relative mb-20 overflow-hidden" aria-label="Whitepapper home">
 		<div class="mx-auto w-full">
 			<div
@@ -86,9 +101,7 @@ Astro.response.headers.set(
 							alt="Green pattern background"
 							class="absolute left-0 top-0 z-[-1] h-full w-full"
 							loading="eager"
-							quality={70}
-							decoding="sync"
-							fetchpriority="high"
+							quality={60}
 						/>
 						<Image
 							src={HeroDashboardLight}
@@ -123,6 +136,7 @@ Astro.response.headers.set(
 
 			<section
 				class="mt-[20px] mb-[70px] flex flex-col items-center gap-6"
+				style="content-visibility:auto; contain-intrinsic-size: 360px;"
 				aria-labelledby="home-trusted-logos"
 			>
 				<h2 class="text-[19px] text-muted-foreground">
@@ -173,6 +187,7 @@ Astro.response.headers.set(
 
 			<section
 				class="mt-20 mx-auto flex w-full max-w-[1500px] flex-col gap-15 md:gap-40 px-5 md:px-15"
+				style="content-visibility:auto; contain-intrinsic-size: 1800px;"
 				aria-label="Product highlights"
 			>
 				<div
