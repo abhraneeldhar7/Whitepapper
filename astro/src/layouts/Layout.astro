@@ -1,9 +1,10 @@
 ---
 import Footer from "@/components/footer.astro";
 import SiteTopNav from "@/components/site/SiteTopNav.astro";
-import { getPageSeoConfig } from "@/metadata/pages";
+import { getPageSeoConfig, type PageSeoConfig } from "@/metadata/pages";
 import ogImageAsset from "@/assets/ogImage.png";
 import { Toaster } from "@/components/ui/sonner";
+import { ClientRouter } from "astro:transitions";
 import "../styles/global.css";
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
   title?: string;
   description?: string;
   image?: string;
+  seo?: PageSeoConfig | null;
   noindex?: boolean;
   showSiteNav?: boolean;
   reserveNavSpace?: boolean;
@@ -21,6 +23,7 @@ const {
   title,
   description,
   image,
+  seo = null,
   noindex = false,
   showSiteNav = true,
   reserveNavSpace = true,
@@ -28,7 +31,8 @@ const {
 const themeCookie = Astro.cookies.get("theme")?.value ?? null;
 const isDarkTheme = themeCookie === "dark";
 const pathname = Astro.url.pathname;
-const pageSeoConfig = getPageSeoConfig(pathname);
+const routeSeoConfig = getPageSeoConfig(pathname);
+const pageSeoConfig = seo ?? routeSeoConfig;
 
 const pathToTitle = (path: string) => {
   if (path === "/") return "Whitepapper";
@@ -161,6 +165,7 @@ const jsonLdItems = Array.isArray(pageSeoConfig?.jsonLd)
       ))
     }
     <slot name="head" />
+    <ClientRouter />
     <script is:inline>
       (() => {
         try {

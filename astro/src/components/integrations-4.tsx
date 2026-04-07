@@ -7,7 +7,6 @@ import RedditLogo from '@/assets/logos/redditLogo.jpeg'
 import DevtoLogo from '@/assets/logos/devto.webp'
 import HashnodeLogo from '@/assets/logos/hashnodeLogo.png'
 
-
 export default function IntegrationsSection({ hideText = false }: { hideText?: boolean }) {
     return (
         <section>
@@ -16,13 +15,13 @@ export default function IntegrationsSection({ hideText = false }: { hideText?: b
                     <div className="relative mx-auto flex max-w-sm items-center justify-between">
                         <div className="space-y-6">
                             <IntegrationCard position="left-top">
-                                <img src={LinkedInLogo.src} alt="LinkedIn" className="size-6 object-cover rounded-[4px]" />
+                                <img src={LinkedInLogo.src} alt="LinkedIn" className="size-6 object-cover rounded-[4px]" loading="lazy" />
                             </IntegrationCard>
                             <IntegrationCard position="left-middle">
-                                <img src={XLogo.src} alt="X" className="size-6 object-cover rounded-[4px]" />
+                                <img src={XLogo.src} alt="X" className="size-6 object-cover rounded-[4px]" loading="lazy" />
                             </IntegrationCard>
                             <IntegrationCard position="left-bottom">
-                                <img src={MediumLogo.src} alt="Medium" className="size-6 object-cover rounded-[4px]" />
+                                <img src={MediumLogo.src} alt="Medium" className="size-6 object-cover rounded-[4px]" loading="lazy" />
                             </IntegrationCard>
                         </div>
                         <div className="mx-auto my-2 flex w-fit justify-center gap-2">
@@ -30,31 +29,32 @@ export default function IntegrationsSection({ hideText = false }: { hideText?: b
                                 <IntegrationCard
                                     className="shadow-black-950/10 dark:bg-background size-16 border-black/25 shadow-xl dark:border-white/25 dark:shadow-white/10"
                                     isCenter={true}>
-                                    <img src="/appLogo.png" alt="Whitepapper" className="size-8 object-contain" />
+                                    <img src="/appLogo.png" alt="Whitepapper" className="size-8 object-contain" loading="lazy" />
                                 </IntegrationCard>
                             </div>
                         </div>
                         <div
                             role="presentation"
-                            className="absolute inset-1/3 bg-[radial-gradient(var(--dots-color)_1px,transparent_1px)] opacity-50 [--dots-color:black] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] dark:[--dots-color:white]"></div>
+                            className="absolute inset-1/3 bg-[radial-gradient(var(--dots-color)_1px,transparent_1px)] opacity-50 [--dots-color:black] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] dark:[--dots-color:white]"
+                        ></div>
 
                         <div className="space-y-6">
                             <IntegrationCard position="right-top">
-                                <img src={RedditLogo.src} alt="Reddit" className="size-6 object-cover rounded-[4px]" />
+                                <img src={RedditLogo.src} alt="Reddit" className="size-6 object-cover rounded-[4px]" loading="lazy" />
                             </IntegrationCard>
                             <IntegrationCard position="right-middle">
-                                <img src={DevtoLogo.src} alt="Dev.to" className="size-6 object-cover rounded-[4px]" />
+                                <img src={DevtoLogo.src} alt="Dev.to" className="size-6 object-cover rounded-[4px]" loading="lazy" />
                             </IntegrationCard>
                             <IntegrationCard position="right-bottom">
-                                <img src={HashnodeLogo.src} alt="Hashnode" className="size-6 object-cover rounded-[4px]" />
+                                <img src={HashnodeLogo.src} alt="Hashnode" className="size-6 object-cover rounded-[4px]" loading="lazy" />
                             </IntegrationCard>
                         </div>
                     </div>
                     {!hideText &&
                         <div className="mx-auto mt-12 max-w-lg space-y-6 text-center">
                             <h2 className="text-balance text-3xl font-semibold md:text-4xl">Write once, distribute everywhere</h2>
-                            <p className="text-muted-foreground">One source, every platform you write on.<br/>
-                            Write it. Ship it. Own it.
+                            <p className="text-muted-foreground">One source, every platform you write on.<br />
+                                Write it. Ship it. Own it.
                             </p>
 
                             <Button

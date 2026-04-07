@@ -5,6 +5,7 @@ import { getPublicProfile } from "@/lib/api/public";
 import styles from "@/components/profile.module.css";
 import { isReservedUsername } from "@/lib/reservedPaths";
 import { excerpt, fallbackDescription, resolveSiteUrl } from "@/lib/seo";
+import { buildProfileSeo } from "@/metadata/dynamic";
 
 const routeHandle = Astro.params.handle as string;
 const rawHandle = routeHandle.trim();
@@ -48,47 +49,17 @@ const seoDescription = excerpt(
 );
 const canonical = `${siteUrl}/${handle}`;
 const avatarUrl = String(userData.user.avatarUrl || "").trim() || `${siteUrl}/appLogo.png`;
-const profileJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "ProfilePage",
-  name: `${displayName} | Whitepapper`,
+const seo = buildProfileSeo({
+  handle,
+  displayName,
   description: seoDescription,
-  url: canonical,
-  mainEntity: {
-    "@type": "Person",
-    name: displayName,
-    alternateName: userData.user.username || handle,
-    url: canonical,
-    description: seoDescription,
-    image: avatarUrl,
-    sameAs: [canonical],
-  },
-};
+  canonical,
+  avatarUrl,
+  username: userData.user.username,
+});
 ---
 
-<Layout
-  showSiteNav={false}
-  title={`${displayName} | Whitepapper`}
-  description={seoDescription}
->
-  <Fragment slot="head">
-    <meta name="robots" content="index,follow" />
-    <link rel="canonical" href={canonical} />
-    <meta property="og:type" content="profile" />
-    <meta property="og:title" content={`${displayName} | Whitepapper`} />
-    <meta property="og:description" content={seoDescription} />
-    <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={avatarUrl} />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content={`${displayName} | Whitepapper`} />
-    <meta name="twitter:description" content={seoDescription} />
-    <meta name="twitter:image" content={avatarUrl} />
-    <script
-      is:inline
-      type="application/ld+json"
-      set:html={JSON.stringify(profileJsonLd)}
-    />
-  </Fragment>
+<Layout showSiteNav={false} seo={seo}>
   <div class="min-h-screen w-full mx-auto max-w-[600px] px-[15px] py-10">
     <div class="flex gap-5 items-end">
       <div class="flex-1 h-full w-full">

@@ -7,7 +7,7 @@ import MetatagsEditorLight from "@/assets/landingPage/metatags_editor_light.png"
 import BlueBgPattern from "@/assets/landingPage/blueBgPattern.jpg";
 import LandingArticleList from "@/components/landing/LandingArticleList.astro";
 
-import IntegrationsSection from "@/components/integrations-4";
+import IntegrationsSection from "@/components/integrations-4.astro";
 
 import BlogsPageImg from "@/assets/landingPage/blogsPage.png";
 
@@ -29,11 +29,7 @@ Astro.response.headers.set(
 );
 ---
 
-<Layout
-	title="Whitepapper"
-	description="SEO-first content engine to create, optimize, and distribute content with fast delivery and integration workflows."
-	reserveNavSpace={false}
->
+<Layout reserveNavSpace={false}>
 	<main class="relative mb-20 overflow-hidden" aria-label="Whitepapper home">
 		<div class="mx-auto w-full">
 			<div
@@ -82,22 +78,25 @@ Astro.response.headers.set(
 			</div> -->
 
 					<div
-						class="heroText mt-8 md:mt-15 relative p-3 md:p-10 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
+						class="heroText mt-8 relative p-3 md:p-12 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
 						style="animation-delay: 0.3s; animation-duration: 0.8s;"
 					>
 						<Image
 							src={BlueBgPattern}
 							alt="Green pattern background"
 							class="absolute left-0 top-0 z-[-1] h-full w-full"
-							loading="lazy"
-							decoding="async"
+							loading="eager"
+							quality={70}
+							decoding="sync"
+							fetchpriority="high"
 						/>
 						<Image
 							src={HeroDashboardLight}
 							alt="Whitepapper dashboard preview"
 							class="h-fit w-full rounded-[10px] border"
 							loading="eager"
-							decoding="async"
+							fetchpriority="high"
+							decoding="sync"
 						/>
 					</div>
 				</div>
@@ -181,19 +180,20 @@ Astro.response.headers.set(
 				>
 					<div class="flex-1">
 						<div
-							class="relative h-full w-full overflow-hidden rounded-[18px] md:rounded-[30px] p-3 md:p-8"
+							class="relative h-full w-full overflow-hidden rounded-[18px] md:rounded-[36px] p-3 md:p-8"
 						>
 							<Image
 								src={BlueBgPattern}
 								alt="Green pattern background"
 								class="absolute left-0 top-0 z-[-1] h-full w-full"
 								loading="lazy"
+								quality={70}
 								decoding="async"
 							/>
 							<Image
 								src={MetatagsEditorLight}
 								alt="Editor preview"
-								class="h-full w-full object-cover rounded-[8px] md:rounded-[15px]"
+								class="h-full w-full object-cover rounded-[8px] md:rounded-[12px]"
 								loading="lazy"
 								decoding="async"
 							/>
@@ -226,7 +226,7 @@ Astro.response.headers.set(
 						</div>
 						<LandingArticleList
 							items={featuredArticles}
-							className="mt-65 hidden md:block"
+							className="mt-50 hidden md:block"
 						/>
 					</div>
 				</div>
@@ -287,6 +287,7 @@ Astro.response.headers.set(
 							alt="Green pattern background"
 							class="absolute left-0 top-0 z-[-1] h-full w-full"
 							loading="lazy"
+							quality={70}
 							decoding="async"
 						/>
 						<Image

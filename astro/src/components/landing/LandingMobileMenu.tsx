@@ -24,7 +24,7 @@ export default function LandingMobileMenu({ navButtons }: LandingMobileMenuProps
 
       <SheetContent
         side="right"
-        className="z-50 h-full data-[side=right]:w-full border-none bg-foreground/70 p-4 text-background backdrop-blur-[7px] sm:max-w-none"
+        className="z-50 h-full data-[side=right]:w-full border-none bg-background sm:max-w-none"
       >
         <SheetHeader className="items-start p-0 text-left">
           <div className="flex items-center gap-2 text-[18px] leading-[1em]">

@@ -7,6 +7,7 @@ import { getCurrentUser } from '@/lib/api/users';
 import { formatFirestoreDate } from '@/lib/utils';
 import { isReservedUsername } from '@/lib/reservedPaths';
 import { excerpt, fallbackDescription, resolveSiteUrl } from '@/lib/seo';
+import { buildProjectSeo } from '@/metadata/dynamic';
 
 const { handle: routeHandle, projectSlug } = Astro.params;
 const rawHandle = (routeHandle as string).trim();
@@ -38,34 +39,20 @@ if (!data?.project) {
 const owner = data.user ?? null;
 const projectCreatedDate = data.project.createdAt ? formatFirestoreDate(data.project.createdAt) : null;
 const siteUrl = resolveSiteUrl(import.meta.env.PUBLIC_SITE_URL, Astro.url.origin);
-const canonical = `${siteUrl}/${handle}/p/${data.project.slug}`;
 const ownerName = (owner?.displayName || owner?.username || handle).trim();
 const description = excerpt(
   fallbackDescription(data.project.description, `${data.project.name} project page on Whitepapper.`),
 );
 const logoUrl = String(data.project.logoUrl || '').trim() || `${siteUrl}/appLogo.png`;
-const standalonePapers = (data.papers ?? []).filter((paper) => !paper.collectionId);
-const collectionPageJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "CollectionPage",
-  name: data.project.name,
+const seo = buildProjectSeo({
+  siteUrl,
+  handle,
+  ownerName,
   description,
-  url: canonical,
-  creator: {
-    "@type": "Person",
-    name: ownerName,
-    url: `${siteUrl}/${handle}`,
-  },
-  image: logoUrl,
-  dateCreated: data.project.createdAt,
-  dateModified: data.project.updatedAt,
-  hasPart: standalonePapers.slice(0, 20).map((paper) => ({
-    "@type": "Article",
-    headline: paper.title,
-    url: `${siteUrl}/${handle}/${paper.slug}`,
-    dateModified: paper.updatedAt,
-  })),
-};
+  project: data.project,
+  papers: data.papers ?? [],
+  logoUrl,
+});
 
 const { userId, getToken } = Astro.locals.auth();
 
@@ -80,29 +67,7 @@ if (userId) {
 }
 ---
 
-<Layout
-  showSiteNav={false}
-  title={`${data.project.name} | ${ownerName} | Whitepapper`}
-  description={description}
->
-  <Fragment slot="head">
-    <meta name="robots" content="index,follow" />
-    <link rel="canonical" href={canonical} />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content={`${data.project.name} | Whitepapper`} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={logoUrl} />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={`${data.project.name} | Whitepapper`} />
-    <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={logoUrl} />
-    <script
-      is:inline
-      type="application/ld+json"
-      set:html={JSON.stringify(collectionPageJsonLd)}
-    />
-  </Fragment>
+<Layout showSiteNav={false} seo={seo}>
   <section class="sr-only" aria-label="Project paper links">
     {
       (data.collectionPapers ?? []).flatMap((entry) =>
