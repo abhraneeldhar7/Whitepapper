@@ -13,7 +13,6 @@ interface Props {
   description?: string;
   image?: string;
   seo?: PageSeoConfig | null;
-  clientUserData?: unknown | null;
   noindex?: boolean;
   showSiteNav?: boolean;
   reserveNavSpace?: boolean;
@@ -25,7 +24,6 @@ const {
   description,
   image,
   seo = null,
-  clientUserData = null,
   noindex = false,
   showSiteNav = true,
   reserveNavSpace = true,
@@ -33,6 +31,9 @@ const {
 const themeCookie = Astro.cookies.get("theme")?.value ?? null;
 const isDarkTheme = themeCookie === "dark";
 const pathname = Astro.url.pathname;
+const { getToken } = Astro.locals.auth();
+const token = await getToken().catch(() => null);
+const isSignedIn = Boolean(token);
 const routeSeoConfig = getPageSeoConfig(pathname);
 const pageSeoConfig = seo ?? routeSeoConfig;
 const shouldBindCopyButtons = pathname === "/docs" || pathname.startsWith("/docs/") || pathname === "/blogs" || pathname.startsWith("/blogs/");
@@ -251,7 +252,7 @@ const jsonLdItems = Array.isArray(pageSeoConfig?.jsonLd)
     }
   </head>
   <body>
-    {showSiteNav && <SiteTopNav clientUserData={clientUserData} />}
+    {showSiteNav && <SiteTopNav isSignedIn={isSignedIn} />}
     {showSiteNav && reserveNavSpace && <div class="h-[58px] w-full"></div>}
     <slot />
     {!hideFooter && <Footer />}

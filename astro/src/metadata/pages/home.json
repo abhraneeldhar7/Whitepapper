@@ -1,6 +1,6 @@
 {
   "path": "/",
-  "title": "Home",
+  "title": "Whitepapper",
   "description": "Whitepapper is a markdown-first CMS for developers to write once, publish to Dev.to, Hashnode, and Medium, and serve content through a fast read API.",
   "canonical": "/",
   "image": "/appLogo.png",
@@ -16,9 +16,9 @@
   "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Whitepapper | SEO-First CMS engine",
   "twitterCard": "summary_large_image",
-  "twitterTitle": "Home",
+  "twitterTitle": "Whitepapper",
   "twitterDescription": "Whitepapper is a markdown-first CMS for developers to write once, publish to Dev.to, Hashnode, and Medium, and serve content through a fast read API.",
-  "twitterImage": "/appLogo.png",
+  "twitterImage": "src/assets/orgImage.png",
   "twitterImageAlt": "Whitepapper | SEO-First Content OS for Developers social preview",
   "jsonLd": [
     {

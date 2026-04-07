@@ -2,8 +2,6 @@ import { MenuIcon } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "../ui/button";
-import UserPopover from "../pre_made_components/user_popover/userPopover";
-import type { UserDoc } from "@/lib/types";
 
 type NavButton = {
   title: string;
@@ -12,10 +10,10 @@ type NavButton = {
 
 type LandingMobileMenuProps = {
   navButtons: NavButton[];
-  clientUserData?: UserDoc | null;
+  isSignedIn?: boolean;
 };
 
-export default function LandingMobileMenu({ navButtons, clientUserData }: LandingMobileMenuProps) {
+export default function LandingMobileMenu({ navButtons, isSignedIn = false }: LandingMobileMenuProps) {
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -36,14 +34,10 @@ export default function LandingMobileMenu({ navButtons, clientUserData }: Landin
           </div>
         </SheetHeader>
 
-        {clientUserData ?
-          <div className="flex gap-4 items-center my-3">
-            <a href="/dashboard" className="w-full">
-            <Button className="w-full" size="lg">Go to Dashboard</Button></a>
-            <div className="shrink-0">
-            <UserPopover user={clientUserData} />
-            </div>
-          </div>
+        {isSignedIn ?
+          <a href="/dashboard" className="w-full my-3" >
+            <Button className="w-full" size="lg">Go to Dashboard</Button>
+          </a>
           :
           <a href="/login" className="w-full my-3" >
             <Button className="w-full" size="lg">Login</Button>

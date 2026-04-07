@@ -2,13 +2,12 @@
 import LandingMobileMenu from "@/components/landing/LandingMobileMenu";
 import { ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { UserDoc } from "@/lib/types";
 
 interface Props {
-  clientUserData?: UserDoc | null;
+  isSignedIn?: boolean;
 }
 
-const { clientUserData = null } = Astro.props as Props;
+const { isSignedIn = false } = Astro.props as Props;
 
 const navButtonsList = [
   { title: "Docs", href: "/docs" },
@@ -48,7 +47,7 @@ const navButtonsList = [
 
     <div class="flex gap-4">
       {
-        clientUserData ? (
+        isSignedIn ? (
           <a href="/dashboard" data-astro-prefetch="viewport">
             <Button> Dashboard </Button>
           </a>
@@ -63,7 +62,7 @@ const navButtonsList = [
         <LandingMobileMenu
           client:idle
           navButtons={navButtonsList}
-          clientUserData={clientUserData}
+          isSignedIn={isSignedIn}
         />
       </div>
     </div>

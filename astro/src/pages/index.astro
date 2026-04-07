@@ -1,8 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { Image } from "astro:assets";
-import { createApiClient } from "@/lib/api/client";
-import { getCurrentUser } from "@/lib/api/users";
 
 import HeroDashboardLight from "@/assets/landingPage/hero_light.png";
 import MetatagsEditorLight from "@/assets/landingPage/metatags_editor_light.png";
@@ -24,27 +22,14 @@ import AudiLogo from "@/assets/logos/bullshi/audi_logo.png";
 import GoogleLogo from "@/assets/logos/bullshi/google_logo.webp";
 import OpenAILogo from "@/assets/logos/bullshi/openai_logo.png";
 import CursorLogo from "@/assets/logos/bullshi/cursor_logo.png";
-import type { UserDoc } from "@/lib/types";
 
 Astro.response.headers.set(
 	"Cache-Control",
 	"public, max-age=600, s-maxage=3600, stale-while-revalidate=86400",
 );
-
-const { getToken } = Astro.locals.auth();
-let clientUserData: UserDoc | null = null;
-try {
-	const token = await getToken();
-	if (token) {
-		const serverClient = createApiClient(token);
-		clientUserData = await getCurrentUser(serverClient).catch(() => null);
-	}
-} catch {
-	clientUserData = null;
-}
 ---
 
-<Layout reserveNavSpace={false} clientUserData={clientUserData}>
+<Layout reserveNavSpace={false}>
 	<main class="relative mb-20 overflow-hidden" aria-label="Whitepapper home">
 		<div class="mx-auto w-full">
 			<div
