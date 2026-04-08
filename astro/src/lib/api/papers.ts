@@ -1,5 +1,6 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
 import { countImagesInContent, MAX_IMAGES_PER_PAPER, MAX_PAPER_BODY_LENGTH } from "@/lib/limits";
+import { sortPapersLatestFirst } from "@/lib/paperSort";
 import type { PaperCreateResponse, PaperDoc, PaperMetadata } from "@/lib/types";
 
 type CreatePaperInput = {
@@ -22,20 +23,31 @@ type UpdatePaperInput = {
 export async function listStandalonePapers(
   client: ApiClient = apiClient,
 ): Promise<PaperDoc[]> {
-  return client.get<PaperDoc[]>("/papers", { query: { standalone: true } });
+  const papers = await client.get<PaperDoc[]>("/papers", { query: { standalone: true } });
+  return sortPapersLatestFirst(papers || []);
 }
 
 export async function listOwnedPapers(
   client: ApiClient = apiClient,
 ): Promise<PaperDoc[]> {
-  return client.get<PaperDoc[]>("/papers");
+  const papers = await client.get<PaperDoc[]>("/papers");
+  return sortPapersLatestFirst(papers || []);
 }
 
 export async function listProjectPapers(
   projectId: string,
   client: ApiClient = apiClient,
 ): Promise<PaperDoc[]> {
-  return client.get<PaperDoc[]>("/papers", { query: { projectId } });
+  const papers = await client.get<PaperDoc[]>("/papers", { query: { projectId } });
+  return sortPapersLatestFirst(papers || []);
+}
+
+export async function listCollectionPapers(
+  collectionId: string,
+  client: ApiClient = apiClient,
+): Promise<PaperDoc[]> {
+  const papers = await client.get<PaperDoc[]>(`/collections/${collectionId}/papers`);
+  return sortPapersLatestFirst(papers || []);
 }
 
 export async function getPaper(

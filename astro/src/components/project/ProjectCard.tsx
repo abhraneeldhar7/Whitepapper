@@ -15,7 +15,7 @@ export default function ProjectCard({
 }: ProjectCardProps) {
     return (
         <div className="flex flex-col items-center">
-            <a href={href}>
+            <a href={href} data-astro-prefetch="viewport">
                 <div className="relative inline-flex">
                     <FolderNotes />
 

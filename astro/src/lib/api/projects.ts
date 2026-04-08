@@ -1,5 +1,6 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
 import { MAX_DESCRIPTION_LENGTH } from "@/lib/limits";
+import { sortPapersLatestFirst } from "@/lib/paperSort";
 import type { ProjectDoc, PaperDoc, CollectionDoc } from "@/lib/types";
 
 type CreateProjectInput = {
@@ -108,5 +109,9 @@ export async function getProjectDashboardData(
   projectId: string,
   client: ApiClient = apiClient,
 ): Promise<ProjectDashboardData> {
-  return client.get<ProjectDashboardData>(`/projects/${projectId}/dashboard`);
+  const data = await client.get<ProjectDashboardData>(`/projects/${projectId}/dashboard`);
+  return {
+    ...data,
+    papers: sortPapersLatestFirst(data.papers || []),
+  };
 }

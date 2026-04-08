@@ -1,8 +1,5 @@
 .g-md-editor-component {
-    color: var(--foreground);
     --g-color-text-primary: var(--foreground);
-    font-family: var(--font-satoshi, var(--font-sans));
-    word-break: break-word;
 }
 
 /* Let editor grow with content instead of creating an internal scroll viewport. */

@@ -1,11 +1,23 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.services.auth_service import get_verified_id
-from app.schemas.entities import CollectionCreate, CollectionDoc, CollectionUpdate, CollectionVisibilityToggle
+from app.schemas.entities import CollectionCreate, CollectionDoc, CollectionUpdate, CollectionVisibilityToggle, PaperDoc
 from app.services.collections_service import collections_service
+from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
 
 router = APIRouter(tags=["collections"])
+
+
+def _to_timestamp(value: object) -> float:
+    if not value:
+        return 0.0
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
+    except Exception:
+        return 0.0
 
 
 @router.get("/collections", response_model=list[CollectionDoc])
@@ -28,6 +40,25 @@ def get_collection(
     if collection.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
     return collection
+
+
+@router.get("/collections/{collection_id}/papers", response_model=list[PaperDoc])
+def list_collection_papers(
+    collection_id: str,
+    user_id: str = Depends(get_verified_id),
+) -> list[PaperDoc]:
+    collection = collections_service.get_by_id(collection_id)
+    if collection.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    papers = papers_service.list_by_collection_id(collection_id)
+    papers.sort(
+        key=lambda paper: (
+            _to_timestamp(paper.get("updatedAt")),
+            _to_timestamp(paper.get("createdAt")),
+        ),
+        reverse=True,
+    )
+    return papers
 
 
 @router.get("/collections/slug/available")

@@ -417,7 +417,7 @@ class PapersService:
             if existing:
                 raise HTTPException(status_code=409, detail="Paper slug already exists.")
         else:
-            payload["slug"] = f"paper-{paper_id}"
+            payload["slug"] = f"init-paper-{paper_id[:8]}"
 
         payload[PAPER_OWNER_KEY] = owner_id
         payload[PAPER_ID_KEY] = paper_id

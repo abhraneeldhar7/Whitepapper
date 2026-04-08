@@ -10,6 +10,7 @@ import { getDevCollection, getDevPaper, getDevProject } from "@/lib/api/dev";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
 const DEV_API_BASE_URL = `${String(import.meta.env.PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "")}/dev`;
+const API_KEY_FALLBACK = "wp_live_your_project_key";
 
 type IdentifierType = "id" | "slug";
 type Language = "typescript" | "python";
@@ -72,7 +73,7 @@ const ENDPOINTS: EndpointConfig[] = [
         path: "/project",
         description: "Get project details, public collections, and published standalone papers",
         variables: [
-            { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "your-api-key" },
+            { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "wp_live_your_project_key" },
         ],
         sampleVariables: {
             apiKey: "wp_live_your_project_key",
@@ -113,7 +114,7 @@ print(data)`,
             { value: "slug", label: "By Slug" },
         ],
         variables: [
-            { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "your-api-key" },
+            { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "wp_live_your_project_key" },
             { name: "identifier", label: "Collection ID", type: "text", required: true, placeholder: "collection-id" },
         ],
         sampleVariables: {
@@ -154,7 +155,7 @@ print(data)`,
             { value: "slug", label: "By Slug" },
         ],
         variables: [
-            { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "your-api-key" },
+            { name: "apiKey", label: "API Key", type: "text", required: true, placeholder: "wp_live_your_project_key" },
             { name: "identifier", label: "Paper ID", type: "text", required: true, placeholder: "paper-id" },
         ],
         sampleVariables: {
@@ -192,10 +193,9 @@ const replaceCodePlaceholders = (code: string, variables: Record<string, string>
 
     updatedCode = updatedCode.replace(/__DEV_API_BASE_URL__/g, DEV_API_BASE_URL);
 
-    // Replace API_KEY placeholder
-    if (variables.apiKey) {
-        updatedCode = updatedCode.replace(/API_KEY/g, `"${variables.apiKey}"`);
-    }
+    // Replace API_KEY placeholder (fallback when empty input)
+    const apiKeyValue = (variables.apiKey || "").trim().length === 0 ? API_KEY_FALLBACK : variables.apiKey;
+    updatedCode = updatedCode.replace(/API_KEY/g, `"${apiKeyValue}"`);
 
     // Replace identifier placeholder based on type
     if (identifierType && (endpointId === "collection" || endpointId === "paper")) {

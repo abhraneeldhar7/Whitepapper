@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { copyToClipboardWithToast } from "@/lib/utils";
+import { sortPapersLatestFirst } from "@/lib/paperSort";
 import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import {
   checkCollectionSlugAvailable,
@@ -60,7 +61,8 @@ export default function CollectionWorkspace({
   isMobileUA,
 }: CollectionWorkspaceProps) {
   const [collection, setCollection] = useState<CollectionDoc | null>(initialCollection);
-  const [pages, setPages] = useState<PaperDoc[]>(initialPages);
+  const [draftCollection, setDraftCollection] = useState<CollectionDoc | null>(null);
+  const [pages, setPages] = useState<PaperDoc[]>(() => sortPapersLatestFirst(initialPages));
   const [creatingPage, setCreatingPage] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedPaper, setSelectedPaper] = useState<PaperDoc | null>(null);
@@ -69,79 +71,15 @@ export default function CollectionWorkspace({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [updatingCollectionVisibility, setUpdatingCollectionVisibility] = useState(false);
-  const [checkingSlug, setCheckingSlug] = useState(false);
-  const [isSlugAvailable, setIsSlugAvailable] = useState(true);
   const [slugCheckMessage, setSlugCheckMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setCollection(initialCollection);
-    setPages(initialPages);
+    setDraftCollection(null);
+    setPages(sortPapersLatestFirst(initialPages));
     setEditingCollection(false);
-  }, [initialCollection, initialPages]);
-
-  useEffect(() => {
-    if (!editingCollection || !collection) {
-      setCheckingSlug(false);
-      setIsSlugAvailable(true);
-      setSlugCheckMessage(null);
-      return;
-    }
-
-    const normalized = normalizeCollectionSlug(collection.slug || "");
-
-    if (!normalized) {
-      setCheckingSlug(false);
-      setIsSlugAvailable(false);
-      setSlugCheckMessage("Slug is required.");
-      return;
-    }
-
-    if (normalized.length < 2) {
-      setCheckingSlug(false);
-      setIsSlugAvailable(false);
-      setSlugCheckMessage("Slug must be at least 2 characters.");
-      return;
-    }
-
-    if (normalized === collection.slug) {
-      setCheckingSlug(false);
-      setIsSlugAvailable(true);
-      setSlugCheckMessage(null);
-      return;
-    }
-
-    let active = true;
-    setCheckingSlug(true);
     setSlugCheckMessage(null);
-
-    const timeoutId = window.setTimeout(() => {
-      void (async () => {
-        try {
-          const available = await checkCollectionSlugAvailable(normalized, collection.projectId, collection.collectionId);
-          if (!active) return;
-          setIsSlugAvailable(available);
-          if (!available) {
-            setSlugCheckMessage("Slug is already in use.");
-          } else {
-            setSlugCheckMessage(null);
-          }
-        } catch {
-          if (!active) return;
-          setIsSlugAvailable(false);
-          setSlugCheckMessage("Unable to validate slug right now.");
-        } finally {
-          if (active) {
-            setCheckingSlug(false);
-          }
-        }
-      })();
-    }, 400);
-
-    return () => {
-      active = false;
-      window.clearTimeout(timeoutId);
-    };
-  }, [editingCollection, collection?.slug, collection?.projectId, collection?.collectionId]);
+  }, [initialCollection, initialPages]);
 
   useEffect(() => {
     document.documentElement.dataset.collectionWorkspaceReady = "true";
@@ -149,6 +87,19 @@ export default function CollectionWorkspace({
       delete document.documentElement.dataset.collectionWorkspaceReady;
     };
   }, []);
+
+  function beginEditCollection() {
+    if (!collection) return;
+    setDraftCollection({ ...collection });
+    setSlugCheckMessage(null);
+    setEditingCollection(true);
+  }
+
+  function cancelEditCollection() {
+    setDraftCollection(null);
+    setSlugCheckMessage(null);
+    setEditingCollection(false);
+  }
 
   async function handleCreatePage() {
     if (!collection) return;
@@ -172,52 +123,57 @@ export default function CollectionWorkspace({
       const paper = await createPromise;
       window.location.href = `/write/${paper.paperId}`;
     } catch {
+      // toast.promise handles failure UI.
+    } finally {
       setCreatingPage(false);
     }
   }
 
   async function handleSaveCollectionDetails() {
-    if (!collection) return;
-    if (!collection.name.trim()) {
+    if (!collection || !draftCollection) return;
+    if (!draftCollection.name.trim()) {
       toast.error("Collection name cannot be empty.");
       return;
     }
 
-    if ((collection.description || "").length > MAX_DESCRIPTION_LENGTH) {
+    if ((draftCollection.description || "").length > MAX_DESCRIPTION_LENGTH) {
       toast.error(`Collection description is too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
       return;
     }
 
-    const normalizedSlug = normalizeCollectionSlug(collection.slug || "");
+    const normalizedSlug = normalizeCollectionSlug(draftCollection.slug || "");
     if (!normalizedSlug) {
+      setSlugCheckMessage("Slug is required.");
       toast.error("Collection slug cannot be empty.");
       return;
     }
     if (normalizedSlug.length < 2) {
+      setSlugCheckMessage("Slug must be at least 2 characters.");
       toast.error("Collection slug must be at least 2 characters.");
       return;
     }
 
-    if (normalizedSlug !== initialCollection.slug) {
+    if (normalizedSlug !== collection.slug) {
       try {
         const available = await checkCollectionSlugAvailable(normalizedSlug, collection.projectId, collection.collectionId);
         if (!available) {
-          setIsSlugAvailable(false);
           setSlugCheckMessage("Slug is already in use.");
           toast.error("Collection slug is already in use.");
           return;
         }
       } catch {
+        setSlugCheckMessage("Unable to validate slug right now.");
         toast.error("Unable to validate collection slug.");
         return;
       }
     }
 
+    setSlugCheckMessage(null);
     setSavingCollection(true);
     const savePromise = updateCollection(collection.collectionId, {
-      name: collection.name,
+      name: draftCollection.name.trim(),
       slug: normalizedSlug,
-      description: collection.description || null,
+      description: draftCollection.description || null,
     });
 
     toast.promise(savePromise, {
@@ -229,6 +185,7 @@ export default function CollectionWorkspace({
     try {
       const updated = await savePromise;
       setCollection(updated);
+      setDraftCollection(null);
       setSlugCheckMessage(null);
       setEditingCollection(false);
     } catch {
@@ -242,9 +199,6 @@ export default function CollectionWorkspace({
     if (!collection || updatingCollectionVisibility || collection.isPublic === nextIsPublic) {
       return;
     }
-
-    const previousIsPublic = collection.isPublic;
-    setCollection((prev) => (prev ? { ...prev, isPublic: nextIsPublic } : prev));
     setUpdatingCollectionVisibility(true);
 
     const visibilityPromise = updateCollectionVisibility(collection.collectionId, nextIsPublic);
@@ -257,8 +211,9 @@ export default function CollectionWorkspace({
     try {
       const updated = await visibilityPromise;
       setCollection(updated);
+      setDraftCollection((prev) => (prev ? { ...prev, isPublic: updated.isPublic, updatedAt: updated.updatedAt } : prev));
     } catch {
-      setCollection((prev) => (prev ? { ...prev, isPublic: previousIsPublic } : prev));
+      // toast.promise handles failure UI.
     } finally {
       setUpdatingCollectionVisibility(false);
     }
@@ -286,7 +241,10 @@ export default function CollectionWorkspace({
     return null;
   }
 
-  const collectionDescription = collection.description || "";
+  const editableCollection = editingCollection ? draftCollection : collection;
+  const collectionNameForDisplay = editableCollection?.name || collection.name;
+  const collectionSlugForDisplay = editableCollection?.slug || collection.slug;
+  const collectionDescription = editableCollection?.description || "";
 
   return (
     <div className="min-h-screen bg-background px-[15px] pt-15 pb-20">
@@ -298,7 +256,7 @@ export default function CollectionWorkspace({
       <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
         <div>
           <p className="text-sm text-muted-foreground">
-            <a href={`/dashboard/${projectId}`} className="transition-all duration-300 hover:text-foreground">{initialProjectName}</a> / {collection.name}
+            <a href={`/dashboard/${projectId}`} data-astro-prefetch="viewport" className="transition-all duration-300 hover:text-foreground">{initialProjectName}</a> / {collectionNameForDisplay}
           </p>
         </div>
 
@@ -310,11 +268,7 @@ export default function CollectionWorkspace({
                   <Button
                     
                     variant="secondary"
-                    onClick={() => {
-                      setCollection(initialCollection);
-                      setSlugCheckMessage(null);
-                      setEditingCollection(false);
-                    }}
+                    onClick={cancelEditCollection}
                     disabled={savingCollection}
                   >
                     <XIcon /> Cancel
@@ -323,13 +277,13 @@ export default function CollectionWorkspace({
                     
                     onClick={handleSaveCollectionDetails}
                     loading={savingCollection}
-                    disabled={checkingSlug || !isSlugAvailable}
+                    disabled={savingCollection}
                   >
                     <SaveIcon /> Save
                   </Button>
                 </>
               ) : (
-                <Button  onClick={() => setEditingCollection(true)}>
+                <Button  onClick={beginEditCollection}>
                   <PencilIcon /> Edit
                 </Button>
               )}
@@ -359,13 +313,17 @@ export default function CollectionWorkspace({
                   {editingCollection ? (
                     <Input
                       id="collection-name"
-                      value={collection.name}
+                      value={draftCollection?.name || ""}
                       className="mt-2 md:w-[300px]"
-                      onChange={(event) => setCollection((prev) => (prev ? { ...prev, name: event.target.value } : prev))}
+                      onChange={(event) =>
+                        setDraftCollection((prev) =>
+                          prev ? { ...prev, name: event.target.value } : prev,
+                        )
+                      }
                       maxLength={120}
                     />
                   ) : (
-                    <p className="mt-[5px]">{collection.name}</p>
+                    <p className="mt-[5px]">{collectionNameForDisplay}</p>
                   )}
                 </div>
 
@@ -374,16 +332,17 @@ export default function CollectionWorkspace({
                   {editingCollection ? (
                     <Input
                       id="collection-slug"
-                      value={collection.slug}
+                      value={draftCollection?.slug || ""}
                       className="mt-2 w-[300px]"
                       onChange={(event) => {
                         const normalized = normalizeCollectionSlug(event.target.value);
-                        setCollection((prev) => (prev ? { ...prev, slug: normalized } : prev));
+                        setSlugCheckMessage(null);
+                        setDraftCollection((prev) => (prev ? { ...prev, slug: normalized } : prev));
                       }}
                       maxLength={120}
                     />
                   ) : (
-                    <p className="mt-[5px]">/{collection.slug}</p>
+                    <p className="mt-[5px]">/{collectionSlugForDisplay}</p>
                   )}
                   {editingCollection && slugCheckMessage ? (
                     <p className="text-xs mt-2 text-destructive">
@@ -472,8 +431,12 @@ export default function CollectionWorkspace({
               <div className="mt-2">
                 {editingCollection ? (
                   <textarea
-                    value={collectionDescription}
-                    onChange={(event) => setCollection((prev) => (prev ? { ...prev, description: event.target.value } : prev))}
+                    value={draftCollection?.description || ""}
+                    onChange={(event) =>
+                      setDraftCollection((prev) =>
+                        prev ? { ...prev, description: event.target.value } : prev,
+                      )
+                    }
                     placeholder="Write your collection description..."
                     className="w-full min-h-[180px] resize-y bg-transparent p-0 text-sm outline-none"
                     maxLength={50000}

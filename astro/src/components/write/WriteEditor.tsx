@@ -75,6 +75,8 @@ type WriteEditorProps = {
 
 type UiStatus = "draft" | "public";
 const typingSoundSources = [click1Sound, click2Sound, click3Sound];
+const INIT_PAPER_SLUG_PREFIX = "init-paper-";
+const EMPATHETIC_SLUG_SUFFIXES = ["new", "updated", "fresh", "kind"] as const;
 
 function toUiStatus(value: PaperDoc["status"]): UiStatus {
   return value === "published" ? "public" : "draft";
@@ -82,6 +84,17 @@ function toUiStatus(value: PaperDoc["status"]): UiStatus {
 
 function toApiStatus(value: UiStatus): PaperDoc["status"] {
   return value === "public" ? "published" : "draft";
+}
+
+function toReadableSlug(value: string): string {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized || "untitled-paper";
 }
 
 const metadataFieldConfig: Array<{ key: keyof PaperMetadata; type: "text" | "number" | "boolean" | "list" | "image" }> = [
@@ -217,7 +230,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        if (isAssetUploading) {
+        if (isAssetUploading || saving) {
           return;
         }
         void handleSaveAction();
@@ -226,7 +239,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [pageDetails.status, title, slug, body, pageDetails.thumbnailUrl, isAssetUploading, metadata, user?.username]);
+  }, [pageDetails.status, title, slug, body, pageDetails.thumbnailUrl, isAssetUploading, saving, metadata, user?.username]);
 
   useEffect(() => {
     if (sheetOpen || statusPopoverOpen) {
@@ -308,13 +321,14 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
     updateUserPreferences({ typingSoundEnabled: checked });
   }
 
-  async function onSave(nextStatus?: UiStatus) {
+  async function onSave(nextStatus?: UiStatus, slugOverride?: string) {
     const appliedStatus = nextStatus ?? pageDetails.status;
+    const nextSlug = slugOverride ?? slug;
     setSaving(true);
     try {
       const updatePayload: Parameters<typeof updatePaper>[1] = {
         title,
-        slug,
+        slug: nextSlug,
         body,
         thumbnailUrl: pageDetails.thumbnailUrl || null,
         status: toApiStatus(appliedStatus),
@@ -346,8 +360,33 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
     return `/${user.username}/${nextSlug || slug}`;
   }
 
+  async function resolveAutoSlugForSave(): Promise<string> {
+    const currentSlug = String(slug || "").trim();
+    if (!currentSlug.startsWith(INIT_PAPER_SLUG_PREFIX)) {
+      return currentSlug;
+    }
+
+    const baseSlug = toReadableSlug(title);
+    const candidates = [
+      baseSlug,
+      ...EMPATHETIC_SLUG_SUFFIXES.map((suffix) => `${baseSlug}-${suffix}`),
+    ];
+
+    for (const candidate of candidates) {
+      const available = await checkPaperSlugAvailable(candidate, paperId);
+      if (available) {
+        setPaperDoc((prev) => ({ ...prev, slug: candidate }));
+        return candidate;
+      }
+    }
+
+    const fallback = `${baseSlug}-${paperId.slice(0, 4)}`;
+    setPaperDoc((prev) => ({ ...prev, slug: fallback }));
+    return fallback;
+  }
+
   async function handleSaveAction(nextStatus?: UiStatus) {
-    if (isAssetUploading) {
+    if (isAssetUploading || saving) {
       return;
     }
 
@@ -362,8 +401,23 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
       return;
     }
 
+    let resolvedSlug = slug;
     try {
-      const updated = await onSave(nextStatus);
+      resolvedSlug = await resolveAutoSlugForSave();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to prepare a slug right now. Please try again.");
+      return;
+    }
+
+    const savePromise = onSave(nextStatus, resolvedSlug);
+    toast.promise(savePromise, {
+      loading: "Saving...",
+      success: (updated) => (toUiStatus(updated.status) === "public" ? "Published." : "Paper saved."),
+      error: (error) => (error instanceof Error ? error.message : "Failed to save page."),
+    });
+
+    try {
+      const updated = await savePromise;
       const resolvedStatus = toUiStatus(updated.status);
       if (resolvedStatus === "public") {
         const publicUrl = resolvePublicPaperUrl(updated.slug);
@@ -382,9 +436,8 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
         }
         return;
       }
-      toast.success("Paper saved.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save page.");
+    } catch {
+      // toast.promise handles failure UI.
     }
   }
 
@@ -977,7 +1030,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                   <SheetFooter className="p-2 z-2 absolute left-0 bottom-0 w-full border-t bg-background">
                     <div className="flex justify-end">
                       <Button
-                        disabled={isAssetUploading}
+                        disabled={isAssetUploading || saving}
                         loading={saving}
                         onClick={() => { void handleSaveAction(); }}
                       >
@@ -1037,7 +1090,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
 
             <Button
               className={`${pageDetails.status === "public" ? "w-[100px]" : "w-[80px]"} transition-all duration-300`}
-              disabled={isAssetUploading}
+              disabled={isAssetUploading || saving}
               loading={saving}
               onClick={() => { void handleSaveAction(); }}
             >
@@ -1057,11 +1110,11 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
           <img
             src={tempUploadingThumbnail}
             alt="Uploading thumbnail"
-            className="w-full h-full object-contain animate-pulse"
+            className="w-full h-full object-cover animate-pulse"
           />
         ) : pageDetails.thumbnailUrl ? (
           <div>
-            <img src={pageDetails.thumbnailUrl} alt="Thumbnail" className="w-full h-full object-contain" />
+            <img src={pageDetails.thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center duration-300">
               <ImagePlusIcon size={25} className="text-white" />
             </div>
@@ -1125,7 +1178,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
             }
           }}
           placeholder="Enter page title..."
-          className="bg-transparent border-none focus:ring-0 outline-none text-[40px] md:text-[40px] font-[400] placeholder:opacity-20 resize-none border-none outline-none focus-visible:ring-0 focus:ring-0"
+          className="bg-transparent dark:bg-transparent border-none focus:ring-0 outline-none text-[40px] md:text-[40px] font-[400] placeholder:opacity-20 resize-none border-none outline-none focus-visible:ring-0 focus:ring-0"
         />
 
         {!isMobile && keyboardEffectEnabled &&

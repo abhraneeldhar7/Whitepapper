@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import { createProject } from "@/lib/api/projects";
 import { MAX_PAPERS_PER_USER, MAX_PROJECTS_PER_USER } from "@/lib/limits";
+import { sortPapersLatestFirst } from "@/lib/paperSort";
 import type { PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
 import FolderNotes from "../folderComponent";
 import EmptyPaperNotes from "../emptyPagesComp";
@@ -78,7 +79,7 @@ function writeTabToQuery(tab: DashboardTab): void {
 export default function DashboardApp({ initialProjects, initialPages, initialUser, isMobileUA }: DashboardAppProps) {
   const [activeTab, setActiveTab] = useState<DashboardTab>(readTabFromQuery);
   const [projects, setProjects] = useState<ProjectDoc[]>(initialProjects);
-  const [pages, setPages] = useState<PaperDoc[]>(initialPages);
+  const [pages, setPages] = useState<PaperDoc[]>(() => sortPapersLatestFirst(initialPages));
   const [creatingPage, setCreatingPage] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -90,7 +91,7 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
   // Sync state with props to get fresh data when navigating back
   useEffect(() => {
     setProjects(initialProjects);
-    setPages(initialPages);
+    setPages(sortPapersLatestFirst(initialPages));
   }, [initialProjects, initialPages]);
 
   useEffect(() => {

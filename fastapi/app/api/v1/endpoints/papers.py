@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 
@@ -24,17 +25,34 @@ def _extract_image_urls(content: str) -> set[str]:
     return urls
 
 
+def _to_timestamp(value: object) -> float:
+    if not value:
+        return 0.0
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
+    except Exception:
+        return 0.0
+
+
 @router.get("/papers", response_model=list[PaperDoc])
 def list_own_papers(
     user_id: str = Depends(get_verified_id),
     project_id: str | None = Query(default=None, alias="projectId"),
     standalone: bool = False,
 ) -> list[PaperDoc]:
-    return papers_service.list_owned_filtered(
+    papers = papers_service.list_owned_filtered(
         owner_id=user_id,
         project_id=project_id,
         standalone=standalone,
     )
+    papers.sort(
+        key=lambda paper: (
+            _to_timestamp(paper.get("updatedAt")),
+            _to_timestamp(paper.get("createdAt")),
+        ),
+        reverse=True,
+    )
+    return papers
 
 
 @router.post("/papers/{paper_id}/thumbnail")

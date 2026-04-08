@@ -30,6 +30,7 @@ import {
   updateProjectVisibility,
 } from "@/lib/api/projects";
 import { MAX_COLLECTIONS_PER_PROJECT, MAX_DESCRIPTION_LENGTH, MAX_PAPERS_PER_USER } from "@/lib/limits";
+import { sortPapersLatestFirst } from "@/lib/paperSort";
 import { uploadProjectEmbeddedImage, uploadProjectLogo } from "@/lib/api/uploads";
 import {
   MAX_EMBEDDED_HEIGHT,
@@ -103,7 +104,8 @@ export default function ProjectWorkspace({
 }: ProjectWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<ProjectTab>(readTabFromQuery);
   const [project, setProject] = useState<ProjectDoc>(initialProject);
-  const [pages, setPages] = useState<PaperDoc[]>(initialPages);
+  const [draftProject, setDraftProject] = useState<ProjectDoc | null>(null);
+  const [pages, setPages] = useState<PaperDoc[]>(() => sortPapersLatestFirst(initialPages));
   const [collections, setCollections] = useState<CollectionDoc[]>(initialCollections);
   const [editingProject, setEditingProject] = useState(false);
   const [savingProject, setSavingProject] = useState(false);
@@ -119,8 +121,6 @@ export default function ProjectWorkspace({
   const [newCollectionPublic, setNewCollectionPublic] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [checkingSlug, setCheckingSlug] = useState(false);
-  const [isSlugAvailable, setIsSlugAvailable] = useState(true);
   const [slugCheckMessage, setSlugCheckMessage] = useState<string | null>(null);
   const [updatingProjectVisibility, setUpdatingProjectVisibility] = useState(false);
   const [apiDoc, setApiDoc] = useState<ApiKeySummary | null>(initialApiDoc);
@@ -137,76 +137,13 @@ export default function ProjectWorkspace({
 
   useEffect(() => {
     setProject(initialProject);
-    setPages(initialPages);
+    setDraftProject(null);
+    setPages(sortPapersLatestFirst(initialPages));
     setCollections(initialCollections);
     setApiDoc(initialApiDoc);
     setEditingProject(false);
-  }, [initialProject, initialPages, initialCollections, initialApiDoc]);
-
-
-  useEffect(() => {
-    if (!editingProject) {
-      setCheckingSlug(false);
-      setIsSlugAvailable(true);
-      setSlugCheckMessage(null);
-      return;
-    }
-
-    const normalized = normalizeProjectSlug(project.slug || "");
-
-    if (!normalized) {
-      setCheckingSlug(false);
-      setIsSlugAvailable(false);
-      setSlugCheckMessage("Slug is required.");
-      return;
-    }
-
-    if (normalized.length < 2) {
-      setCheckingSlug(false);
-      setIsSlugAvailable(false);
-      setSlugCheckMessage("Slug must be at least 2 characters.");
-      return;
-    }
-
-    if (normalized === project.slug) {
-      setCheckingSlug(false);
-      setIsSlugAvailable(true);
-      setSlugCheckMessage(null);
-      return;
-    }
-
-    let active = true;
-    setCheckingSlug(true);
     setSlugCheckMessage(null);
-
-    const timeoutId = window.setTimeout(() => {
-      void (async () => {
-        try {
-          const available = await checkProjectSlugAvailable(normalized, project.projectId);
-          if (!active) return;
-          setIsSlugAvailable(available);
-          if (!available) {
-            setSlugCheckMessage("Slug is already in use.");
-          } else {
-            setSlugCheckMessage(null);
-          }
-        } catch {
-          if (!active) return;
-          setIsSlugAvailable(false);
-          setSlugCheckMessage("Unable to validate slug right now.");
-        } finally {
-          if (active) {
-            setCheckingSlug(false);
-          }
-        }
-      })();
-    }, 400);
-
-    return () => {
-      active = false;
-      window.clearTimeout(timeoutId);
-    };
-  }, [editingProject, project.slug]);
+  }, [initialProject, initialPages, initialCollections, initialApiDoc]);
 
 
   useEffect(() => {
@@ -223,48 +160,64 @@ export default function ProjectWorkspace({
     setApiKeyCopied(false);
   }, [apiKeyDialogOpen, createdApiKey]);
 
+  function beginEditProject() {
+    setDraftProject({ ...project });
+    setSlugCheckMessage(null);
+    setEditingProject(true);
+  }
+
+  function cancelEditProject() {
+    setDraftProject(null);
+    setSlugCheckMessage(null);
+    setEditingProject(false);
+  }
+
   async function handleSaveProjectDetails() {
-    if (!project.name.trim()) {
+    if (!draftProject) return;
+    if (!draftProject.name.trim()) {
       toast.error("Project name cannot be empty.");
       return;
     }
 
-    if ((project.description || "").length > MAX_DESCRIPTION_LENGTH) {
+    if ((draftProject.description || "").length > MAX_DESCRIPTION_LENGTH) {
       toast.error(`Project description is too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
       return;
     }
 
-    const normalizedSlug = normalizeProjectSlug(project.slug || "");
+    const normalizedSlug = normalizeProjectSlug(draftProject.slug || "");
     if (!normalizedSlug) {
+      setSlugCheckMessage("Slug is required.");
       toast.error("Project slug cannot be empty.");
       return;
     }
     if (normalizedSlug.length < 2) {
+      setSlugCheckMessage("Slug must be at least 2 characters.");
       toast.error("Project slug must be at least 2 characters.");
       return;
     }
 
-    if (normalizedSlug !== initialProject.slug) {
+    if (normalizedSlug !== project.slug) {
       try {
         const available = await checkProjectSlugAvailable(normalizedSlug, project.projectId);
         if (!available) {
-          setIsSlugAvailable(false);
           setSlugCheckMessage("Slug is already in use.");
           toast.error("Project slug is already in use.");
           return;
         }
       } catch {
+        setSlugCheckMessage("Unable to validate slug right now.");
         toast.error("Unable to validate project slug.");
         return;
       }
     }
 
+    setSlugCheckMessage(null);
     setSavingProject(true);
     const savePromise = updateProject(project.projectId, {
-      name: project.name,
+      name: draftProject.name.trim(),
       slug: normalizedSlug,
-      description: project.description || null,
-      logoUrl: project.logoUrl ?? null,
+      description: draftProject.description || null,
+      logoUrl: draftProject.logoUrl ?? null,
     });
     toast.promise(savePromise, {
       loading: "Saving project details...",
@@ -275,6 +228,7 @@ export default function ProjectWorkspace({
     try {
       const updated = await savePromise;
       setProject(updated);
+      setDraftProject(null);
       setSlugCheckMessage(null);
       setEditingProject(false);
     } catch {
@@ -288,9 +242,6 @@ export default function ProjectWorkspace({
     if (!project || updatingProjectVisibility || project.isPublic === nextIsPublic) {
       return;
     }
-
-    const previousIsPublic = project.isPublic;
-    setProject((prev) => ({ ...prev, isPublic: nextIsPublic }));
     setUpdatingProjectVisibility(true);
 
     const visibilityPromise = updateProjectVisibility(project.projectId, nextIsPublic);
@@ -307,8 +258,17 @@ export default function ProjectWorkspace({
         isPublic: updated.isPublic,
         updatedAt: updated.updatedAt,
       }));
+      setDraftProject((prev) =>
+        prev
+          ? {
+            ...prev,
+            isPublic: updated.isPublic,
+            updatedAt: updated.updatedAt,
+          }
+          : prev,
+      );
     } catch {
-      setProject((prev) => ({ ...prev, isPublic: previousIsPublic }));
+      // toast.promise handles failure UI.
     } finally {
       setUpdatingProjectVisibility(false);
     }
@@ -342,8 +302,13 @@ export default function ProjectWorkspace({
 
     try {
       const uploaded = await uploadPromise;
-      setProject((prev) => ({ ...prev, logoUrl: uploaded.url }));
-      setEditingProject(true);
+      if (editingProject) {
+        setDraftProject((prev) => (prev ? { ...prev, logoUrl: uploaded.url } : prev));
+      } else {
+        setDraftProject({ ...project, logoUrl: uploaded.url });
+        setSlugCheckMessage(null);
+        setEditingProject(true);
+      }
     } catch {
       // toast.promise handles failure UI.
     } finally {
@@ -409,6 +374,8 @@ export default function ProjectWorkspace({
       const paper = await createPromise;
       window.location.href = `/write/${paper.paperId}`;
     } catch {
+      // toast.promise handles failure UI.
+    } finally {
       setCreatingPage(false);
     }
   }
@@ -527,8 +494,11 @@ export default function ProjectWorkspace({
     return null;
   }
 
-  const logoPreview = tempUploadingProjectLogo || project.logoUrl || "";
-  const projectDescription = project.description || "";
+  const editableProject = editingProject ? draftProject : project;
+  const projectNameForDisplay = editableProject?.name || project.name;
+  const projectSlugForDisplay = editableProject?.slug || project.slug;
+  const projectDescription = editableProject?.description || "";
+  const logoPreview = tempUploadingProjectLogo || editableProject?.logoUrl || "";
   const projectPreviewKey = `${project.projectId}:${project.updatedAt}:${projectDescription.length}`;
 
   return (
@@ -541,7 +511,7 @@ export default function ProjectWorkspace({
       <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
         <div>
           <p className="text-sm text-muted-foreground">
-            <a href="/dashboard" className="transition-all duration-300 hover:text-foreground">Dashboard</a> / {project.name}
+            <a href="/dashboard" data-astro-prefetch="viewport" className="transition-all duration-300 hover:text-foreground">Dashboard</a> / {projectNameForDisplay}
           </p>
         </div>
 
@@ -569,11 +539,7 @@ export default function ProjectWorkspace({
                       <Button
 
                         variant="secondary"
-                        onClick={() => {
-                          setProject(initialProject);
-                          setSlugCheckMessage(null);
-                          setEditingProject(false);
-                        }}
+                        onClick={cancelEditProject}
                         disabled={savingProject || isProjectAssetUploading}
                       >
                         <XIcon /> Cancel
@@ -582,13 +548,13 @@ export default function ProjectWorkspace({
 
                         onClick={handleSaveProjectDetails}
                         loading={savingProject}
-                        disabled={isProjectAssetUploading || checkingSlug || !isSlugAvailable}
+                        disabled={isProjectAssetUploading || savingProject}
                       >
                         <SaveIcon /> Save
                       </Button>
                     </>
                   ) : (
-                    <Button onClick={() => setEditingProject(true)}>
+                    <Button onClick={beginEditProject}>
                       <PencilIcon /> Edit
                     </Button>
                   )}
@@ -615,16 +581,16 @@ export default function ProjectWorkspace({
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-[24px] font-semibold text-muted-foreground">
-                              {project.name.slice(0, 1).toUpperCase() || "P"}
+                              {projectNameForDisplay.slice(0, 1).toUpperCase() || "P"}
                             </div>
                           )}
                         </div>
-                        {editingProject && project.logoUrl ? (
+                        {editingProject && editableProject?.logoUrl ? (
                           <Button
 
                             variant="destructive"
                             className="md:w-full"
-                            onClick={() => setProject((prev) => ({ ...prev, logoUrl: null }))}
+                            onClick={() => setDraftProject((prev) => (prev ? { ...prev, logoUrl: null } : prev))}
                             disabled={uploadingProjectLogo || savingProject}
                           >
                             Remove
@@ -653,12 +619,14 @@ export default function ProjectWorkspace({
                       {editingProject ?
                         <Input
                           id="project-name"
-                          value={project.name}
+                          value={draftProject?.name || ""}
                           className="mt-2 md:w-[300px]"
-                          onChange={(event) => setProject((prev) => ({ ...prev, name: event.target.value }))}
+                          onChange={(event) =>
+                            setDraftProject((prev) => (prev ? { ...prev, name: event.target.value } : prev))
+                          }
                           maxLength={120}
                         /> :
-                        <p className="mt-[5px]">{project.name}</p>
+                        <p className="mt-[5px]">{projectNameForDisplay}</p>
                       }
                     </div>
 
@@ -667,15 +635,16 @@ export default function ProjectWorkspace({
                       {editingProject ?
                         <Input
                           id="project-slug"
-                          value={project.slug}
+                          value={draftProject?.slug || ""}
                           className="mt-2 md:w-[300px]"
                           onChange={(event) => {
                             const normalized = normalizeProjectSlug(event.target.value);
-                            setProject((prev) => ({ ...prev, slug: normalized }));
+                            setSlugCheckMessage(null);
+                            setDraftProject((prev) => (prev ? { ...prev, slug: normalized } : prev));
                           }}
                           maxLength={120}
                         /> :
-                        <p className="mt-[5px]">/{project.slug}</p>
+                        <p className="mt-[5px]">/{projectSlugForDisplay}</p>
                       }
                       {editingProject && slugCheckMessage ? (
                         <p className="text-xs mt-2 text-destructive">
@@ -750,7 +719,7 @@ export default function ProjectWorkspace({
                             <DialogHeader>
                               <DialogTitle>Delete project?</DialogTitle>
                               <DialogDescription>
-                                This will delete this project <span className="text-[15px] font-[500]">{project.name}</span> and all its pages
+                                This will delete this project <span className="text-[15px] font-[500]">{projectNameForDisplay}</span> and all its pages
                               </DialogDescription>
                             </DialogHeader>
 
@@ -779,7 +748,7 @@ export default function ProjectWorkspace({
                     {editingProject ? (
                       <TextEditor
                         initialContent={projectDescription}
-                        onChange={(content) => setProject((prev) => ({ ...prev, description: content }))}
+                        onChange={(content) => setDraftProject((prev) => (prev ? { ...prev, description: content } : prev))}
                         onImageUpload={onProjectDescriptionImageUpload}
                         placeholder="Write your project description..."
                       />

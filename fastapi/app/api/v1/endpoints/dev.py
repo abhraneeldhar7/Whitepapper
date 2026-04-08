@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Path, Query, Response
@@ -88,6 +89,26 @@ def _set_dev_cache_headers(response: Response) -> None:
     response.headers["Vary"] = "x-api-key"
 
 
+def _to_timestamp(value: object) -> float:
+    if not value:
+        return 0.0
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
+    except Exception:
+        return 0.0
+
+
+def _sort_papers_latest_first(papers: list[dict]) -> list[dict]:
+    return sorted(
+        papers,
+        key=lambda paper: (
+            _to_timestamp(paper.get("updatedAt")),
+            _to_timestamp(paper.get("createdAt")),
+        ),
+        reverse=True,
+    )
+
+
 
 @router.get("/project")
 async def get_project_bundle(
@@ -145,6 +166,7 @@ async def get_collection_bundle(
 
     _add_usage_increment(background_tasks, key_doc)
     papers = await asyncio.to_thread(papers_service.list_by_collection_id, collection.get("collectionId"), True)
+    papers = _sort_papers_latest_first(papers)
     _set_dev_cache_headers(response)
 
 

@@ -1,4 +1,5 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
+import { sortPapersLatestFirst } from "@/lib/paperSort";
 import type { UserDoc, ProjectDoc, PaperDoc } from "@/lib/types";
 
 export async function getCurrentUser(client: ApiClient = apiClient): Promise<UserDoc> {
@@ -12,7 +13,11 @@ export interface DashboardData {
 }
 
 export async function getDashboardData(client: ApiClient = apiClient): Promise<DashboardData> {
-  return client.get<DashboardData>("/users/dashboard");
+  const data = await client.get<DashboardData>("/users/dashboard");
+  return {
+    ...data,
+    papers: sortPapersLatestFirst(data.papers || []),
+  };
 }
 
 export async function updateCurrentUser(

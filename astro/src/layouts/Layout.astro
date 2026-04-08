@@ -172,6 +172,31 @@ const jsonLdItems = Array.isArray(pageSeoConfig?.jsonLd)
     <ClientRouter />
     <script is:inline>
       (() => {
+        if (window.__wpReadyFlagsHooked) {
+          return;
+        }
+        window.__wpReadyFlagsHooked = true;
+
+        const READY_FLAGS = [
+          "data-dashboard-ready",
+          "data-project-workspace-ready",
+          "data-collection-workspace-ready",
+          "data-write-editor-ready",
+        ];
+
+        const clearReadyFlags = () => {
+          const root = document.documentElement;
+          for (const flag of READY_FLAGS) {
+            root.removeAttribute(flag);
+          }
+        };
+
+        document.addEventListener("astro:before-preparation", clearReadyFlags);
+        document.addEventListener("astro:before-swap", clearReadyFlags);
+      })();
+    </script>
+    <script is:inline>
+      (() => {
         try {
           const storageKey = "theme";
           const root = document.documentElement;
