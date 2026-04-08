@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { docsPageEntries } from "@/content/docs/docsPagesStructure";
 
 function escapeXml(value: string): string {
   return value
@@ -11,17 +12,22 @@ function escapeXml(value: string): string {
 
 export const GET: APIRoute = ({ site, url }) => {
   const baseUrl = (site?.toString() || url.origin).replace(/\/+$/, "");
-  const sitemapEntries = [
-    `${baseUrl}/sitemaps/public-pages.xml`,
-    `${baseUrl}/sitemaps/docs-pages.xml`,
-    `${baseUrl}/sitemaps/public-projects.xml`,
-    `${baseUrl}/sitemaps/public-papers.xml`,
-  ];
+  const now = new Date().toISOString();
+  const docsPaths = Array.from(
+    new Set(["/docs", ...docsPageEntries.map((entry) => entry.route)]),
+  );
+
+  const xmlEntries = docsPaths
+    .map((path) => {
+      const loc = `${baseUrl}${path === "/" ? "" : path}`;
+      return `<url><loc>${escapeXml(loc)}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`;
+    })
+    .join("\n");
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${sitemapEntries.map((loc) => `<sitemap><loc>${escapeXml(loc)}</loc></sitemap>`).join("\n")}
-</sitemapindex>`;
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${xmlEntries}
+</urlset>`;
 
   return new Response(xml, {
     headers: {

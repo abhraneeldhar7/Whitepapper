@@ -78,14 +78,26 @@ export default function PostRender({ content, contentContainerId }: PostRenderPr
                     children={content}
                     remarkPlugins={[remarkGfm, remarkHighlight]}
                     components={{
-                        a: ({ node, ...props }) => (
-                            <a
-                                href={props.href || "#"}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                {...props}
-                            />
-                        ),
+                        a: ({ node, ...props }) => {
+                            const href = props.href || "#";
+                            const isExternal =
+                                /^(https?:)?\/\//i.test(href) ||
+                                href.startsWith("mailto:") ||
+                                href.startsWith("tel:");
+
+                            if (!isExternal) {
+                                return <a href={href} {...props} />;
+                            }
+
+                            return (
+                                <a
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    {...props}
+                                />
+                            );
+                        },
                         code: ({ node, className, children, ...props }) => {
                             return (
                                 <code {...props} >

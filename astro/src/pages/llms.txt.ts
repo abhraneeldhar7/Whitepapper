@@ -26,6 +26,7 @@ export const GET: APIRoute = ({ site, url }) => {
     `Sitemap: ${baseUrl}/sitemap.xml`,
     `Sitemap: ${baseUrl}/sitemap-index.xml`,
     `Sitemap: ${baseUrl}/sitemaps/public-pages.xml`,
+    `Sitemap: ${baseUrl}/sitemaps/docs-pages.xml`,
     `Sitemap: ${baseUrl}/sitemaps/public-projects.xml`,
     `Sitemap: ${baseUrl}/sitemaps/public-papers.xml`,
   ].join("\n");

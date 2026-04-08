@@ -14,6 +14,7 @@ export const GET: APIRoute = ({ site, url }) => {
   const sitemapEntries = [
     `${baseUrl}/sitemap-index.xml`,
     `${baseUrl}/sitemaps/public-pages.xml`,
+    `${baseUrl}/sitemaps/docs-pages.xml`,
     `${baseUrl}/sitemaps/public-projects.xml`,
     `${baseUrl}/sitemaps/public-papers.xml`,
   ];

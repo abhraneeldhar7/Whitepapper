@@ -1,0 +1,73 @@
+---
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Label } from "../ui/label";
+import { ScrollArea } from "../ui/scroll-area";
+import type { DocsNavSection } from "@/content/docs/docsPagesStructure";
+
+type Props = {
+  navSections: DocsNavSection[];
+  currentPath: string;
+};
+
+const { navSections, currentPath } = Astro.props as Props;
+---
+
+<aside class="hidden md:block w-[240px] shrink-0">
+  <div class="sticky top-[70px] z-[5] h-[calc(100vh-90px)] w-[240px]">
+    <ScrollArea client:load className="h-full w-full pr-2">
+      <nav class="pr-2 pb-10" aria-label="Documentation navigation">
+        {
+          navSections.map((section) => (
+            <div class="mt-5 first:mt-0">
+              <Label>{section.title}</Label>
+              <ul class="mt-2 space-y-1">
+                {section.pages.map((page) => {
+                  const isPageActive = currentPath === page.route;
+                  return (
+                    <>
+                      <li>
+                        <a href={page.route} class="w-full">
+                          <Button
+                            variant="ghost"
+                            className={cn(
+                              "w-full font-[400] justify-start",
+                              isPageActive ? "bg-muted text-foreground" : "",
+                            )}
+                            aria-current={isPageActive ? "page" : undefined}
+                          >
+                            {page.title}
+                          </Button>
+                        </a>
+                      </li>
+                      {page.children?.map((child) => {
+                        const isChildActive = currentPath === child.route;
+                        return (
+                          <li>
+                            <a href={child.route}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                  "ml-5 justify-start",
+                                  isChildActive ? "bg-muted text-foreground" : "",
+                                )}
+                                aria-current={isChildActive ? "page" : undefined}
+                              >
+                                {child.title}
+                              </Button>
+                            </a>
+                          </li>
+                        );
+                      })}
+                    </>
+                  );
+                })}
+              </ul>
+            </div>
+          ))
+        }
+      </nav>
+    </ScrollArea>
+  </div>
+</aside>

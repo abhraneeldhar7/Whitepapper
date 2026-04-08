@@ -1,6 +1,204 @@
 ---
-import DocsPageShell from "@/components/docs/DocsPageShell.astro";
-import markdown from "@/content/docs/quickstart.md?raw";
+import Layout from "@/layouts/Layout.astro";
+import DocsMobileNav from "@/components/docs/DocsMobileNav";
+import DocsSidebar from "@/components/docs/DocsSidebar.astro";
+import { docsNavSections, getDocsPageByRoute } from "@/content/docs/docsPagesStructure";
+import type { LucideIcon } from "lucide-react";
+import {
+  BookOpen,
+  Braces,
+  FileText,
+  FolderKanban,
+  PenSquare,
+  Rocket,
+  Search,
+  Send,
+  Server,
+} from "lucide-react";
+import {ChevronRight} from "lucide-react";
+const sectionIconByTitle: Record<string, LucideIcon> = {
+  "Getting Started": Rocket,
+  "Core Concepts": FolderKanban,
+  Editor: PenSquare,
+  SEO: Search,
+  "Dev API": Braces,
+  Distribution: Send,
+  "Self Host": Server,
+};
+
+const sectionCards = docsNavSections
+  .slice()
+  .sort((a, b) => a.order - b.order)
+  .slice(0, 3)
+  .map((section) => {
+    const firstPage = section.pages.slice().sort((a, b) => a.order - b.order)[0];
+    return {
+      sectionTitle: section.title,
+      route: firstPage?.route || "/docs/intro",
+      pageTitle: firstPage?.title || "Overview",
+      description: firstPage?.description || "Open this section",
+      icon: sectionIconByTitle[section.title] || BookOpen,
+    };
+  });
+
+const importantDocRoutes: Array<{ route: string; icon: LucideIcon }> = [
+  { route: "/docs/quickstart", icon: Rocket },
+  { route: "/docs/projects", icon: FolderKanban },
+  { route: "/docs/papers", icon: FileText },
+  { route: "/docs/seo/overview", icon: Search },
+  { route: "/docs/dev-api/overview", icon: Braces },
+  { route: "/docs/self-host/overview", icon: Server },
+];
+
+const importantDocs = importantDocRoutes
+  .map((entry) => {
+    const page = getDocsPageByRoute(entry.route);
+    if (!page) return null;
+    return {
+      ...page,
+      icon: entry.icon,
+    };
+  })
+  .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+  .slice(0, 6);
+
+const cardClass =
+  "group block rounded-xl border border-border/70 bg-card p-4 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30";
+const docsIndexSeo = {
+  path: "/docs",
+  title: "Whitepapper Docs",
+  description:
+    "Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides.",
+  canonical: "/docs",
+  keywords:
+    "whitepapper docs, developer docs, technical documentation, content workflow docs, api documentation",
+  robots: "index, follow",
+  ogType: "website",
+  ogTitle: "Whitepapper Docs",
+  ogDescription:
+    "Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides.",
+  ogUrl: "/docs",
+  twitterCard: "summary_large_image",
+  twitterTitle: "Whitepapper Docs",
+  twitterDescription:
+    "Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides.",
+  jsonLd: {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "Whitepapper Docs",
+    description:
+      "Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides.",
+    url: `${Astro.url.origin}/docs`,
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Whitepapper",
+      url: Astro.url.origin,
+    },
+  },
+};
 ---
 
-<DocsPageShell markdown={markdown} currentPath="/docs" />
+<Layout
+  title="Whitepapper Docs"
+  description="Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides."
+  seo={docsIndexSeo}
+>
+  <div class="pb-5 md:pb-10 px-5">
+    <div class="flex gap-10 justify-between">
+      <DocsSidebar navSections={docsNavSections} currentPath="/docs" />
+
+      <main class="max-w-[920px] w-full pt-15 md:pt-17" aria-label="Documentation home">
+        <div
+          class="fixed top-[50px] md:top-[55px] left-1/2 -translate-x-1/2 z-[9] w-[calc(100%-2rem)] max-w-[900px] flex justify-between items-center pl-2 pr-4 bg-background/85 backdrop-blur-[20px] py-2 md:py-4"
+        >
+          <div class="flex gap-1 items-center">
+            <div class="md:hidden">
+              <DocsMobileNav
+                client:load
+                navSections={docsNavSections}
+                currentPath="/docs"
+              />
+            </div>
+            <h1 class="text-[20px] md:text-[32px] font-[500]">Whitepapper Docs</h1>
+          </div>
+        </div>
+
+        <p class="mt-1 max-w-[760px] text-muted-foreground text-[15px]">
+          Everything you need to use and run Whitepapper, from first setup to API contracts and self-hosting.
+        </p>
+
+        <section class="mt-10">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {
+              sectionCards.map((card) => {
+                const Icon = card.icon;
+                return (
+                  <a href={card.route} class={cardClass}>
+                    <div class="flex items-start justify-between gap-3">
+                      <span class="flex h-8 w-8 items-center justify-center rounded-md border border-border/80 bg-muted/40 text-muted-foreground group-hover:text-foreground">
+                        <Icon size={16} />
+                      </span>
+                    </div>
+                    <div class="border-b mb-5 md:mt-17 mt-10"/>
+                    <h3 class="mt-1 text-[18px] leading-tight font-[520]">{card.pageTitle}</h3>
+                    <p class="mt-2 text-[14px] text-muted-foreground leading-relaxed">{card.description}</p>
+                  </a>
+                );
+              })
+            }
+          </div>
+        </section>
+
+        <section class="mt-15 space-y-3">
+            <h2 class="text-[15px]">Recommended</h2>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {
+              importantDocs.map((card) => {
+                const Icon = card.icon;
+                return (
+                   <a href={card.route} class={cardClass}>
+                    <div class="flex items-start justify-between gap-3">
+                      <span class="flex h-8 w-8 items-center justify-center rounded-md border border-border/80 bg-muted/40 text-muted-foreground group-hover:text-foreground">
+                        <Icon size={16} />
+                      </span>
+                    </div>
+                    <div class="border-b mb-5 md:mt-17 mt-10"/>
+                    <h3 class="mt-1 text-[18px] leading-tight font-[520]">{card.title}</h3>
+                    <p class="mt-2 text-[14px] text-muted-foreground leading-relaxed">{card.description}</p>
+                  </a>
+                );
+              })
+            }
+          </div>
+        </section>
+
+        <p class="my-10 text-[14px] text-muted-foreground fotn-[350] text-center">Docs are vibe coded, cry about it</p>
+
+        <nav
+          class="mt-12 border-t border-border/60 pt-6"
+          aria-label="Docs page pagination"
+        >
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+               <div/>
+                <a
+                  href={"/docs/intro"}
+                  class="rounded-lg border border-border/70 p-4 hover:bg-muted/70 transition-all duration-300 flex flex-col items-end"
+                >
+                  <div class="flex gap-1 items-center  text-muted-foreground">
+                    <p class="text-[12px]">Next</p>
+                    <ChevronRight size={14}/>
+                  </div>
+                  <p class="mt-4 text-[15px] font-[500] leading-tight">
+                     Introduction
+                  </p>
+                </a>
+          </div>
+        </nav>
+
+
+      </main>
+
+      <aside class="hidden lg:block w-[200px]" aria-hidden="true"></aside>
+    </div>
+  </div>
+</Layout>

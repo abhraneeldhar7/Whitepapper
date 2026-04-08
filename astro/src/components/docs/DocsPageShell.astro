@@ -1,85 +1,122 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import PostRender from "@/components/pre_made_components/render/postPreview";
+import PostPreviewMobileToc from "@/components/pre_made_components/render/PostPreviewMobileToc";
 import DocsCopyButton from "@/components/docs/DocsCopyButton";
 import DocsMobileNav from "@/components/docs/DocsMobileNav";
-import { cn } from "@/lib/utils";
-import { Label } from "../ui/label";
+import DocsSidebar from "@/components/docs/DocsSidebar.astro";
+import { isMobileUserAgent } from "@/lib/userAgent";
+import type {
+  DocsNavSection,
+  DocsPageEntry,
+} from "@/content/docs/docsPagesStructure";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Props = {
   markdown: string;
-  currentPath: "/docs" | "/docs/best-practices" | "/docs/advanced";
+  currentPath: string;
+  pageTitle: string;
+  pageDescription: string;
+  navSections: DocsNavSection[];
+  previousPage: DocsPageEntry | null;
+  nextPage: DocsPageEntry | null;
 };
 
-type NavItem = {
-  title: string;
-  href: "/docs" | "/docs/best-practices" | "/docs/advanced";
+const {
+  markdown,
+  currentPath,
+  pageTitle,
+  pageDescription,
+  navSections,
+  previousPage,
+  nextPage,
+} = Astro.props as Props;
+
+const docsContentContainerId = "docs-page-content";
+const userAgent = Astro.request.headers.get("user-agent");
+const shouldRenderMobileToc = isMobileUserAgent(userAgent);
+const docsPageSeo = {
+  path: currentPath,
+  title: `${pageTitle} | Whitepapper Docs`,
+  description: pageDescription,
+  canonical: currentPath,
+  keywords:
+    "whitepapper docs, developer documentation, technical docs, content publishing docs, api docs, seo docs",
+  robots: "index, follow",
+  ogType: "article",
+  ogTitle: `${pageTitle} | Whitepapper Docs`,
+  ogDescription: pageDescription,
+  ogUrl: currentPath,
+  twitterCard: "summary_large_image",
+  twitterTitle: `${pageTitle} | Whitepapper Docs`,
+  twitterDescription: pageDescription,
+  jsonLd: [
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      headline: pageTitle,
+      description: pageDescription,
+      url: `${Astro.url.origin}${currentPath}`,
+      mainEntityOfPage: `${Astro.url.origin}${currentPath}`,
+      isPartOf: {
+        "@type": "CreativeWork",
+        name: "Whitepapper Docs",
+        url: `${Astro.url.origin}/docs`,
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "Whitepapper",
+        url: Astro.url.origin,
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Docs",
+          item: `${Astro.url.origin}/docs`,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: pageTitle,
+          item: `${Astro.url.origin}${currentPath}`,
+        },
+      ],
+    },
+  ],
 };
-
-const { markdown, currentPath } = Astro.props as Props;
-
-const navItems: NavItem[] = [
-  { title: "Quickstart", href: "/docs" },
-  { title: "Best practices", href: "/docs/best-practices" },
-  { title: "Advanced", href: "/docs/advanced" },
-];
-
-const lines = markdown.split("\n");
-const firstLine = lines[0]?.trim() ?? "";
-const headingMatch = firstLine.match(/^#\s+(.+)$/);
-const pageTitle = headingMatch?.[1]?.trim() || "Docs";
-const bodyMarkdown = headingMatch
-  ? lines.slice(1).join("\n").trimStart()
-  : markdown;
-
 ---
 
 <Layout
-  title={`${pageTitle} | Whitepapper`}
-  description={`${pageTitle} documentation for Whitepapper.`}
+  title={`${pageTitle} | Whitepapper Docs`}
+  description={pageDescription}
+  seo={docsPageSeo}
 >
-  <div class="pb-5 md:pb-10 px-5">
+  <Fragment slot="head">
+    {previousPage ? <link rel="prev" href={previousPage.route} /> : null}
+    {nextPage ? <link rel="next" href={nextPage.route} /> : null}
+  </Fragment>
+
+  <div class="pb-5 md:pb-10 px-4">
     <div class="flex gap-10 justify-between">
-      <aside class="hidden md:block w-[200px]">
-        <nav class="sticky top-24" aria-label="Documentation navigation">
-          <Label>Pages</Label>
-          <ul class="mt-2 space-y-2">
-            {
-              navItems.map((item) => {
-                const isActive = item.href === currentPath;
-                return (
-                  <li>
-                    <a
-                      href={item.href}
-                      class={cn(
-                        "block rounded-md px-3 py-2 text-sm transition-colors",
-                        isActive
-                          ? "bg-muted text-foreground font-medium"
-                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                      )}
-                    >
-                      {item.title}
-                    </a>
-                  </li>
-                );
-              })
-            }
-          </ul>
-        </nav>
-      </aside>
+      <DocsSidebar navSections={navSections} currentPath={currentPath} />
 
       <main
-        class="max-w-[700px] w-full pt-15"
+        class="max-w-[700px] w-full pt-18 md:pt-18"
         aria-label={`${pageTitle} documentation content`}
       >
         <div
-          class="flex justify-between items-center md:sticky md:top-[55px] md:mb-10 w-full fixed top-[50px] pl-2 pr-4 bg-background/80 md:bg-background backdrop-blur-[20px] z-10 left-0 py-1 md:py-2"
+          class="fixed top-[50px] md:top-[55px] left-1/2 -translate-x-1/2 z-[9] w-[calc(100%-2rem)] max-w-[740px] flex justify-between items-center md:px-[40px] bg-background/85 backdrop-blur-[20px] py-2 md:py-4"
         >
           <div class="flex gap-1 items-center">
             <div class="md:hidden">
               <DocsMobileNav
                 client:load
-                navItems={navItems}
+                navSections={navSections}
                 currentPath={currentPath}
               />
             </div>
@@ -89,10 +126,67 @@ const bodyMarkdown = headingMatch
           <DocsCopyButton client:load markdown={markdown} />
         </div>
 
-        <PostRender content={bodyMarkdown} />
+        <PostRender
+          content={markdown}
+          contentContainerId={docsContentContainerId}
+        />
+
+        <nav
+          class="mt-12 border-t border-border/60 pt-6"
+          aria-label="Docs page pagination"
+        >
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {
+              previousPage ? (
+                <a
+                  href={previousPage.route}
+                  class="rounded-lg border border-border/70 p-4 hover:bg-muted/70 transition-all duration-300 flex flex-col"
+                >
+                  <div class="flex gap-1 items-center  text-muted-foreground">
+                    <ChevronLeft size={14}/>
+                    <p class="text-[12px]">Previous</p>
+                  </div>
+                  <p class="mt-4 text-[15px] font-[500] leading-tight">
+                     {previousPage.title}
+                  </p>
+                </a>
+              ) : (
+                <div aria-hidden="true" />
+              )
+            }
+
+            {
+              nextPage ? (
+                <a
+                  href={nextPage.route}
+                  class="rounded-lg border border-border/70 p-4 hover:bg-muted/70 transition-all duration-300 flex flex-col items-end"
+                >
+                  <div class="flex gap-1 items-center  text-muted-foreground">
+                    <p class="text-[12px]">Next</p>
+                    <ChevronRight size={14}/>
+                  </div>
+                  <p class="mt-4 text-[15px] font-[500] leading-tight">
+                     {nextPage.title}
+                  </p>
+                </a>
+              ) : (
+                <div aria-hidden="true" />
+              )
+            }
+          </div>
+        </nav>
       </main>
 
       <aside class="hidden lg:block w-[200px]" aria-hidden="true"></aside>
     </div>
   </div>
+
+  {
+    shouldRenderMobileToc ? (
+      <PostPreviewMobileToc
+        client:load
+        contentContainerId={docsContentContainerId}
+      />
+    ) : null
+  }
 </Layout>

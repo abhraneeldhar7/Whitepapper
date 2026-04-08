@@ -1,0 +1,58 @@
+---
+import DocsPageShell from "@/components/docs/DocsPageShell.astro";
+import {
+  docsNavSections,
+  getDocsPageByRoute,
+  getDocsPageNeighbors,
+} from "@/content/docs/docsPagesStructure";
+
+const markdownModules = import.meta.glob("../../content/docs/**/*.md", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+
+const markdownByLocation = new Map<string, string>();
+for (const [key, value] of Object.entries(markdownModules)) {
+  const normalizedPath = key.replace(/\\/g, "/");
+  const marker = "content/docs/";
+  const markerIndex = normalizedPath.lastIndexOf(marker);
+  if (markerIndex === -1) continue;
+  const location = normalizedPath.slice(markerIndex + marker.length);
+  markdownByLocation.set(location, String(value));
+}
+
+const slugParam = Astro.params.slug || "";
+const slugValue = Array.isArray(slugParam) ? slugParam.join("/") : slugParam;
+if (!slugValue.trim()) {
+  return Astro.redirect("/docs/intro", 302);
+}
+
+const normalizedSlug = slugValue
+  .split("/")
+  .filter(Boolean)
+  .join("/");
+const currentPath = `/docs/${normalizedSlug}`;
+const page = getDocsPageByRoute(currentPath);
+
+if (!page) {
+  return new Response(null, { status: 404 });
+}
+
+const markdown = markdownByLocation.get(page.location);
+if (!markdown) {
+  return new Response(null, { status: 500 });
+}
+
+const { previous, next } = getDocsPageNeighbors(page.route);
+---
+
+<DocsPageShell
+  markdown={markdown}
+  currentPath={page.route}
+  pageTitle={page.title}
+  pageDescription={page.description}
+  navSections={docsNavSections}
+  previousPage={previous}
+  nextPage={next}
+/>
