@@ -1,4 +1,5 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
+import { MAX_DESCRIPTION_LENGTH } from "@/lib/limits";
 import type { ProjectDoc, PaperDoc, CollectionDoc } from "@/lib/types";
 
 type CreateProjectInput = {
@@ -43,10 +44,15 @@ export async function createProject(
   input: CreateProjectInput,
   client: ApiClient = apiClient,
 ): Promise<ProjectDoc> {
+  const description = input.description ?? null;
+  if (description && description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(`Project description is too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
+  }
+
   return client.post<ProjectDoc>("/projects", {
     body: {
       name: input.name,
-      description: input.description ?? null,
+      description,
       isPublic: input.isPublic ?? true,
     },
   });
@@ -57,8 +63,16 @@ export async function updateProject(
   input: UpdateProjectInput,
   client: ApiClient = apiClient,
 ): Promise<ProjectDoc> {
+  const description = input.description ?? undefined;
+  if (typeof description === "string" && description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(`Project description is too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
+  }
+
   return client.patch<ProjectDoc>(`/projects/${projectId}`, {
-    body: input,
+    body: {
+      ...input,
+      description,
+    },
   });
 }
 

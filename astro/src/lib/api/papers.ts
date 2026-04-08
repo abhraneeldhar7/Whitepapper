@@ -1,4 +1,5 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
+import { countImagesInContent, MAX_IMAGES_PER_PAPER, MAX_PAPER_BODY_LENGTH } from "@/lib/limits";
 import type { PaperCreateResponse, PaperDoc, PaperMetadata } from "@/lib/types";
 
 type CreatePaperInput = {
@@ -22,6 +23,12 @@ export async function listStandalonePapers(
   client: ApiClient = apiClient,
 ): Promise<PaperDoc[]> {
   return client.get<PaperDoc[]>("/papers", { query: { standalone: true } });
+}
+
+export async function listOwnedPapers(
+  client: ApiClient = apiClient,
+): Promise<PaperDoc[]> {
+  return client.get<PaperDoc[]>("/papers");
 }
 
 export async function listProjectPapers(
@@ -56,6 +63,17 @@ export async function updatePaper(
   input: UpdatePaperInput,
   client: ApiClient = apiClient,
 ): Promise<PaperDoc> {
+  if (typeof input.body === "string") {
+    if (input.body.length > MAX_PAPER_BODY_LENGTH) {
+      throw new Error(`Paper content is too long. Maximum length is ${MAX_PAPER_BODY_LENGTH} characters.`);
+    }
+
+    const imageCount = countImagesInContent(input.body);
+    if (imageCount > MAX_IMAGES_PER_PAPER) {
+      throw new Error(`Paper image limit reached (${MAX_IMAGES_PER_PAPER}). Remove some images before saving.`);
+    }
+  }
+
   return client.patch<PaperDoc>(`/papers/${paperId}`, {
     body: input,
   });

@@ -132,4 +132,12 @@ class StorageService:
                 return True
         return False
 
+    def count_by_prefix(self, prefix: str, max_count: int | None = None) -> int:
+        total = 0
+        for _blob in self._bucket().list_blobs(prefix=prefix):
+            total += 1
+            if max_count is not None and total >= max_count:
+                break
+        return total
+
 storage_service = StorageService()

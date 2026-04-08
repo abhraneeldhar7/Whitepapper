@@ -41,6 +41,7 @@ import {
   updatePaper,
 } from "@/lib/api/papers";
 import { uploadEmbeddedImage, uploadPaperMetadataImage, uploadThumbnail } from "@/lib/api/uploads";
+import { countImagesInContent, MAX_IMAGES_PER_PAPER, MAX_PAPER_BODY_LENGTH } from "@/lib/limits";
 import { updateCurrentUser } from "@/lib/api/users";
 import {
   MAX_EMBEDDED_HEIGHT,
@@ -365,6 +366,17 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
       return;
     }
 
+    if (body.length > MAX_PAPER_BODY_LENGTH) {
+      toast.error(`Paper content is too long. Maximum length is ${MAX_PAPER_BODY_LENGTH} characters.`);
+      return;
+    }
+
+    const imageCount = countImagesInContent(body);
+    if (imageCount > MAX_IMAGES_PER_PAPER) {
+      toast.error(`Paper image limit reached (${MAX_IMAGES_PER_PAPER}). Remove some images before saving.`);
+      return;
+    }
+
     try {
       const updated = await onSave(nextStatus);
       const resolvedStatus = toUiStatus(updated.status);
@@ -420,6 +432,14 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
   }
 
   async function onEditorImageUpload(file: File): Promise<{ success: boolean; url?: string; message?: string }> {
+    const imageCount = countImagesInContent(body);
+    if (imageCount >= MAX_IMAGES_PER_PAPER) {
+      return {
+        success: false,
+        message: `Paper image limit reached (${MAX_IMAGES_PER_PAPER}). Remove some images before uploading a new one.`,
+      };
+    }
+
     setUploadingEmbeddedCount((prev) => prev + 1);
     const uploadPromise = (async () => {
       if (!isImageFile(file)) throw new Error('Only image files are allowed.');

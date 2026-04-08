@@ -1,5 +1,6 @@
 import logging
 import pickle
+import re
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
@@ -11,6 +12,7 @@ from app.core.constants import (
     MAX_THUMBNAIL_HEIGHT,
     MAX_THUMBNAIL_WIDTH,
 )
+from app.core.limits import MAX_IMAGES_PER_PAPER, MAX_PAPER_BODY_LENGTH, MAX_PAPERS_PER_USER
 from app.core.firestore_store import firestore_store, utc_now
 from app.core.redis_client import get_cache_prefix, get_redis_client
 from app.core.reserved_paths import is_reserved_paper_slug
@@ -32,9 +34,39 @@ PAPER_STATUS_KEY = "status"
 PAPER_STATUS_PUBLISHED = "published"
 SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
 METADATA_IMAGE_FIELDS = ("ogImage", "twitterImage", "coverImageUrl")
+MARKDOWN_IMAGE_PATTERN = re.compile(r"!\[[^\]]*]\(([^)\s]+)", re.IGNORECASE)
+HTML_IMAGE_PATTERN = re.compile(r"<img[^>]+src=[\"']([^\"']+)[\"']", re.IGNORECASE)
 
 
 class PapersService:
+    @staticmethod
+    def _count_images_in_body(content: str | None) -> int:
+        body = content or ""
+        markdown_hits = MARKDOWN_IMAGE_PATTERN.findall(body)
+        html_hits = HTML_IMAGE_PATTERN.findall(body)
+        return len(markdown_hits) + len(html_hits)
+
+    @staticmethod
+    def _validate_body_limits(body: str | None) -> None:
+        value = body or ""
+        if len(value) > MAX_PAPER_BODY_LENGTH:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Paper content is too long. "
+                    f"Maximum length is {MAX_PAPER_BODY_LENGTH} characters."
+                ),
+            )
+        image_count = PapersService._count_images_in_body(value)
+        if image_count > MAX_IMAGES_PER_PAPER:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Paper image limit reached ({MAX_IMAGES_PER_PAPER}). "
+                    "Remove some images before saving."
+                ),
+            )
+
     def _paper_by_id_key(self, paper_id: str) -> str:
         return f"{get_cache_prefix()}:papers:id:{paper_id}"
 
@@ -345,9 +377,20 @@ class PapersService:
         return self.get_by_slug(owner_username or "", slug, public=public)
 
     def create(self, owner_id: str, payload: dict) -> dict:
+        owned_papers = self.list_owned(owner_id)
+        if len(owned_papers) >= MAX_PAPERS_PER_USER:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Paper limit reached ({MAX_PAPERS_PER_USER}) for this user. "
+                    "Delete an existing paper to create a new one."
+                ),
+            )
+
         paper_id = str(uuid4())
         now = utc_now()
         payload["title"] = (payload.get("title") or "Untitled Paper").strip() or "Untitled Paper"
+        self._validate_body_limits(payload.get("body"))
 
         collection_id = payload.get("collectionId")
         project_id = payload.get("projectId")
@@ -396,6 +439,9 @@ class PapersService:
         current = firestore_store.get(PAPERS_COLLECTION, paper_id)
         if not current:
             raise HTTPException(status_code=404, detail="Paper not found.")
+
+        if "body" in payload:
+            self._validate_body_limits(payload.get("body"))
 
         if payload.get("slug"):
             new_slug = normalize_slug(payload["slug"])
@@ -505,6 +551,17 @@ class PapersService:
         owner_id = paper.get(PAPER_OWNER_KEY)
         if not owner_id:
             raise HTTPException(status_code=400, detail="Paper owner is missing.")
+
+        embedded_prefix = f"users/{owner_id}/papers/{paper_id}/embedded/"
+        current_images = storage_service.count_by_prefix(embedded_prefix, max_count=MAX_IMAGES_PER_PAPER)
+        if current_images >= MAX_IMAGES_PER_PAPER:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Paper image limit reached ({MAX_IMAGES_PER_PAPER}). "
+                    "Remove some images before uploading a new one."
+                ),
+            )
 
         url = await storage_service.upload_image(
             f"users/{owner_id}/papers/{paper_id}/embedded",

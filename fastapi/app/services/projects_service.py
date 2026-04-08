@@ -12,6 +12,7 @@ from app.core.constants import (
     MAX_PROJECT_LOGO_HEIGHT,
     MAX_PROJECT_LOGO_WIDTH,
 )
+from app.core.limits import MAX_DESCRIPTION_LENGTH, MAX_PROJECTS_PER_USER
 from app.core.firestore_store import firestore_store, utc_now
 from app.core.redis_client import get_cache_prefix, get_redis_client
 from app.core.reserved_paths import is_reserved_project_slug
@@ -212,15 +213,35 @@ class ProjectsService:
         return project
 
     def create(self, owner_id: str, payload: dict) -> dict:
+        owned_projects = self.list_owned(owner_id)
+        if len(owned_projects) >= MAX_PROJECTS_PER_USER:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Project limit reached ({MAX_PROJECTS_PER_USER}). "
+                    "Delete an existing project to create a new one."
+                ),
+            )
+
         project_id = str(uuid4())
         now = utc_now()
         name = (payload.get("name") or "Untitled Project").strip() or "Untitled Project"
+        description = payload.get("description") or ""
+        if len(description) > MAX_DESCRIPTION_LENGTH:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Project description is too long. "
+                    f"Maximum length is {MAX_DESCRIPTION_LENGTH} characters."
+                ),
+            )
+
         created = {
             PROJECT_ID_KEY: project_id,
             PROJECT_OWNER_KEY: owner_id,
             "name": name,
             PROJECT_SLUG_KEY: self._unique_slug(owner_id, payload.get("slug") or name),
-            "description": payload.get("description") or "",
+            "description": description,
             "logoUrl": payload.get("logoUrl") or None,
             "isPublic": bool(payload.get("isPublic", True)),
             "pagesNumber": 0,
@@ -240,6 +261,14 @@ class ProjectsService:
             payload["name"] = (payload.get("name") or "Untitled Project").strip() or "Untitled Project"
         if "description" in payload:
             payload["description"] = payload.get("description") or ""
+            if len(payload["description"]) > MAX_DESCRIPTION_LENGTH:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Project description is too long. "
+                        f"Maximum length is {MAX_DESCRIPTION_LENGTH} characters."
+                    ),
+                )
         if "logoUrl" in payload and not payload.get("logoUrl"):
             payload["logoUrl"] = None
         if "isPublic" in payload:

@@ -22,13 +22,14 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createCollection } from "@/lib/api/collections";
 import { createApiKey, resetApiKey, setApiKeyActive, type ApiKeySummary } from "@/lib/api/api_keys";
-import { createPaper } from "@/lib/api/papers";
+import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import {
   checkProjectSlugAvailable,
   deleteProject,
   updateProject,
   updateProjectVisibility,
 } from "@/lib/api/projects";
+import { MAX_COLLECTIONS_PER_PROJECT, MAX_DESCRIPTION_LENGTH, MAX_PAPERS_PER_USER } from "@/lib/limits";
 import { uploadProjectEmbeddedImage, uploadProjectLogo } from "@/lib/api/uploads";
 import {
   MAX_EMBEDDED_HEIGHT,
@@ -221,6 +222,11 @@ export default function ProjectWorkspace({
       return;
     }
 
+    if ((project.description || "").length > MAX_DESCRIPTION_LENGTH) {
+      toast.error(`Project description is too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
+      return;
+    }
+
     const normalizedSlug = normalizeProjectSlug(project.slug || "");
     if (!normalizedSlug) {
       toast.error("Project slug cannot be empty.");
@@ -380,6 +386,12 @@ export default function ProjectWorkspace({
     if (!project) return;
     setCreatingPage(true);
     try {
+      const ownedPapers = await listOwnedPapers();
+      if (ownedPapers.length >= MAX_PAPERS_PER_USER) {
+        toast.error(`Paper limit reached (${MAX_PAPERS_PER_USER}) for this user. Delete an existing paper to create a new one.`);
+        return;
+      }
+
       const createPromise = createPaper({ projectId: project.projectId });
       toast.promise(createPromise, {
         loading: "Creating page...",
@@ -395,6 +407,11 @@ export default function ProjectWorkspace({
 
   async function handleCreateCollection() {
     if (!project) return;
+    if (collections.length >= MAX_COLLECTIONS_PER_PROJECT) {
+      toast.error(`Collection limit reached (${MAX_COLLECTIONS_PER_PROJECT}) for this project.`);
+      return;
+    }
+
     setCreatingCollection(true);
 
     try {

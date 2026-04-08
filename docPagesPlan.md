@@ -1,4 +1,4 @@
-﻿# Whitepapper Documentation Build Plan
+# Whitepapper Documentation Build Plan
 
 ## Docs Root Note
 - `/docs` will be finalized later as a custom `.astro` page.
@@ -17,7 +17,6 @@
 - No workspace entity right now.
 
 ## Data Types
-
 ```ts
 type UserPreferences = {
   showKeyboardEffect: boolean
@@ -182,16 +181,19 @@ type DistributionPublishResult = {
   - `astro/src/lib/limits.ts`
 
 ### Entity count limits
-- `MAX_PROJECTS_PER_USER = 500`
-- `MAX_COLLECTIONS_PER_PROJECT = 500`
-- `MAX_STANDALONE_PAPERS_PER_USER = 5000`
-- `MAX_PROJECT_STANDALONE_PAPERS_PER_PROJECT = 5000`
-- `MAX_COLLECTION_PAPERS_PER_COLLECTION = 5000`
+- `MAX_PROJECTS_PER_USER = 50`
+- `MAX_COLLECTIONS_PER_PROJECT = 10`
+- `MAX_PAPERS_PER_USER = 500`
+- Paper limit is total-per-user across standalone papers, project standalone papers, and collection papers.
 
 ### Content length limits
-- `MAX_PROJECT_DESCRIPTION_LENGTH = 100000`
-- `MAX_COLLECTION_DESCRIPTION_LENGTH = 100000`
+- `MAX_DESCRIPTION_LENGTH = 50000`
+- Applied to project and collection descriptions.
 - `MAX_PAPER_BODY_LENGTH = 500000`
+
+### Paper media limits
+- `MAX_IMAGES_PER_PAPER = 20`
+- Enforced during paper save/update and embedded image upload operations.
 
 ### Dev API usage limit
 - `DEV_API_LIMIT_PER_MONTH = 10000`
@@ -199,17 +201,20 @@ type DistributionPublishResult = {
 
 ### Error behavior to document
 - Project create beyond limit:
-  - `400`: `Project limit reached (500). Delete an existing project to create a new one.`
+  - `400`: `Project limit reached (50). Delete an existing project to create a new one.`
 - Collection create beyond limit:
-  - `400`: `Collection limit reached (500) for this project.`
-- Paper create/move beyond limits:
-  - `400`: collection/project/standalone paper limit reached messages
+  - `400`: `Collection limit reached (10) for this project.`
+- Paper create beyond per-user total limit:
+  - `400`: `Paper limit reached (500) for this user. Delete an existing paper to create a new one.`
 - Project description too long:
-  - `400`: `Project description is too long. Maximum length is 100000 characters.`
+  - `400`: `Project description is too long. Maximum length is 50000 characters.`
 - Collection description too long:
-  - `400`: `Collection description is too long. Maximum length is 100000 characters.`
+  - `400`: `Collection description is too long. Maximum length is 50000 characters.`
 - Paper body too long:
   - `400`: `Paper content is too long. Maximum length is 500000 characters.`
+- Paper image limit reached:
+  - `400`: `Paper image limit reached (20). Remove some images before saving.`
+  - `400`: `Paper image limit reached (20). Remove some images before uploading a new one.`
 
 ## Sidebar Plan
 

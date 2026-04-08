@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException
 
+from app.core.limits import MAX_COLLECTIONS_PER_PROJECT, MAX_DESCRIPTION_LENGTH
 from app.core.cache_policies import COLLECTION_CACHE_POLICY
 from app.core.firestore_store import firestore_store, utc_now
 from app.core.redis_client import get_cache_prefix, get_redis_client
@@ -153,6 +154,22 @@ class CollectionsService:
             raise HTTPException(status_code=400, detail="projectId is required.")
 
         projects_service.get_by_id(project_id)
+        existing_collections = self.list_project_collections(project_id)
+        if len(existing_collections) >= MAX_COLLECTIONS_PER_PROJECT:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Collection limit reached ({MAX_COLLECTIONS_PER_PROJECT}) for this project.",
+            )
+
+        description = payload.get("description") or ""
+        if len(description) > MAX_DESCRIPTION_LENGTH:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Collection description is too long. "
+                    f"Maximum length is {MAX_DESCRIPTION_LENGTH} characters."
+                ),
+            )
 
         provided_slug = payload.get(COLLECTION_SLUG_KEY)
         if provided_slug:
@@ -165,7 +182,7 @@ class CollectionsService:
             COLLECTION_PROJECT_KEY: project_id,
             COLLECTION_OWNER_KEY: owner_id,
             "name": (payload.get("name") or "Untitled Collection").strip() or "Untitled Collection",
-            "description": payload.get("description") or "",
+            "description": description,
             COLLECTION_SLUG_KEY: slug_value,
             "isPublic": bool(payload.get("isPublic", True)),
             "pagesNumber": 0,
@@ -189,6 +206,14 @@ class CollectionsService:
             payload["name"] = (payload.get("name") or "Untitled Collection").strip() or "Untitled Collection"
         if "description" in payload:
             payload["description"] = payload.get("description") or ""
+            if len(payload["description"]) > MAX_DESCRIPTION_LENGTH:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Collection description is too long. "
+                        f"Maximum length is {MAX_DESCRIPTION_LENGTH} characters."
+                    ),
+                )
         if "isPublic" in payload:
             payload["isPublic"] = bool(payload.get("isPublic"))
         if "slug" in payload:

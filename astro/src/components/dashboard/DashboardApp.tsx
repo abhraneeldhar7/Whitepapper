@@ -16,8 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createPaper } from "@/lib/api/papers";
+import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import { createProject } from "@/lib/api/projects";
+import { MAX_PAPERS_PER_USER, MAX_PROJECTS_PER_USER } from "@/lib/limits";
 import type { PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
 import FolderNotes from "../folderComponent";
 import EmptyPaperNotes from "../emptyPagesComp";
@@ -105,6 +106,12 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
     setCreatingPage(true);
 
     try {
+      const ownedPapers = await listOwnedPapers();
+      if (ownedPapers.length >= MAX_PAPERS_PER_USER) {
+        toast.error(`Paper limit reached (${MAX_PAPERS_PER_USER}) for this user. Delete an existing paper to create a new one.`);
+        return;
+      }
+
       const createPromise = createPaper({});
       toast.promise(createPromise, {
         loading: "Creating page...",
@@ -123,6 +130,11 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
   }
 
   async function handleCreateProject() {
+    if (projects.length >= MAX_PROJECTS_PER_USER) {
+      toast.error(`Project limit reached (${MAX_PROJECTS_PER_USER}). Delete an existing project to create a new one.`);
+      return;
+    }
+
     setCreatingProject(true);
     const optimisticProject = buildOptimisticProject(
       initialUser?.userId,

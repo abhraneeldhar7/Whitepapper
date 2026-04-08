@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from redis import Redis
 
 from app.core.cache_policies import API_KEY_CACHE_POLICY
-from app.core.constants import API_KEY_LIMIT_PER_MONTH
+from app.core.limits import DEV_API_LIMIT_PER_MONTH
 from app.core.firestore_store import firestore_store, utc_now
 from app.core.redis_client import get_cache_prefix, get_redis_client
 
@@ -94,7 +94,7 @@ class DevApiService:
             "projectId": project_id,
             API_KEY_HASH_KEY: key_hash,
             "usage": 0,
-            "limitPerMonth": API_KEY_LIMIT_PER_MONTH,
+            "limitPerMonth": DEV_API_LIMIT_PER_MONTH,
             "isActive": True,
             "createdAt": utc_now(),
         }
@@ -170,7 +170,7 @@ class DevApiService:
             raise HTTPException(status_code=403, detail="API key is inactive.")
 
         usage = int(key_doc.get("usage", 0))
-        limit = int(key_doc.get("limitPerMonth", API_KEY_LIMIT_PER_MONTH))
+        limit = int(key_doc.get("limitPerMonth", DEV_API_LIMIT_PER_MONTH))
         if usage >= limit:
             raise HTTPException(status_code=429, detail="Monthly API limit exceeded.")
 

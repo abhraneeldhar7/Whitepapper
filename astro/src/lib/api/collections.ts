@@ -1,4 +1,5 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
+import { MAX_DESCRIPTION_LENGTH } from "@/lib/limits";
 import type { CollectionDoc } from "@/lib/types";
 
 type CreateCollectionInput = {
@@ -27,8 +28,16 @@ export async function createCollection(
   input: CreateCollectionInput,
   client: ApiClient = apiClient,
 ): Promise<CollectionDoc> {
+  const description = input.description ?? undefined;
+  if (typeof description === "string" && description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(`Collection description is too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
+  }
+
   return client.post<CollectionDoc>("/collections", {
-    body: input,
+    body: {
+      ...input,
+      description,
+    },
   });
 }
 
@@ -44,8 +53,16 @@ export async function updateCollection(
   input: UpdateCollectionInput,
   client: ApiClient = apiClient,
 ): Promise<CollectionDoc> {
+  const description = input.description ?? undefined;
+  if (typeof description === "string" && description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(`Collection description is too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
+  }
+
   return client.patch<CollectionDoc>(`/collections/${collectionId}`, {
-    body: input,
+    body: {
+      ...input,
+      description,
+    },
   });
 }
 

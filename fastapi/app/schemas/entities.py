@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from app.core.limits import DEV_API_LIMIT_PER_MONTH
+
 
 class AuthUser(BaseModel):
     userId: str
@@ -71,7 +73,7 @@ class ProjectDoc(BaseModel):
 
 class ProjectCreate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
-    description: str | None = Field(default=None, max_length=50000)
+    description: str | None = None
     logoUrl: str | None = None
     isPublic: bool = True
 
@@ -79,7 +81,7 @@ class ProjectCreate(BaseModel):
 class ProjectUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     slug: str | None = Field(default=None, min_length=2, max_length=80)
-    description: str | None = Field(default=None, max_length=50000)
+    description: str | None = None
     logoUrl: str | None = None
 
 
@@ -104,7 +106,7 @@ class CollectionCreate(BaseModel):
     projectId: str
     name: str = Field(min_length=1, max_length=120)
     slug: str | None = Field(default=None, min_length=2, max_length=80)
-    description: str | None = Field(default=None, max_length=50000)
+    description: str | None = None
     isPublic: bool | None = None
 
 
@@ -112,7 +114,7 @@ class CollectionUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     title: str | None = Field(default=None, min_length=1, max_length=120)
     slug: str | None = Field(default=None, min_length=2, max_length=80)
-    description: str | None = Field(default=None, max_length=50000)
+    description: str | None = None
 
 
 class CollectionVisibilityToggle(BaseModel):
@@ -266,7 +268,7 @@ class ApiKeyDoc(BaseModel):
     projectId: str
     keyHash: str
     usage: int = 0
-    limitPerMonth: int = 10000
+    limitPerMonth: int = DEV_API_LIMIT_PER_MONTH
     isActive: bool = True
     createdAt: datetime
 
@@ -276,7 +278,7 @@ class ApiKeySummary(BaseModel):
     ownerId: str
     projectId: str
     usage: int = 0
-    limitPerMonth: int = 10000
+    limitPerMonth: int = DEV_API_LIMIT_PER_MONTH
     isActive: bool = True
     createdAt: datetime
 

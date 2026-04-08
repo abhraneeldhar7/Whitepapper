@@ -16,13 +16,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { copyToClipboardWithToast } from "@/lib/utils";
-import { createPaper } from "@/lib/api/papers";
+import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import {
   checkCollectionSlugAvailable,
   deleteCollection,
   updateCollection,
   updateCollectionVisibility,
 } from "@/lib/api/collections";
+import { MAX_DESCRIPTION_LENGTH, MAX_PAPERS_PER_USER } from "@/lib/limits";
 import type { CollectionDoc, PaperDoc, UserDoc } from "@/lib/types";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
@@ -151,6 +152,12 @@ export default function CollectionWorkspace({
     if (!collection) return;
     setCreatingPage(true);
     try {
+      const ownedPapers = await listOwnedPapers();
+      if (ownedPapers.length >= MAX_PAPERS_PER_USER) {
+        toast.error(`Paper limit reached (${MAX_PAPERS_PER_USER}) for this user. Delete an existing paper to create a new one.`);
+        return;
+      }
+
       const createPromise = createPaper({
         projectId: collection.projectId,
         collectionId: collection.collectionId,
@@ -171,6 +178,11 @@ export default function CollectionWorkspace({
     if (!collection) return;
     if (!collection.name.trim()) {
       toast.error("Collection name cannot be empty.");
+      return;
+    }
+
+    if ((collection.description || "").length > MAX_DESCRIPTION_LENGTH) {
+      toast.error(`Collection description is too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
       return;
     }
 
