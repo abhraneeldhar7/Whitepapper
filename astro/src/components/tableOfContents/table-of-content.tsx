@@ -11,6 +11,7 @@ interface Heading {
 
 interface TableOfContentsProps {
     contentRef: React.RefObject<HTMLElement | null>
+    topOffset?: number
 }
 
 function CircleProgress({ value }: { value: number }) {
@@ -44,7 +45,7 @@ function CircleProgress({ value }: { value: number }) {
     )
 }
 
-const TableOfContents: React.FC<TableOfContentsProps> = ({ contentRef }) => {
+const TableOfContents: React.FC<TableOfContentsProps> = ({ contentRef, topOffset = 60 }) => {
     const [headings, setHeadings] = useState<Heading[]>([])
     const [activeId, setActiveId] = useState<string>('')
     const [progress, setProgress] = useState(0)
@@ -152,7 +153,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ contentRef }) => {
             setIsNearBottom(scrollableDistance > 0 && bottomGap <= 140 && progressVal > 85)
 
             // 2. Determine Active Heading
-            const upperBound = scrollTop + 60
+            const upperBound = scrollTop + topOffset
             let currentActive = headings[0]
             let withinRange: Heading | null = null
 
@@ -182,7 +183,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ contentRef }) => {
             }
 
         }, 16)
-    }, [contentRef, headings])
+    }, [contentRef, headings, topOffset])
 
     // Attach scroll listener
     useEffect(() => {
@@ -225,11 +226,10 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ contentRef }) => {
             const rootTop = root instanceof Window ? 0 : root.getBoundingClientRect().top
             const currentScroll = root instanceof Window ? window.scrollY : root.scrollTop
             const elementTop = element.getBoundingClientRect().top - rootTop + currentScroll
-            const offset = 60
             if (root instanceof Window) {
-                window.scrollTo({ top: elementTop - offset, behavior: 'smooth' })
+                window.scrollTo({ top: elementTop - topOffset, behavior: 'smooth' })
             } else {
-                root.scrollTo({ top: elementTop - offset, behavior: 'smooth' })
+                root.scrollTo({ top: elementTop - topOffset, behavior: 'smooth' })
             }
         }
         setIsExpanded(false)

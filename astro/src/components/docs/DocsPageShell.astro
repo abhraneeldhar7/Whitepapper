@@ -106,7 +106,7 @@ const docsPageSeo = {
       <DocsSidebar navSections={navSections} currentPath={currentPath} />
 
       <main
-        class="max-w-[700px] w-full pt-18 md:pt-18"
+        class="max-w-[700px] w-full pt-14 md:pt-18"
         aria-label={`${pageTitle} documentation content`}
       >
         <div
@@ -186,6 +186,7 @@ const docsPageSeo = {
       <PostPreviewMobileToc
         client:load
         contentContainerId={docsContentContainerId}
+        topOffset={110}
       />
     ) : null
   }

@@ -4,9 +4,10 @@ import TableOfContents from "@/components/tableOfContents/table-of-content";
 
 type Props = {
   contentContainerId: string;
+  topOffset?: number;
 };
 
-export default function PostPreviewMobileToc({ contentContainerId }: Props) {
+export default function PostPreviewMobileToc({ contentContainerId, topOffset }: Props) {
   const contentRef = useRef<HTMLElement | null>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -20,5 +21,5 @@ export default function PostPreviewMobileToc({ contentContainerId }: Props) {
 
   if (!isReady) return null;
 
-  return <TableOfContents contentRef={contentRef} />;
+  return <TableOfContents contentRef={contentRef} topOffset={topOffset} />;
 }
