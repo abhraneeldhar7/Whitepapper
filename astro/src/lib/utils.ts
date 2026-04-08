@@ -158,6 +158,24 @@ export async function copyToClipboardWithToast(
   return ok;
 }
 
+export function downloadMarkdownFile(content: string, slug?: string): void {
+  if (typeof document === "undefined" || typeof URL === "undefined") {
+    return;
+  }
+
+  const safeSlug = String(slug || "page").trim() || "page";
+  const fileName = `${safeSlug}.md`;
+  const blob = new Blob([content || ""], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 
 
 export async function compressImage({ file, maxWidth, maxHeight, crop = false }: {

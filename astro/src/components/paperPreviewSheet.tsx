@@ -1,17 +1,32 @@
-import { NotebookPen, SquareArrowOutUpRight, XIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { DownloadIcon, Ellipsis, ForwardIcon, NotebookPen, SquareArrowOutUpRight, Trash2Icon, XIcon } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 import PostRender from "@/components/pre_made_components/render/postPreview";
+import { deletePaper } from "@/lib/api/papers";
+import { resolveIntegrationBaseUrl } from "@/lib/integrationBaseUrl";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetClose, SheetContent } from "@/components/ui/sheet";
 import type { PaperDoc } from "@/lib/types";
+import { copyToClipboardWithToast, downloadMarkdownFile } from "@/lib/utils";
 
 type PaperPreviewSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   paper: PaperDoc | null;
   handle: string;
+  isMobileUA: boolean;
+  onPaperDeleted?: (paperId: string) => void;
 };
 
 export default function PaperPreviewSheet({
@@ -19,28 +34,61 @@ export default function PaperPreviewSheet({
   onOpenChange,
   paper,
   handle,
+  isMobileUA,
+  onPaperDeleted,
 }: PaperPreviewSheetProps) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 768px)");
-    const handleMediaChange = (event: MediaQueryListEvent) => {
-      setIsMobile(event.matches);
-    };
-
-    setIsMobile(media.matches);
-    if (typeof media.addEventListener === "function") {
-      media.addEventListener("change", handleMediaChange);
-      return () => media.removeEventListener("change", handleMediaChange);
-    }
-
-    media.addListener(handleMediaChange);
-    return () => media.removeListener(handleMediaChange);
-  }, []);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   if (!paper) {
     return null;
   }
+
+  const isMobile = isMobileUA;
+
+  const resolvePublicUrl = (): string => {
+    const baseUrl = resolveIntegrationBaseUrl();
+    const origin =
+      baseUrl || (typeof window !== "undefined" ? String(window.location.origin || "").trim().replace(/\/+$/, "") : "");
+    const safeHandle = String(handle || "").trim();
+    const safeSlug = String(paper.slug || "").trim();
+    return `${origin}/${safeHandle}/${safeSlug}`;
+  };
+
+  const handleShare = async () => {
+    if (!String(handle || "").trim() || !String(paper.slug || "").trim()) {
+      toast.error("Unable to resolve public URL.");
+      return;
+    }
+    const publicUrl = resolvePublicUrl();
+    if (!publicUrl) {
+      toast.error("Unable to resolve public URL.");
+      return;
+    }
+    await copyToClipboardWithToast(publicUrl, "Public URL copied.", "Unable to copy public URL.");
+    setActionsOpen(false);
+  };
+
+  const handleDownload = () => {
+    downloadMarkdownFile(paper.body || "", paper.slug || "page");
+    setActionsOpen(false);
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deletePaper(paper.paperId);
+      toast.success("Page deleted.");
+      onPaperDeleted?.(paper.paperId);
+      onOpenChange(false);
+      setDeleteDialogOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete page.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -63,6 +111,41 @@ export default function PaperPreviewSheet({
                 </Button>
               </a>
             ) : null}
+            <Popover open={actionsOpen} onOpenChange={setActionsOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon-sm" aria-label="More actions">
+                  <Ellipsis />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[170px] p-[4px]" align="start">
+                <div className="flex flex-col gap-[4px]">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start"
+                    onClick={() => {
+                      void handleShare();
+                    }}
+                  >
+                    <ForwardIcon /> Share
+                  </Button>
+                  <Button variant="ghost" size="sm" className="justify-start" onClick={handleDownload}>
+                    <DownloadIcon /> Download
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="justify-start text-destructive hover:text-destructive"
+                    onClick={() => {
+                      setActionsOpen(false);
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2Icon /> Delete
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <SheetClose asChild>
             <Button className="mr-1" variant="ghost" size="icon" aria-label="Close preview">
@@ -93,6 +176,25 @@ export default function PaperPreviewSheet({
           </div>
         </ScrollArea>
       </SheetContent>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete page?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete <span className="font-[500]">{paper.title || "this page"}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={() => { void handleDelete(); }} loading={deleting}>
+              Confirm delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }

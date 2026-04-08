@@ -5,8 +5,16 @@ type WriteEditorRootProps = {
   initialPaper: PaperDoc;
   initialUser?: UserDoc | null;
   integrationBaseUrl?: string;
+  isMobileUA: boolean;
 };
 
-export default function WriteEditorRoot({ initialPaper, initialUser, integrationBaseUrl }: WriteEditorRootProps) {
-  return <WriteEditor initialPaper={initialPaper} initialUser={initialUser} integrationBaseUrl={integrationBaseUrl} />;
+export default function WriteEditorRoot({ initialPaper, initialUser, integrationBaseUrl, isMobileUA }: WriteEditorRootProps) {
+  return (
+    <WriteEditor
+      initialPaper={initialPaper}
+      initialUser={initialUser}
+      integrationBaseUrl={integrationBaseUrl}
+      isMobileUA={isMobileUA}
+    />
+  );
 }

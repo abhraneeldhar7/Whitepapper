@@ -59,7 +59,7 @@ const aboutContent = [
         </section>
 
         <section
-            class="mt-10 px-4 flex flex-col gap-5"
+            class="mt-10 px-4 flex flex-col gap-10"
             aria-label="About details"
         >
             {
@@ -73,7 +73,7 @@ const aboutContent = [
                                 <PostRender content={section.content} />
                             </div>
                         </article>
-                        {index <= aboutContent.length && (
+                        {index < aboutContent.length-1 && (
                             <div
                                 class="w-full border my-4"
                                 aria-hidden="true"

@@ -8,6 +8,7 @@ import { getProjectById } from "@/lib/api/projects";
 import { listProjectPapers } from "@/lib/api/papers";
 import { getCurrentUser } from "@/lib/api/users";
 import type { CollectionDoc, PaperDoc, UserDoc } from "@/lib/types";
+import { isMobileUserAgent } from "@/lib/userAgent";
 
 const { userId, getToken } = Astro.locals.auth();
 const projectId = Astro.params.projectId as string;
@@ -21,6 +22,7 @@ const token = await getToken();
 if (!token) {
   return Astro.redirect("/login");
 }
+const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 
 const serverClient = createApiClient(token);
 const initialUser = await getCurrentUser(serverClient).catch(
@@ -58,6 +60,7 @@ const initialProjectName = await getProjectById(projectId, serverClient)
       initialCollection={initialCollection}
       initialPages={initialPages}
       initialUser={initialUser}
+      isMobileUA={isMobileUA}
     />
   </div>
 </Layout>

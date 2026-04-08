@@ -31,6 +31,7 @@ type DashboardAppProps = {
   initialProjects: ProjectDoc[];
   initialPages: PaperDoc[];
   initialUser: UserDoc;
+  isMobileUA: boolean;
 };
 type DashboardTab = "pages" | "settings";
 
@@ -74,7 +75,7 @@ function writeTabToQuery(tab: DashboardTab): void {
   window.history.pushState({}, "", url);
 }
 
-export default function DashboardApp({ initialProjects, initialPages, initialUser }: DashboardAppProps) {
+export default function DashboardApp({ initialProjects, initialPages, initialUser, isMobileUA }: DashboardAppProps) {
   const [activeTab, setActiveTab] = useState<DashboardTab>(readTabFromQuery);
   const [projects, setProjects] = useState<ProjectDoc[]>(initialProjects);
   const [pages, setPages] = useState<PaperDoc[]>(initialPages);
@@ -158,6 +159,12 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
       setCreatingProject(false);
       toast.error(error instanceof Error ? error.message : "Failed to create project.");
     }
+  }
+
+  function handlePaperDeleted(paperId: string) {
+    setPages((prev) => prev.filter((paper) => paper.paperId !== paperId));
+    setSelectedPaper((prev) => (prev?.paperId === paperId ? null : prev));
+    setPreviewOpen(false);
   }
 
 
@@ -327,6 +334,8 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
         onOpenChange={setPreviewOpen}
         paper={selectedPaper}
         handle={initialUser?.username ?? "user"}
+        isMobileUA={isMobileUA}
+        onPaperDeleted={handlePaperDeleted}
       />
     </div>
   );

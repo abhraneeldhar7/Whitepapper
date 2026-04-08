@@ -50,7 +50,7 @@ import {
   MAX_THUMBNAIL_WIDTH,
 } from "@/lib/constants";
 import type { PaperDoc, PaperMetadata, UserDoc } from "@/lib/types";
-import { compressImage, copyToClipboard, deepEqual, isImageFile } from "@/lib/utils";
+import { compressImage, copyToClipboard, deepEqual, downloadMarkdownFile, isImageFile } from "@/lib/utils";
 import { resolveIntegrationBaseUrl } from "@/lib/integrationBaseUrl";
 import click1Sound from "@/assets/sounds/click1.mp3";
 import click2Sound from "@/assets/sounds/click2.mp3";
@@ -70,6 +70,7 @@ type WriteEditorProps = {
   initialPaper: PaperDoc;
   initialUser?: UserDoc | null;
   integrationBaseUrl?: string;
+  isMobileUA: boolean;
 };
 
 type UiStatus = "draft" | "public";
@@ -124,7 +125,7 @@ const metadataFieldConfig: Array<{ key: keyof PaperMetadata; type: "text" | "num
   { key: "license", type: "text" },
 ];
 
-export default function WriteEditor({ initialPaper, initialUser, integrationBaseUrl }: WriteEditorProps) {
+export default function WriteEditor({ initialPaper, initialUser, integrationBaseUrl, isMobileUA }: WriteEditorProps) {
   const [user, setUser] = useState<UserDoc | null>(initialUser ?? null);
   const paperId = initialPaper.paperId;
   const [paperDoc, setPaperDoc] = useState<PaperDoc>(() => ({
@@ -155,7 +156,6 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
   const [tempMetadataImageMap, setTempMetadataImageMap] = useState<Record<string, string>>({});
   const [statusPopoverOpen, setStatusPopoverOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [isTopBarHovered, setIsTopBarHovered] = useState(false);
   const [isTopBarPinned, setIsTopBarPinned] = useState(false);
   const [keyboardEffectEnabled, setKeyboardEffectEnabled] = useState(Boolean(user?.preferences?.showKeyboardEffect));
@@ -177,6 +177,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
     status: toUiStatus(paperDoc.status),
     lastSavedSlug: savedPaperDoc.slug,
   };
+  const isMobile = isMobileUA;
 
   useEffect(() => {
     setKeyboardEffectEnabled(Boolean(user?.preferences?.showKeyboardEffect));
@@ -226,22 +227,6 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [pageDetails.status, title, slug, body, pageDetails.thumbnailUrl, isAssetUploading, metadata, user?.username]);
-
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 768px)");
-    const handleMediaChange = (event: MediaQueryListEvent) => {
-      setIsMobile(event.matches);
-    };
-
-    setIsMobile(media.matches);
-    if (typeof media.addEventListener === "function") {
-      media.addEventListener("change", handleMediaChange);
-      return () => media.removeEventListener("change", handleMediaChange);
-    }
-
-    media.addListener(handleMediaChange);
-    return () => media.removeListener(handleMediaChange);
-  }, []);
 
   useEffect(() => {
     if (sheetOpen || statusPopoverOpen) {
@@ -381,10 +366,19 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
       const updated = await onSave(nextStatus);
       const resolvedStatus = toUiStatus(updated.status);
       if (resolvedStatus === "public") {
-        toast.success("Paper published.");
         const publicUrl = resolvePublicPaperUrl(updated.slug);
         if (publicUrl) {
-          window.location.href = publicUrl;
+          const visitPublishedPage = () => {
+            window.open(publicUrl, "_blank", "noopener,noreferrer");
+          };
+          toast.success("Published", {
+            action: {
+              label: "Visit",
+              onClick: visitPublishedPage,
+            },
+          });
+        } else {
+          toast.success("Published");
         }
         return;
       }
@@ -563,16 +557,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
       return;
     }
     setExportLoading(true);
-    const fileName = `${slugValue || "page"}.md`;
-    const blob = new Blob([body], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    downloadMarkdownFile(body, slugValue || "page");
     setExportLoading(false);
   };
 
@@ -927,7 +912,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                     <div className="space-y-2">
                       <Label>Preferences</Label>
                       <div className="p-3 space-y-6">
-                        <div className="flex justify-between">
+                        <div className="hidden md:flex justify-between">
                           <div className="flex gap-2 items-center">
                             {keyboardEffectEnabled ? <KeyboardIcon size={17} /> : <KeyboardOffIcon size={17} />}
                             <p>Enable keyboard effect</p>

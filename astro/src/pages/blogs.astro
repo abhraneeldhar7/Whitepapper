@@ -36,8 +36,8 @@ async function fetchSiteBlogCollectionBySlug(slug: string): Promise<SiteBlogColl
   return response.json() as Promise<SiteBlogCollectionResponse>;
 }
 
-const updateBlogs = await fetchSiteBlogCollectionBySlug("updates");
-const resourcesBlogs = await fetchSiteBlogCollectionBySlug("resources");
+// const updateBlogs = await fetchSiteBlogCollectionBySlug("updates");
+// const resourcesBlogs = await fetchSiteBlogCollectionBySlug("resources");
 
 Astro.response.headers.set(
   "Cache-Control",
@@ -52,8 +52,8 @@ Astro.response.headers.set(
       pageTitle="blogs"
       primaryTitle="Latest at Whitepapper"
       secondaryTitle="Resources"
-      primaryBlogs={updateBlogs.papers}
-      secondaryBlogs={resourcesBlogs.papers}
+      primaryBlogs={[]}
+      secondaryBlogs={[]}
     />
   </main>
 </Layout>

@@ -42,7 +42,7 @@ export default function PaperCardComponent({
                 </span>
             )}
 
-            <div className="overflow-hidden md:h-[170px] h-[125px]">
+            <div className="overflow-hidden aspect-5/3">
                 {
                     paperData.thumbnailUrl ?
                         <img

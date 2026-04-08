@@ -1,24 +1,9 @@
-
+import { isDesktopUserAgent } from "@/lib/userAgent";
 
 export default function TweetStack() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  // Keep transform behavior responsive: mobile stacks only on Y, desktop on X + Y.
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(min-width: 768px)');
-    const updateIsDesktop = (e: MediaQueryListEvent | MediaQueryList) => {
-      setIsDesktop(e.matches);
-    };
-
-    updateIsDesktop(mediaQuery);
-    mediaQuery.addEventListener('change', updateIsDesktop);
-
-    return () => {
-      mediaQuery.removeEventListener('change', updateIsDesktop);
-    };
-  }, []);
+  const isDesktop = isDesktopUserAgent(typeof navigator !== "undefined" ? navigator.userAgent : "");
 
   // Handle the auto-play timer
   useEffect(() => {

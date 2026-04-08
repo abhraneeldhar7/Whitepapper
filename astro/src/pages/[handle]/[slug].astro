@@ -9,6 +9,7 @@ import type { PaperDoc } from "@/lib/types";
 import { DotIcon } from "lucide-react";
 import { isReservedUsername } from "@/lib/reservedPaths";
 import { buildPaperSeoConfig, buildPublicPaperMetadata } from "@/metadata/dynamic";
+import { isDesktopUserAgent } from "@/lib/userAgent";
 
 const handle = Astro.params.handle as string;
 const pageSlug = Astro.params.slug as string;
@@ -19,7 +20,7 @@ const siteUrl = String(import.meta.env.PUBLIC_SITE_URL ?? "")
   .trim()
   .replace(/\/+$/, "");
 const userAgent = Astro.request.headers.get("user-agent") ?? "";
-const isDesktopUA = !/Mobi|Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile|WPDesktop/i.test(userAgent);
+const isDesktopUA = isDesktopUserAgent(userAgent);
 
 if (!normalizedHandle || rawHandle.includes("@") || isReservedUsername(normalizedHandle)) {
   return new Response(null, { status: 404 });

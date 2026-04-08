@@ -37,6 +37,7 @@ type CollectionWorkspaceProps = {
   initialCollection: CollectionDoc;
   initialPages: PaperDoc[];
   initialUser?: UserDoc | null;
+  isMobileUA: boolean;
 };
 
 function normalizeCollectionSlug(value: string): string {
@@ -56,6 +57,7 @@ export default function CollectionWorkspace({
   initialCollection,
   initialPages,
   initialUser,
+  isMobileUA,
 }: CollectionWorkspaceProps) {
   const [collection, setCollection] = useState<CollectionDoc | null>(initialCollection);
   const [pages, setPages] = useState<PaperDoc[]>(initialPages);
@@ -272,6 +274,12 @@ export default function CollectionWorkspace({
       toast.error(error instanceof Error ? error.message : "Failed to delete collection.");
       setDeleteLoading(false);
     }
+  }
+
+  function handlePaperDeleted(paperId: string) {
+    setPages((prev) => prev.filter((paper) => paper.paperId !== paperId));
+    setSelectedPaper((prev) => (prev?.paperId === paperId ? null : prev));
+    setPreviewOpen(false);
   }
 
   if (!collection || !initialUser || collection.collectionId !== collectionId) {
@@ -528,6 +536,8 @@ export default function CollectionWorkspace({
         onOpenChange={setPreviewOpen}
         paper={selectedPaper}
         handle={initialUser?.username ?? "user"}
+        isMobileUA={isMobileUA}
+        onPaperDeleted={handlePaperDeleted}
       />
     </div>
   );

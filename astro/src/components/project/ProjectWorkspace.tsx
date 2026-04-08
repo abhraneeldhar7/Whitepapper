@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Ellipsis, FolderPlus, LockIcon, NotebookPen, PencilIcon, PlusIcon, RssIcon, SaveIcon, SquareArrowOutUpLeft, SquareArrowOutUpRight, SquareArrowUpRight, TrashIcon, XIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, Ellipsis, FolderPlus, LockIcon, NotebookPen, PencilIcon, PlusIcon, RssIcon, SaveIcon, SquareArrowOutUpLeft, SquareArrowOutUpRight, SquareArrowUpRight, TrashIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import FolderNotes from "@/components/folderComponent";
@@ -54,6 +54,7 @@ type ProjectWorkspaceProps = {
   initialCollections: CollectionDoc[];
   initialApiDoc: ApiKeySummary | null;
   initialUser?: UserDoc | null;
+  isMobileUA: boolean;
 };
 
 type ProjectTab = "overview" | "api";
@@ -98,6 +99,7 @@ export default function ProjectWorkspace({
   initialCollections,
   initialApiDoc,
   initialUser,
+  isMobileUA,
 }: ProjectWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<ProjectTab>(readTabFromQuery);
   const [project, setProject] = useState<ProjectDoc>(initialProject);
@@ -128,6 +130,7 @@ export default function ProjectWorkspace({
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
+  const [apiKeyCopied, setApiKeyCopied] = useState(false);
   const projectLogoInputRef = useRef<HTMLInputElement>(null);
 
   const isProjectAssetUploading = uploadingProjectLogo || uploadingProjectEmbeddedCount > 0;
@@ -215,6 +218,10 @@ export default function ProjectWorkspace({
       }
     };
   }, [tempUploadingProjectLogo]);
+
+  useEffect(() => {
+    setApiKeyCopied(false);
+  }, [apiKeyDialogOpen, createdApiKey]);
 
   async function handleSaveProjectDetails() {
     if (!project.name.trim()) {
@@ -336,6 +343,7 @@ export default function ProjectWorkspace({
     try {
       const uploaded = await uploadPromise;
       setProject((prev) => ({ ...prev, logoUrl: uploaded.url }));
+      setEditingProject(true);
     } catch {
       // toast.promise handles failure UI.
     } finally {
@@ -478,7 +486,13 @@ export default function ProjectWorkspace({
       return;
     }
 
-    await copyToClipboardWithToast(createdApiKey, "API key copied.", "Unable to copy API key.");
+    const ok = await copyToClipboardWithToast(createdApiKey, "API key copied.", "Unable to copy API key.");
+    if (!ok) {
+      setApiKeyCopied(false);
+      return;
+    }
+    setApiKeyCopied(true);
+    window.setTimeout(() => setApiKeyCopied(false), 1400);
   }
 
   async function handleResetApiKey() {
@@ -499,6 +513,12 @@ export default function ProjectWorkspace({
     } finally {
       setResettingApiKey(false);
     }
+  }
+
+  function handlePaperDeleted(paperId: string) {
+    setPages((prev) => prev.filter((paper) => paper.paperId !== paperId));
+    setSelectedPaper((prev) => (prev?.paperId === paperId ? null : prev));
+    setPreviewOpen(false);
   }
 
 
@@ -582,9 +602,8 @@ export default function ProjectWorkspace({
                     <div className="flex items-center gap-3 mt-3">
                       <div className="flex md:flex-col items-start gap-2">
                         <div
-                          className="h-[90px] w-[90px] shrink-0"
+                          className="h-[90px] w-[90px] shrink-0 cursor-pointer"
                           onClick={() => {
-                            if (!editingProject) return;
                             projectLogoInputRef.current?.click();
                           }}
                         >
@@ -972,7 +991,8 @@ export default function ProjectWorkspace({
                 </div>
                 <DialogFooter>
                   <Button onClick={handleCopyCreatedApiKey}>
-                    Copy key
+                    {apiKeyCopied ? <CheckIcon /> : <CopyIcon />}
+                    {apiKeyCopied ? "Copied" : "Copy key"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -1015,6 +1035,8 @@ export default function ProjectWorkspace({
         onOpenChange={setPreviewOpen}
         paper={selectedPaper}
         handle={initialUser?.username ?? "user"}
+        isMobileUA={isMobileUA}
+        onPaperDeleted={handlePaperDeleted}
       />
     </div >
   );

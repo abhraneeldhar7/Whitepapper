@@ -36,7 +36,7 @@ async function fetchSiteBlogCollectionBySlug(slug: string): Promise<SiteBlogColl
   return response.json() as Promise<SiteBlogCollectionResponse>;
 }
 
-const updateBlogs = await fetchSiteBlogCollectionBySlug("updates");
+// const updateBlogs = await fetchSiteBlogCollectionBySlug("updates");
 
 
 Astro.response.headers.set(
@@ -51,8 +51,14 @@ Astro.response.headers.set(
     <BlogListingPage
       pageTitle="updates"
       primaryTitle="Updates"
+      primaryBlogs={[]}
+      secondaryBlogs={[]}
+    />
+    <!-- <BlogListingPage
+      pageTitle="updates"
+      primaryTitle="Updates"
       primaryBlogs={updateBlogs.papers.slice(0, 4)}
       secondaryBlogs={updateBlogs.papers.slice(5, updateBlogs.papers.length)}
-    />
+    /> -->
   </main>
 </Layout>

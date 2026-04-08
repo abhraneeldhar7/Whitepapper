@@ -4,10 +4,12 @@ import DashboardApp from "@/components/dashboard/DashboardApp";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import { createApiClient } from "@/lib/api/client";
 import { getDashboardData } from "@/lib/api/users";
+import { isMobileUserAgent } from "@/lib/userAgent";
 
 const { userId, getToken } = Astro.locals.auth();
 
 const token = await getToken();
+const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 
 const serverClient = createApiClient(token);
 const dashboardData = await getDashboardData(serverClient).catch(() => null);
@@ -25,6 +27,7 @@ const { user: initialUser, projects: initialProjects, papers: initialPages } = d
     initialProjects={initialProjects}
     initialPages={initialPages}
     initialUser={initialUser}
+    isMobileUA={isMobileUA}
   >
     <DashboardSkeleton slot="fallback" />
   </DashboardApp>

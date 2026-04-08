@@ -36,7 +36,7 @@ async function fetchSiteBlogCollectionBySlug(slug: string): Promise<SiteBlogColl
   return response.json() as Promise<SiteBlogCollectionResponse>;
 }
 
-const resourcesBlogs = await fetchSiteBlogCollectionBySlug("resources");
+// const resourcesBlogs = await fetchSiteBlogCollectionBySlug("resources");
 
 
 Astro.response.headers.set(
@@ -48,11 +48,17 @@ Astro.response.headers.set(
 
 <Layout>
   <main aria-label="Resources listing">
-    <BlogListingPage
+    <!-- <BlogListingPage
       pageTitle="resources"
       primaryTitle="Resources"
       primaryBlogs={resourcesBlogs.papers.slice(0, 2)}
       secondaryBlogs={resourcesBlogs.papers.slice(2, resourcesBlogs.papers.length)}
+    /> -->
+    <BlogListingPage
+      pageTitle="resources"
+      primaryTitle="Resources"
+      primaryBlogs={[]}
+      secondaryBlogs={[]}
     />
   </main>
 </Layout>

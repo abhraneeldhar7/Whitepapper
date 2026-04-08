@@ -7,6 +7,7 @@ import { resolveIntegrationBaseUrl } from "@/lib/integrationBaseUrl";
 import { getPaper } from "@/lib/api/papers";
 import { getCurrentUser } from "@/lib/api/users";
 import type { PaperDoc, UserDoc } from "@/lib/types";
+import { isMobileUserAgent } from "@/lib/userAgent";
 
 const { userId, getToken } = Astro.locals.auth();
 const id = Astro.params.id as string;
@@ -19,6 +20,7 @@ const token = await getToken();
 if (!token) {
   return Astro.redirect("/login");
 }
+const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 
 const serverClient = createApiClient(token);
 const initialUser = await getCurrentUser(serverClient).catch(() => null as UserDoc | null);
@@ -39,6 +41,7 @@ const integrationBaseUrl = resolveIntegrationBaseUrl();
     initialPaper={initialPaper}
     initialUser={initialUser}
     integrationBaseUrl={integrationBaseUrl}
+    isMobileUA={isMobileUA}
   >
     <WriteEditorSkeleton slot="fallback" />
   </WriteEditorRoot>
