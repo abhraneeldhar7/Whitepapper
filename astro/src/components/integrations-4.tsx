@@ -6,6 +6,8 @@ import MediumLogo from '@/assets/logos/mediumLogo.jpeg'
 import RedditLogo from '@/assets/logos/redditLogo.jpeg'
 import DevtoLogo from '@/assets/logos/devto.webp'
 import HashnodeLogo from '@/assets/logos/hashnodeLogo.png'
+import apiIcon from '@/assets/logos/rssLogo.png'
+import threadsLogo from '@/assets/logos/threadsLogo.png'
 
 export default function IntegrationsSection({ hideText = false }: { hideText?: boolean }) {
     return (
@@ -15,13 +17,13 @@ export default function IntegrationsSection({ hideText = false }: { hideText?: b
                     <div className="relative mx-auto flex max-w-sm items-center justify-between">
                         <div className="space-y-6">
                             <IntegrationCard position="left-top">
-                                <img src={LinkedInLogo.src} alt="LinkedIn" className="size-6 object-cover rounded-[4px]" loading="lazy" />
+                                <img src={HashnodeLogo.src} alt="Hashnode" className="size-6 object-cover rounded-[4px]" loading="lazy" />
                             </IntegrationCard>
                             <IntegrationCard position="left-middle">
-                                <img src={XLogo.src} alt="X" className="size-6 object-cover rounded-[4px]" loading="lazy" />
+                                <img src={DevtoLogo.src} alt="DevTo" className="size-6 object-cover rounded-[4px]" loading="lazy" />
                             </IntegrationCard>
                             <IntegrationCard position="left-bottom">
-                                <img src={MediumLogo.src} alt="Medium" className="size-6 object-cover rounded-[4px]" loading="lazy" />
+                                <img src={apiIcon.src} alt="DevApi" className="size-6 object-cover rounded-[4px]" loading="lazy" />
                             </IntegrationCard>
                         </div>
                         <div className="mx-auto my-2 flex w-fit justify-center gap-2">
@@ -40,13 +42,13 @@ export default function IntegrationsSection({ hideText = false }: { hideText?: b
 
                         <div className="space-y-6">
                             <IntegrationCard position="right-top">
-                                <img src={RedditLogo.src} alt="Reddit" className="size-6 object-cover rounded-[4px]" loading="lazy" />
+                                <img src={MediumLogo.src} alt="Medium" className="size-6 object-cover rounded-[4px]" loading="lazy" />
                             </IntegrationCard>
                             <IntegrationCard position="right-middle">
-                                <img src={DevtoLogo.src} alt="Dev.to" className="size-6 object-cover rounded-[4px]" loading="lazy" />
+                                <img src={threadsLogo.src} alt="Threads" className="size-6 object-cover rounded-[4px]" loading="lazy" />
                             </IntegrationCard>
                             <IntegrationCard position="right-bottom">
-                                <img src={HashnodeLogo.src} alt="Hashnode" className="size-6 object-cover rounded-[4px]" loading="lazy" />
+                                <img src={LinkedInLogo.src} alt="Linkedin" className="size-6 object-cover rounded-[4px]" loading="lazy" />
                             </IntegrationCard>
                         </div>
                     </div>

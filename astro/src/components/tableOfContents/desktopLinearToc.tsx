@@ -49,38 +49,62 @@ export function LinearTableOfContents({
   useEffect(() => {
     if (headings.length === 0) return;
 
-    const handleScroll = () => {
-      const container = document.getElementById(containerId);
-      if (!container) return;
+    let ticking = false;
 
-      const headingElements = Array.from(container.querySelectorAll("h1, h2, h3, h4, h5, h6"));
-      let currentActiveId = "";
+    const updateActiveHeading = () => {
+      ticking = false;
 
-      for (const el of headingElements) {
-        const rect = el.getBoundingClientRect();
-        // Check if the heading has crossed the reading threshold (with a small 10px buffer)
-        if (rect.top <= offset + 10) {
-          currentActiveId = el.id;
-        } else {
-          break; // Stop looking once we find a heading below the reading threshold
+      const headingElements = headings
+        .map((heading) => document.getElementById(heading.id))
+        .filter((el): el is HTMLElement => el !== null);
+
+      if (headingElements.length === 0) return;
+
+      // Pick the heading whose top is closest to the reading threshold line.
+      const threshold = Math.max(0, offset);
+      const closestHeading = headingElements.reduce((best, current) => {
+        const bestTop = best.getBoundingClientRect().top;
+        const currentTop = current.getBoundingClientRect().top;
+        const bestDistance = Math.abs(bestTop - threshold);
+        const currentDistance = Math.abs(currentTop - threshold);
+
+        if (currentDistance < bestDistance) {
+          return current;
         }
-      }
 
-      // If we are at the very top (above the first heading), select the closest one (the first)
-      if (!currentActiveId && headingElements.length > 0) {
-        currentActiveId = headingElements[0].id;
-      }
+        if (currentDistance === bestDistance) {
+          // If equally close, prefer the heading already at/above the threshold.
+          const bestIsAbove = bestTop <= threshold;
+          const currentIsAbove = currentTop <= threshold;
+          if (currentIsAbove && !bestIsAbove) {
+            return current;
+          }
+        }
 
-      if (currentActiveId && currentActiveId !== activeId) {
-        setActiveId(currentActiveId);
-      }
+        return best;
+      }, headingElements[0]);
+
+      const currentActiveId = closestHeading.id;
+
+      setActiveId((prev) => (prev === currentActiveId ? prev : currentActiveId));
     };
 
-    handleScroll(); // Trigger immediately on mount
+    const queueUpdate = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(updateActiveHeading);
+    };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [containerId, offset, activeId, headings]);
+    updateActiveHeading(); // Trigger immediately on mount
+
+    window.addEventListener("scroll", queueUpdate, { passive: true });
+    window.addEventListener("resize", queueUpdate);
+
+    return () => {
+      window.removeEventListener("scroll", queueUpdate);
+      window.removeEventListener("resize", queueUpdate);
+    };
+  }, [containerId, offset, headings]);
 
   // 3. Smooth Indicator Position Calculation
   useEffect(() => {

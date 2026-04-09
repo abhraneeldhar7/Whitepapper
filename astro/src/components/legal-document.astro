@@ -1,5 +1,6 @@
 ---
 import PostRender from "./pre_made_components/render/postPreview";
+import { LinearTableOfContents } from "./tableOfContents/desktopLinearToc";
 
 type LegalSection = {
   title: string;
@@ -25,6 +26,8 @@ function slugify(value: string) {
     .trim()
     .replace(/\s+/g, "-");
 }
+
+const containerId = "legal-document-container";
 ---
 
 <div class="min-h-screen bg-background text-foreground">
@@ -68,30 +71,11 @@ function slugify(value: string) {
     <div class="grid gap-8 border-t border-border pt-12 md:grid-cols-12">
       <aside class="md:col-span-4">
         <div class="md:sticky md:top-20">
-          <p
-            class="mb-3 text-xs uppercase tracking-[0.14em] text-muted-foreground"
-          >
-            On This Page
-          </p>
-          <nav class="space-y-1.2">
-            {
-              sections.map((section) => {
-                const id = slugify(section.title);
-                return (
-                  <a
-                    href={`#${id}`}
-                    class="block border-l border-border py-2 pl-3 text-sm text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
-                  >
-                    {section.title}
-                  </a>
-                );
-              })
-            }
-          </nav>
+          <LinearTableOfContents offset={64} client:load containerId={containerId} />
         </div>
       </aside>
 
-      <main class="space-y-3 md:col-span-8">
+      <main class="space-y-3 md:col-span-8" id={containerId}>
         {
           sections.map((section, index) => {
             const id = slugify(section.title);
@@ -109,7 +93,7 @@ function slugify(value: string) {
                 {/* <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted-foreground md:text-base">
                   {section.content}
                 </p> */}
-                <PostRender content={section.content}/>
+                <PostRender content={section.content} />
               </article>
             );
           })
