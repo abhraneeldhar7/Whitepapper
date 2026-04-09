@@ -1,7 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import { formatFirestoreDate } from "@/lib/utils";
-import PostPreviewMobileToc from "@/components/pre_made_components/render/PostPreviewMobileToc";
+import MobileTableOfContent from "@/components/ui/toc/mobileTableOfContent";
 import type { PaperDoc } from "@/lib/types";
 import { ChevronLeft, DotIcon } from "lucide-react";
 import {
@@ -191,8 +191,8 @@ const seo = buildPaperSeoConfig(metadata, {
                         />
                     </div>
                 ) : (
-                    <PostPreviewMobileToc
-                    topOffset={80}
+                    <MobileTableOfContent
+                        topOffset={80}
                         client:idle
                         contentContainerId={contentContainerId}
                     />

@@ -36,7 +36,6 @@ const token = await getToken().catch(() => null);
 const isSignedIn = Boolean(token);
 const routeSeoConfig = getPageSeoConfig(pathname);
 const pageSeoConfig = seo ?? routeSeoConfig;
-const shouldBindCopyButtons = pathname === "/docs" || pathname.startsWith("/docs/") || pathname === "/blogs" || pathname.startsWith("/blogs/");
 
 const pathToTitle = (path: string) => {
   if (path === "/") return "Whitepapper";
@@ -218,63 +217,6 @@ const jsonLdItems = Array.isArray(pageSeoConfig?.jsonLd)
         }
       })();
     </script>
-    {
-      shouldBindCopyButtons ? (
-        <script>
-          import { toast } from "sonner";
-
-          (() => {
-            const BOUND_ATTR = "data-copy-bound";
-
-            const bindCopyButtons = () => {
-              const buttons = document.querySelectorAll("button[data-copy-button]");
-
-              for (const button of buttons) {
-                if (!(button instanceof HTMLButtonElement)) continue;
-                if (button.hasAttribute(BOUND_ATTR)) continue;
-
-                const pre = button.closest("pre");
-                const codeEl = pre?.querySelector("code");
-                if (!codeEl) continue;
-
-                button.setAttribute(BOUND_ATTR, "true");
-                button.addEventListener("click", async () => {
-                  const text = codeEl.textContent ?? "";
-                  if (!text.trim()) return;
-
-                  try {
-                    await navigator.clipboard.writeText(text);
-                    toast.success("Copied");
-                  } catch {
-                    // Clipboard may be blocked in some contexts.
-                  }
-                });
-              }
-            };
-
-            if (document.readyState === "loading") {
-              document.addEventListener("DOMContentLoaded", () => bindCopyButtons());
-            } else {
-              bindCopyButtons();
-            }
-
-            const observer = new MutationObserver((mutations) => {
-              for (const mutation of mutations) {
-                for (const node of mutation.addedNodes) {
-                  if (!(node instanceof HTMLElement)) continue;
-                  bindCopyButtons();
-                }
-              }
-            });
-
-            observer.observe(document.documentElement, {
-              childList: true,
-              subtree: true,
-            });
-          })();
-        </script>
-      ) : null
-    }
   </head>
   <body>
     {showSiteNav && <SiteTopNav isSignedIn={isSignedIn} />}

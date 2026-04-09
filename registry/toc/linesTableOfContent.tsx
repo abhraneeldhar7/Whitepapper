@@ -10,10 +10,10 @@ interface Heading {
 }
 
 interface TableOfContentsProps {
-  contentRef: React.RefObject<HTMLElement | null>;
+  contentContainerId: string;
 }
 
-export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef }) => {
+export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentContainerId }) => {
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeId, setActiveId] = useState<string>('');
   const [isHovering, setIsHovering] = useState<boolean>(false);
@@ -67,15 +67,14 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
 
   // Extract headings from content
   useEffect(() => {
-    if (!contentRef.current) return;
-
     const extractHeadings = () => {
-      if (!contentRef.current) return;
+      const contentEl = document.getElementById(contentContainerId) as HTMLElement | null;
+      if (!contentEl) return;
 
-      const elements = contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      const elements = contentEl.querySelectorAll('h1, h2, h3, h4, h5, h6');
       const root = scrollRootRef.current ?? document.getElementById('app-scroll-root') ?? window;
-      const contentAbsoluteTop = getAbsoluteTop(contentRef.current, root);
-      const contentHeight = Math.max(1, contentRef.current.scrollHeight);
+      const contentAbsoluteTop = getAbsoluteTop(contentEl, root);
+      const contentHeight = Math.max(1, contentEl.scrollHeight);
 
       const headingData: Heading[] = Array.from(elements).map((heading, index) => {
         const id = heading.id || `heading-${index}`;
@@ -105,23 +104,27 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
     const retryId = window.setInterval(() => {
       attempts += 1;
       extractHeadings();
-      if (attempts >= 20 || (contentRef.current?.querySelector('h1, h2, h3, h4, h5, h6'))) {
+      const contentEl = document.getElementById(contentContainerId) as HTMLElement | null;
+      if (attempts >= 20 || (contentEl?.querySelector('h1, h2, h3, h4, h5, h6'))) {
         window.clearInterval(retryId);
       }
     }, 120);
 
     const observer = new MutationObserver(extractHeadings);
-    observer.observe(contentRef.current, {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
+    const contentEl = document.getElementById(contentContainerId) as HTMLElement | null;
+    if (contentEl) {
+      observer.observe(contentEl, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+    }
 
     return () => {
       window.clearInterval(retryId);
       observer.disconnect();
     };
-  }, [contentRef, getAbsoluteTop]);
+  }, [contentContainerId, getAbsoluteTop]);
 
   const headingLineMap = useMemo(() => {
     const map = new Map<number, number>();
@@ -182,16 +185,13 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
 
   // Handle scroll to determine active heading and active normal line
   const handleScroll = useCallback(() => {
-    if (!contentRef.current || headings.length === 0) return;
+    if (headings.length === 0) return;
 
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
     }
 
     scrollTimeoutRef.current = setTimeout(() => {
-      const contentEl = contentRef.current;
-      if (!contentEl) return;
-
       const scrollRoot = scrollRootRef.current ?? window;
       // Find active heading (the one that crossed 50px from top)
       let activeHeading: Heading | null = null;
@@ -218,7 +218,7 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
 
       initialActiveSetRef.current = true;
     }, 16);
-  }, [contentRef, headings]);
+  }, [headings]);
 
   // Set initial active heading on mount
   useEffect(() => {
@@ -256,7 +256,7 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentRef
   }, [handleScroll]);
 
   const handleLineClick = (lineIndex: number): void => {
-    if (!contentRef.current || headings.length === 0) return;
+    if (headings.length === 0) return;
 
     const closestHeadingIndex = headingIndexForLine(lineIndex);
     const isHeadingLine = closestHeadingIndex !== -1;

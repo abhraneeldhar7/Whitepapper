@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { FolderPlus, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import UserPopover from "@/components/pre_made_components/user_popover/userPopover";
+import UserPopover from "@/components/userPopover";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

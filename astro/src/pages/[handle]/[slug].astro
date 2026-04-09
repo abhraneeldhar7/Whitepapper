@@ -3,8 +3,8 @@ import Layout from "@/layouts/Layout.astro";
 import { getPublicPaperPageData } from "@/lib/api/public";
 import { formatFirestoreDate } from "@/lib/utils";
 import PostRender from "@/components/ui/markdown-render/markdown-render";
-import PostPreviewDesktopToc from "@/components/pre_made_components/render/PostPreviewDesktopToc";
-import PostPreviewMobileToc from "@/components/pre_made_components/render/PostPreviewMobileToc";
+import { LinesTableOfContent } from "@/components/ui/toc/linesTableOfContent";
+import MobileTableOfContent from "@/components/ui/toc/mobileTableOfContent";
 import type { PaperDoc } from "@/lib/types";
 import { DotIcon } from "lucide-react";
 import { isReservedUsername } from "@/lib/reservedPaths";
@@ -141,9 +141,9 @@ const seo = buildPaperSeoConfig(metadata, {
         <PostRender content={paper.body || ""} contentContainerId={contentContainerId} />
         {
           isDesktopUA ? (
-            <PostPreviewDesktopToc client:idle contentContainerId={contentContainerId} />
+            <LinesTableOfContent client:idle contentContainerId={contentContainerId} />
           ) : (
-            <PostPreviewMobileToc client:idle contentContainerId={contentContainerId} />
+            <MobileTableOfContent client:idle contentContainerId={contentContainerId} />
           )
         }
       </section>

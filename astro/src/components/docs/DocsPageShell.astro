@@ -1,7 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import PostRender from "@/components/ui/markdown-render/markdown-render";
-import PostPreviewMobileToc from "@/components/pre_made_components/render/PostPreviewMobileToc";
+import MobileTableOfContent from "@/components/ui/toc/mobileTableOfContent";
 import DocsCopyButton from "@/components/docs/DocsCopyButton";
 import DocsMobileNav from "@/components/docs/DocsMobileNav";
 import DocsSidebar from "@/components/docs/DocsSidebar.astro";
@@ -215,7 +215,7 @@ const docsPageSeo = {
 
   {
     shouldRenderMobileToc ? (
-      <PostPreviewMobileToc
+      <MobileTableOfContent
         client:load
         contentContainerId={docsContentContainerId}
         topOffset={110}

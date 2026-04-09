@@ -9,7 +9,7 @@ interface Heading {
 }
 
 interface MobileTableOfContentProps {
-    contentRef: React.RefObject<HTMLElement | null>
+    contentContainerId: string
     topOffset?: number
 }
 
@@ -44,7 +44,7 @@ function CircleProgress({ value }: { value: number }) {
     )
 }
 
-const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentRef, topOffset = 60 }) => {
+const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentContainerId, topOffset = 60 }) => {
     const [headings, setHeadings] = useState<Heading[]>([])
     const [activeId, setActiveId] = useState<string>('')
     const [progress, setProgress] = useState(0)
@@ -60,13 +60,12 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentRef,
 
     // Extract headings from content
     useEffect(() => {
-        if (!contentRef.current) return
-
         const extractHeadings = () => {
-            if (!contentRef.current) return
+            const contentEl = document.getElementById(contentContainerId) as HTMLElement | null
+            if (!contentEl) return
 
             const headingElements = Array.from(
-                contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6')
+                contentEl.querySelectorAll('h1, h2, h3, h4, h5, h6')
             ) as HTMLElement[]
 
             const extractedHeadings = headingElements.map((element, index) => {
@@ -98,7 +97,8 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentRef,
         const retryId = window.setInterval(() => {
             attempts += 1
             extractHeadings()
-            if (attempts >= 20 || (contentRef.current?.querySelector('h1, h2, h3, h4, h5, h6'))) {
+            const contentEl = document.getElementById(contentContainerId) as HTMLElement | null
+            if (attempts >= 20 || (contentEl?.querySelector('h1, h2, h3, h4, h5, h6'))) {
                 window.clearInterval(retryId)
             }
         }, 120)
@@ -106,25 +106,28 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentRef,
         const observer = new MutationObserver(() => {
             extractHeadings()
         })
-        observer.observe(contentRef.current, { childList: true, subtree: true })
+        const contentEl = document.getElementById(contentContainerId) as HTMLElement | null
+        if (contentEl) {
+            observer.observe(contentEl, { childList: true, subtree: true })
+        }
 
         return () => {
             window.cancelAnimationFrame(rafId)
             window.clearInterval(retryId)
             observer.disconnect()
         }
-    }, [contentRef])
+    }, [contentContainerId])
 
     // Handle scroll progress and Active Heading detection
     const handleScroll = useCallback(() => {
-        if (!contentRef.current || headings.length === 0) return
+        if (headings.length === 0) return
 
         if (scrollTimeoutRef.current) {
             clearTimeout(scrollTimeoutRef.current)
         }
 
         scrollTimeoutRef.current = setTimeout(() => {
-            const contentEl = contentRef.current
+            const contentEl = document.getElementById(contentContainerId) as HTMLElement | null
             if (!contentEl) return
 
             const scrollRoot = scrollRootRef.current ?? window
@@ -182,7 +185,7 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentRef,
             }
 
         }, 16)
-    }, [contentRef, headings, topOffset])
+    }, [contentContainerId, headings, topOffset])
 
     // Attach scroll listener
     useEffect(() => {

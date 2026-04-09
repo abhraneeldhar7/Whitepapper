@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { AnimatedThemeToggler } from '../animated-theme-toggler'
-// import { AnimatedThemeToggler } from './ui/animated-theme-toggler'
 
 interface Heading {
     id: string
