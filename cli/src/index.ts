@@ -4,6 +4,7 @@ import prompts from "prompts";
 import pc from "picocolors";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 type ComponentFile = {
   name: string;
@@ -22,16 +23,77 @@ type Registry = {
   components: Component[];
 };
 
-const REGISTRY_URL =
-  "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/registry.json";
+const DEFAULT_REGISTRY_URLS = [
+  "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/registry.json",
+];
 
-async function fetchRegistry(): Promise<Registry> {
-  const response = await fetch(REGISTRY_URL);
-  if (!response.ok) {
-    throw new Error(`Could not reach registry at ${REGISTRY_URL}`);
+function getRegistryCandidates(): string[] {
+  const envUrl = process.env.WHITEPAPPER_REGISTRY_URL?.trim();
+  if (envUrl) {
+    return [envUrl, ...DEFAULT_REGISTRY_URLS.filter((url) => url !== envUrl)];
   }
 
-  return (await response.json()) as Registry;
+  return DEFAULT_REGISTRY_URLS;
+}
+
+async function loadLocalRegistryFallback(): Promise<Registry | null> {
+  const currentFilePath = fileURLToPath(import.meta.url);
+  const currentDir = path.dirname(currentFilePath);
+
+  // Works for both ts source (cli/src) and published dist (cli/dist).
+  const candidates = [
+    path.resolve(currentDir, "../../registry/registry.json"),
+    path.resolve(currentDir, "../../../registry/registry.json"),
+    path.resolve(process.cwd(), "registry/registry.json"),
+  ];
+
+  for (const filePath of candidates) {
+    try {
+      const text = await fs.readFile(filePath, "utf8");
+      const parsed = JSON.parse(text) as Registry;
+      if (Array.isArray(parsed.components)) {
+        console.log(pc.yellow(`Using local registry fallback: ${filePath}`));
+        return parsed;
+      }
+    } catch {
+      // Try next candidate.
+    }
+  }
+
+  return null;
+}
+
+async function fetchRegistry(): Promise<Registry> {
+  const errors: string[] = [];
+
+  for (const url of getRegistryCandidates()) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        errors.push(`${url} -> HTTP ${response.status}`);
+        continue;
+      }
+
+      const parsed = (await response.json()) as Registry;
+      if (!Array.isArray(parsed.components)) {
+        errors.push(`${url} -> Invalid registry payload`);
+        continue;
+      }
+
+      return parsed;
+    } catch (error) {
+      errors.push(`${url} -> ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  const local = await loadLocalRegistryFallback();
+  if (local) {
+    return local;
+  }
+
+  throw new Error(
+    `Could not reach registry. Tried:\n${errors.map((line) => `  - ${line}`).join("\n")}`,
+  );
 }
 
 function sanitizeRelativePath(fileName: string): string {
@@ -140,5 +202,5 @@ program
 
 program.parseAsync().catch((error) => {
   console.error(pc.red(`\n${error instanceof Error ? error.message : String(error)}`));
-  process.exit(1);
+  process.exitCode = 1;
 });
