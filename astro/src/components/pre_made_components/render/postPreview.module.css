@@ -189,7 +189,7 @@
 
 /* Code Blocks - pre elements that contain code */
 .markdownDiv pre {
-    background-color: var(--muted) !important;
+    background-color: var(--card) !important;
     /* font-size: 17px; */
     margin: 1.5em 0;
     font-size: 0.85em;
@@ -202,7 +202,7 @@
 
 /* Code inside pre tags (code blocks) */
 .markdownDiv pre code {
-    background-color: var(--muted) !important;
+    /* background-color: var(--card) !important; */
     font-family: var(--font-mono, 'SF Mono', Monaco, 'Cascadia Mono', monospace);
     /* font-size: 17px; */
     /* font-size: 0.85em; */

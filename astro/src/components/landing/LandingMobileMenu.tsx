@@ -35,18 +35,18 @@ export default function LandingMobileMenu({ navButtons, isSignedIn = false }: La
         </SheetHeader>
 
         {isSignedIn ?
-          <a href="/dashboard" className="w-full my-3" >
+          <a href="/dashboard" className="w-full my-3" data-astro-prefetch="viewport">
             <Button className="w-full" size="lg">Go to Dashboard</Button>
           </a>
           :
-          <a href="/login" className="w-full my-3" >
+          <a href="/login" className="w-full my-3" data-astro-prefetch="viewport">
             <Button className="w-full" size="lg">Login</Button>
           </a>
         }
 
         <nav className="flex flex-col gap-2" aria-label="Mobile navigation">
           {navButtons.map((button) => (
-            <a key={button.href} href={button.href} className="w-full text-[50px] font-[500]">
+            <a data-astro-prefetch="viewport" key={button.href} href={button.href} className="w-full text-[50px] font-[500]">
               {button.title}
             </a>
           ))}

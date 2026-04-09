@@ -1,6 +1,6 @@
 import { MenuIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,22 +29,28 @@ export default function DocsMobileNav({ navSections, currentPath }: DocsMobileNa
           <MenuIcon />
         </Button>
       </SheetTrigger>
-
-      <SheetContent side="left" className="w-[300px] p-0 pt-10">
-        <ScrollArea className="h-[calc(100vh-2.5rem)]">
+      <SheetContent side="left" className="data-[side=left]:w-full p-1 bg-background/40 dark:bg-background/70">
+        <SheetHeader>
+          <SheetTitle className="flex gap-4 items-center">
+            <img src="/appLogo.png" height="30" width="30" alt="Whitepapper" />
+            <h1 className="text-[20px]">Documentation</h1>
+          </SheetTitle>
+        </SheetHeader>
+        <ScrollArea className="h-full">
           <nav className="p-4 pb-10 space-y-4">
             {navSections.map((section) => (
-              <div key={section.title} className="space-y-1">
+              <div key={section.title} className="space-y-1 mb-5">
                 <Label>{section.title}</Label>
-                <ul className="space-y-1">
+                <ul className="space-y-1 mt-3">
                   {section.pages.map((item) => {
                     const isActive = item.route === currentPath;
                     return (
                       <li key={item.route}>
                         <a href={item.route}>
                           <Button
-                            variant="ghost"
-                            className={cn("w-full justify-start", isActive ? "bg-muted text-foreground" : "")}
+                            size="lg"
+                            variant={isActive ? "default" : "ghost"}
+                            className="w-full justify-start"
                           >
                             {item.title}
                           </Button>

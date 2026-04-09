@@ -11,7 +11,7 @@ export default function BlogCard({
     showDesc?: boolean
 }) {
     return (
-        <a href={`/blogs/${blogData.slug}`} className="relative flex flex-col">
+        <a href={`/blogs/${blogData.slug}`} className="relative flex flex-col" data-astro-prefetch="viewport">
             <div className="overflow-hidden aspect-5/3">
                 {
                     blogData.thumbnailUrl ?

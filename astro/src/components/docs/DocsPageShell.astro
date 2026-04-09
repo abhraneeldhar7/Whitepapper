@@ -104,30 +104,40 @@ const docsPageSeo = {
 
   <div class="pb-5 md:pb-10 px-4">
     <div class="flex gap-10 justify-between">
-      <DocsSidebar navSections={navSections} currentPath={currentPath} />
+      {
+        !shouldRenderMobileToc && (
+          <DocsSidebar navSections={navSections} currentPath={currentPath} />
+        )
+      }
 
       <main
         class="max-w-[700px] w-full pt-14 md:pt-18"
         aria-label={`${pageTitle} documentation content`}
       >
         <div
-          class="fixed top-[50px] md:top-[55px] left-0 w-full z-[9] flex justify-between items-center gap-10"
+          class="fixed top-[50px] md:top-[55px] left-0 w-full z-[2] flex justify-between items-center gap-10"
         >
           <div class="md:w-[300px] md:block hidden shrink-0"></div>
 
           <div
-            class="flex w-full max-w-[700px] justify-between items-center gap-2 z-[5] bg-background/85 backdrop-blur-[20px] px-[15px] md:px-[0px] py-2 md:py-4"
+            class="flex w-full max-w-[700px] justify-between items-center gap-2 bg-background/85 backdrop-blur-[20px] px-[15px] md:px-[0px] py-2 md:py-4"
           >
-            <div class="flex gap-1 items-center w-full">
+            <div class="flex gap-1 items-center w-full z-[5]">
               <div class="md:hidden">
-                <DocsMobileNav
-                  client:load
-                  navSections={navSections}
-                  currentPath={currentPath}
-                />
+                {
+                  shouldRenderMobileToc && (
+                    <DocsMobileNav
+                      client:load
+                      navSections={navSections}
+                      currentPath={currentPath}
+                    />
+                  )
+                }
               </div>
               <div class="w-full h-[20px] md:h-[32px] relative">
-                <h1 class="absolute left-0 top-1/2 -translate-y-1/2 right-0 text-[20px] md:text-[32px] truncate font-[500] leading-[1.5em]">
+                <h1
+                  class="absolute left-0 top-1/2 -translate-y-1/2 right-0 text-[20px] md:text-[32px] truncate font-[500] leading-[1.5em]"
+                >
                   {pageTitle}
                 </h1>
               </div>
@@ -187,7 +197,7 @@ const docsPageSeo = {
         </nav>
       </main>
 
-      <aside class="hidden md:block w-[320px]">
+      <aside class="hidden md:block w-[320px] z-[10]">
         {
           !shouldRenderMobileToc && (
             <div class="fixed top-[80px] w-[320px] right-10">
