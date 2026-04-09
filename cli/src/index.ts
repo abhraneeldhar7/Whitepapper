@@ -97,7 +97,7 @@ program
 program
   .command("add [components...]")
   .description("Add one or more components from the registry")
-  .option("-o, --outdir <dir>", "directory to write files into", "src/components")
+  .option("-o, --outdir <dir>", "directory to write files into", "src/components/ui")
   .action(async (componentNames: string[] = [], options: { outdir: string }) => {
     const registry = await fetchRegistry();
     let toInstall = componentNames;

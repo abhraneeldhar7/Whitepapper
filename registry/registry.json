@@ -42,6 +42,48 @@
         "react"
       ],
       "devDependencies": []
+    },
+    {
+      "name": "linear-table-of-content",
+      "description": "Linear desktop table of contents component.",
+      "files": [
+        {
+          "name": "toc/linearTableOfContent.tsx",
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/toc/linearTableOfContent.tsx"
+        }
+      ],
+      "dependencies": [
+        "react"
+      ],
+      "devDependencies": []
+    },
+    {
+      "name": "lines-table-of-content",
+      "description": "Interactive lines desktop table of contents component.",
+      "files": [
+        {
+          "name": "toc/linesTableOfContent.tsx",
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/toc/linesTableOfContent.tsx"
+        }
+      ],
+      "dependencies": [
+        "react"
+      ],
+      "devDependencies": []
+    },
+    {
+      "name": "mobile-table-of-content",
+      "description": "Mobile bottom-sheet table of contents component.",
+      "files": [
+        {
+          "name": "toc/mobileTableOfContent.tsx",
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/toc/mobileTableOfContent.tsx"
+        }
+      ],
+      "dependencies": [
+        "react"
+      ],
+      "devDependencies": []
     }
   ]
 }
