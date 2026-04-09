@@ -6,11 +6,11 @@
       "files": [
         {
           "name": "markdown-render/markdown-render.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/markdown-render/markdown-render.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/markdown-render/markdown-render.tsx"
         },
         {
           "name": "markdown-render/markdown-render.module.css",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/markdown-render/markdown-render.module.css"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/markdown-render/markdown-render.module.css"
         }
       ],
       "dependencies": [
@@ -27,15 +27,15 @@
       "files": [
         {
           "name": "toc/linearTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/toc/linearTableOfContent.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/linearTableOfContent.tsx"
         },
         {
           "name": "toc/linesTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/toc/linesTableOfContent.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/linesTableOfContent.tsx"
         },
         {
           "name": "toc/mobileTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/toc/mobileTableOfContent.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/mobileTableOfContent.tsx"
         }
       ],
       "dependencies": [
@@ -49,7 +49,7 @@
       "files": [
         {
           "name": "toc/linearTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/toc/linearTableOfContent.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/linearTableOfContent.tsx"
         }
       ],
       "dependencies": [
@@ -63,7 +63,7 @@
       "files": [
         {
           "name": "toc/linesTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/toc/linesTableOfContent.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/linesTableOfContent.tsx"
         }
       ],
       "dependencies": [
@@ -77,7 +77,7 @@
       "files": [
         {
           "name": "toc/mobileTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/toc/mobileTableOfContent.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/mobileTableOfContent.tsx"
         }
       ],
       "dependencies": [
