@@ -11,6 +11,7 @@ import type {
   DocsPageEntry,
 } from "@/content/docs/docsPagesStructure";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { LinearTableOfContents } from "../tableOfContents/desktopLinearToc";
 
 type Props = {
   markdown: string;
@@ -131,10 +132,7 @@ const docsPageSeo = {
           contentContainerId={docsContentContainerId}
         />
 
-        <nav
-          class="mt-12 pt-6"
-          aria-label="Docs page pagination"
-        >
+        <nav class="mt-12 pt-6" aria-label="Docs page pagination">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {
               previousPage ? (
@@ -143,11 +141,11 @@ const docsPageSeo = {
                   class="rounded-lg border border-border/70 p-4 hover:bg-muted/70 transition-all duration-300 flex flex-col"
                 >
                   <div class="flex gap-1 items-center  text-muted-foreground">
-                    <ChevronLeft size={14}/>
+                    <ChevronLeft size={14} />
                     <p class="text-[12px]">Previous</p>
                   </div>
                   <p class="mt-4 text-[15px] font-[500] leading-tight">
-                     {previousPage.title}
+                    {previousPage.title}
                   </p>
                 </a>
               ) : (
@@ -163,10 +161,10 @@ const docsPageSeo = {
                 >
                   <div class="flex gap-1 items-center  text-muted-foreground">
                     <p class="text-[12px]">Next</p>
-                    <ChevronRight size={14}/>
+                    <ChevronRight size={14} />
                   </div>
                   <p class="mt-4 text-[15px] font-[500] leading-tight">
-                     {nextPage.title}
+                    {nextPage.title}
                   </p>
                 </a>
               ) : (
@@ -177,7 +175,19 @@ const docsPageSeo = {
         </nav>
       </main>
 
-      <aside class="hidden lg:block w-[200px]" aria-hidden="true"></aside>
+      <aside class="hidden md:block w-[320px]">
+        {
+          !shouldRenderMobileToc && (
+            <div class="fixed top-[80px] w-[320px] right-10">
+              <LinearTableOfContents
+                client:load
+                offset={125}
+                containerId={docsContentContainerId}
+              />
+            </div>
+          )
+        }
+      </aside>
     </div>
   </div>
 
