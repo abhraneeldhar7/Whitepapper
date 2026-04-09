@@ -11,7 +11,7 @@ import type {
   DocsPageEntry,
 } from "@/content/docs/docsPagesStructure";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { LinearTableOfContents } from "../tableOfContents/desktopLinearToc";
+import { LinearTableOfContent } from "../tableOfContents/linearTableOfContent";
 
 type Props = {
   markdown: string;
@@ -201,7 +201,7 @@ const docsPageSeo = {
         {
           !shouldRenderMobileToc && (
             <div class="fixed top-[80px] w-[320px] right-10">
-              <LinearTableOfContents
+              <LinearTableOfContent
                 client:load
                 offset={125}
                 containerId={docsContentContainerId}

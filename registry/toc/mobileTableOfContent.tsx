@@ -9,7 +9,7 @@ interface Heading {
     element: HTMLElement
 }
 
-interface TableOfContentsProps {
+interface MobileTableOfContentProps {
     contentRef: React.RefObject<HTMLElement | null>
     topOffset?: number
 }
@@ -45,7 +45,7 @@ function CircleProgress({ value }: { value: number }) {
     )
 }
 
-const TableOfContents: React.FC<TableOfContentsProps> = ({ contentRef, topOffset = 60 }) => {
+const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentRef, topOffset = 60 }) => {
     const [headings, setHeadings] = useState<Heading[]>([])
     const [activeId, setActiveId] = useState<string>('')
     const [progress, setProgress] = useState(0)
@@ -361,4 +361,4 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ contentRef, topOffset
     )
 }
 
-export default TableOfContents
+export default MobileTableOfContent

@@ -10,7 +10,7 @@ import {
     buildPaperSeoConfig,
 } from "@/metadata/dynamic";
 import { isDesktopUserAgent } from "@/lib/userAgent";
-import { LinearTableOfContents } from "@/components/tableOfContents/desktopLinearToc";
+import { LinearTableOfContent } from "@/components/tableOfContents/linearTableOfContent";
 
 type SiteBlogPaperResponse = {
     paper: PaperDoc;
@@ -181,7 +181,7 @@ const seo = buildPaperSeoConfig(metadata, {
             {
                 isDesktopUA ? (
                     <div class="sticky top-[140px] hidden md:block">
-                        <LinearTableOfContents
+                        <LinearTableOfContent
                             client:load
                             containerId={contentContainerId}
                         />

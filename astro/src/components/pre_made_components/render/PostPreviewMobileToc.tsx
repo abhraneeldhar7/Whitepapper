@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import TableOfContents from "@/components/tableOfContents/table-of-content";
+import MobileTableOfContent from "@/components/tableOfContents/mobileTableOfContent";
 
 type Props = {
   contentContainerId: string;
@@ -21,5 +21,5 @@ export default function PostPreviewMobileToc({ contentContainerId, topOffset }: 
 
   if (!isReady) return null;
 
-  return <TableOfContents contentRef={contentRef} topOffset={topOffset} />;
+  return <MobileTableOfContent contentRef={contentRef} topOffset={topOffset} />;
 }

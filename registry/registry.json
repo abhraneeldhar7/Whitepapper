@@ -1,0 +1,47 @@
+{
+  "components": [
+    {
+      "name": "markdown-render",
+      "description": "React markdown renderer with GFM support, highlight syntax, and copy-to-clipboard for code blocks.",
+      "files": [
+        {
+          "name": "markdown-render/markdown-render.tsx",
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/markdown-render/markdown-render.tsx"
+        },
+        {
+          "name": "markdown-render/markdown-render.module.css",
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/markdown-render/markdown-render.module.css"
+        }
+      ],
+      "dependencies": [
+        "react",
+        "lucide-react",
+        "react-markdown",
+        "remark-gfm"
+      ],
+      "devDependencies": []
+    },
+    {
+      "name": "toc",
+      "description": "Three table-of-content variants: linear desktop rail, interactive line rail, and mobile bottom-sheet TOC.",
+      "files": [
+        {
+          "name": "toc/linearTableOfContent.tsx",
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/toc/linearTableOfContent.tsx"
+        },
+        {
+          "name": "toc/linesTableOfContent.tsx",
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/toc/linesTableOfContent.tsx"
+        },
+        {
+          "name": "toc/mobileTableOfContent.tsx",
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/main/registry/toc/mobileTableOfContent.tsx"
+        }
+      ],
+      "dependencies": [
+        "react"
+      ],
+      "devDependencies": []
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "name": "whitepapper-cli",
+  "version": "0.1.0",
+  "description": "CLI to add reusable Whitepapper UI components from the public registry.",
+  "type": "module",
+  "bin": {
+    "whitepapper": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "picocolors": "^1.1.1",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.8.2"
+  }
+}

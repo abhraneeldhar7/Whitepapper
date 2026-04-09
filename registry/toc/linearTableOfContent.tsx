@@ -6,17 +6,17 @@ interface TocItem {
   level: number;
 }
 
-interface TableOfContentsProps {
+interface LinearTableOfContentProps {
   /** The ID of the parent wrapper containing your article/content to scan */
   containerId: string;
   /** Distance from the top of the viewport to use as the active threshold */
   offset?: number;
 }
 
-export function LinearTableOfContents({
+export function LinearTableOfContent({
   containerId,
   offset = 100,
-}: TableOfContentsProps) {
+}: LinearTableOfContentProps) {
   const [headings, setHeadings] = useState<TocItem[]>([]);
   const [activeId, setActiveId] = useState<string>("");
   const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 0, opacity: 0 });

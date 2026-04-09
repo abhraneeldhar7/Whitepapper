@@ -1,6 +1,6 @@
 ---
 import PostRender from "./pre_made_components/render/postPreview";
-import { LinearTableOfContents } from "./tableOfContents/desktopLinearToc";
+import { LinearTableOfContent } from "./tableOfContents/linearTableOfContent";
 
 type LegalSection = {
   title: string;
@@ -71,7 +71,7 @@ const containerId = "legal-document-container";
     <div class="grid gap-8 border-t border-border pt-12 md:grid-cols-12">
       <aside class="md:col-span-4">
         <div class="md:sticky md:top-20">
-          <LinearTableOfContents offset={64} client:load containerId={containerId} />
+          <LinearTableOfContent offset={64} client:load containerId={containerId} />
         </div>
       </aside>
 
