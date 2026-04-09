@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import MobileTableOfContent from "@/components/tableOfContents/mobileTableOfContent";
+import MobileTableOfContent from "@/components/ui/toc/mobileTableOfContent";
 
 type Props = {
   contentContainerId: string;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { LinesTableOfContent } from "@/components/tableOfContents/linesTableOfContent";
+import { LinesTableOfContent } from "@/components/ui/toc/linesTableOfContent";
 
 type Props = {
   contentContainerId: string;

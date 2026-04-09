@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 import FolderNotes from "@/components/folderComponent";
 import TextEditor from "@/components/pre_made_components/editor/textEditor";
-import PostRender from "@/components/pre_made_components/render/postPreview";
+import PostRender from "@/components/ui/markdown-render/markdown-render";
 import UserPopover from "@/components/pre_made_components/user_popover/userPopover";
 import { Button } from "@/components/ui/button";
 import {

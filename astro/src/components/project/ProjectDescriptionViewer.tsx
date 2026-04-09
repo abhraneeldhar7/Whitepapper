@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import PostRender from "@/components/pre_made_components/render/postPreview";
+import PostRender from "@/components/ui/markdown-render/markdown-render";
 import { Button } from "@/components/ui/button";
 
 type ProjectDescriptionViewerProps = {

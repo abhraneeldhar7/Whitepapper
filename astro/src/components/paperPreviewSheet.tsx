@@ -2,7 +2,7 @@ import { DownloadIcon, Ellipsis, ForwardIcon, NotebookPen, SquareArrowOutUpRight
 import { useState } from "react";
 import { toast } from "sonner";
 
-import PostRender from "@/components/pre_made_components/render/postPreview";
+import PostRender from "@/components/ui/markdown-render/markdown-render";
 import { deletePaper } from "@/lib/api/papers";
 import { resolveIntegrationBaseUrl } from "@/lib/integrationBaseUrl";
 import { Button } from "@/components/ui/button";

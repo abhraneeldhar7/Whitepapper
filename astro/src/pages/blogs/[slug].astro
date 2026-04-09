@@ -1,7 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import { formatFirestoreDate } from "@/lib/utils";
-import PostRender from "@/components/pre_made_components/render/postPreview";
 import PostPreviewMobileToc from "@/components/pre_made_components/render/PostPreviewMobileToc";
 import type { PaperDoc } from "@/lib/types";
 import { ChevronLeft, DotIcon } from "lucide-react";
@@ -10,7 +9,7 @@ import {
     buildPaperSeoConfig,
 } from "@/metadata/dynamic";
 import { isDesktopUserAgent } from "@/lib/userAgent";
-import { LinearTableOfContent } from "@/components/tableOfContents/linearTableOfContent";
+import { LinearTableOfContent } from "@/components/ui/toc/linearTableOfContent";
 import MarkdownRender from "@/components/ui/markdown-render/markdown-render";
 
 type SiteBlogPaperResponse = {

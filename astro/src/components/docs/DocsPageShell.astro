@@ -1,6 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import PostRender from "@/components/pre_made_components/render/postPreview";
+import PostRender from "@/components/ui/markdown-render/markdown-render";
 import PostPreviewMobileToc from "@/components/pre_made_components/render/PostPreviewMobileToc";
 import DocsCopyButton from "@/components/docs/DocsCopyButton";
 import DocsMobileNav from "@/components/docs/DocsMobileNav";
@@ -11,7 +11,7 @@ import type {
   DocsPageEntry,
 } from "@/content/docs/docsPagesStructure";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { LinearTableOfContent } from "../tableOfContents/linearTableOfContent";
+import { LinearTableOfContent } from "../ui/toc/linearTableOfContent";
 
 type Props = {
   markdown: string;

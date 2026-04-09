@@ -36,10 +36,16 @@
         {
           "name": "toc/mobileTableOfContent.tsx",
           "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/mobileTableOfContent.tsx"
+        },
+        {
+          "name": "animated-theme-toggler.tsx",
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/animated-theme-toggler.tsx"
         }
       ],
       "dependencies": [
-        "react"
+        "react",
+        "lucide-react",
+        "react-dom"
       ],
       "devDependencies": []
     },
@@ -78,10 +84,16 @@
         {
           "name": "toc/mobileTableOfContent.tsx",
           "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/mobileTableOfContent.tsx"
+        },
+        {
+          "name": "animated-theme-toggler.tsx",
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/animated-theme-toggler.tsx"
         }
       ],
       "dependencies": [
-        "react"
+        "react",
+        "lucide-react",
+        "react-dom"
       ],
       "devDependencies": []
     }
