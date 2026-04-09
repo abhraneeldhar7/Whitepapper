@@ -11,6 +11,7 @@ import {
 } from "@/metadata/dynamic";
 import { isDesktopUserAgent } from "@/lib/userAgent";
 import { LinearTableOfContent } from "@/components/tableOfContents/linearTableOfContent";
+import MarkdownRender from "@/components/ui/markdown-render/markdown-render";
 
 type SiteBlogPaperResponse = {
     paper: PaperDoc;
@@ -170,7 +171,11 @@ const seo = buildPaperSeoConfig(metadata, {
                     aria-label="Article content"
                     itemprop="articleBody"
                 >
-                    <PostRender
+                    <!-- <PostRender
+                        content={paper.body || ""}
+                        contentContainerId={contentContainerId}
+                    /> -->
+                    <MarkdownRender
                         content={paper.body || ""}
                         contentContainerId={contentContainerId}
                     />
