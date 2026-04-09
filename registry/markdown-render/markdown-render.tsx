@@ -138,32 +138,48 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                         <script
                                 dangerouslySetInnerHTML={{
                                         __html: `(function(){
-    var root = document.getElementById(${JSON.stringify(resolvedContentContainerId)});
-    if (!root) return;
-    var buttons = root.querySelectorAll('button[data-copy-button]');
-    for (var i = 0; i < buttons.length; i++) {
-        var button = buttons[i];
-        if (!(button instanceof HTMLButtonElement)) continue;
-        if (button.dataset.copyBound === '1') continue;
-        button.dataset.copyBound = '1';
-        button.addEventListener('click', async function() {
-            var copyIcon = this.querySelector('[data-copy-icon]');
-            var checkIcon = this.querySelector('[data-check-icon]');
-            var pre = this.closest('pre');
-            var codeEl = pre ? pre.querySelector('code') : null;
-            var text = codeEl && codeEl.textContent ? codeEl.textContent : '';
-            if (!text.trim()) return;
-            try {
-                await navigator.clipboard.writeText(text);
-                if (copyIcon) copyIcon.classList.add('hidden');
-                if (checkIcon) checkIcon.classList.remove('hidden');
-                window.setTimeout(function() {
-                    if (checkIcon) checkIcon.classList.add('hidden');
-                    if (copyIcon) copyIcon.classList.remove('hidden');
-                }, 1200);
-            } catch (_) {}
-        });
+    var bindCopyButtons = function() {
+        var buttons = document.querySelectorAll('button[data-copy-button]');
+        for (var i = 0; i < buttons.length; i++) {
+            var button = buttons[i];
+            if (!(button instanceof HTMLButtonElement)) continue;
+            if (button.dataset.copyBound === '1') continue;
+            button.dataset.copyBound = '1';
+            button.addEventListener('click', async function() {
+                var copyIcon = this.querySelector('[data-copy-icon]');
+                var checkIcon = this.querySelector('[data-check-icon]');
+                var pre = this.closest('pre');
+                var codeEl = pre ? pre.querySelector('code') : null;
+                var text = codeEl && codeEl.textContent ? codeEl.textContent : '';
+                if (!text.trim()) return;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    if (copyIcon) copyIcon.classList.add('hidden');
+                    if (checkIcon) checkIcon.classList.remove('hidden');
+                    window.setTimeout(function() {
+                        if (checkIcon) checkIcon.classList.add('hidden');
+                        if (copyIcon) copyIcon.classList.remove('hidden');
+                    }, 1200);
+                } catch (_) {}
+            });
+        }
+    };
+
+    if (window.__whitepapperCopyInit) {
+        if (typeof window.__whitepapperBindCopyButtons === 'function') {
+            window.__whitepapperBindCopyButtons();
+        }
+        return;
     }
+
+    window.__whitepapperCopyInit = true;
+    window.__whitepapperBindCopyButtons = bindCopyButtons;
+
+    bindCopyButtons();
+    document.addEventListener('astro:page-load', bindCopyButtons);
+    document.addEventListener('astro:after-swap', function() {
+        window.setTimeout(bindCopyButtons, 0);
+    });
 })();`,
                                 }}
                         />

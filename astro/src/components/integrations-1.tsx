@@ -45,7 +45,7 @@ export default function IntegrationsSection() {
             <div className="py-32">
                 <div className="mx-auto max-w-5xl px-6">
                     <div className="text-center">
-                        <h2 className="text-balance text-3xl font-semibold md:text-4xl">Use Whitepapper in your workflow</h2>
+                        <h2 className="text-[30px] md:text-[40px] font-[400]">Use Whitepapper in your workflow</h2>
                         <p className="text-muted-foreground mt-6">Connect seamlessly with your platforms and websites to enhance your content distribution.</p>
                     </div>
 

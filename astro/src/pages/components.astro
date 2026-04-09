@@ -1,0 +1,50 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import bgPattern from "@/assets/components/bgPattern.jpg";
+import markdownRenderImg from "@/assets/components/markdownRender.png";
+import LinearTocImg from "@/assets/components/linearToc.png";
+import mobileTocImg from "@/assets/components/mobileToc.png";
+import linesTocImg from "@/assets/components/linesToc.png";
+---
+
+<Layout>
+    <div class="max-w-[800px] px-4 w-full mx-auto md:py-10 py-5 min-h-screen">
+        <h1 class="text-[30px] md:text-[40px] font-[400]">Components</h1>
+        <p class="text-[16px] text-muted-foreground mt-2">
+            Install the react components used in this site.<br /> All components made
+            by me (codex and gemini) and some I did install from other packages, all
+            credits are given in each comoponent's page.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-7 mt-10">
+            <div class="overflow-hidden relative rounded-[12px] aspect-square p-7 pb-0">
+                <img
+                    src={bgPattern.src}
+                    class="absolute z-[-1] left-0 top-0 h-full w-full object-cover"
+                />
+                <img src={markdownRenderImg.src} class="object-cover object-top rounded-t-[8px] w-full h-full"/>
+            </div>
+            <div class="overflow-hidden relative rounded-[10px] aspect-square pr-0 pt-0 p-7">
+                <img
+                    src={bgPattern.src}
+                    class="absolute z-[-1] left-0 top-0 h-full w-full object-cover"
+                />
+                <img src={LinearTocImg.src} class="object-cover object-left rounded-bl-[8px] w-full h-full"/>
+            </div>
+            <div class="overflow-hidden relative rounded-[10px] aspect-square p-7 flex items-center justify-center">
+                <img
+                src={bgPattern.src}
+                class="absolute z-[-1] left-0 top-0 h-full w-full object-cover"
+                />
+                <img src={mobileTocImg.src} class="object-cover rounded-[12px] w-full h-fit"/>
+            </div>
+            <div class="overflow-hidden relative rounded-[10px] aspect-square p-7 pb-0 pl-0">
+                <img
+                src={bgPattern.src}
+                class="absolute z-[-1] left-0 top-0 h-full w-full object-cover"
+                />
+                <img src={linesTocImg.src} class="object-cover object-right rounded-tr-[8px] w-full h-full"/>
+            </div>
+        </div>
+    </div>
+</Layout>

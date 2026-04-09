@@ -2,7 +2,7 @@ import styles from "./markdown-render.module.css";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useId } from "react";
-import { CopyIcon } from "lucide-react";
+import { CheckIcon, CopyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type PostRenderProps = {
@@ -111,13 +111,13 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                                 <pre {...props} className="relative">
                                     <Button
                                         type="button"
-                                        data-copy-button
                                         size="icon-sm"
-                                        // variant="outline"
+                                        data-copy-button
                                         aria-label="Copy code"
                                         className="absolute top-2 p-[5px] rounded-sm right-2 z-2 trasnition-all duration-100"
                                     >
-                                        <CopyIcon />
+                                        <CopyIcon data-copy-icon />
+                                        <CheckIcon data-check-icon className="hidden" />
                                     </Button>
                                     {children}
                                 </pre>
@@ -135,5 +135,53 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                         ),
                     }} />
             </div>
+                        <script
+                                dangerouslySetInnerHTML={{
+                                        __html: `(function(){
+    var bindCopyButtons = function() {
+        var buttons = document.querySelectorAll('button[data-copy-button]');
+        for (var i = 0; i < buttons.length; i++) {
+            var button = buttons[i];
+            if (!(button instanceof HTMLButtonElement)) continue;
+            if (button.dataset.copyBound === '1') continue;
+            button.dataset.copyBound = '1';
+            button.addEventListener('click', async function() {
+                var copyIcon = this.querySelector('[data-copy-icon]');
+                var checkIcon = this.querySelector('[data-check-icon]');
+                var pre = this.closest('pre');
+                var codeEl = pre ? pre.querySelector('code') : null;
+                var text = codeEl && codeEl.textContent ? codeEl.textContent : '';
+                if (!text.trim()) return;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    if (copyIcon) copyIcon.classList.add('hidden');
+                    if (checkIcon) checkIcon.classList.remove('hidden');
+                    window.setTimeout(function() {
+                        if (checkIcon) checkIcon.classList.add('hidden');
+                        if (copyIcon) copyIcon.classList.remove('hidden');
+                    }, 1200);
+                } catch (_) {}
+            });
+        }
+    };
+
+    if (window.__whitepapperCopyInit) {
+        if (typeof window.__whitepapperBindCopyButtons === 'function') {
+            window.__whitepapperBindCopyButtons();
+        }
+        return;
+    }
+
+    window.__whitepapperCopyInit = true;
+    window.__whitepapperBindCopyButtons = bindCopyButtons;
+
+    bindCopyButtons();
+    document.addEventListener('astro:page-load', bindCopyButtons);
+    document.addEventListener('astro:after-swap', function() {
+        window.setTimeout(bindCopyButtons, 0);
+    });
+})();`,
+                                }}
+                        />
         </div>)
 }
