@@ -111,20 +111,32 @@ const docsPageSeo = {
         aria-label={`${pageTitle} documentation content`}
       >
         <div
-          class="fixed top-[50px] md:top-[55px] md:left-1/2 md:-translate-x-1/2 left-0 w-full z-[9] w-[calc(100%-2rem)] max-w-[740px] flex justify-between items-center px-[15px] md:px-[40px] bg-background/85 backdrop-blur-[20px] py-2 md:py-4"
+          class="fixed top-[50px] md:top-[55px] left-0 w-full z-[9] flex justify-between items-center gap-10"
         >
-          <div class="flex gap-1 items-center">
-            <div class="md:hidden">
-              <DocsMobileNav
-                client:load
-                navSections={navSections}
-                currentPath={currentPath}
-              />
+          <div class="md:w-[300px] md:block hidden shrink-0"></div>
+
+          <div
+            class="flex w-full max-w-[700px] justify-between items-center gap-2 z-[5] bg-background/85 backdrop-blur-[20px] px-[15px] md:px-[0px] py-2 md:py-4"
+          >
+            <div class="flex gap-1 items-center w-full">
+              <div class="md:hidden">
+                <DocsMobileNav
+                  client:load
+                  navSections={navSections}
+                  currentPath={currentPath}
+                />
+              </div>
+              <div class="w-full h-[20px] md:h-[32px] relative">
+                <h1 class="absolute left-0 top-1/2 -translate-y-1/2 right-0 text-[20px] md:text-[32px] truncate font-[500] leading-[1.5em]">
+                  {pageTitle}
+                </h1>
+              </div>
             </div>
-            <h1 class="text-[20px] md:text-[32px] font-[500]">{pageTitle}</h1>
+
+            <DocsCopyButton client:load markdown={markdown} />
           </div>
 
-          <DocsCopyButton client:load markdown={markdown} />
+          <div class="md:w-[350px] md:block hidden shrink-0"></div>
         </div>
 
         <PostRender

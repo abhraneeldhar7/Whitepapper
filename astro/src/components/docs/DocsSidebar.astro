@@ -13,8 +13,8 @@ type Props = {
 const { navSections, currentPath } = Astro.props as Props;
 ---
 
-<aside class="hidden md:block w-[350px] shrink-0">
-  <div class="sticky top-[70px] z-[5] h-[calc(100vh-90px)] w-[240px]">
+<aside class="hidden md:block ml-5 shrink-0">
+  <div class="sticky top-[70px] z-[5] h-[calc(100vh-90px)] w-[250px]">
     <ScrollArea client:load className="h-full w-full pr-2">
       <nav class="pr-2 pb-10" aria-label="Documentation navigation">
         {
@@ -29,11 +29,8 @@ const { navSections, currentPath } = Astro.props as Props;
                       <li>
                         <a href={page.route} class="w-full">
                           <Button
-                            variant="ghost"
-                            className={cn(
-                              "w-full font-[400] justify-start",
-                              isPageActive ? "bg-muted text-foreground" : "",
-                            )}
+                            variant={isPageActive ? "secondary" : "ghost"}
+                            className="w-full font-[400] justify-start"
                             aria-current={isPageActive ? "page" : undefined}
                           >
                             {page.title}
@@ -50,9 +47,13 @@ const { navSections, currentPath } = Astro.props as Props;
                                 size="sm"
                                 className={cn(
                                   "ml-5 justify-start",
-                                  isChildActive ? "bg-muted text-foreground" : "",
+                                  isChildActive
+                                    ? "bg-muted text-foreground"
+                                    : "",
                                 )}
-                                aria-current={isChildActive ? "page" : undefined}
+                                aria-current={
+                                  isChildActive ? "page" : undefined
+                                }
                               >
                                 {child.title}
                               </Button>
