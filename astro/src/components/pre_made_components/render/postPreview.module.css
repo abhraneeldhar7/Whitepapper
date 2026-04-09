@@ -197,7 +197,7 @@
     border-radius: 8px;
     overflow: hidden;
     color: var(--muted-foreground);
-    border: 1px solid var(--border);
+    /* border: 1px solid var(--border); */
 }
 
 /* Code inside pre tags (code blocks) */
@@ -263,7 +263,7 @@
 }
 
 .markdownDiv th {
-    background-color: color-mix(in srgb, var(--muted, #f3f4f6) 80%, transparent) !important;
+    background-color: color-mix(in srgb, var(--card, #f3f4f6) 80%, transparent) !important;
     color: var(--foreground, #1a1a1a) !important;
     font-weight: 600;
     text-align: left;

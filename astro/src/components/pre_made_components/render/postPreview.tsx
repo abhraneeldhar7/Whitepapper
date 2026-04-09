@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useId } from "react";
 import { CopyIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type PostRenderProps = {
     content: string
@@ -108,14 +109,16 @@ export default function PostRender({ content, contentContainerId }: PostRenderPr
                         pre: ({ node, className, children, ...props }) => {
                             return (
                                 <pre {...props} className="relative">
-                                    <button
+                                    <Button
                                         type="button"
                                         data-copy-button
+                                        size="icon-sm"
+                                        // variant="outline"
                                         aria-label="Copy code"
-                                        className="absolute top-2 p-[5px] rounded-sm right-2 z-2 hover:bg-muted-foreground hover:text-background trasnition-all duration-100"
+                                        className="absolute top-2 p-[5px] rounded-sm right-2 z-2 trasnition-all duration-100"
                                     >
-                                        <CopyIcon size={14} />
-                                    </button>
+                                        <CopyIcon />
+                                    </Button>
                                     {children}
                                 </pre>
                             )

@@ -117,7 +117,7 @@ export function LinearTableOfContents({
   const minLevel = Math.min(...headings.map((h) => h.level));
 
   return (
-    <div className="relative text-sm">
+    <div className="relative text-sm dark:font-[300]">
       {/* Track Background */}
       <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-border" />
 

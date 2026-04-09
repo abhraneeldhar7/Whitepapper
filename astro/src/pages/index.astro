@@ -7,14 +7,14 @@ import MetatagsEditorLight from "@/assets/landingPage/metatags_editor_light.png"
 import BlueBgPattern from "@/assets/landingPage/blueBgPattern.jpg";
 import LandingArticleList from "@/components/landing/LandingArticleList.astro";
 
-import IntegrationsSection from "@/components/integrations-4.astro";
+import IntegrationsSection from "@/components/integrations-4";
 
 import BlogsPageImg from "@/assets/landingPage/blogsPage.png";
 
 const featuredArticles = [
-	{ title: "How whitepapper handles SEO", readTime: "6 min read", href: "" },
-	{ title: "How whitepapper handles SEO", readTime: "6 min read", href: "" },
-	{ title: "How whitepapper handles SEO", readTime: "6 min read", href: "" },
+	{ title: "How to Write Content That AI Assistants Actually Quote", readTime: "6 min read", href: "/blogs/paper-20491f39-fcff-4683-9c01-d856dab87b9f" },
+	{ title: "How to Make Your Brand Recognizable to AI Systems", readTime: "1 min read", href: "/blogs/paper-5846b146-e7a0-424f-8eff-2818b695fe1e" },
+	{ title: "GEO: The Complete Guide to Showing Up in AI Search Results", readTime: "1 min read", href: "/blogs/paper-a396d657-361a-4392-bf8f-819043c1f11b" },
 ];
 
 import TeslaLogo from "@/assets/logos/bullshi/tesla_logo.png";
@@ -187,7 +187,7 @@ Astro.response.headers.set(
 						class="flex-1 flex flex-col items-center text-center relative"
 					>
 						<div
-							class="h-[35px] dark:h-[12px] w-[300px] rotate-[-10deg] rounded-[50%] bg-[#faae40] dark:blur-[40px] blur-[45px] absolute z-[-1] top-2"
+							class="h-[30px] dark:h-[10px] w-[300px] rotate-[-10deg] rounded-[50%] bg-[#faae40] dark:blur-[45px] blur-[60px] absolute z-[-1] top-2"
 						>
 						</div>
 						<h3 class="font-[600] text-[40px]">~ 100ms</h3>
@@ -200,7 +200,7 @@ Astro.response.headers.set(
 					>
 					</div>
 					<div class="flex-1">
-						<p class="text-center text-[18px]">
+						<p class="text-center text-[16px] leading-[1.8em]">
 							Whitepapper's API and public pages are cached at the
 							edge using Cloudflare Workers. Whether your reader
 							is in Mumbai or Munich, content loads in under

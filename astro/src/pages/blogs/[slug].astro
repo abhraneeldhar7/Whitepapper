@@ -2,12 +2,15 @@
 import Layout from "@/layouts/Layout.astro";
 import { formatFirestoreDate } from "@/lib/utils";
 import PostRender from "@/components/pre_made_components/render/postPreview";
-import PostPreviewDesktopToc from "@/components/pre_made_components/render/PostPreviewDesktopToc";
 import PostPreviewMobileToc from "@/components/pre_made_components/render/PostPreviewMobileToc";
 import type { PaperDoc } from "@/lib/types";
 import { ChevronLeft, DotIcon } from "lucide-react";
-import { buildBlogPaperMetadata, buildPaperSeoConfig } from "@/metadata/dynamic";
+import {
+    buildBlogPaperMetadata,
+    buildPaperSeoConfig,
+} from "@/metadata/dynamic";
 import { isDesktopUserAgent } from "@/lib/userAgent";
+import { LinearTableOfContents } from "@/components/tableOfContents/desktopLinearToc";
 
 type SiteBlogPaperResponse = {
     paper: PaperDoc;
@@ -33,10 +36,14 @@ Astro.response.headers.set(
 const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
     .trim()
     .replace(/\/+$/, "");
-const whitepapperApiKey = String(import.meta.env.WHITEPAPPER_API_KEY ?? "").trim();
+const whitepapperApiKey = String(
+    import.meta.env.WHITEPAPPER_API_KEY ?? "",
+).trim();
 
 if (!apiBaseUrl || !whitepapperApiKey) {
-    throw new Error("PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.");
+    throw new Error(
+        "PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.",
+    );
 }
 
 const paperResponse = await fetch(
@@ -52,7 +59,9 @@ const paperResponse = await fetch(
 
 if (!paperResponse.ok) {
     const message = await paperResponse.text();
-    throw new Error(message || `Upstream request failed with ${paperResponse.status}`);
+    throw new Error(
+        message || `Upstream request failed with ${paperResponse.status}`,
+    );
 }
 
 const { paper } = (await paperResponse.json()) as SiteBlogPaperResponse;
@@ -83,90 +92,108 @@ const seo = buildPaperSeoConfig(metadata, {
 });
 ---
 
-<Layout showSiteNav={false} seo={seo}>
-
-    <main
-        class="mx-auto min-h-screen max-w-[700px] px-[15px] pt-15 md:pt-20 pb-20"
-    >
-        <a
-            href="/blogs"
-            class="text-[14px] w-fit text-muted-foreground hover:text-foreground flex items-center gap-1"
-        >
-            <ChevronLeft size={14} /> Blogs
-        </a>
-
-        <article itemscope itemtype="https://schema.org/Article">
-            <header>
-                <h1
-                    itemprop="headline"
-                    class="text-[28px] md:text-[35px] font-[600] mt-5"
-                    style={{ lineHeight: "1.4em" }}
-                >
-                    {paper.title}
-                </h1>
-
-                <div class="mt-4 flex items-center justify-between gap-3">
-                    <address class="not-italic">
-                        <a
-                            href="/"
-                            rel="author"
-                            itemprop="author"
-                            class="flex items-center gap-2 w-fit"
-                        >
-                        <img src="/appLogo.png" height="25" width="22"/>
-                            <p
-                                class="text-[15px] text-muted-foreground hover:text-foreground transition-all duration-300"
-                            >
-                                Whitepapper
-                            </p>
-                        </a>
-                    </address>
-
-                    <div
-                        class="flex items-center gap-1 text-[14px] text-muted-foreground"
-                    >
-                        <time
-                            datetime={metadata.dateModified}
-                            itemprop="dateModified"
-                        >
-                            {updatedDate}
-                        </time>
-                        <DotIcon size={20} />
-                        <span>{readingTimeMinutes} min read</span>
-                    </div>
-                </div>
-            </header>
-
-            {
-                paper.thumbnailUrl ? (
-                    <figure class="mt-6 border rounded-[8px] overflow-hidden">
-                        <img
-                            src={paper.thumbnailUrl}
-                            alt={metadata.ogImageAlt || paper.title}
-                            itemprop="image"
-                            class="h-full w-full object-contain"
-                            loading="eager"
-                            decoding="async"
-                            fetchpriority="high"
-                        />
-                    </figure>
-                ) : null
-            }
-
-            <section
-                class="mt-6"
-                aria-label="Article content"
-                itemprop="articleBody"
+<Layout showSiteNav={true} seo={seo}>
+    <div class="flex justify-between px-[15px] md:px-[35px] md:gap-10">
+        <div class="md:w-[300px] hidden md:block"></div>
+        <main class="mx-auto min-h-screen max-w-[700px] pt-15 md:pt-20 pb-20">
+            <a
+                href="/blogs"
+                class="text-[14px] w-fit text-muted-foreground hover:text-foreground flex items-center gap-1"
             >
-                <PostRender content={paper.body || ""} contentContainerId={contentContainerId} />
+                <ChevronLeft size={14} /> Blogs
+            </a>
+
+            <article itemscope itemtype="https://schema.org/Article">
+                <header>
+                    <h1
+                        itemprop="headline"
+                        class="text-[28px] md:text-[35px] font-[600] mt-5"
+                        style={{ lineHeight: "1.4em" }}
+                    >
+                        {paper.title}
+                    </h1>
+
+                    <div class="mt-4 flex items-center justify-between gap-3">
+                        <address class="not-italic">
+                            <a
+                                href="/"
+                                rel="author"
+                                itemprop="author"
+                                class="flex items-center gap-2 w-fit"
+                            >
+                                <img
+                                    src="/appLogo.png"
+                                    height="25"
+                                    width="22"
+                                />
+                                <p
+                                    class="text-[15px] text-muted-foreground hover:text-foreground transition-all duration-300"
+                                >
+                                    Whitepapper
+                                </p>
+                            </a>
+                        </address>
+
+                        <div
+                            class="flex items-center gap-1 text-[14px] text-muted-foreground"
+                        >
+                            <time
+                                datetime={metadata.dateModified}
+                                itemprop="dateModified"
+                            >
+                                {updatedDate}
+                            </time>
+                            <DotIcon size={20} />
+                            <span>{readingTimeMinutes} min read</span>
+                        </div>
+                    </div>
+                </header>
+
                 {
-                    isDesktopUA ? (
-                        <PostPreviewDesktopToc client:idle contentContainerId={contentContainerId} />
-                    ) : (
-                        <PostPreviewMobileToc client:idle contentContainerId={contentContainerId} />
-                    )
+                    paper.thumbnailUrl ? (
+                        <figure class="mt-6 border rounded-[8px] overflow-hidden">
+                            <img
+                                src={paper.thumbnailUrl}
+                                alt={metadata.ogImageAlt || paper.title}
+                                itemprop="image"
+                                class="h-full w-full object-contain"
+                                loading="eager"
+                                decoding="async"
+                                fetchpriority="high"
+                            />
+                        </figure>
+                    ) : null
                 }
-            </section>
-        </article>
-    </main>
+
+                <section
+                    class="mt-6"
+                    aria-label="Article content"
+                    itemprop="articleBody"
+                >
+                    <PostRender
+                        content={paper.body || ""}
+                        contentContainerId={contentContainerId}
+                    />
+                </section>
+            </article>
+        </main>
+        <aside class="md:w-[300px]">
+            {
+                isDesktopUA ? (
+                    <div class="sticky top-[140px] hidden md:block">
+                        <LinearTableOfContents
+                            client:load
+                            containerId={contentContainerId}
+                        />
+                    </div>
+                ) : (
+                    <PostPreviewMobileToc
+                    topOffset={80}
+                        client:idle
+                        contentContainerId={contentContainerId}
+                    />
+                )
+            }
+        </aside>
+    </div>
 </Layout>
