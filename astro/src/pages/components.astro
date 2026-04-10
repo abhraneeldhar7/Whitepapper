@@ -16,35 +16,83 @@ import linesTocImg from "@/assets/components/linesToc.png";
             credits are given in each comoponent's page.
         </p>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-7 mt-10">
-            <div class="overflow-hidden relative rounded-[12px] aspect-square p-7 pb-0">
-                <img
-                    src={bgPattern.src}
-                    class="absolute z-[-1] left-0 top-0 h-full w-full object-cover"
-                />
-                <img src={markdownRenderImg.src} class="object-cover object-top rounded-t-[8px] w-full h-full"/>
-            </div>
-            <div class="overflow-hidden relative rounded-[10px] aspect-square pr-0 pt-0 p-7">
-                <img
-                    src={bgPattern.src}
-                    class="absolute z-[-1] left-0 top-0 h-full w-full object-cover"
-                />
-                <img src={LinearTocImg.src} class="object-cover object-left rounded-bl-[8px] w-full h-full"/>
-            </div>
-            <div class="overflow-hidden relative rounded-[10px] aspect-square p-7 flex items-center justify-center">
-                <img
-                src={bgPattern.src}
-                class="absolute z-[-1] left-0 top-0 h-full w-full object-cover"
-                />
-                <img src={mobileTocImg.src} class="object-cover rounded-[12px] w-full h-fit"/>
-            </div>
-            <div class="overflow-hidden relative rounded-[10px] aspect-square p-7 pb-0 pl-0">
-                <img
-                src={bgPattern.src}
-                class="absolute z-[-1] left-0 top-0 h-full w-full object-cover"
-                />
-                <img src={linesTocImg.src} class="object-cover object-right rounded-tr-[8px] w-full h-full"/>
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 md:space-x-6 space-y-4 mt-10">
+            <a href="/components/markdown" class="flex flex-col gap-3 group">
+                <div
+                    class="overflow-hidden relative rounded-[12px] aspect-square p-7 pb-0"
+                >
+                    <img
+                        src={bgPattern.src}
+                        class="absolute z-[-1] left-0 top-0 h-full w-full object-cover"
+                    />
+                    <img
+                        src={markdownRenderImg.src}
+                        class="object-cover object-top rounded-t-[8px] w-full h-full"
+                    />
+                </div>
+                <h2
+                     class="text-[16px] px-2 md:text-foreground/50 transition-all duration-300 group-hover:text-foreground"
+                >
+                    Markdown Render
+                </h2>
+            </a>
+            <a href="/components/linear-toc" class="flex flex-col gap-3 group">
+                <div
+                    class="overflow-hidden relative rounded-[10px] aspect-square pr-0 pt-0 p-7"
+                >
+                    <img
+                        src={bgPattern.src}
+                        class="absolute z-[-1] left-0 top-0 h-full w-full object-cover"
+                    />
+                    <img
+                        src={LinearTocImg.src}
+                        class="object-cover object-left rounded-bl-[8px] w-full h-full"
+                    />
+                </div>
+                <h2
+                     class="text-[16px] px-2 md:text-foreground/50 transition-all duration-300 group-hover:text-foreground"
+                >
+                    Linear style table of content
+                </h2>
+            </a>
+            <a href="/components/mobile-toc" class="flex flex-col gap-3 group">
+                <div
+                    class="overflow-hidden relative rounded-[10px] aspect-square p-7 flex items-center justify-center"
+                >
+                    <img
+                        src={bgPattern.src}
+                        class="absolute z-[-1] left-0 top-0 h-full w-full object-cover"
+                    />
+                    <img
+                        src={mobileTocImg.src}
+                        class="object-cover rounded-[12px] w-full h-fit"
+                    />
+                </div>
+                <h2 class="text-[16px] px-2 md:text-foreground/50 transition-all duration-300 group-hover:text-foreground"
+                >
+                    Mobile table of content
+                </h2>
+            </a>
+            <a href="/components/lines-toc" class="flex flex-col gap-3 group">
+                <div
+                    class="overflow-hidden relative rounded-[10px] aspect-square p-7 pb-0 pl-0"
+                >
+                    <img
+                        src={bgPattern.src}
+                        class="absolute z-[-1] left-0 top-0 h-full w-full object-cover"
+                    />
+                    <img
+                        src={linesTocImg.src}
+                        class="object-cover object-right rounded-tr-[8px] w-full h-full"
+                    />
+                </div>
+                <h2
+                    class="text-[16px] px-2 md:text-foreground/50 transition-all duration-300 group-hover:text-foreground"
+                >
+                    Lines table of content
+                </h2>
+            </a>
+            <div></div>
         </div>
     </div>
 </Layout>
