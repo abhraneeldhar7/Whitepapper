@@ -218,11 +218,7 @@ class PaperMetadataGenerate(BaseModel):
 
 class DistributionPublishInput(BaseModel):
     paperId: str
-    title: str = Field(min_length=1, max_length=200)
-    slug: str = Field(min_length=1, max_length=120)
-    body: str = Field(min_length=1)
-    thumbnailUrl: str | None = None
-    metadata: PaperMetadata | None = None
+    payload: PaperDoc | None = None
     accessToken: str | None = None
 
 

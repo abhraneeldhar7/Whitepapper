@@ -1,0 +1,170 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import ComponentDocPage from "@/components/component-docs/ComponentDocPage.astro";
+import { LinearTableOfContent } from "@/components/ui/toc/linearTableOfContent";
+import { LinesTableOfContent } from "@/components/ui/toc/linesTableOfContent";
+import MobileTableOfContent from "@/components/ui/toc/mobileTableOfContent";
+
+import markdownDocs from "@/content/components/markdown.md?raw";
+import linearDocs from "@/content/components/linear-toc.md?raw";
+import mobileDocs from "@/content/components/mobile-toc.md?raw";
+import linesDocs from "@/content/components/lines-toc.md?raw";
+
+import markdownCode from "@/components/ui/markdown-render/markdown-render.tsx?raw";
+import linearCode from "@/components/ui/toc/linearTableOfContent.tsx?raw";
+import mobileCode from "@/components/ui/toc/mobileTableOfContent.tsx?raw";
+import linesCode from "@/components/ui/toc/linesTableOfContent.tsx?raw";
+
+const componentOrder = [
+  "markdown",
+  "linear-toc",
+  "mobile-toc",
+  "lines-toc",
+] as const;
+type ComponentSlug = (typeof componentOrder)[number];
+
+const componentMeta: Record<
+  ComponentSlug,
+  {
+    componentName: string;
+    title: string;
+    description: string;
+    docs: string;
+    code: string;
+  }
+> = {
+  markdown: {
+    componentName: "markdown",
+    title: "Markdown Render",
+    description:
+      "A reading-first markdown renderer with copyable code blocks, GitHub-flavored markdown support, and a clean article layout.",
+    docs: markdownDocs,
+    code: markdownCode,
+  },
+  "linear-toc": {
+    componentName: "linear-toc",
+    title: "Linear Table Of Content",
+    description:
+      "A quiet, structured table-of-content rail that tracks the active heading and gives long-form pages a steady navigation spine.",
+    docs: linearDocs,
+    code: linearCode,
+  },
+  "mobile-toc": {
+    componentName: "mobile-toc",
+    title: "Mobile Table Of Content",
+    description:
+      "A compact bottom-sheet table of contents for phones that tracks progress, surfaces the current heading, and expands when readers need orientation.",
+    docs: mobileDocs,
+    code: mobileCode,
+  },
+  "lines-toc": {
+    componentName: "lines-toc",
+    title: "Lines Table Of Content",
+    description:
+      "An expressive desktop-only table-of-content rail that turns heading navigation into a visual reading instrument on the right edge of the screen.",
+    docs: linesDocs,
+    code: linesCode,
+  },
+};
+
+export function getStaticPaths() {
+  return componentOrder.map((component) => ({ params: { component } }));
+}
+
+const componentParam = Astro.params.component as ComponentSlug | undefined;
+if (!componentParam || !(componentParam in componentMeta)) {
+  return new Response(null, { status: 404 });
+}
+
+const active = componentMeta[componentParam];
+const activeIndex = componentOrder.indexOf(componentParam);
+const previousSlug = activeIndex > 0 ? componentOrder[activeIndex - 1] : null;
+const nextSlug =
+  activeIndex < componentOrder.length - 1
+    ? componentOrder[activeIndex + 1]
+    : null;
+const contentContainerId = `component-doc-${componentParam}`;
+const markdown = `## Code\n\n\`\`\`\`tsx\n${active.code.trim()}\n\`\`\`\`\n\n${active.docs.trim()}`;
+const previous = previousSlug
+  ? {
+      href: `/components/${previousSlug}`,
+      label: componentMeta[previousSlug].title,
+    }
+  : null;
+const next = nextSlug
+  ? { href: `/components/${nextSlug}`, label: componentMeta[nextSlug].title }
+  : null;
+---
+
+<Layout>
+  <ComponentDocPage
+    componentName={active.componentName}
+    title={active.title}
+    description={active.description}
+    markdown={markdown}
+    contentContainerId={contentContainerId}
+    previous={previous}
+    next={next}
+  >
+    {
+      componentParam === "linear-toc" && (
+        <div
+          slot="mobile-preview"
+          class="rounded-[16px] border bg-card px-4 py-4"
+        >
+          <p class="mb-3 text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
+            Preview
+          </p>
+          <LinearTableOfContent containerId={contentContainerId} />
+        </div>
+      )
+    }
+
+    {
+      componentParam === "linear-toc" && (
+        <LinearTableOfContent containerId={contentContainerId} />
+      )
+    }
+
+    {
+      componentParam === "mobile-toc" && (
+        <div slot="mobile-preview">
+          <MobileTableOfContent
+            client:idle
+            contentContainerId={contentContainerId}
+          />
+        </div>
+      )
+    }
+
+    {
+      componentParam === "mobile-toc" && (
+        <div
+          slot="desktop-preview"
+          class="rounded-[18px] border bg-card px-4 py-5"
+        >
+          <p class="text-[12px] uppercase tracking-[0.18em] text-muted-foreground">
+            Floating Preview
+          </p>
+          <p class="mt-3 text-[14px] leading-6 text-muted-foreground">
+            Open this page on a phone-sized viewport to experience the floating
+            bottom-sheet table of contents.
+          </p>
+          <MobileTableOfContent
+            client:idle
+            contentContainerId={contentContainerId}
+          />
+        </div>
+      )
+    }
+
+    {
+      componentParam === "lines-toc" && (
+        <LinesTableOfContent
+          client:idle
+          contentContainerId={contentContainerId}
+        />
+      )
+    }
+  </ComponentDocPage>
+</Layout>

@@ -5,14 +5,8 @@ from urllib import error as urllib_error
 from urllib import request as urllib_request
 
 from fastapi import HTTPException
-import httpx
 
-from app.core.firestore_store import firestore_store
-
-DISTRIBUTIONS_COLLECTION = "distributions"
 HASHNODE_GRAPHQL_URL = "https://gql.hashnode.com/"
-DEVTO_ARTICLES_URL = "https://dev.to/api/articles"
-_UNSET = object()
 
 
 @dataclass
@@ -21,95 +15,7 @@ class ExternalDistributionError(Exception):
     detail: str
 
 
-class DistributionsService:
-    def get_by_user_id(self, user_id: str) -> dict:
-        doc = firestore_store.get(DISTRIBUTIONS_COLLECTION, user_id)
-        if doc:
-            return doc
-        return {
-            "userId": user_id,
-            "hashnode": None,
-            "devto": None,
-        }
-
-    def _replace_distribution_doc(self, user_id: str, distribution_doc: dict) -> dict:
-        distribution_doc["userId"] = user_id
-        firestore_store.update(DISTRIBUTIONS_COLLECTION, user_id, distribution_doc, merge=False)
-        return distribution_doc
-
-    def _update_hashnode_distribution(
-        self,
-        user_id: str,
-        *,
-        access_token: str | None | object = _UNSET,
-        publication_id: str | None | object = _UNSET,
-    ) -> dict:
-        existing_doc = self.get_by_user_id(user_id)
-        current_hashnode = existing_doc.get("hashnode")
-        next_hashnode = dict(current_hashnode) if isinstance(current_hashnode, dict) else {}
-
-        if access_token is not _UNSET:
-            if access_token:
-                next_hashnode["accessToken"] = access_token
-            else:
-                next_hashnode.pop("accessToken", None)
-
-        if publication_id is not _UNSET:
-            if publication_id:
-                next_hashnode["publicationId"] = publication_id
-            else:
-                next_hashnode.pop("publicationId", None)
-
-        existing_doc["hashnode"] = next_hashnode or None
-        return self._replace_distribution_doc(user_id, existing_doc)
-
-    def upsert_hashnode_access_token(self, user_id: str, access_token: str) -> dict:
-        return self._update_hashnode_distribution(user_id, access_token=access_token)
-
-    def clear_hashnode_access_token(self, user_id: str) -> dict:
-        return self._update_hashnode_distribution(user_id, access_token=None)
-
-    def set_hashnode_publication_id(self, user_id: str, publication_id: str) -> dict:
-        return self._update_hashnode_distribution(user_id, publication_id=publication_id)
-
-    def remove_hashnode_distribution(self, user_id: str) -> dict:
-        existing_doc = self.get_by_user_id(user_id)
-        existing_doc["hashnode"] = None
-        return self._replace_distribution_doc(user_id, existing_doc)
-
-    def upsert_devto_access_token(self, user_id: str, access_token: str) -> dict:
-        existing_doc = self.get_by_user_id(user_id)
-        existing_doc["devto"] = {
-            "accessToken": access_token,
-        }
-        return self._replace_distribution_doc(user_id, existing_doc)
-
-    def remove_devto_access_token(self, user_id: str) -> dict:
-        existing_doc = self.get_by_user_id(user_id)
-        existing_doc["devto"] = None
-        return self._replace_distribution_doc(user_id, existing_doc)
-
-    def get_hashnode_access_token(self, user_id: str) -> str | None:
-        hashnode = self.get_by_user_id(user_id).get("hashnode")
-        if not isinstance(hashnode, dict):
-            return None
-        access_token = str(hashnode.get("accessToken") or "").strip()
-        return access_token or None
-
-    def get_devto_access_token(self, user_id: str) -> str | None:
-        devto = self.get_by_user_id(user_id).get("devto")
-        if not isinstance(devto, dict):
-            return None
-        access_token = str(devto.get("accessToken") or "").strip()
-        return access_token or None
-
-    def get_hashnode_publication_id(self, user_id: str) -> str | None:
-        hashnode = self.get_by_user_id(user_id).get("hashnode")
-        if not isinstance(hashnode, dict):
-            return None
-        publication_id = str(hashnode.get("publicationId") or "").strip()
-        return publication_id or None
-
+class HashnodeDistributionService:
     @staticmethod
     def _extract_error_message(payload: Any, fallback: str) -> str:
         if isinstance(payload, dict):
@@ -152,13 +58,10 @@ class DistributionsService:
         self,
         url: str,
         *,
-        method: str = "POST",
         headers: dict[str, str] | None = None,
         body: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        request_headers = {
-            "Accept": "application/json",
-        }
+        request_headers = {"Accept": "application/json"}
         if headers:
             request_headers.update(headers)
 
@@ -171,7 +74,7 @@ class DistributionsService:
             url,
             data=payload_bytes,
             headers=request_headers,
-            method=method,
+            method="POST",
         )
 
         try:
@@ -214,7 +117,7 @@ class DistributionsService:
 
         return payload
 
-    def fetch_hashnode_publication_id(self, access_token: str) -> str:
+    def fetch_publication_id(self, access_token: str) -> str:
         query = """
         query ResolvePublication($first: Int!) {
           me {
@@ -262,7 +165,7 @@ class DistributionsService:
             detail="No Hashnode publication was found for this account.",
         )
 
-    def publish_hashnode_post(self, access_token: str, payload: dict[str, Any]) -> dict[str, Any]:
+    def publish_post(self, access_token: str, payload: dict[str, Any]) -> dict[str, Any]:
         mutation = """
         mutation PublishPost($input: PublishPostInput!) {
           publishPost(input: $input) {
@@ -297,49 +200,5 @@ class DistributionsService:
             raise HTTPException(status_code=502, detail="Hashnode did not return a published post.")
         return post
 
-    async def publish_devto_article(self, access_token: str, final_payload: dict[str, Any]) -> dict[str, Any]:
-        headers = {
-            "api-key": access_token,
-            "Content-Type": "application/json",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
-        }
 
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(
-                    DEVTO_ARTICLES_URL,
-                    json=final_payload,
-                    headers=headers,
-                )
-        except httpx.RequestError as exc:
-            raise HTTPException(
-                status_code=502,
-                detail="Unable to reach the external distribution service right now.",
-            ) from exc
-
-        if response.is_error:
-            parsed_payload: Any
-            try:
-                parsed_payload = response.json()
-            except ValueError:
-                parsed_payload = response.text
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=self._extract_error_message(parsed_payload, response.text or "Dev.to request failed."),
-            )
-
-        try:
-            payload = response.json()
-        except ValueError as exc:
-            raise HTTPException(status_code=502, detail="Received an invalid response from Dev.to.") from exc
-
-        if not isinstance(payload, dict):
-            raise HTTPException(status_code=502, detail="Received an unexpected response from Dev.to.")
-
-        article_id = payload.get("id")
-        if article_id is None:
-            raise HTTPException(status_code=502, detail="Dev.to did not return a published article.")
-        return payload
-
-
-distributions_service = DistributionsService()
+hashnode_distribution_service = HashnodeDistributionService()

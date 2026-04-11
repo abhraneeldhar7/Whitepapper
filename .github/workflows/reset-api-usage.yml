@@ -2,8 +2,8 @@ name: Reset API Key Usage
 
 on:
   schedule:
-    - cron: "0 0 1 * *" # First of every month at midnight UTC
-  workflow_dispatch: # Allow manual trigger
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
 
 jobs:
   reset-usage:

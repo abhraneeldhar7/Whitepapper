@@ -926,16 +926,14 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
 
                     <div className="space-y-2">
                       <Label>Metadata</Label>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="bg-card px-2 py-1 rounded-[4px] border text-[12px]">{metadata ? "Generated" : "Empty"}</p>
+                      <div className="flex items-center gap-2">
                         {metadata ? (
-                          <Button type="button" variant="secondary" onClick={handleOpenMetadataDialog}>
+                          <Button type="button" className="w-full" onClick={handleOpenMetadataDialog}>
                             Details
                           </Button>
                         ) : (
                           <Button
                             type="button"
-                            variant="secondary"
                             onClick={handleGenerateMetadataFromSheet}
                             loading={metadataGenerating}
                           >
@@ -947,13 +945,14 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
 
 
 
-                    <div className="relative mt-5">
+                    <div className="relative h-[220px] space-y-4 overflow-hidden">
+                      <Label>Distribute</Label>
                       <IntegrationsSection hideText />
                       <div className="absolute bottom-[-2px] left-0 right-0 h-full bg-gradient-to-t from-background to-transparent from-[10%] z-2" />
 
 
                       <Button
-                        className="w-full absolute z-3 bottom-2"
+                        className="w-full absolute z-3 bottom-0"
                         onClick={() => setDistributionDialogOpen(true)}
                       >
                         <RssIcon /> Distribute
@@ -1403,14 +1402,9 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
         open={distributionDialogOpen}
         onOpenChange={setDistributionDialogOpen}
         user={user}
-        paperId={paperId}
-        title={title}
-        slug={slug}
-        body={body}
+        paperDoc={paperDoc}
         status={pageDetails.status}
         integrationBaseUrl={integrationBaseUrl}
-        thumbnailUrl={paperDoc.thumbnailUrl || null}
-        metadata={metadata}
       />
 
     </div>

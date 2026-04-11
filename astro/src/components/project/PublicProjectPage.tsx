@@ -1,16 +1,15 @@
 import PaperCardComponent from "@/components/paperCardComponent";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import type { PaperDoc, ProjectDoc, PublicProjectCollectionPapers, UserDoc } from "@/lib/types";
-import ProjectDescriptionViewer from "./ProjectDescriptionViewer";
+import type { CollectionDoc, PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
 import ProjectCollectionsViewer from "./ProjectCollectionsViewer";
+import MarkdownRender from "../ui/markdown-render/markdown-render";
 
 type PublicProjectPageProps = {
   handle: string;
   project: ProjectDoc;
   papers: PaperDoc[];
-  collections: any[];
-  collectionPapers?: PublicProjectCollectionPapers[];
+  collections: CollectionDoc[];
   owner?: UserDoc | null;
   projectCreatedDate?: string | null;
   currentUserId?: string | null;
@@ -21,7 +20,6 @@ export default function PublicProjectPage({
   project,
   papers,
   collections,
-  collectionPapers = [],
   owner,
   projectCreatedDate,
   currentUserId,
@@ -37,7 +35,7 @@ export default function PublicProjectPage({
         <div className="space-y-4 md:flex-3">
           <div className="flex flex-wrap gap-5 items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-[56px] w-[56px] shrink-0 overflow-hidden rounded-md border">
+              <div className="h-[56px] w-[56px] shrink-0">
                 {project.logoUrl ? (
                   <img
                     src={project.logoUrl}
@@ -70,7 +68,7 @@ export default function PublicProjectPage({
               >
                 <div className="h-[28px] w-[28px] p-[1px] bg-[white] dark:bg-[black] rounded-[8px] border shadow-md">
                   <img
-                    src={owner.avatarUrl||""}
+                    src={owner.avatarUrl || ""}
                     className="rounded-[6px] h-full w-full object-cover"
                     alt={owner.displayName ?? owner.username}
                     width={28}
@@ -90,28 +88,33 @@ export default function PublicProjectPage({
             )}
           </div>
 
-          <ProjectDescriptionViewer content={project.description || ""} />
+          <MarkdownRender content={project.description} />
         </div>
 
-        <div className="space-y-8 md:flex-3">
-          <div className="space-y-4">
-            <Label>Papers</Label>
-            <div className="grid grid-cols-2 gap-5 md:grid-cols-3">
-              {sortedStandalonePapers.map((paper) => (
-                <PaperCardComponent
-                  key={paper.paperId}
-                  handle={handle}
-                  paperData={paper}
-                />
-              ))}
-            </div>
-          </div>
+        <div className="space-y-10 md:flex-3">
+          {sortedStandalonePapers.length > 0 ?
+            <div className="space-y-4">
+              <Label>Papers</Label>
+              <div className="grid grid-cols-2 gap-5 md:grid-cols-3">
+                {sortedStandalonePapers.map((paper) => (
+                  <PaperCardComponent
+                    key={paper.paperId}
+                    handle={handle}
+                    paperData={paper}
+                  />
+                ))}
+              </div>
+            </div> :
+            <p className="my-5 text-[18px] text-muted-foreground">No papers added yet.</p>
+          }
 
-          <ProjectCollectionsViewer
-            handle={handle}
-            collections={collections}
-            collectionPapers={collectionPapers}
-          />
+          {collections.length > 0 &&
+            <ProjectCollectionsViewer
+              handle={handle}
+              collections={collections}
+              papers={papers}
+            />
+          }
         </div>
       </div>
     </main>

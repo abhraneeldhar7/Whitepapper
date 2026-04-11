@@ -192,12 +192,17 @@
     background-color: var(--card) !important;
     /* font-size: 17px; */
     margin: 1.5em 0;
-    font-size: 0.85em;
-    font-weight: 400;
+    font-weight: 200;
     border-radius: 8px;
-    overflow: hidden;
-    color: var(--muted-foreground);
-    /* border: 1px solid var(--border); */
+    /* overflow: auto; */
+    /* max-height: 300px; */
+    border: 1px solid var(--border);
+    /* -ms-overflow-style: none; */
+    /* scrollbar-width: none; */
+}
+
+.markdownDiv pre::-webkit-scrollbar {
+    display: none;
 }
 
 /* Code inside pre tags (code blocks) */
@@ -209,9 +214,9 @@
     line-height: 1.5;
     display: block;
     padding: 1em;
-    overflow-x: auto;
+    overflow: visible;
     color: var(--muted-foreground);
-    white-space: pre-line;
+    white-space: pre;
 }
 
 /* Syntax highlighted code blocks */

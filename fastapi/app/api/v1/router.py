@@ -1,11 +1,12 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import collections, dev, distributions, papers, projects, public, system, users, webhooks
+from app.api.v1.endpoints import collections, dev, papers, projects, public, system, users, webhooks
+from app.api.v1.endpoints.distributions import router as distributions_router
 
 api_router = APIRouter()
 api_router.include_router(system.router)
 api_router.include_router(users.router)
-api_router.include_router(distributions.router)
+api_router.include_router(distributions_router)
 api_router.include_router(projects.router)
 api_router.include_router(public.router)
 api_router.include_router(papers.router)

@@ -47,8 +47,7 @@ def _public_response(payload: dict, request: Request, *, max_age: int = PUBLIC_C
     etag_value = hashlib.sha256(canonical_json.encode("utf-8")).hexdigest()
     etag = f"\"{etag_value}\""
     headers = {
-        "Cache-Control": f"public, max-age={max_age}, s-maxage={max_age}",
-        "ETag": etag,
+        "Cache-Control": f"public, max-age={max_age}, s-maxage={max_age}, stale-while-revalidate={max_age}"
     }
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=headers)
@@ -141,7 +140,9 @@ async def get_public_profiles_projects_for_sitemap(request: Request) -> Response
 @router.get("/{handle}")
 async def get_public_profile(handle: str, request: Request) -> Response:
     user = await asyncio.to_thread(user_service.get_by_username, handle)
-    owner_id = user["userId"]
+    owner_id = user.get("userId")
+    if not owner_id:
+        raise HTTPException(status_code=404, detail="User not found.")
 
     public_projects, papers = await asyncio.gather(
         asyncio.to_thread(projects_service.list_owned, owner_id, True),
@@ -169,64 +170,15 @@ async def get_public_paper_page_data(handle: str, paper_slug: str, request: Requ
 @router.get("/{handle}/projects/{project_slug}")
 async def get_public_project(handle: str, project_slug: str, request: Request) -> Response:
     user = await asyncio.to_thread(user_service.get_by_username, handle)
-    project = await asyncio.to_thread(projects_service.get_by_slug, user["username"], project_slug, True)
-    public_collections, papers = await asyncio.gather(
+    project = await asyncio.to_thread(projects_service.get_by_slug, handle, project_slug, True)
+    papers, public_collections = await asyncio.gather(
+        asyncio.to_thread(papers_service.list_by_project_id, project["projectId"], True),
         asyncio.to_thread(collections_service.list_project_collections, project["projectId"], True),
-        asyncio.to_thread(papers_service.list_by_project_id, project["projectId"], True, True),
     )
-    collection_papers_data = await asyncio.gather(
-        *[
-            asyncio.to_thread(papers_service.list_by_collection_id, collection.get("collectionId"), True)
-            for collection in public_collections
-        ]
-    ) if public_collections else []
-    collection_papers = []
-    for collection, collection_items in zip(public_collections, collection_papers_data):
-        collection_papers.append(
-            {
-                "collectionId": collection.get("collectionId"),
-                "papers": [_public_paper(item) for item in collection_items],
-            }
-        )
 
     return _public_response({
         "user": _public_user(user),
         "project": _public_project(project),
         "collections": [_public_collection(collection) for collection in public_collections],
         "papers": [_public_paper(paper) for paper in papers],
-        "collectionPapers": collection_papers,
     }, request)
-
-
-async def _get_public_collection_payload(collection_id: str) -> dict:
-    collection = await asyncio.to_thread(collections_service.get_by_id, collection_id, True)
-    project, papers = await asyncio.gather(
-        asyncio.to_thread(projects_service.get_by_id, collection.get("projectId"), True),
-        asyncio.to_thread(papers_service.list_by_collection_id, collection["collectionId"], True),
-    )
-    if collection.get("projectId") != project.get("projectId"):
-        raise HTTPException(status_code=404, detail="Collection not found.")
-
-    return {
-        "project": _public_project(project),
-        "collection": _public_collection(collection),
-        "papers": [_public_paper(paper) for paper in papers],
-    }
-
-
-@router.get("/collections/{collection_id}")
-async def get_public_collection_by_id_global(collection_id: str, request: Request) -> Response:
-    return _public_response(await _get_public_collection_payload(collection_id), request)
-
-
-@router.get("/{handle}/collections/{collection_id}")
-async def get_public_collection_by_id(handle: str, collection_id: str, request: Request) -> Response:
-    return _public_response(await _get_public_collection_payload(collection_id), request)
-
-
-@router.get("/{handle}/projects/{project_slug}/collections/{collection_id}")
-async def get_public_collection(handle: str, project_slug: str, collection_id: str, request: Request) -> Response:
-    payload = await _get_public_collection_payload(collection_id)
-    if payload["project"].get("slug") != project_slug:
-        raise HTTPException(status_code=404, detail="Collection not found.")
-    return _public_response(payload, request)

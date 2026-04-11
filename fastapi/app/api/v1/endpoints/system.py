@@ -10,7 +10,7 @@ router = APIRouter(tags=["system"])
 
 @router.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"msg":"we cooking gng 🔥"}
 
 
 @router.post("/reset-api-usage")

@@ -44,63 +44,27 @@ export async function publishHashnodeDistribution(
 }
 
 export async function getDevtoDistribution(client: ApiClient = apiClient): Promise<DevtoDistribution | null> {
-  try {
-    return await client.get<DevtoDistribution | null>("/distributions/devto");
-  } catch (error) {
-    if (!isNotFoundError(error)) {
-      throw error;
-    }
-    return client.get<DevtoDistribution | null>("/distributions/devto");
-  }
+  return client.get<DevtoDistribution | null>("/distributions/devto");
 }
 
 export async function saveDevtoDistribution(
   input: DevtoDistributionUpsertInput,
   client: ApiClient = apiClient,
 ): Promise<UserDoc> {
-  try {
-    return await client.put<UserDoc>("/distributions/devto", {
-      body: input,
-    });
-  } catch (error) {
-    if (!isNotFoundError(error)) {
-      throw error;
-    }
-    return client.put<UserDoc>("/distributions/devto", {
-      body: input,
-    });
-  }
+  return client.put<UserDoc>("/distributions/devto", {
+    body: input,
+  });
 }
 
 export async function revokeDevtoDistribution(client: ApiClient = apiClient): Promise<UserDoc> {
-  try {
-    return await client.delete<UserDoc>("/distributions/devto");
-  } catch (error) {
-    if (!isNotFoundError(error)) {
-      throw error;
-    }
-    return client.delete<UserDoc>("/distributions/devto");
-  }
+  return client.delete<UserDoc>("/distributions/devto");
 }
 
 export async function publishDevtoDistribution(
   input: DistributionPublishInput,
   client: ApiClient = apiClient,
 ): Promise<DistributionPublishResult> {
-  try {
-    return await client.post<DistributionPublishResult>("/distributions/devto/publish", {
-      body: input,
-    });
-  } catch (error) {
-    if (!isNotFoundError(error)) {
-      throw error;
-    }
-    return client.post<DistributionPublishResult>("/distributions/devto/publish", {
-      body: input,
-    });
-  }
-}
-
-function isNotFoundError(error: unknown): boolean {
-  return error instanceof Error && error.message.includes("Not Found");
+  return client.post<DistributionPublishResult>("/distributions/devto/publish", {
+    body: input,
+  });
 }

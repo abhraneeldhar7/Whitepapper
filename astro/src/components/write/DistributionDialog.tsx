@@ -23,7 +23,7 @@ import { resolveIntegrationBaseUrl } from "@/lib/integrationBaseUrl";
 import type {
   DevtoDistribution,
   HashnodeDistribution,
-  PaperMetadata,
+  PaperDoc,
   UserDoc,
 } from "@/lib/types";
 import { copyToClipboard } from "@/lib/utils";
@@ -45,14 +45,9 @@ type DistributionDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: UserDoc | null;
-  paperId: string;
-  title: string;
-  slug: string;
-  body: string;
+  paperDoc: PaperDoc;
   status: "draft" | "public";
   integrationBaseUrl?: string;
-  thumbnailUrl?: string | null;
-  metadata?: PaperMetadata | null;
 };
 
 type DistributionState = {
@@ -94,17 +89,12 @@ export default function DistributionDialog({
   open,
   onOpenChange,
   user,
-  paperId,
-  title,
-  slug,
-  body,
+  paperDoc,
   status,
   integrationBaseUrl,
-  thumbnailUrl,
-  metadata,
 }: DistributionDialogProps) {
   const [distributionState, setDistributionState] = useState<DistributionState>(emptyDistributionState);
-  const [loadingConfig, setLoadingConfig] = useState(false);
+  const [checkingPlatformMap, setCheckingPlatformMap] = useState<Partial<Record<SupportedPlatformId, boolean>>>({});
   const [postingPlatform, setPostingPlatform] = useState<SupportedPlatformId | null>(null);
   const [postedUrlMap, setPostedUrlMap] = useState<Partial<Record<SupportedPlatformId, string>>>({});
   const [mediumImportExpanded, setMediumImportExpanded] = useState(false);
@@ -121,26 +111,37 @@ export default function DistributionDialog({
     let cancelled = false;
 
     async function loadDistributionState() {
-      setLoadingConfig(true);
-      const [hashnodeResult, devtoResult] = await Promise.allSettled([
-        getHashnodeDistribution(),
-        getDevtoDistribution(),
+      const shouldCheckHashnode = !readLocalToken(HASHNODE_ACCESS_TOKEN_KEY);
+      const shouldCheckDevto = !readLocalToken(DEVTO_ACCESS_TOKEN_KEY);
+
+      setCheckingPlatformMap({
+        hashnode: shouldCheckHashnode,
+        devto: shouldCheckDevto,
+      });
+
+      const checks: PromiseSettledResult<HashnodeDistribution | DevtoDistribution | null>[] = await Promise.allSettled([
+        shouldCheckHashnode ? getHashnodeDistribution() : Promise.resolve(null),
+        shouldCheckDevto ? getDevtoDistribution() : Promise.resolve(null),
       ]);
 
       if (cancelled) {
         return;
       }
 
+      const [hashnodeResult, devtoResult] = checks;
       setDistributionState({
-        hashnode: hashnodeResult.status === "fulfilled" ? hashnodeResult.value : null,
-        devto: devtoResult.status === "fulfilled" ? devtoResult.value : null,
+        hashnode: shouldCheckHashnode && hashnodeResult.status === "fulfilled" ? hashnodeResult.value as HashnodeDistribution | null : null,
+        devto: shouldCheckDevto && devtoResult.status === "fulfilled" ? devtoResult.value as DevtoDistribution | null : null,
       });
 
-      if (hashnodeResult.status === "rejected" || devtoResult.status === "rejected") {
+      if (
+        (shouldCheckHashnode && hashnodeResult.status === "rejected") ||
+        (shouldCheckDevto && devtoResult.status === "rejected")
+      ) {
         toast.error("Unable to load every distribution setting right now.");
       }
 
-      setLoadingConfig(false);
+      setCheckingPlatformMap({});
     }
 
     void loadDistributionState();
@@ -161,6 +162,10 @@ export default function DistributionDialog({
     return Boolean(resolveAccessToken(platform));
   }
 
+  function isCheckingPlatform(platform: SupportedPlatformId): boolean {
+    return Boolean(checkingPlatformMap[platform]);
+  }
+
   function getPlatformStatus(platform: PlatformDefinition): string {
     if (platform.behavior === "coming_soon") {
       return "Awaiting approval";
@@ -168,14 +173,17 @@ export default function DistributionDialog({
     if (platform.behavior === "medium_import") {
       return status === "public" ? "Import available" : "Publish paper to import";
     }
-    if (loadingConfig) {
-      return "Checking connection";
-    }
     if (platform.id === "hashnode") {
+      if (isCheckingPlatform("hashnode")) {
+        return "Checking connection";
+      }
       if (hasConfiguredAccessToken("hashnode")) {
         return "Ready to post";
       }
       return user?.preferences?.hashnodeIntegrated ? "Missing key" : "Not connected";
+    }
+    if (isCheckingPlatform("devto")) {
+      return "Checking connection";
     }
     if (hasConfiguredAccessToken("devto")) {
       return "Ready to post";
@@ -184,7 +192,7 @@ export default function DistributionDialog({
   }
 
   function resolveArticleUrl(): string | null {
-    const normalizedSlug = slug.trim();
+    const normalizedSlug = paperDoc.slug.trim();
     const username = user?.username?.trim();
     if (!normalizedSlug || !username) {
       return null;
@@ -225,9 +233,9 @@ export default function DistributionDialog({
   }
 
   async function publishToPlatform(platform: SupportedPlatformId) {
-    const resolvedTitle = title.trim();
-    const resolvedSlug = slug.trim();
-    const resolvedBody = body.trim();
+    const resolvedTitle = paperDoc.title.trim();
+    const resolvedSlug = paperDoc.slug.trim();
+    const resolvedBody = paperDoc.body.trim();
     const accessToken = resolveAccessToken(platform);
 
     if (!resolvedTitle) {
@@ -254,12 +262,8 @@ export default function DistributionDialog({
     setPostingPlatform(platform);
     try {
       const payload = {
-        paperId,
-        title: resolvedTitle,
-        slug: resolvedSlug,
-        body,
-        thumbnailUrl: thumbnailUrl || null,
-        metadata: metadata || null,
+        paperId: paperDoc.paperId,
+        payload: paperDoc,
         accessToken,
       };
 
@@ -291,9 +295,10 @@ export default function DistributionDialog({
         <div className="space-y-2">
           {platformDefinitions.map((platform) => {
             const isPublishPlatform = platform.id === "hashnode" || platform.id === "devto";
+            const isChecking = isPublishPlatform && isCheckingPlatform(platform.id as SupportedPlatformId);
             const canPost =
               platform.behavior === "publish" &&
-              !loadingConfig &&
+              !isChecking &&
               ((platform.id === "hashnode" && hasConfiguredAccessToken("hashnode")) ||
                 (platform.id === "devto" && hasConfiguredAccessToken("devto")));
             const isPosting = isPublishPlatform && postingPlatform === platform.id;
@@ -331,19 +336,26 @@ export default function DistributionDialog({
                       </Button>
                     </a>
                   ) : platform.behavior === "publish" ? (
-                    <Button
-                      variant="secondary"
-                      className="shrink-0"
-                      onClick={() => {
-                        if (platform.id === "hashnode" || platform.id === "devto") {
-                          void publishToPlatform(platform.id);
-                        }
-                      }}
-                      disabled={!canPost}
-                      loading={Boolean(isPosting)}
-                    >
-                      Post
-                    </Button>
+                    canPost ? (
+                      <Button
+                        variant="secondary"
+                        className="shrink-0"
+                        onClick={() => {
+                          if (platform.id === "hashnode" || platform.id === "devto") {
+                            void publishToPlatform(platform.id);
+                          }
+                        }}
+                        loading={Boolean(isPosting) || Boolean(isChecking)}
+                      >
+                        Post
+                      </Button>
+                    ) : (
+                      <a href="/settings" className="shrink-0">
+                        <Button variant="secondary" className="shrink-0" loading={Boolean(isChecking)}>
+                          Configure
+                        </Button>
+                      </a>
+                    )
                   ) : platform.behavior === "medium_import" ? (
                     status === "public" ? (
                       <Button

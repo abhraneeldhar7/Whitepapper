@@ -23,7 +23,7 @@ class DevApiService:
         return get_redis_client()
 
     def _doc_cache_key(self, key_hash: str) -> str:
-        return f"{get_cache_prefix()}:api_keys:doc:{key_hash}"
+        return f"{get_cache_prefix()}:api_keys:{key_hash}"
 
     def _read_cached_doc(self, key_hash: str, client: Redis | None = None) -> dict | None:
         client = client or self._redis()
@@ -216,7 +216,7 @@ class DevApiService:
             return 0
 
         synced = 0
-        pattern = f"{get_cache_prefix()}:api_keys:doc:*"
+        pattern = f"{get_cache_prefix()}:api_keys:*"
         for key in client.scan_iter(match=pattern):
             try:
                 payload = client.get(key)
@@ -245,28 +245,25 @@ class DevApiService:
         return synced
 
     def reset_all_usage(self) -> int:
-        client = self._redis()
         all_keys = firestore_store.list_all(API_KEYS_COLLECTION)
-        count = 0
+        key_ids: list[str] = []
         for key in all_keys:
-            should_reset = int(key.get("usage", 0)) > 0
-            key_hash = key.get(API_KEY_HASH_KEY)
-            if client and key_hash:
-                cached_doc = self._read_cached_doc(key_hash, client=client)
-                if cached_doc:
-                    if int(cached_doc.get("usage", 0)) > 0:
-                        should_reset = True
-                    cached_doc["usage"] = 0
-                    self._write_cached_doc(cached_doc, client=client)
-
-            if not should_reset:
-                continue
-
             key_id = key.get(API_KEY_ID_KEY)
             if key_id:
                 firestore_store.update(API_KEYS_COLLECTION, key_id, {"usage": 0})
-                count += 1
-        return count
+                key_ids.append(key_id)
+
+        client = self._redis()
+        if client:
+            pattern = f"{get_cache_prefix()}:api_keys:*"
+            try:
+                keys = list(client.scan_iter(match=pattern))
+                if keys:
+                    client.delete(*keys)
+            except Exception:
+                logger.exception("API key cache reset failed.")
+
+        return len(key_ids)
 
 
 _dev_api_service = DevApiService()

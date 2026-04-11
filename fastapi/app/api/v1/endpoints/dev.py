@@ -59,29 +59,11 @@ def _resolve_paper_for_project(project_id: str, paper_id: str | None, paper_slug
         if paper.get("projectId") != project_id:
             raise HTTPException(status_code=403, detail="Paper does not belong to the API key project.")
     else:
-        paper = papers_service.get_by_project_slug(project_id=project_id, paper_slug=paper_slug or "", public=True)
+        paper = papers_service.get_by_project_slug(project_id=project_id, paper_slug=paper_slug, public=True)
         if not paper:
             raise HTTPException(status_code=404, detail="Paper not found for slug in this project.")
 
     return paper
-
-
-def _mask_owner_in_project(project: dict) -> dict:
-    masked = dict(project)
-    masked["ownerId"] = None
-    return masked
-
-
-def _mask_owner_in_collection(collection: dict) -> dict:
-    masked = dict(collection)
-    masked["ownerId"] = None
-    return masked
-
-
-def _mask_owner_in_paper(paper: dict) -> dict:
-    masked = dict(paper)
-    masked["ownerId"] = None
-    return masked
 
 
 def _set_dev_cache_headers(response: Response) -> None:
@@ -128,8 +110,8 @@ async def get_project_bundle(
 
 
     return {
-        "project": _mask_owner_in_project(project),
-        "collections": [_mask_owner_in_collection(collection) for collection in collections],
+        "project":project,
+        "collections": [collection for collection in collections],
     }
 
 
@@ -147,32 +129,31 @@ async def get_collection_bundle(
     if bool(collection_id) == bool(collection_slug):
         raise HTTPException(status_code=400, detail="Provide exactly one of: id or slug.")
 
-    project_task = asyncio.to_thread(projects_service.get_by_id, key_project_id, True)
     if collection_id:
         collection_task = asyncio.to_thread(collections_service.get_by_id, collection_id, True)
-        project, collection = await asyncio.gather(project_task, collection_task)
+        papers_task = asyncio.to_thread(papers_service.list_by_collection_id, collection_id, True)
+        collection, papers = await asyncio.gather(collection_task, papers_task)
         if collection.get("projectId") != key_project_id:
             raise HTTPException(status_code=403, detail="Collection does not belong to the API key project.")
     else:
-        collection_task = asyncio.to_thread(
+        collection = await asyncio.to_thread(
             collections_service.get_by_slug,
             key_project_id,
             collection_slug or "",
             True,
         )
-        project, collection = await asyncio.gather(project_task, collection_task)
-        if collection.get("projectId") != project.get("projectId"):
+        if collection.get("projectId") != key_project_id:
             raise HTTPException(status_code=403, detail="Collection does not belong to the API key project.")
+        papers = await asyncio.to_thread(papers_service.list_by_collection_id, collection.get("collectionId"), True)
 
     _add_usage_increment(background_tasks, key_doc)
-    papers = await asyncio.to_thread(papers_service.list_by_collection_id, collection.get("collectionId"), True)
     papers = _sort_papers_latest_first(papers)
     _set_dev_cache_headers(response)
 
 
     return {
-        "collection": _mask_owner_in_collection(collection),
-        "papers": [_mask_owner_in_paper(paper) for paper in papers],
+        "collection": collection,
+        "papers": [(paper) for paper in papers],
     }
 
 
@@ -193,12 +174,12 @@ async def get_paper(
 
 
     return {
-        "paper": _mask_owner_in_paper(paper),
+        "paper": paper,
     }
 
 
 @api_keys_router.get("/projects/{project_id}/api-key", response_model=ApiKeySummary | None)
-def get_project_api_key(
+def get_project_api_doc(
     project_id: Annotated[str, Path()],
     user_id: CurrentUserIdDep,
 ) -> ApiKeySummary | None:

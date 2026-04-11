@@ -2,7 +2,7 @@ name: Sync API Key Cache
 
 on:
   schedule:
-    - cron: "0 * * * *" # Hourly at minute 0 UTC
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 jobs:

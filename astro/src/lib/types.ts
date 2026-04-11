@@ -117,11 +117,7 @@ export type PaperMetadata = {
 
 export type DistributionPublishInput = {
   paperId: string;
-  title: string;
-  slug: string;
-  body: string;
-  thumbnailUrl?: string | null;
-  metadata?: PaperMetadata | null;
+  payload?: PaperDoc | null;
   accessToken?: string | null;
 };
 
@@ -139,11 +135,6 @@ export type PublicAuthorSummary = {
 
 export type PublicPaperPagePayload = {
   paper: PaperDoc;
-};
-
-export type PublicProjectCollectionPapers = {
-  collectionId: string;
-  papers: PaperDoc[];
 };
 
 export type PaperCreateResponse = {

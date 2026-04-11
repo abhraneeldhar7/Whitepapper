@@ -4,7 +4,6 @@ import type {
   PaperDoc,
   ProjectDoc,
   PublicPaperPagePayload,
-  PublicProjectCollectionPapers,
   UserDoc,
 } from "@/lib/types";
 
@@ -14,18 +13,11 @@ export type PublicProfileResponse = {
   papers: PaperDoc[];
 };
 
-export type PublicCollectionResponse = {
-  project: ProjectDoc;
-  collection: CollectionDoc;
-  papers: PaperDoc[];
-};
-
 export type PublicProjectResponse = {
   user: UserDoc;
   project: ProjectDoc;
   collections: CollectionDoc[];
   papers: PaperDoc[];
-  collectionPapers: PublicProjectCollectionPapers[];
 };
 
 export async function getPublicProfile(handle: string): Promise<PublicProfileResponse> {
@@ -39,14 +31,6 @@ export async function getPublicProjectBySlug(
   return apiClient.get<PublicProjectResponse>(`/public/${handle}/projects/${projectSlug}`, { auth: "none" });
 }
 
-export async function getPublicCollectionById(
-  collectionId: string,
-): Promise<PublicCollectionResponse> {
-  return apiClient.get<PublicCollectionResponse>(
-    `/public/collections/${collectionId}`,
-    { auth: "none" },
-  );
-}
 
 export async function getPublicPaperPageData(
   handle: string,

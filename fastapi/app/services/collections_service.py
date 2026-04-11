@@ -1,14 +1,11 @@
 import logging
-import pickle
 import threading
 from uuid import uuid4
 
 from fastapi import HTTPException
 
 from app.core.limits import MAX_COLLECTIONS_PER_PROJECT, MAX_DESCRIPTION_LENGTH
-from app.core.cache_policies import COLLECTION_CACHE_POLICY
 from app.core.firestore_store import firestore_store, utc_now
-from app.core.redis_client import get_cache_prefix, get_redis_client
 from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
 
@@ -23,65 +20,8 @@ COLLECTION_PUBLIC_KEY = "isPublic"
 
 
 class CollectionsService:
-    def _collection_by_id_key(self, collection_id: str) -> str:
-        return f"{get_cache_prefix()}:collections:id:{collection_id}"
-
-    def _collection_by_slug_key(self, project_id: str, slug: str) -> str:
-        return f"{get_cache_prefix()}:collections:slug:{project_id}:{slug}"
-
-    def _load_cached_collection(self, key: str) -> dict | None:
-        client = get_redis_client()
-        if not client:
-            return None
-        try:
-            payload = client.get(key)
-            if payload is None:
-                return None
-            value = pickle.loads(payload)
-            return value if isinstance(value, dict) else None
-        except Exception:
-            logger.exception("Collection cache read failed for key=%s", key)
-            return None
-
-    def _set_cached_collection(self, collection: dict) -> None:
-        client = get_redis_client()
-        if not client:
-            return
-
-        collection_id = collection.get(COLLECTION_ID_KEY)
-        project_id = collection.get(COLLECTION_PROJECT_KEY)
-        slug = collection.get(COLLECTION_SLUG_KEY)
-        if not collection_id and not (project_id and slug):
-            return
-
-        try:
-            if collection_id:
-                client.setex(
-                    self._collection_by_id_key(collection_id),
-                    COLLECTION_CACHE_POLICY.ttl_seconds,
-                    pickle.dumps(collection),
-                )
-            if project_id and slug:
-                client.setex(
-                    self._collection_by_slug_key(project_id, slug),
-                    COLLECTION_CACHE_POLICY.ttl_seconds,
-                    pickle.dumps(collection),
-                )
-        except Exception:
-            logger.exception("Collection cache write failed for collection_id=%s", collection_id)
-
     def invalidate_collection(self, collection_id: str, project_id: str | None = None, slug: str | None = None) -> None:
-        client = get_redis_client()
-        if not client:
-            return
-
-        keys = [self._collection_by_id_key(collection_id)]
-        if project_id and slug:
-            keys.append(self._collection_by_slug_key(project_id, slug))
-        try:
-            client.delete(*keys)
-        except Exception:
-            logger.exception("Collection cache invalidation failed for keys=%s", keys)
+        return None
 
     def _unique_slug(self, project_id: str, source: str, exclude_collection_id: str | None = None) -> str:
         base = normalize_slug(source) or "collection"
@@ -276,27 +216,14 @@ class CollectionsService:
         return {"ok": True}
 
     def get_by_id(self, collection_id: str, public: bool = False) -> dict:
-        cached = self._load_cached_collection(self._collection_by_id_key(collection_id))
-        if cached:
-            if public and not self._is_public_collection(cached):
-                raise HTTPException(status_code=404, detail="Collection not found.")
-            return cached
-
         collection = firestore_store.get(COLLECTIONS_COLLECTION, collection_id)
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found.")
         if public and not self._is_public_collection(collection):
             raise HTTPException(status_code=404, detail="Collection not found.")
-        self._set_cached_collection(collection)
         return collection
 
     def get_by_slug(self, project_id: str, collection_slug: str, public: bool = False) -> dict:
-        cached = self._load_cached_collection(self._collection_by_slug_key(project_id, collection_slug))
-        if cached:
-            if public and not self._is_public_collection(cached):
-                raise HTTPException(status_code=404, detail="Collection not found.")
-            return cached
-
         filters: dict[str, object] = {
             COLLECTION_PROJECT_KEY: project_id,
             COLLECTION_SLUG_KEY: collection_slug,
@@ -306,9 +233,7 @@ class CollectionsService:
         matches = firestore_store.find_by_fields(COLLECTIONS_COLLECTION, filters)
         if not matches:
             raise HTTPException(status_code=404, detail="Collection not found.")
-        collection = matches[0]
-        self._set_cached_collection(collection)
-        return collection
+        return matches[0]
 
     def is_slug_available(self, project_id: str, slug: str, collection_id: str | None = None) -> bool:
         candidate = normalize_slug(slug or "")

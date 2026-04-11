@@ -1,11 +1,9 @@
 import logging
-import pickle
 import threading
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
 
-from app.core.cache_policies import PROJECT_CACHE_POLICY
 from app.core.constants import (
     MAX_EMBEDDED_HEIGHT,
     MAX_EMBEDDED_WIDTH,
@@ -14,7 +12,6 @@ from app.core.constants import (
 )
 from app.core.limits import MAX_DESCRIPTION_LENGTH, MAX_PROJECTS_PER_USER
 from app.core.firestore_store import firestore_store, utc_now
-from app.core.redis_client import get_cache_prefix, get_redis_client
 from app.core.reserved_paths import is_reserved_project_slug
 from app.services.slug_utils import normalize_slug
 from app.services.storage_service import storage_service
@@ -31,65 +28,8 @@ SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
 
 
 class ProjectsService:
-    def _project_by_id_key(self, project_id: str) -> str:
-        return f"{get_cache_prefix()}:projects:id:{project_id}"
-
-    def _project_by_slug_key(self, owner_username: str, slug: str) -> str:
-        return f"{get_cache_prefix()}:projects:slug:{owner_username}:{slug}"
-
-    def _load_cached_project(self, key: str) -> dict | None:
-        client = get_redis_client()
-        if not client:
-            return None
-        try:
-            payload = client.get(key)
-            if payload is None:
-                return None
-            value = pickle.loads(payload)
-            return value if isinstance(value, dict) else None
-        except Exception:
-            logger.exception("Project cache read failed for key=%s", key)
-            return None
-
-    def _set_cached_project(self, project: dict) -> None:
-        client = get_redis_client()
-        if not client:
-            return
-
-        project_id = project.get(PROJECT_ID_KEY)
-        owner_username = self._get_owner_username(project.get(PROJECT_OWNER_KEY))
-        slug = project.get(PROJECT_SLUG_KEY)
-        if not project_id and not (owner_username and slug):
-            return
-
-        try:
-            if project_id:
-                client.setex(
-                    self._project_by_id_key(project_id),
-                    PROJECT_CACHE_POLICY.ttl_seconds,
-                    pickle.dumps(project),
-                )
-            if owner_username and slug:
-                client.setex(
-                    self._project_by_slug_key(owner_username, slug),
-                    PROJECT_CACHE_POLICY.ttl_seconds,
-                    pickle.dumps(project),
-                )
-        except Exception:
-            logger.exception("Project cache write failed for project_id=%s", project_id)
-
     def invalidate_project(self, project_id: str, owner_username: str | None = None, slug: str | None = None) -> None:
-        client = get_redis_client()
-        if not client:
-            return
-
-        keys = [self._project_by_id_key(project_id)]
-        if owner_username and slug:
-            keys.append(self._project_by_slug_key(owner_username, slug))
-        try:
-            client.delete(*keys)
-        except Exception:
-            logger.exception("Project cache invalidation failed for keys=%s", keys)
+        return None
 
     def _get_owner_username(self, owner_id: str | None) -> str | None:
         if not owner_id:
@@ -168,27 +108,14 @@ class ProjectsService:
         return firestore_store.find_by_fields(PROJECTS_COLLECTION, {PROJECT_PUBLIC_KEY: True})
 
     def get_by_id(self, project_id: str, public: bool = False) -> dict:
-        cached = self._load_cached_project(self._project_by_id_key(project_id))
-        if cached:
-            if public and not self._is_public_project(cached):
-                raise HTTPException(status_code=404, detail="Project not found.")
-            return cached
-
         project = firestore_store.get(PROJECTS_COLLECTION, project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found.")
         if public and not self._is_public_project(project):
             raise HTTPException(status_code=404, detail="Project not found.")
-        self._set_cached_project(project)
         return project
 
     def get_by_slug(self, owner_username: str, project_slug: str, public: bool = False) -> dict:
-        cached = self._load_cached_project(self._project_by_slug_key(owner_username, project_slug))
-        if cached:
-            if public and not self._is_public_project(cached):
-                raise HTTPException(status_code=404, detail="Project not found.")
-            return cached
-
         from app.services.user_service import user_service
 
         try:
@@ -208,9 +135,7 @@ class ProjectsService:
         matches = firestore_store.find_by_fields(PROJECTS_COLLECTION, filters)
         if not matches:
             raise HTTPException(status_code=404, detail="Project not found.")
-        project = matches[0]
-        self._set_cached_project(project)
-        return project
+        return matches[0]
 
     def create(self, owner_id: str, payload: dict) -> dict:
         owned_projects = self.list_owned(owner_id)

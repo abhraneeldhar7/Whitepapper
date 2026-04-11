@@ -1,6 +1,10 @@
 ---
 import Layout from '@/layouts/Layout.astro';
-import PublicProjectPage from '@/components/project/PublicProjectPage';
+import PaperCardComponent from '@/components/paperCardComponent';
+import ProjectCollectionsViewer from '@/components/project/ProjectCollectionsViewer';
+import MarkdownRender from '@/components/ui/markdown-render/markdown-render';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { createApiClient } from '@/lib/api/client';
 import { getPublicProjectBySlug } from '@/lib/api/public';
 import { getCurrentUser } from '@/lib/api/users';
@@ -20,6 +24,11 @@ if (!handle || rawHandle.includes("@") || isReservedUsername(handle)) {
 if (rawHandle !== handle) {
   return Astro.redirect(`/${handle}/p/${projectSlug}`, 301);
 }
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+);
 
 let data: Awaited<ReturnType<typeof getPublicProjectBySlug>>;
 try {
@@ -65,27 +74,109 @@ if (userId) {
     currentUserId = currentUser?.userId ?? null;
   }
 }
+
+const canManageProject = Boolean(currentUserId && currentUserId === data.project.ownerId);
+const standalonePapers = (data.papers ?? []).filter((paper) => !paper.collectionId);
+const sortedStandalonePapers = [...standalonePapers].sort(
+  (a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt),
+);
 ---
 
 <Layout showSiteNav={false} seo={seo}>
   <section class="sr-only" aria-label="Project paper links">
     {
-      (data.collectionPapers ?? []).flatMap((entry) =>
-        (entry.papers ?? []).map((paper) => (
-          <a href={`/${handle}/${paper.slug}`}>{paper.title}</a>
-        )),
-      )
+      (data.papers ?? []).map((paper) => (
+        <a href={`/${handle}/${paper.slug}`}>{paper.title}</a>
+      ))
     }
   </section>
-  <PublicProjectPage
-    client:idle
-    handle={handle}
-    project={data.project}
-    papers={data.papers ?? []}
-    collections={data.collections ?? []}
-    collectionPapers={data.collectionPapers ?? []}
-    owner={owner}
-    projectCreatedDate={projectCreatedDate}
-    currentUserId={currentUserId}
-  />
+  <main class="mx-auto min-h-screen w-full max-w-[1400px] px-[15px] pt-8 pb-20">
+    <div class="flex flex-col gap-10 md:gap-20 md:flex-row">
+      <div class="space-y-4 md:flex-3">
+        <div class="flex flex-wrap gap-5 items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="h-[56px] w-[56px] shrink-0">
+              {
+                data.project.logoUrl ? (
+                  <img
+                    src={data.project.logoUrl}
+                    alt={data.project.name}
+                    class="h-full w-full object-cover"
+                    width={56}
+                    height={56}
+                    decoding="async"
+                  />
+                ) : (
+                  <div class="flex h-full w-full items-center justify-center text-[20px] font-semibold text-muted-foreground">
+                    {data.project.name.slice(0, 1).toUpperCase() || "P"}
+                  </div>
+                )
+              }
+            </div>
+            <h1 class="text-[26px] font-semibold leading-tight">{data.project.name}</h1>
+          </div>
+          {
+            canManageProject && (
+              <a href={`/dashboard/${data.project.projectId}`}>
+                <Button>Open dashboard</Button>
+              </a>
+            )
+          }
+        </div>
+
+        <div class="mt-4 flex items-center justify-between gap-3">
+          {
+            owner && (
+              <a href={`/${owner.username}`} class="flex items-center gap-[8px] w-fit">
+                <div class="h-[28px] w-[28px] p-[1px] bg-[white] dark:bg-[black] rounded-[8px] border shadow-md">
+                  <img
+                    src={owner.avatarUrl || ""}
+                    class="rounded-[6px] h-full w-full object-cover"
+                    alt={owner.displayName ?? owner.username}
+                    width={28}
+                    height={28}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <p class="text-[14px] text-muted-foreground">{owner.displayName}</p>
+              </a>
+            )
+          }
+
+          {projectCreatedDate && <p class="text-[14px] text-muted-foreground">{projectCreatedDate}</p>}
+        </div>
+
+        <MarkdownRender content={data.project.description || ""} />
+      </div>
+
+      <div class="space-y-10 md:flex-3">
+        {
+          sortedStandalonePapers.length > 0 ? (
+            <div class="space-y-4">
+              <Label>Papers</Label>
+              <div class="grid grid-cols-2 gap-5 md:grid-cols-3">
+                {sortedStandalonePapers.map((paper) => (
+                  <PaperCardComponent handle={handle} paperData={paper} />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p class="my-5 text-[18px] text-muted-foreground">No papers added yet.</p>
+          )
+        }
+
+        {
+          (data.collections ?? []).length > 0 && (
+            <ProjectCollectionsViewer
+              client:idle
+              handle={handle}
+              collections={data.collections ?? []}
+              papers={data.papers ?? []}
+            />
+          )
+        }
+      </div>
+    </div>
+  </main>
 </Layout>

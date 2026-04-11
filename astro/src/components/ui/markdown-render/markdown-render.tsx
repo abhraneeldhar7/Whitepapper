@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { useId } from "react";
 import { CheckIcon, CopyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "../scroll-area";
 
 type PostRenderProps = {
     content: string
@@ -69,12 +70,10 @@ function remarkHighlight() {
 }
 
 export default function MarkdownRender({ content, contentContainerId }: PostRenderProps) {
-    const generatedContentContainerId = useId().replace(/:/g, "-")
-    const resolvedContentContainerId = contentContainerId || generatedContentContainerId
 
     return (
         <div>
-            <div id={resolvedContentContainerId} className={styles.markdownDiv}>
+            <div id={contentContainerId} className={styles.markdownDiv}>
                 <ReactMarkdown
                     children={content}
                     remarkPlugins={[remarkGfm, remarkHighlight]}
@@ -108,26 +107,23 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                         },
                         pre: ({ node, className, children, ...props }) => {
                             return (
-                                <pre {...props} className="relative">
-                                    <Button
-                                        type="button"
-                                        size="icon-sm"
-                                        data-copy-button
-                                        aria-label="Copy code"
-                                        className="absolute top-2 p-[5px] rounded-sm right-2 z-2 trasnition-all duration-100"
-                                    >
-                                        <CopyIcon data-copy-icon />
-                                        <CheckIcon data-check-icon className="hidden" />
-                                    </Button>
-                                    {children}
-                                </pre>
+                                <div className="relative">
+                                    <pre {...props} className="max-h-[300px] overflow-auto">
+                                        <Button
+                                            type="button"
+                                            size="icon-sm"
+                                            data-copy-button
+                                            aria-label="Copy code"
+                                            className="absolute top-2 p-[5px] rounded-sm right-2 z-2 trasnition-all duration-100"
+                                        >
+                                            <CopyIcon data-copy-icon />
+                                            <CheckIcon data-check-icon className="hidden" />
+                                        </Button>
+                                        {children}
+                                    </pre>
+                                </div>
                             )
                         },
-                        // mark: ({ node, children, ...props }) => (
-                        //     <div className={styles.highlightedText}>
-                        //         <mark {...props}>{children}</mark>
-                        //     </div>
-                        // ),
                         mark: ({ node, children, ...props }) => (
                             <mark {...props}>
                                 {children}
@@ -135,9 +131,9 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                         ),
                     }} />
             </div>
-                        <script
-                                dangerouslySetInnerHTML={{
-                                        __html: `(function(){
+            <script
+                dangerouslySetInnerHTML={{
+                    __html: `(function(){
     var bindCopyButtons = function() {
         var buttons = document.querySelectorAll('button[data-copy-button]');
         for (var i = 0; i < buttons.length; i++) {
@@ -181,7 +177,7 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
         window.setTimeout(bindCopyButtons, 0);
     });
 })();`,
-                                }}
-                        />
+                }}
+            />
         </div>)
 }
