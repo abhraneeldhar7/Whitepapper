@@ -18,7 +18,7 @@ export default defineConfig({
         '@gravity-ui/markdown-editor',
         '@diplodoc/transform',
       ],
-      external: ['sharp', 'detect-libc'],
+      external: ['sharp', 'detect-libc','react-syntax-highlighter'],
     },
     server: {
       allowedHosts: ["yearlong-jon-patrilineal.ngrok-free.dev"]
