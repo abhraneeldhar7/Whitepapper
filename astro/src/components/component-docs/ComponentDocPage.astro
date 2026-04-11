@@ -141,14 +141,16 @@ const isLinesToc = componentName === "lines-toc";
       </div>
     </div>
 
-    <aside class="hidden md:block md:flex-1 sticky top-20">
+    <aside class="hidden md:block md:flex-1">
       {
         shouldRenderDesktopPreview &&
           (isLinearToc ? (
-            <LinearTableOfContent
-              client:idle
-              containerId={contentContainerId}
-            />
+            <div class="sticky top-23 self-start">
+              <LinearTableOfContent
+                client:idle
+                containerId={contentContainerId}
+              />
+            </div>
           ) : isMobileToc ? (
             <MobileTableOfContent
               client:idle
