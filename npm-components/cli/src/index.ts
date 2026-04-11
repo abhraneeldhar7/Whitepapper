@@ -24,7 +24,7 @@ type Registry = {
 };
 
 const DEFAULT_REGISTRY_URLS = [
-  "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/registry.json",
+  "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/registry.json",
 ];
 
 function getRegistryCandidates(): string[] {
@@ -40,11 +40,10 @@ async function loadLocalRegistryFallback(): Promise<Registry | null> {
   const currentFilePath = fileURLToPath(import.meta.url);
   const currentDir = path.dirname(currentFilePath);
 
-  // Works for both ts source (cli/src) and published dist (cli/dist).
+  // Works for both ts source (npm-components/cli/src) and published dist (npm-components/cli/dist).
   const candidates = [
     path.resolve(currentDir, "../../registry/registry.json"),
-    path.resolve(currentDir, "../../../registry/registry.json"),
-    path.resolve(process.cwd(), "registry/registry.json"),
+    path.resolve(process.cwd(), "npm-components/registry/registry.json"),
   ];
 
   for (const filePath of candidates) {

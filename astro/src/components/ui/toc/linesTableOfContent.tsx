@@ -386,7 +386,7 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentCon
       className={`fixed right-0 top-0 h-screen flex justify-end items-center z-50 transition-all ease-in-out duration-300 ${isHovering ? 'w-[400px]' : 'w-[100px]'}`}
     >
       {/* Table of contents */}
-      <div className="h-full max-w-[400px] flex flex-col justify-center py-8 pr-3">
+      <div className="h-full max-w-[400px] flex flex-col justify-center py-19 pr-3">
         <div className="flex flex-col justify-between h-full">
           {renderLines()}
         </div>

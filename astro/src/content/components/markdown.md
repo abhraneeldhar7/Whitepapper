@@ -1,5 +1,3 @@
-> This page below the code block is using the markdown render to display content.
-
 ## Installation
 
 ````bash

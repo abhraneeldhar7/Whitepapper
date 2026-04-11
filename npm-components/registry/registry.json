@@ -6,20 +6,25 @@
       "files": [
         {
           "name": "markdown-render/markdown-render.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/markdown-render/markdown-render.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/markdown-render/markdown-render.tsx"
         },
         {
-          "name": "markdown-render/markdown-render.module.css",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/markdown-render/markdown-render.module.css"
+          "name": "markdown-render/markdown-render.css",
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/markdown-render/markdown-render.css"
         }
       ],
       "dependencies": [
         "react",
         "lucide-react",
         "react-markdown",
-        "remark-gfm"
+        "remark-gfm",
+        "remark-highlight",
+        "rehype-raw",
+        "react-syntax-highlighter"
       ],
-      "devDependencies": []
+      "devDependencies": [
+        "@types/react-syntax-highlighter"
+      ]
     },
     {
       "name": "toc",
@@ -27,19 +32,19 @@
       "files": [
         {
           "name": "toc/linearTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/linearTableOfContent.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/linearTableOfContent.tsx"
         },
         {
           "name": "toc/linesTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/linesTableOfContent.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/linesTableOfContent.tsx"
         },
         {
           "name": "toc/mobileTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/mobileTableOfContent.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/mobileTableOfContent.tsx"
         },
         {
           "name": "animated-theme-toggler.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/animated-theme-toggler.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/animated-theme-toggler.tsx"
         }
       ],
       "dependencies": [
@@ -55,7 +60,7 @@
       "files": [
         {
           "name": "toc/linearTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/linearTableOfContent.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/linearTableOfContent.tsx"
         }
       ],
       "dependencies": [
@@ -69,7 +74,7 @@
       "files": [
         {
           "name": "toc/linesTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/linesTableOfContent.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/linesTableOfContent.tsx"
         }
       ],
       "dependencies": [
@@ -83,11 +88,11 @@
       "files": [
         {
           "name": "toc/mobileTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/mobileTableOfContent.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/mobileTableOfContent.tsx"
         },
         {
           "name": "animated-theme-toggler.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/registry/toc/animated-theme-toggler.tsx"
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/animated-theme-toggler.tsx"
         }
       ],
       "dependencies": [

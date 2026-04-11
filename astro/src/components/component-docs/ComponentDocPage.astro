@@ -1,6 +1,11 @@
 ---
 import { Button } from "@/components/ui/button";
 import MarkdownRender from "@/components/ui/markdown-render/markdown-render";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { isMobileUserAgent } from "@/lib/userAgent";
+import { LinearTableOfContent } from "@/components/ui/toc/linearTableOfContent";
+import { LinesTableOfContent } from "@/components/ui/toc/linesTableOfContent";
+import MobileTableOfContent from "@/components/ui/toc/mobileTableOfContent";
 
 type PrevNextLink = {
   href: string;
@@ -26,50 +31,136 @@ const {
   previous = null,
   next = null,
 } = Astro.props;
+
+const userAgent = Astro.request.headers.get("user-agent");
+const hasUserAgent = Boolean(userAgent && userAgent.trim());
+const isMobileUA = isMobileUserAgent(userAgent);
+const shouldRenderMobilePreview = !hasUserAgent || isMobileUA;
+const shouldRenderDesktopPreview = !hasUserAgent || !isMobileUA;
+
+const isLinearToc = componentName === "linear-toc";
+const isMobileToc = componentName === "mobile-toc";
+const isLinesToc = componentName === "lines-toc";
 ---
 
 <main class="mx-auto min-h-screen w-full max-w-[1400px] px-[15px] pt-8 pb-20">
-  <div class="flex flex-col gap-8 md:flex-row md:gap-10">
+  <div class="flex flex-col gap-8 md:flex-row md:gap-10 justify-between">
     <div class="hidden md:block md:flex-1" aria-hidden="true"></div>
 
-    <div class="md:flex-3 min-w-0">
-      <p class="text-[13px] uppercase tracking-[0.22em] text-muted-foreground">
-        <a href="/components" class="underline underline-offset-4 hover:text-foreground">Components</a>
-        <span class="mx-2">/</span>
-        <span>{componentName}</span>
-      </p>
+    <div class="md:flex-3 max-w-[740px]">
+      <div class="flex items-center justify-between">
+        <div class="flex gap-2 items-center text-[15px]">
+          <a
+            href="/components"
+            class="text-muted-foreground transition-all duration-300 hover:text-foreground"
+            ><p>Components</p></a
+          >
+          <p>/</p>
+          <p>{componentName}</p>
+        </div>
 
-      <h1 class="mt-3 text-[30px] font-[500] leading-tight md:text-[42px]">{title}</h1>
-      <p class="mt-3 max-w-[760px] text-[16px] leading-7 text-muted-foreground md:text-[17px]">{description}</p>
+        <div class="flex gap-2">
+          {
+            previous && (
+              <a href={previous?.href}>
+                <Button variant="secondary" size="icon">
+                  <ArrowLeft />
+                </Button>
+              </a>
+            )
+          }
+          {
+            next && (
+              <a href={next?.href}>
+                <Button variant="secondary" size="icon">
+                  <ArrowRight />
+                </Button>
+              </a>
+            )
+          }
+        </div>
+      </div>
 
-      <div class="mt-8 md:hidden">
-        <slot name="mobile-preview" />
+      <h1 class="mt-4 text-[30px] font-[500] leading-tight md:text-[42px]">
+        {title}
+      </h1>
+      <p class="mt-2 text-[15px] text-muted-foreground">{description}</p>
+
+      <div class={`${isLinearToc && "mt-8 px-4 py-3"} md:hidden`}>
+        {
+          shouldRenderMobilePreview &&
+            (isLinearToc ? (
+              <LinearTableOfContent
+                client:idle
+                containerId={contentContainerId}
+              />
+            ) : isMobileToc ? (
+              <MobileTableOfContent
+                client:idle
+                contentContainerId={contentContainerId}
+              />
+            ) : isLinesToc ? (
+              <LinesTableOfContent
+                client:idle
+                contentContainerId={contentContainerId}
+              />
+            ) : null)
+        }
       </div>
 
       <div class="mt-8">
-        <MarkdownRender content={markdown} contentContainerId={contentContainerId} />
+        <MarkdownRender
+          content={markdown}
+          contentContainerId={contentContainerId}
+        />
       </div>
 
-      <div class="mt-10 flex flex-wrap items-center justify-between gap-3 border-t pt-6">
+      <div class="mt-10 flex flex-wrap items-center justify-between gap-3 pt-6">
         <div>
-          {previous && (
-            <a href={previous.href}>
-              <Button variant="secondary">Previous: {previous.label}</Button>
-            </a>
-          )}
+          {
+            previous && (
+              <a href={previous.href}>
+                <Button variant="secondary">
+                  <ChevronLeft /> {previous.label}
+                </Button>
+              </a>
+            )
+          }
         </div>
         <div class="ml-auto">
-          {next && (
-            <a href={next.href}>
-              <Button variant="secondary">Next: {next.label}</Button>
-            </a>
-          )}
+          {
+            next && (
+              <a href={next.href}>
+                <Button variant="secondary">
+                  {next.label} <ChevronRight />{" "}
+                </Button>
+              </a>
+            )
+          }
         </div>
       </div>
     </div>
 
     <aside class="hidden md:block md:flex-1 min-w-0">
-      <slot name="desktop-preview" />
+      {
+        shouldRenderDesktopPreview &&
+          (isLinearToc ? (
+            <LinearTableOfContent
+              client:idle
+              containerId={contentContainerId}
+            />
+          ) : isMobileToc ? (
+            <MobileTableOfContent
+              client:idle
+              contentContainerId={contentContainerId}
+            />
+          ) : isLinesToc ? (
+            <LinesTableOfContent
+              client:idle
+              contentContainerId={contentContainerId}
+            />
+          ) : null)
+      }
     </aside>
   </div>
 </main>

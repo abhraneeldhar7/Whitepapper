@@ -16,14 +16,20 @@ import linesTocImg from "@/assets/components/linesToc.png";
             credits are given in each comoponent's page.
         </p>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 md:space-x-6 space-y-4 mt-10">
-            <a href="/components/markdown" class="flex flex-col gap-3 group">
+        <div
+            class="grid grid-cols-1 md:grid-cols-2 md:space-x-6 space-y-4 mt-10"
+        >
+            <a
+                href="/components/markdown"
+                class="flex flex-col gap-3 group"
+                data-astro-prefetch="viewport"
+            >
                 <div
                     class="overflow-hidden relative rounded-[12px] md:aspect-square md:h-auto h-[200px] p-7 pb-0"
                 >
                     <img
                         src={bgPattern.src}
-                        class="absolute z-[-1] left-0 top-0 h-full w-full  object-cover object-left group-hover:object-right transition-all duration-400 ease-in-out"
+                        class="absolute z-[-1] left-0 top-0 h-full w-full object-cover object-left group-hover:object-right transition-all duration-400 ease-in-out"
                     />
                     <img
                         src={markdownRenderImg.src}
@@ -31,12 +37,16 @@ import linesTocImg from "@/assets/components/linesToc.png";
                     />
                 </div>
                 <h2
-                     class="text-[16px] px-2 md:text-foreground/50 transition-all duration-300 group-hover:text-foreground"
+                    class="text-[16px] px-2 md:text-foreground/50 transition-all duration-300 group-hover:text-foreground"
                 >
                     Markdown Render
                 </h2>
             </a>
-            <a href="/components/linear-toc" class="flex flex-col gap-3 group">
+            <a
+                href="/components/linear-toc"
+                class="flex flex-col gap-3 group"
+                data-astro-prefetch="viewport"
+            >
                 <div
                     class="overflow-hidden relative rounded-[10px] md:aspect-square md:h-auto h-[200px] pr-0 pt-0 p-7"
                 >
@@ -50,14 +60,18 @@ import linesTocImg from "@/assets/components/linesToc.png";
                     />
                 </div>
                 <h2
-                     class="text-[16px] px-2 md:text-foreground/50 transition-all duration-300 group-hover:text-foreground"
+                    class="text-[16px] px-2 md:text-foreground/50 transition-all duration-300 group-hover:text-foreground"
                 >
                     Linear style table of content
                 </h2>
             </a>
-            <a href="/components/mobile-toc" class="flex flex-col gap-3 group">
+            <a
+                href="/components/mobile-toc"
+                class="flex flex-col gap-3 group"
+                data-astro-prefetch="viewport"
+            >
                 <div
-                    class="overflow-hidden relative rounded-[10px] md:aspect-square  p-7 flex items-center justify-center"
+                    class="overflow-hidden relative rounded-[10px] md:aspect-square p-7 flex items-center justify-center"
                 >
                     <img
                         src={bgPattern.src}
@@ -68,12 +82,16 @@ import linesTocImg from "@/assets/components/linesToc.png";
                         class="object-contain rounded-[12px] w-full h-fit"
                     />
                 </div>
-                <h2 class="text-[16px] px-2 md:text-foreground/50 transition-all duration-300 group-hover:text-foreground"
+                <h2
+                    class="text-[16px] px-2 md:text-foreground/50 transition-all duration-300 group-hover:text-foreground"
                 >
                     Mobile table of content
                 </h2>
             </a>
-            <a href="/components/lines-toc" class="flex flex-col gap-3 group">
+            <a
+                href="/components/lines-toc"
+                class="flex flex-col gap-3 group"
+            >
                 <div
                     class="overflow-hidden relative rounded-[10px] md:aspect-square md:h-auto h-[200px] p-7 pb-0 pl-0"
                 >

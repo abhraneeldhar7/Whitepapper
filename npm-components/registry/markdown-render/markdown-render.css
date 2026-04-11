@@ -166,7 +166,7 @@
 }
 
 .markdownDiv a:hover {
-    color: var(--primary-foreground) !important;
+    color: var(--muted-foreground) !important;
 }
 
 .markdownDiv a strong {
@@ -176,7 +176,7 @@
 
 
 
-/* Inline Code - code elements NOT inside pre tags */
+/* Inline Code */
 .markdownDiv code:not(pre code) {
     font-size: 0.85em;
     font-weight: 450;
@@ -187,51 +187,58 @@
     margin: 0 2px;
 }
 
-/* Code Blocks - pre elements that contain code */
-.markdownDiv pre {
-    background-color: var(--card) !important;
-    /* font-size: 17px; */
-    margin: 1.5em 0;
-    font-weight: 200;
-    border-radius: 8px;
-    /* overflow: auto; */
-    /* max-height: 300px; */
-    border: 1px solid var(--border);
-    /* -ms-overflow-style: none; */
-    /* scrollbar-width: none; */
-}
-
-.markdownDiv pre::-webkit-scrollbar {
+.markdownHidden {
     display: none;
 }
 
-/* Code inside pre tags (code blocks) */
-.markdownDiv pre code {
-    /* background-color: var(--card) !important; */
-    font-family: var(--font-mono, 'SF Mono', Monaco, 'Cascadia Mono', monospace);
-    /* font-size: 17px; */
-    /* font-size: 0.85em; */
-    line-height: 1.5;
-    display: block;
-    padding: 1em;
-    overflow: visible;
-    color: var(--muted-foreground);
-    white-space: pre;
+
+/* Block Code */
+.markdownCodeBlock {
+    position: relative;
 }
 
-/* Syntax highlighted code blocks */
-.markdownDiv pre code.hljs {
+.markdownCopyButton {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 2;
+    padding: 7px;
+    border-radius: 0.125rem;
+    background-color: var(--foreground);
+    color: var(--background);
+    transition: all 0.2s ease;
+}
+
+.markdownCopyButton:hover,
+.markdownCopyButton:focus-visible {
+    background-color: color-mix(in srgb, var(--foreground) 60%, transparent);
+}
+
+@media (min-width: 768px) {
+    .markdownCopyButton {
+        opacity: 0;
+    }
+
+    .markdownCodeBlock:hover .markdownCopyButton,
+    .markdownCodeBlock .markdownCopyButton:focus-visible {
+        opacity: 1;
+    }
+}
+
+.markdownDiv pre pre {
     background-color: var(--card) !important;
+    font-size: 0.9em;
+    border-radius: 8px !important;
+    padding: 0.8em 1.2em !important;
+    max-height: 300px;
+    overflow: auto !important;
+    scrollbar-width: none !important;
 }
 
-/* Fix for any direct code elements with language classes (should be rare) */
-.markdownDiv code[class*="language-"]:not(pre code) {
-    background-color: var(--primary, #3b82f6) !important;
+.markdownDiv pre::-webkit-scrollbar {
+    display: none !important;
 }
 
-.markdownDiv pre code[class*="language-"] {
-    background-color: transparent !important;
-}
 
 
 
@@ -240,7 +247,14 @@
 /* Highlighted Text */
 
 .markdownDiv mark {
-    background-color: var(--primary, #3b82f6);
+    background-color: var(--primary, #3b82f6) !important;
+    color: var(--primary-foreground);
+    padding: 5px;
+    border-radius: 3px;
+}
+
+.markdownDiv .highlight {
+    background-color: var(--primary, #3b82f6) !important;
     color: var(--primary-foreground);
     padding: 5px;
     border-radius: 3px;
@@ -257,14 +271,26 @@
 }
 
 /* Tables */
+.markdownTableScrollArea {
+    width: 100%;
+    overflow: auto !important;
+    scrollbar-width: none !important;
+    border: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 50%, transparent);
+    border-radius: 8px;
+}
+
 .markdownDiv table {
     border-collapse: separate;
     border-spacing: 0;
-    margin-bottom: 1.5em;
+    margin-bottom: 0;
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 50%, transparent);
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
+}
+
+.markdownTable {
+    min-width: 100%;
 }
 
 .markdownDiv th {
@@ -276,6 +302,10 @@
     border-bottom: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 40%, transparent) !important;
     border-right: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 20%, transparent) !important;
     transition: all 0.25s ease-in-out;
+    max-width: 150px;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
 }
 
 .markdownDiv th:last-child {
@@ -293,6 +323,11 @@
     color: var(--foreground, #1a1a1a) !important;
     background-color: transparent !important;
     transition: all 0.25s ease-in-out;
+    max-width: 200px;
+    font-size: 15px;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
 }
 
 .markdownDiv td:last-child {
@@ -360,7 +395,6 @@
     border-radius: 4px;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
     color: var(--foreground, #1a1a1a);
-    font-family: var(--font-mono, 'SF Mono', Monaco, 'Cascadia Mono', monospace);
     font-size: 0.85em;
     padding: 0.2em 0.4em;
     white-space: nowrap;
@@ -458,8 +492,19 @@
 
 /* Print styles */
 @media print {
-    .markdownDiv {
-        color: #000;
+
+    h1,
+    p,
+    .markdownDiv,
+    .markdownDiv h1,
+    .markdownDiv h2,
+    .markdownDiv h3,
+    .markdownDiv h4,
+    .markdownDiv h5,
+    .markdownDiv h6,
+    .markdownDiv blockquote,
+    table {
+        color: #000 !important;
     }
 
     .markdownDiv a {
