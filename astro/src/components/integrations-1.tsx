@@ -57,9 +57,9 @@ export default function IntegrationsSection() {
                         <Card className="p-5">
                             <div className="relative">
                                 <div className='relative h-[40px]'>
-                                    <img src={linkedinLogo.src} height={34} width={34} className='rounded-[5px] absolute z-4' />
-                                    <img src={xLogo.src} height={34} width={34} className='rounded-[5px] z-2 top-0 absolute translate-x-5' />
-                                    <img src={substackLogo.src} height={34} width={34} className='rounded-[5px] absolute top-0 translate-x-10' />
+                                    <img src={linkedinLogo.src} alt="LinkedIn logo" height={34} width={34} className='rounded-[5px] absolute z-4' />
+                                    <img src={xLogo.src} alt="X logo" height={34} width={34} className='rounded-[5px] z-2 top-0 absolute translate-x-5' />
+                                    <img src={substackLogo.src} alt="Substack logo" height={34} width={34} className='rounded-[5px] absolute top-0 translate-x-10' />
                                 </div>
 
                                 <div className="space-y-2 py-6">
@@ -90,7 +90,7 @@ const IntegrationCard = ({ title, description, logo, link }: { title: string; de
     return (
         <Card className="p-5">
             <div className="relative">
-                <img src={logo.src} height={40} width={40} className='rounded-[5px]' />
+                <img src={logo.src} alt={`${title} logo`} height={40} width={40} className='rounded-[5px]' />
 
                 <div className="space-y-2 py-6">
                     <h3 className="text-base font-medium">{title}</h3>

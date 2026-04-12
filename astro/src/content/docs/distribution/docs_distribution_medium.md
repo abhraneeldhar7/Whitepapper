@@ -28,3 +28,4 @@ Medium import flow keeps the source URL relationship, so canonical attribution c
 
 - [Distribution Overview](/docs/distribution/overview)
 - [Platform Status](/docs/distribution/platform-status)
+\nLast updated: 12th April, 2026\n

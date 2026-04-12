@@ -23,3 +23,4 @@ GET requests are proxied and cached via `caches.default`.
 
 - [Cloud Run Backend](/docs/self-host/cloud-run-backend)
 - [Cron Jobs](/docs/self-host/cron-jobs)
+\nLast updated: 12th April, 2026\n

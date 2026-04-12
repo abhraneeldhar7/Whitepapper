@@ -20,3 +20,4 @@ All critical runtime paths work without manual intervention.
 - [Overview](/docs/self-host/overview)
 - [Local Run](/docs/self-host/local-run)
 - [Cron Jobs](/docs/self-host/cron-jobs)
+\nLast updated: 12th April, 2026\n

@@ -8,6 +8,7 @@ import BlueBgPattern from "@/assets/landingPage/blueBgPattern.jpg";
 import LandingArticleList from "@/components/landing/LandingArticleList.astro";
 
 import IntegrationsSection from "@/components/integrations-4";
+import FAQs from "@/components/faqs-2";
 
 import BlogsPageImg from "@/assets/landingPage/blogsPage.png";
 
@@ -15,25 +16,67 @@ const featuredArticles = [
 	{
 		title: "How to Write Content That AI Assistants Actually Quote",
 		readTime: "6 min read",
-		href: "/blogs/paper-20491f39-fcff-4683-9c01-d856dab87b9f",
+		href: "/abhraneeldhar7/paper-20491f39-fcff-4683-9c01-d856dab87b9f",
 	},
 	{
 		title: "How to Make Your Brand Recognizable to AI Systems",
 		readTime: "1 min read",
-		href: "/blogs/paper-5846b146-e7a0-424f-8eff-2818b695fe1e",
+		href: "/abhraneeldhar7/paper-5846b146-e7a0-424f-8eff-2818b695fe1e",
 	},
 	{
 		title: "GEO: The Complete Guide to Showing Up in AI Search Results",
 		readTime: "1 min read",
-		href: "/blogs/paper-a396d657-361a-4392-bf8f-819043c1f11b",
+		href: "/abhraneeldhar7/paper-a396d657-361a-4392-bf8f-819043c1f11b",
 	},
 ];
 
-import TeslaLogo from "@/assets/logos/bullshi/tesla_logo.png";
-import AudiLogo from "@/assets/logos/bullshi/audi_logo.png";
-import GoogleLogo from "@/assets/logos/bullshi/google_logo.webp";
-import OpenAILogo from "@/assets/logos/bullshi/openai_logo.png";
-import CursorLogo from "@/assets/logos/bullshi/cursor_logo.png";
+const homeFaqs = [
+	{
+		question: "What is Whitepapper?",
+		answer: "Whitepapper is a markdown-first content platform for developers who want one source of truth for public pages, docs, blog posts, and API-backed content reuse.",
+	},
+	{
+		question: "Who is Whitepapper for?",
+		answer: "Whitepapper is built for solo developers, indie builders, technical writers, and small teams who want a practical publishing workflow without a bloated CMS.",
+	},
+	{
+		question: "How does Whitepapper help SEO and AI visibility?",
+		answer: "Whitepapper keeps metadata, canonical rules, public pages, schema, sitemaps, and LLM-facing files close to the content so search engines and AI systems can understand the same page clearly.",
+	},
+];
+
+const homeExploreLinks = [
+	{
+		href: "/features",
+		title: "Features",
+		description:
+			"See the core product pages for the Content API, distribution flow, metadata workflow, and public pages.",
+	},
+	{
+		href: "/use-cases",
+		title: "Use Cases",
+		description:
+			"Explore how Whitepapper fits developer blogs, portfolio frontends, and docs-plus-updates workflows.",
+	},
+	{
+		href: "/pricing",
+		title: "Pricing",
+		description:
+			"Review the current free plan and the machine-readable pricing file published for AI agents.",
+	},
+	{
+		href: "/compare/whitepapper-vs-ghost",
+		title: "Compare",
+		description:
+			"Compare Whitepapper with Ghost, Hashnode, and a Dev.to-only workflow without leaving the site.",
+	},
+	{
+		href: "/glossary/llms-txt",
+		title: "Glossary",
+		description:
+			"Read plain-English definitions for llms.txt, canonical URLs, content APIs, and programmatic SEO.",
+	},
+];
 
 Astro.response.headers.set(
 	"Cache-Control",
@@ -70,13 +113,13 @@ Astro.response.headers.set(
 					</h1>
 
 					<div
-						class="my-4 space-y-2 text-[18px] text-muted-foreground md:w-[600px]"
+						class="my-4 space-y-2 text-[18px] text-muted-foreground md:w-[700px]"
 					>
 						<p class="heroText" style="animation-delay: 0.25s;">
-							Own everything, distribute everywhere.
-						</p>
-						<p class="heroText" style="animation-delay: 0.30s;">
-							The internet was yours first.
+							Whitepapper is a SEO-enforced content platform for
+							developers who want one writing workflow for blogs,
+							docs, updates, public pages, and API-backed
+							frontends.<br /> <strong class="font-[450]">Own everything, distribute everywhere.</strong>
 						</p>
 					</div>
 
@@ -122,16 +165,12 @@ Astro.response.headers.set(
 				</div>
 			</section>
 
-			<p class="text-center text-[15px] my-10">
-				Whitepapper is <a
-					href="https://github.com/abhraneeldhar7/Whitepapper"
-					target="_blank"
-					class="font-[450] underline">open-sourced</a
-				> for schizo writers
+			<p class="px-5 md:px-15 text-center my-5 mx-auto">
+				The internet was yours first.
 			</p>
 
 			<section
-				class="mt-20 mx-auto flex w-full max-w-[1500px] flex-col gap-15 md:gap-40 px-5 md:px-15"
+				class="mt-14 mx-auto flex w-full max-w-[1500px] flex-col gap-15 md:gap-40 px-5 md:px-15"
 				style="content-visibility:auto; contain-intrinsic-size: 1800px;"
 				aria-label="Product highlights"
 			>
@@ -319,6 +358,58 @@ Astro.response.headers.set(
 				</section> -->
 
 				<IntegrationsSection />
+
+				<section class="space-y-4">
+					<div
+						class="flex md:flex-row flex-col md:items-end md:justify-between gap-3"
+					>
+						<div>
+							<h2 class="text-[30px] md:text-[40px] font-[450]">
+								Explore the product
+							</h2>
+							<p
+								class="mt-2 text-[16px] text-muted-foreground max-w-[760px]"
+							>
+								These pages are the clearest path through
+								Whitepapper if you are evaluating the workflow,
+								the API, or the SEO and GEO model.
+							</p>
+						</div>
+						<a
+							href="/docs"
+							class="text-[14px] text-muted-foreground hover:text-foreground"
+							>Browse documentation</a
+						>
+					</div>
+					<div
+						class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3"
+					>
+						{
+							homeExploreLinks.map((item) => (
+								<a
+									href={item.href}
+									class="rounded-[18px] p-4 hover:bg-muted/30 transition-all duration-200"
+								>
+									<h3 class="text-[17px] font-[520]">
+										{item.title}
+									</h3>
+									<p class="mt-2 text-[14px] leading-[1.7em] text-muted-foreground">
+										{item.description}
+									</p>
+								</a>
+							))
+						}
+					</div>
+				</section>
+
+				<section class="space-y-4">
+					<FAQs
+						client:idle
+						items={homeFaqs}
+						title="FAQ"
+						description="A quick overview of what Whitepapper is, who it serves, and why the public page layer matters."
+					/>
+				</section>
 			</section>
 		</div>
 	</main>

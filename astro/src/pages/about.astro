@@ -7,7 +7,7 @@ const aboutContent = [
     {
         title: "Why Whitepapper exists",
         content:
-            "I built Whitepaper because I needed one place to document my projects, feed my portfolio blog, and push content out to Dev.to, Hashnode, and Medium without doing the same thing three times.\n\nThe tools I tried were either too heavy, too expensive, or just not built for developers who write. So I built my own.",
+            "I built Whitepapper because I needed one place to document my projects, feed my portfolio blog, and push content out to Dev.to, Hashnode, and Medium without doing the same thing three times.\n\nThe tools I tried were either too heavy, too expensive, or just not built for developers who write. So I built my own.",
     },
     {
         title: "A developer API that fits your stack",
@@ -44,17 +44,19 @@ const aboutContent = [
 
 <Layout>
     <main class="max-w-[900px] mx-auto w-full]" aria-label="About Whitepapper">
-        <section class="relative" aria-labelledby="about-title">
-            <h1
-                id="about-title"
-                class="text-[40px] font-[500] absolute top-[50%] left-[50%] translate-y-[-50%] translate-x-[-50%] z-2"
-            >
-                About Us
-            </h1>
+        <section class="relative h-[250px] md:h-[450px] p-10 flex items-center justify-center" aria-labelledby="about-title">
+            
+                <h1
+                    id="about-title"
+                    class="text-[40px] font-[500]"
+                >
+                    About Whitepapper
+                </h1>
+            
             <img
                 src={AboutImg.src}
                 alt="Abstract Whitepapper about section background"
-                class="h-full w-full invert dark:invert-0"
+                class="h-full w-full invert dark:invert-0 absolute top-0 left-0 z-[-1]"
             />
         </section>
 
@@ -73,7 +75,7 @@ const aboutContent = [
                                 <PostRender content={section.content} />
                             </div>
                         </article>
-                        {index < aboutContent.length-1 && (
+                        {index < aboutContent.length - 1 && (
                             <div
                                 class="w-full border my-4"
                                 aria-hidden="true"

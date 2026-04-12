@@ -43,3 +43,4 @@ uvicorn app.main:app --reload --port 8000
 
 - [Environment Files](/docs/self-host/environment-files)
 - [Production Checklist](/docs/self-host/production-checklist)
+\nLast updated: 12th April, 2026\n

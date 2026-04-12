@@ -91,9 +91,61 @@ const previous = previousSlug
 const next = nextSlug
   ? { href: `/components/${nextSlug}`, label: componentMeta[nextSlug].title }
   : null;
+const seo = {
+  path: `/components/${active.componentName}`,
+  title: `${active.title} | Whitepapper Components`,
+  description: active.description,
+  canonical: `/components/${active.componentName}`,
+  robots: "index, follow",
+  ogType: "article",
+  ogTitle: `${active.title} | Whitepapper Components`,
+  ogDescription: active.description,
+  ogUrl: `/components/${active.componentName}`,
+  twitterCard: "summary_large_image",
+  twitterTitle: `${active.title} | Whitepapper Components`,
+  twitterDescription: active.description,
+  jsonLd: [
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      headline: active.title,
+      description: active.description,
+      url: `${Astro.url.origin}/components/${active.componentName}`,
+      isPartOf: {
+        "@type": "CollectionPage",
+        name: "Whitepapper Components",
+        url: `${Astro.url.origin}/components`,
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: Astro.url.origin,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Components",
+          item: `${Astro.url.origin}/components`,
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: active.title,
+          item: `${Astro.url.origin}/components/${active.componentName}`,
+        },
+      ],
+    },
+  ],
+};
 ---
 
-<Layout>
+<Layout seo={seo}>
   <ComponentDocPage
     componentName={active.componentName}
     title={active.title}

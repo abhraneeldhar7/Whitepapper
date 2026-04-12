@@ -33,3 +33,4 @@ Both services can boot with valid credentials and URLs.
 
 - [Astro Env](/docs/self-host/environment-files/astro-env)
 - [FastAPI Env](/docs/self-host/environment-files/fastapi-env)
+\nLast updated: 12th April, 2026\n

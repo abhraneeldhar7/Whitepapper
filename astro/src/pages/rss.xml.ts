@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { resolvePreferredPaperPath } from "@/lib/seo";
 
 type BlogPaper = {
   title?: string;
@@ -72,10 +73,16 @@ export const GET: APIRoute = async ({ site, url }) => {
       const slug = (paper.slug || "").trim().toLowerCase();
       const title = (paper.title || slug).trim();
       const description = (paper.metadata?.metaDescription || "").trim();
-      const canonicalCandidate = String(paper.metadata?.canonical || "").trim();
-      const link = canonicalCandidate
-        ? toAbsoluteUrl(canonicalCandidate, baseUrl)
-        : `${baseUrl}/blogs/${slug}`;
+      const link = toAbsoluteUrl(
+        resolvePreferredPaperPath({
+          slug,
+          canonical: paper.metadata?.canonical,
+          authorHandle: paper.metadata?.authorHandle,
+          fallbackPath: `/blogs/${slug}`,
+          siteUrl: baseUrl,
+        }),
+        baseUrl,
+      );
       const pubDate = new Date(paper.updatedAt || paper.createdAt || Date.now()).toUTCString();
 
       return `<item>

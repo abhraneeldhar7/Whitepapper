@@ -15,11 +15,11 @@ export default function BlogCard({
             <div className="overflow-hidden aspect-5/3">
                 {
                     blogData.thumbnailUrl ?
-                        <img className="w-full object-cover w-full h-full border rounded-[3px]" src={blogData.thumbnailUrl} />
+                        <img alt={`Cover image for ${blogData.title}`} className="w-full object-cover w-full h-full border rounded-[3px]" src={blogData.thumbnailUrl} />
                         :
                         <>
-                            <img className="dark:hidden w-full object-cover border w-full h-full opacity-[0.7] rounded-[3px]" src={abstractLightPic.src} />
-                            <img className="hidden dark:block w-full object-cover w-full h-full border opacity-[0.4] rounded-[3px]" src={abstractDarkPic.src} />
+                            <img className="dark:hidden w-full object-cover border w-full h-full opacity-[0.7] rounded-[3px]" src={abstractLightPic.src} alt={`Abstract light cover image for ${blogData.title}`} />
+                            <img className="hidden dark:block w-full object-cover w-full h-full border opacity-[0.4] rounded-[3px]" src={abstractDarkPic.src} alt={`Abstract dark cover image for ${blogData.title}`} />
                         </>
                 }
             </div>

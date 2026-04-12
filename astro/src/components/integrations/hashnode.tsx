@@ -22,7 +22,7 @@ export function HashnodeCard({ user, onUserUpdated }: HashnodeCardProps) {
 
     return (<div className="">
         <div className="flex gap-4 items-center">
-            <img alt="" src={hashnode_logo.src} height={35} width={35} />
+            <img alt="Hashnode logo" src={hashnode_logo.src} height={35} width={35} />
             <h3 className="text-[19px]">Hashnode</h3>
         </div>
         <p className="text-[15px] mt-3">Connect hashnode to cross post your content. Lorem ipsum dolor sit amet consectetur adipisicing elit. Qui, hic!</p>

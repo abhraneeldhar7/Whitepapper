@@ -32,3 +32,4 @@ Using this key client-side is supported for read-only use cases. If you prefer n
 | `401` | Missing or invalid key |
 | `403` | Inactive key or cross-project access |
 | `429` | Monthly usage limit exceeded |
+\nLast updated: 12th April, 2026\n

@@ -1,0 +1,17 @@
+---
+import ContentPageShell from "@/components/site/ContentPageShell.astro";
+import { comparePages, getComparePage } from "@/lib/sitePages";
+
+export function getStaticPaths() {
+  return comparePages.map((page) => ({ params: { slug: page.slug } }));
+}
+
+const slug = Astro.params.slug as string;
+const page = getComparePage(slug);
+
+if (!page) {
+  return new Response(null, { status: 404 });
+}
+---
+
+<ContentPageShell page={page} path={`/compare/${page.slug}`} parentHref="/compare" parentLabel="Compare" />

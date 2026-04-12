@@ -1,0 +1,17 @@
+---
+import ContentPageShell from "@/components/site/ContentPageShell.astro";
+import { getGlossaryPage, glossaryPages } from "@/lib/sitePages";
+
+export function getStaticPaths() {
+  return glossaryPages.map((page) => ({ params: { slug: page.slug } }));
+}
+
+const slug = Astro.params.slug as string;
+const page = getGlossaryPage(slug);
+
+if (!page) {
+  return new Response(null, { status: 404 });
+}
+---
+
+<ContentPageShell page={page} path={`/glossary/${page.slug}`} parentHref="/glossary" parentLabel="Glossary" />

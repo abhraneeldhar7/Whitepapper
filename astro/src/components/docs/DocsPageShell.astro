@@ -18,6 +18,7 @@ type Props = {
   currentPath: string;
   pageTitle: string;
   pageDescription: string;
+  pageSection: string;
   navSections: DocsNavSection[];
   previousPage: DocsPageEntry | null;
   nextPage: DocsPageEntry | null;
@@ -28,6 +29,7 @@ const {
   currentPath,
   pageTitle,
   pageDescription,
+  pageSection,
   navSections,
   previousPage,
   nextPage,
@@ -36,20 +38,46 @@ const {
 const docsContentContainerId = "docs-page-content";
 const userAgent = Astro.request.headers.get("user-agent");
 const shouldRenderMobileToc = isMobileUserAgent(userAgent);
+const pageTitleWithBrand = `${pageTitle} | Whitepapper`;
+const breadcrumbItems = [
+  {
+    "@type": "ListItem",
+    position: 1,
+    name: "Docs",
+    item: `${Astro.url.origin}/docs`,
+  },
+];
+
+if (pageSection && pageSection !== "Getting Started") {
+  breadcrumbItems.push({
+    "@type": "ListItem",
+    position: 2,
+    name: pageSection,
+    item: `${Astro.url.origin}/docs`,
+  });
+}
+
+breadcrumbItems.push({
+  "@type": "ListItem",
+  position: breadcrumbItems.length + 1,
+  name: pageTitle,
+  item: `${Astro.url.origin}${currentPath}`,
+});
+
 const docsPageSeo = {
   path: currentPath,
-  title: `${pageTitle} | Whitepapper Docs`,
+  title: pageTitleWithBrand,
   description: pageDescription,
   canonical: currentPath,
   keywords:
     "whitepapper docs, developer documentation, technical docs, content publishing docs, api docs, seo docs",
   robots: "index, follow",
   ogType: "article",
-  ogTitle: `${pageTitle} | Whitepapper Docs`,
+  ogTitle: pageTitleWithBrand,
   ogDescription: pageDescription,
   ogUrl: currentPath,
   twitterCard: "summary_large_image",
-  twitterTitle: `${pageTitle} | Whitepapper Docs`,
+  twitterTitle: pageTitleWithBrand,
   twitterDescription: pageDescription,
   jsonLd: [
     {
@@ -57,43 +85,40 @@ const docsPageSeo = {
       "@type": "TechArticle",
       headline: pageTitle,
       description: pageDescription,
+      articleSection: pageSection,
       url: `${Astro.url.origin}${currentPath}`,
       mainEntityOfPage: `${Astro.url.origin}${currentPath}`,
       isPartOf: {
         "@type": "CreativeWork",
-        name: "Whitepapper Docs",
+        name: "Whitepapper Documentation",
         url: `${Astro.url.origin}/docs`,
+      },
+      author: {
+        "@type": "Organization",
+        name: "Whitepapper",
+        url: Astro.url.origin,
       },
       publisher: {
         "@type": "Organization",
         name: "Whitepapper",
         url: Astro.url.origin,
+        logo: {
+          "@type": "ImageObject",
+          url: `${Astro.url.origin}/appLogo.png`,
+        },
       },
     },
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: "Docs",
-          item: `${Astro.url.origin}/docs`,
-        },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: pageTitle,
-          item: `${Astro.url.origin}${currentPath}`,
-        },
-      ],
+      itemListElement: breadcrumbItems,
     },
   ],
 };
 ---
 
 <Layout
-  title={`${pageTitle} | Whitepapper Docs`}
+  title={pageTitleWithBrand}
   description={pageDescription}
   seo={docsPageSeo}
 >
@@ -127,7 +152,7 @@ const docsPageSeo = {
                 {
                   shouldRenderMobileToc && (
                     <DocsMobileNav
-                      client:load
+                      client:idle
                       navSections={navSections}
                       currentPath={currentPath}
                     />
@@ -143,7 +168,7 @@ const docsPageSeo = {
               </div>
             </div>
 
-            <DocsCopyButton client:load markdown={markdown} />
+            <DocsCopyButton client:idle markdown={markdown} />
           </div>
 
           <div class="md:w-[350px] md:block hidden shrink-0"></div>
@@ -154,7 +179,7 @@ const docsPageSeo = {
           contentContainerId={docsContentContainerId}
         />
 
-        <nav class="mt-12 pt-6" aria-label="Docs page pagination">
+        <nav class="mt-7 pt-6" aria-label="Docs page pagination">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {
               previousPage ? (
@@ -202,7 +227,7 @@ const docsPageSeo = {
           !shouldRenderMobileToc && (
             <div class="fixed top-[80px] w-[320px] right-10">
               <LinearTableOfContent
-                client:load
+                client:idle
                 offset={125}
                 containerId={docsContentContainerId}
               />
@@ -216,7 +241,7 @@ const docsPageSeo = {
   {
     shouldRenderMobileToc ? (
       <MobileTableOfContent
-        client:load
+        client:idle
         contentContainerId={docsContentContainerId}
         topOffset={110}
       />

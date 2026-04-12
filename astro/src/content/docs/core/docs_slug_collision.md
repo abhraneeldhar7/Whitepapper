@@ -47,3 +47,4 @@ Auto-adjusted slugs use a short random suffix, not a simple increment.
 - Username routes have reserved values (for example: `api`, `dashboard`, `docs`, `sitemaps`).
 - Project and paper reserved slug lists are currently empty in code, but this can be expanded later.
 - Empty or invalid normalized slugs are always unavailable.
+\nLast updated: 12th April, 2026\n

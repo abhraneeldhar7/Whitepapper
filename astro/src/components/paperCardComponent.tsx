@@ -59,7 +59,7 @@ export default function PaperCardComponent({
                             <img
                                 className="dark:hidden w-full object-cover border w-full h-full opacity-[0.7] rounded-[3px]"
                                 src={abstractLightPic.src}
-                                alt=""
+                                alt={`Abstract placeholder cover for ${paperData.title}`}
                                 width={640}
                                 height={360}
                                 loading="lazy"
@@ -68,7 +68,7 @@ export default function PaperCardComponent({
                             <img
                                 className="hidden dark:block w-full object-cover w-full h-full border opacity-[0.4] rounded-[3px]"
                                 src={abstractDarkPic.src}
-                                alt=""
+                                alt={`Abstract placeholder cover for ${paperData.title}`}
                                 width={640}
                                 height={360}
                                 loading="lazy"

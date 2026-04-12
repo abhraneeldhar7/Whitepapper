@@ -39,3 +39,4 @@ type ApiError = {
 ## Troubleshooting stale content
 
 If API output looks stale, wait for cache expiry (~5 minutes). If your own CDN is in front, purge that layer separately.
+\nLast updated: 12th April, 2026\n

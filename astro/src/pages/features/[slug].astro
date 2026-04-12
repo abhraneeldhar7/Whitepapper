@@ -1,0 +1,17 @@
+---
+import ContentPageShell from "@/components/site/ContentPageShell.astro";
+import { featurePages, getFeaturePage } from "@/lib/sitePages";
+
+export function getStaticPaths() {
+  return featurePages.map((page) => ({ params: { slug: page.slug } }));
+}
+
+const slug = Astro.params.slug as string;
+const page = getFeaturePage(slug);
+
+if (!page) {
+  return new Response(null, { status: 404 });
+}
+---
+
+<ContentPageShell page={page} path={`/features/${page.slug}`} parentHref="/features" parentLabel="Features" />

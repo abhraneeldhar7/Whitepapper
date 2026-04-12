@@ -1,0 +1,121 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import MarkdownRender from "@/components/ui/markdown-render/markdown-render";
+import PricingComparator from "@/components/pricing-comparator";
+import FAQs from "@/components/faqs-2";
+import { pricingPage } from "@/lib/sitePages";
+
+const seo = {
+  path: "/pricing",
+  title: `${pricingPage.title} | Whitepapper`,
+  description: pricingPage.description,
+  canonical: "/pricing",
+  robots: "index, follow",
+  ogType: "website",
+  ogTitle: `${pricingPage.title} | Whitepapper`,
+  ogDescription: pricingPage.description,
+  ogUrl: "/pricing",
+  twitterCard: "summary_large_image",
+  twitterTitle: `${pricingPage.title} | Whitepapper`,
+  twitterDescription: pricingPage.description,
+  jsonLd: [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: pricingPage.title,
+      description: pricingPage.description,
+      url: `${Astro.url.origin}/pricing`,
+      isPartOf: {
+        "@type": "WebSite",
+        name: "Whitepapper",
+        url: Astro.url.origin,
+      },
+    },
+    ...(pricingPage.faq?.length
+      ? [
+          {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: pricingPage.faq.map((item) => ({
+              "@type": "Question",
+              name: item.question,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: item.answer,
+              },
+            })),
+          },
+        ]
+      : []),
+  ],
+};
+---
+
+<Layout seo={seo}>
+  <main class="mx-auto w-full max-w-[900px] px-4 py-10">
+    <div class="flex gap-2 items-center text-[15px]">
+      <a
+        href="/"
+        class="text-muted-foreground transition-all duration-300 hover:text-foreground"
+      >
+        <p>{pricingPage.eyebrow}</p>
+      </a>
+      <p>/</p>
+      <p>{pricingPage.title}</p>
+    </div>
+
+    <section class="mt-6">
+      <h1 class="mt-3 text-[32px] md:text-[42px] font-[500] leading-[1.15em]">
+        {pricingPage.title}
+      </h1>
+      <p class="mt-4 max-w-[760px] text-[17px] leading-[1.8em] text-muted-foreground">
+        {pricingPage.description}
+      </p>
+    </section>
+
+    <div class="py-10">
+      <PricingComparator />
+    </div>
+
+    <section class="mt-8">
+      <MarkdownRender
+        content={pricingPage.body}
+        contentContainerId="content-pricing"
+      />
+    </section>
+
+    {
+      pricingPage.links?.length ? (
+        <section class="mt-12">
+          <h2 class="text-[18px] font-[520]">Related links</h2>
+          <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+            {pricingPage.links.map((link) => (
+              <a
+                href={link.href}
+                class="rounded-xl p-4 hover:bg-muted/30 transition-all duration-200"
+              >
+                <p class="text-[16px] font-[520]">{link.label}</p>
+                <p class="mt-2 text-[14px] leading-[1.7em] text-muted-foreground">
+                  {link.description}
+                </p>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null
+    }
+
+    {
+      pricingPage.faq?.length ? (
+        <section class="mt-12">
+          <FAQs
+            client:idle
+            items={pricingPage.faq}
+            title="FAQs"
+            description="Common questions about Whitepapper pricing."
+          />
+        </section>
+      ) : null
+    }
+  </main>
+</Layout>

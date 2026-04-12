@@ -12,15 +12,23 @@ function escapeXml(value: string): string {
 
 export const GET: APIRoute = ({ site, url }) => {
   const baseUrl = (site?.toString() || url.origin).replace(/\/+$/, "");
-  const now = new Date().toISOString();
-  const docsPaths = Array.from(
-    new Set(["/docs", ...docsPageEntries.map((entry) => entry.route)]),
-  );
+  const docsLastUpdated = "2026-04-12T00:00:00.000Z";
+  const docsEntries = [
+    {
+      path: "/docs",
+      updatedAt: docsLastUpdated,
+    },
+    ...docsPageEntries.map((entry) => ({
+      path: entry.route,
+      updatedAt: docsLastUpdated,
+    })),
+  ];
 
-  const xmlEntries = docsPaths
-    .map((path) => {
+  const xmlEntries = docsEntries
+    .map((entry) => {
+      const path = entry.path;
       const loc = `${baseUrl}${path === "/" ? "" : path}`;
-      return `<url><loc>${escapeXml(loc)}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`;
+      return `<url><loc>${escapeXml(loc)}</loc><lastmod>${escapeXml(entry.updatedAt)}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>`;
     })
     .join("\n");
 

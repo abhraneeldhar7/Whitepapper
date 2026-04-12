@@ -150,7 +150,12 @@ def generate_paper_metadata(
         raise HTTPException(status_code=404, detail="Paper not found.")
     if paper.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
-    return papers_service.generate_metadata_preview(paper_id, payload.model_dump(exclude_unset=True))
+    generated_payload = payload.payload.model_dump(mode="json")
+    if generated_payload.get("ownerId") != user_id:
+        raise HTTPException(status_code=403, detail="Not allowed.")
+    if str(generated_payload.get("paperId") or "").strip() != paper_id:
+        raise HTTPException(status_code=400, detail="paperId does not match the payload paper.")
+    return papers_service.generate_metadata_preview(generated_payload)
 
 
 @router.get("/papers/slug/available")

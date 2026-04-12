@@ -16,7 +16,11 @@ interface Props {
   noindex?: boolean;
   showSiteNav?: boolean;
   reserveNavSpace?: boolean;
+  enableClientRouter?: boolean;
+  enableToaster?: boolean;
 }
+
+const pathname = Astro.url.pathname;
 
 const {
   hideFooter = false,
@@ -27,12 +31,25 @@ const {
   noindex = false,
   showSiteNav = true,
   reserveNavSpace = true,
+  enableClientRouter = pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/write") ||
+    pathname === "/login" ||
+    pathname === "/sign-in" ||
+    pathname === "/sign-up" ||
+    pathname === "/welcome",
+  enableToaster = pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/write") ||
+    pathname === "/login" ||
+    pathname === "/sign-in" ||
+    pathname === "/sign-up" ||
+    pathname === "/welcome",
 } = Astro.props as Props;
 const themeCookie = Astro.cookies.get("theme")?.value ?? null;
 const isDarkTheme = themeCookie === "dark";
-const pathname = Astro.url.pathname;
-const { getToken } = Astro.locals.auth();
-const token = await getToken().catch(() => null);
+const authHelpers = showSiteNav ? Astro.locals.auth() : null;
+const token = authHelpers ? await authHelpers.getToken().catch(() => null) : null;
 const isSignedIn = Boolean(token);
 const routeSeoConfig = getPageSeoConfig(pathname);
 const pageSeoConfig = seo ?? routeSeoConfig;
@@ -168,7 +185,7 @@ const jsonLdItems = Array.isArray(pageSeoConfig?.jsonLd)
       ))
     }
     <slot name="head" />
-    <ClientRouter />
+    {enableClientRouter ? <ClientRouter /> : null}
     <script is:inline>
       (() => {
         if (window.__wpReadyFlagsHooked) {
@@ -223,7 +240,7 @@ const jsonLdItems = Array.isArray(pageSeoConfig?.jsonLd)
     {showSiteNav && reserveNavSpace && <div class="h-[58px] w-full"></div>}
     <slot />
     {!hideFooter && <Footer />}
-    <Toaster client:idle  />
+    {enableToaster ? <Toaster client:idle /> : null}
   </body>
 </html>
 

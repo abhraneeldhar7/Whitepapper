@@ -39,19 +39,32 @@ export const GET: APIRoute = async () => {
 
   const payload = (await response.json()) as { papers?: SeoPaperItem[] };
   const papers = Array.isArray(payload?.papers) ? payload.papers : [];
+  const seen = new Set<string>();
 
-  const urlEntries = papers
-    .map((item) => {
+  const entries = await Promise.all(
+    papers.map(async (item) => {
       const loc = resolveAbsoluteUrl(item.url, siteUrl);
-      if (!loc) return "";
+      if (!loc || seen.has(loc)) return "";
+      seen.add(loc);
+
+      try {
+        const validationResponse = await fetch(loc, { method: "GET" });
+        if (!validationResponse.ok) {
+          return "";
+        }
+      } catch {
+        return "";
+      }
+
       const lastModValue = (item.lastModified || "").trim();
       const lastmod = lastModValue
         ? `<lastmod>${escapeXml(new Date(lastModValue).toISOString())}</lastmod>`
         : "";
       return `<url><loc>${escapeXml(loc)}</loc>${lastmod}</url>`;
-    })
-    .filter(Boolean)
-    .join("");
+    }),
+  );
+
+  const urlEntries = entries.filter(Boolean).join("");
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

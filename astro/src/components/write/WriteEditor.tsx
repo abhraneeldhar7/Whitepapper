@@ -627,11 +627,10 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
     setMetadataGenerating(true);
     try {
       const generated = await generatePaperMetadata(paperId, {
-        title,
-        slug,
-        body,
+        ...paperDoc,
         status: toApiStatus(pageDetails.status),
         thumbnailUrl: pageDetails.thumbnailUrl || null,
+        metadata: paperDoc.metadata ?? null,
       });
       setPaperDoc((prev) => ({ ...prev, metadata: generated }));
       setMetadataDraft(structuredClone(generated));

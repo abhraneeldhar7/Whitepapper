@@ -66,3 +66,4 @@ Limit errors:
 - `Paper limit reached (500) for this user. Delete an existing paper to create a new one.`
 - `Paper content is too long. Maximum length is 500000 characters.`
 - `Paper image limit reached (20). Remove some images before saving.`
+\nLast updated: 12th April, 2026\n

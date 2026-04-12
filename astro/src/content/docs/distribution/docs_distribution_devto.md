@@ -32,3 +32,4 @@ Whitepapper sends canonical URL pointing to the Whitepapper paper URL.
 
 - [Distribution Overview](/docs/distribution/overview)
 - [Platform Status](/docs/distribution/platform-status)
+\nLast updated: 12th April, 2026\n

@@ -92,7 +92,7 @@ const seo = buildPaperSeoConfig(metadata, {
 });
 ---
 
-<Layout showSiteNav={true} seo={seo}>
+<Layout seo={seo}>
     <div class="flex justify-between px-[15px] md:px-[35px] md:gap-10">
         <div class="md:w-[300px] hidden md:block"></div>
         <main class="mx-auto min-h-screen max-w-[700px] pt-15 md:pt-20 pb-20">
@@ -125,6 +125,7 @@ const seo = buildPaperSeoConfig(metadata, {
                                     src="/appLogo.png"
                                     height="25"
                                     width="22"
+                                    alt="Whitepapper logo"
                                 />
                                 <p
                                     class="text-[15px] text-muted-foreground hover:text-foreground transition-all duration-300"
@@ -186,7 +187,7 @@ const seo = buildPaperSeoConfig(metadata, {
                 isDesktopUA ? (
                     <div class="sticky top-[140px] hidden md:block">
                         <LinearTableOfContent
-                            client:load
+                            client:idle
                             containerId={contentContainerId}
                         />
                     </div>

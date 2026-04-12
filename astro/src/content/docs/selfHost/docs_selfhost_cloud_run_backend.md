@@ -31,3 +31,4 @@ Expected response:
 
 - [FastAPI Env](/docs/self-host/environment-files/fastapi-env)
 - [Cloudflare Worker](/docs/self-host/cloudflare-worker)
+\nLast updated: 12th April, 2026\n

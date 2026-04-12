@@ -38,3 +38,4 @@ If you want the thumbnail to also serve as the OG image, you can copy the thumbn
 ## Upload behavior
 
 All image uploads go to Whitepapper's storage. Uploads are tied to the paper they're uploaded from. There is no global media library shared across papers.
+\nLast updated: 12th April, 2026\n

@@ -56,3 +56,4 @@ Common statuses:
 - [Collection Endpoint](/docs/dev-api/contracts/collection-endpoint)
 - [Paper Endpoint](/docs/dev-api/contracts/paper-endpoint)
 - [Caching and Errors](/docs/dev-api/caching-and-errors)
+\nLast updated: 12th April, 2026\n

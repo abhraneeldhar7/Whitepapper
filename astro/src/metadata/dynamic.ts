@@ -1,5 +1,14 @@
 import type { PaperDoc, PaperMetadata, ProjectDoc } from "@/lib/types";
 import type { PageSeoConfig } from "@/metadata/pages";
+import {
+  absoluteUrl,
+  countWords,
+  estimateReadingTimeMinutes,
+  excerptFromMarkdown,
+  normalizeHandle,
+  resolvePreferredPaperPath,
+  stripMarkdown,
+} from "@/lib/seo";
 
 type PublicPaperMetadataOptions = {
   paper: PaperDoc;
@@ -35,19 +44,43 @@ function ensureSiteUrl(value: string): string {
   return String(value || "").trim().replace(/\/+$/, "");
 }
 
-function normalizeBlogCanonical(candidate: string, fallbackCanonical: string): string {
-  const normalizedCandidate = String(candidate || "").trim();
-  const isBlogCanonical = /\/blogs\/[^/]+\/?$/i.test(normalizedCandidate);
-  return isBlogCanonical ? normalizedCandidate : fallbackCanonical;
+function isUntitledValue(value: string | undefined | null): boolean {
+  return /^\s*untitled paper\b/i.test(String(value || "").trim());
+}
+
+function isMeaningfulText(value: string | undefined | null): boolean {
+  const normalized = String(value || "").trim();
+  return Boolean(normalized) && !isUntitledValue(normalized);
+}
+
+function resolveMeaningfulText(...values: Array<string | undefined | null>): string {
+  for (const value of values) {
+    if (isMeaningfulText(value)) {
+      return String(value).trim();
+    }
+  }
+  return "";
 }
 
 function toPaperMetadataBase(paper: PaperDoc, siteUrl: string) {
   const metadataInput = paper.metadata;
   const fallbackImage = paper.thumbnailUrl || `${siteUrl}/appLogo.png`;
+  const inferredExcerpt = excerptFromMarkdown(paper.body || paper.title, 160) || paper.title;
+  const inferredAbstract = excerptFromMarkdown(paper.body || paper.title, 320) || paper.title;
+  const inferredWordCount = countWords(paper.body || paper.title);
+  const inferredReadingTimeMinutes = estimateReadingTimeMinutes(paper.body || paper.title);
+  const headlineBase =
+    resolveMeaningfulText(paper.title, stripMarkdown(paper.body || ""), "Whitepapper article") ||
+    "Whitepapper article";
 
   return {
     metadataInput,
     fallbackImage,
+    inferredExcerpt,
+    inferredAbstract,
+    inferredWordCount,
+    inferredReadingTimeMinutes,
+    headlineBase,
     ogTags: Array.isArray(metadataInput?.ogTags) ? metadataInput.ogTags : [],
     isAccessibleForFree:
       typeof metadataInput?.isAccessibleForFree === "boolean"
@@ -59,31 +92,56 @@ function toPaperMetadataBase(paper: PaperDoc, siteUrl: string) {
 
 export function buildPublicPaperMetadata(options: PublicPaperMetadataOptions): PaperMetadata {
   const { paper, siteUrl, handle } = options;
-  const { metadataInput, fallbackImage, ogTags, isAccessibleForFree, license } = toPaperMetadataBase(paper, siteUrl);
+  const {
+    metadataInput,
+    fallbackImage,
+    inferredExcerpt,
+    inferredAbstract,
+    inferredWordCount,
+    inferredReadingTimeMinutes,
+    headlineBase,
+    ogTags,
+    isAccessibleForFree,
+    license,
+  } = toPaperMetadataBase(paper, siteUrl);
 
-  const normalizedHandle = handle.trim().toLowerCase();
-  const authorHandle = (metadataInput?.authorHandle || normalizedHandle)
-    .trim()
-    .toLowerCase();
-  const fallbackCanonical = `${siteUrl}/${normalizedHandle}/${paper.slug}`;
-  const fallbackAuthorUrl = `${siteUrl}/${authorHandle}`;
+  const normalizedHandle = normalizeHandle(handle);
+  const authorHandle = normalizeHandle(metadataInput?.authorHandle || normalizedHandle) || normalizedHandle;
+  const canonicalPath = resolvePreferredPaperPath({
+    slug: paper.slug,
+    canonical: metadataInput?.canonical,
+    authorHandle,
+    fallbackHandle: normalizedHandle,
+    fallbackPath: `/${normalizedHandle}/${paper.slug}`,
+    siteUrl,
+  });
+  const canonical = absoluteUrl(canonicalPath, siteUrl);
+  const fallbackAuthorUrl = absoluteUrl(`/${authorHandle}`, siteUrl);
+  const articleTitle =
+    resolveMeaningfulText(metadataInput?.ogTitle, metadataInput?.twitterTitle, metadataInput?.headline, headlineBase) ||
+    headlineBase;
+  const metaDescription =
+    resolveMeaningfulText(metadataInput?.metaDescription, inferredExcerpt) || inferredExcerpt;
 
   return {
-    title: metadataInput?.title || `${paper.title} | Whitepapper`,
-    metaDescription: metadataInput?.metaDescription || paper.title,
-    canonical: metadataInput?.canonical || fallbackCanonical,
+    title:
+      resolveMeaningfulText(metadataInput?.title, `${headlineBase} | Whitepapper`) ||
+      `${headlineBase} | Whitepapper`,
+    metaDescription,
+    canonical,
     robots:
       metadataInput?.robots ||
       (paper.status === "published" ? "index, follow" : "noindex, nofollow"),
-    ogTitle: metadataInput?.ogTitle || paper.title,
+    ogTitle: articleTitle,
     ogDescription:
-      metadataInput?.ogDescription ||
-      metadataInput?.metaDescription ||
-      paper.title,
+      resolveMeaningfulText(metadataInput?.ogDescription, metadataInput?.metaDescription, inferredExcerpt) ||
+      inferredExcerpt,
     ogImage: metadataInput?.ogImage || fallbackImage,
     ogImageWidth: metadataInput?.ogImageWidth || 1200,
     ogImageHeight: metadataInput?.ogImageHeight || 630,
-    ogImageAlt: metadataInput?.ogImageAlt || `Cover image for ${paper.title}`,
+    ogImageAlt:
+      resolveMeaningfulText(metadataInput?.ogImageAlt, `Cover image for ${headlineBase}`) ||
+      `Cover image for ${headlineBase}`,
     ogLocale: metadataInput?.ogLocale || "en_US",
     ogPublishedTime:
       metadataInput?.ogPublishedTime ||
@@ -91,26 +149,26 @@ export function buildPublicPaperMetadata(options: PublicPaperMetadataOptions): P
       paper.createdAt,
     ogModifiedTime:
       metadataInput?.ogModifiedTime || metadataInput?.dateModified || paper.updatedAt,
-    ogAuthorUrl:
-      metadataInput?.ogAuthorUrl || metadataInput?.authorUrl || fallbackAuthorUrl,
+    ogAuthorUrl: metadataInput?.ogAuthorUrl || metadataInput?.authorUrl || fallbackAuthorUrl,
     ogTags,
-    twitterTitle: metadataInput?.twitterTitle || paper.title,
+    twitterTitle: resolveMeaningfulText(metadataInput?.twitterTitle, articleTitle) || articleTitle,
     twitterDescription:
-      metadataInput?.twitterDescription ||
-      metadataInput?.metaDescription ||
-      paper.title,
+      resolveMeaningfulText(metadataInput?.twitterDescription, metadataInput?.metaDescription, inferredExcerpt) ||
+      inferredExcerpt,
     twitterImage:
       metadataInput?.twitterImage || metadataInput?.ogImage || fallbackImage,
     twitterImageAlt:
-      metadataInput?.twitterImageAlt || `Cover image for ${paper.title}`,
+      resolveMeaningfulText(metadataInput?.twitterImageAlt, `Cover image for ${headlineBase}`) ||
+      `Cover image for ${headlineBase}`,
     twitterCreator: metadataInput?.twitterCreator || null,
-    headline: metadataInput?.headline || paper.title,
+    headline: articleTitle,
     abstract:
-      metadataInput?.abstract || metadataInput?.metaDescription || paper.title,
-    keywords: metadataInput?.keywords || "",
+      resolveMeaningfulText(metadataInput?.abstract, metadataInput?.metaDescription, inferredAbstract) ||
+      inferredAbstract,
+    keywords: resolveMeaningfulText(metadataInput?.keywords, ogTags.join(", ")) || "",
     articleSection: metadataInput?.articleSection || "General",
-    wordCount: metadataInput?.wordCount || 0,
-    readingTimeMinutes: metadataInput?.readingTimeMinutes || 1,
+    wordCount: metadataInput?.wordCount || inferredWordCount,
+    readingTimeMinutes: metadataInput?.readingTimeMinutes || inferredReadingTimeMinutes,
     inLanguage: metadataInput?.inLanguage || "en",
     datePublished:
       metadataInput?.datePublished ||
@@ -118,7 +176,7 @@ export function buildPublicPaperMetadata(options: PublicPaperMetadataOptions): P
       paper.createdAt,
     dateModified:
       metadataInput?.dateModified || metadataInput?.ogModifiedTime || paper.updatedAt,
-    authorName: metadataInput?.authorName || authorHandle,
+    authorName: resolveMeaningfulText(metadataInput?.authorName, authorHandle) || authorHandle,
     authorHandle,
     authorUrl: metadataInput?.authorUrl || fallbackAuthorUrl,
     authorId: metadataInput?.authorId || "",
@@ -133,30 +191,54 @@ export function buildPublicPaperMetadata(options: PublicPaperMetadataOptions): P
 
 export function buildBlogPaperMetadata(options: BlogPaperMetadataOptions): PaperMetadata {
   const { paper, siteUrl } = options;
-  const { metadataInput, fallbackImage, ogTags, isAccessibleForFree, license } = toPaperMetadataBase(paper, siteUrl);
+  const {
+    metadataInput,
+    fallbackImage,
+    inferredExcerpt,
+    inferredAbstract,
+    inferredWordCount,
+    inferredReadingTimeMinutes,
+    headlineBase,
+    ogTags,
+    isAccessibleForFree,
+    license,
+  } = toPaperMetadataBase(paper, siteUrl);
 
-  const authorHandle = (metadataInput?.authorHandle || "whitepapper")
-    .trim()
-    .toLowerCase();
-  const fallbackCanonical = `${siteUrl}/blogs/${paper.slug}`;
-  const fallbackAuthorUrl = `${siteUrl}/blogs`;
+  const authorHandle = normalizeHandle(metadataInput?.authorHandle || "whitepapper") || "whitepapper";
+  const canonicalPath = resolvePreferredPaperPath({
+    slug: paper.slug,
+    canonical: metadataInput?.canonical,
+    authorHandle,
+    fallbackPath: `/blogs/${paper.slug}`,
+    siteUrl,
+  });
+  const canonical = absoluteUrl(canonicalPath, siteUrl);
+  const fallbackAuthorUrl = absoluteUrl(`/${authorHandle}`, siteUrl);
+  const articleTitle =
+    resolveMeaningfulText(metadataInput?.ogTitle, metadataInput?.twitterTitle, metadataInput?.headline, headlineBase) ||
+    headlineBase;
+  const metaDescription =
+    resolveMeaningfulText(metadataInput?.metaDescription, inferredExcerpt) || inferredExcerpt;
 
   return {
-    title: metadataInput?.title || `${paper.title} | Whitepapper Blog`,
-    metaDescription: metadataInput?.metaDescription || paper.title,
-    canonical: normalizeBlogCanonical(metadataInput?.canonical || "", fallbackCanonical),
+    title:
+      resolveMeaningfulText(metadataInput?.title, `${headlineBase} | Whitepapper`) ||
+      `${headlineBase} | Whitepapper`,
+    metaDescription,
+    canonical,
     robots:
       metadataInput?.robots ||
       (paper.status === "published" ? "index, follow" : "noindex, nofollow"),
-    ogTitle: metadataInput?.ogTitle || paper.title,
+    ogTitle: articleTitle,
     ogDescription:
-      metadataInput?.ogDescription ||
-      metadataInput?.metaDescription ||
-      paper.title,
+      resolveMeaningfulText(metadataInput?.ogDescription, metadataInput?.metaDescription, inferredExcerpt) ||
+      inferredExcerpt,
     ogImage: metadataInput?.ogImage || fallbackImage,
     ogImageWidth: metadataInput?.ogImageWidth || 1200,
     ogImageHeight: metadataInput?.ogImageHeight || 630,
-    ogImageAlt: metadataInput?.ogImageAlt || `Cover image for ${paper.title}`,
+    ogImageAlt:
+      resolveMeaningfulText(metadataInput?.ogImageAlt, `Cover image for ${headlineBase}`) ||
+      `Cover image for ${headlineBase}`,
     ogLocale: metadataInput?.ogLocale || "en_US",
     ogPublishedTime:
       metadataInput?.ogPublishedTime ||
@@ -171,25 +253,24 @@ export function buildBlogPaperMetadata(options: BlogPaperMetadataOptions): Paper
       metadataInput?.authorUrl ||
       fallbackAuthorUrl,
     ogTags,
-    twitterTitle: metadataInput?.twitterTitle || paper.title,
+    twitterTitle: resolveMeaningfulText(metadataInput?.twitterTitle, articleTitle) || articleTitle,
     twitterDescription:
-      metadataInput?.twitterDescription ||
-      metadataInput?.metaDescription ||
-      paper.title,
+      resolveMeaningfulText(metadataInput?.twitterDescription, metadataInput?.metaDescription, inferredExcerpt) ||
+      inferredExcerpt,
     twitterImage:
       metadataInput?.twitterImage || metadataInput?.ogImage || fallbackImage,
     twitterImageAlt:
-      metadataInput?.twitterImageAlt || `Cover image for ${paper.title}`,
+      resolveMeaningfulText(metadataInput?.twitterImageAlt, `Cover image for ${headlineBase}`) ||
+      `Cover image for ${headlineBase}`,
     twitterCreator: metadataInput?.twitterCreator || null,
-    headline: metadataInput?.headline || paper.title,
+    headline: articleTitle,
     abstract:
-      metadataInput?.abstract ||
-      metadataInput?.metaDescription ||
-      paper.title,
-    keywords: metadataInput?.keywords || "",
+      resolveMeaningfulText(metadataInput?.abstract, metadataInput?.metaDescription, inferredAbstract) ||
+      inferredAbstract,
+    keywords: resolveMeaningfulText(metadataInput?.keywords, ogTags.join(", ")) || "",
     articleSection: metadataInput?.articleSection || "General",
-    wordCount: metadataInput?.wordCount || 0,
-    readingTimeMinutes: metadataInput?.readingTimeMinutes || 1,
+    wordCount: metadataInput?.wordCount || inferredWordCount,
+    readingTimeMinutes: metadataInput?.readingTimeMinutes || inferredReadingTimeMinutes,
     inLanguage: metadataInput?.inLanguage || "en",
     datePublished:
       metadataInput?.datePublished ||
@@ -199,7 +280,7 @@ export function buildBlogPaperMetadata(options: BlogPaperMetadataOptions): Paper
       metadataInput?.dateModified ||
       metadataInput?.ogModifiedTime ||
       paper.updatedAt,
-    authorName: metadataInput?.authorName || authorHandle,
+    authorName: resolveMeaningfulText(metadataInput?.authorName, "Whitepapper") || "Whitepapper",
     authorHandle,
     authorUrl: metadataInput?.authorUrl || fallbackAuthorUrl,
     authorId: metadataInput?.authorId || "",
@@ -215,6 +296,12 @@ export function buildBlogPaperMetadata(options: BlogPaperMetadataOptions): Paper
 function buildPaperJsonLd(metadata: PaperMetadata, schemaType: "Article" | "BlogPosting") {
   const publisherUrl = metadata.publisherUrl;
   const publisherLogoUrl = `${publisherUrl.replace(/\/+$/, "")}/appLogo.png`;
+  const authorName = String(metadata.authorName || "").trim();
+  const publisherName = String(metadata.publisherName || "").trim();
+  const authorSchemaType =
+    authorName && publisherName && authorName.toLowerCase() === publisherName.toLowerCase()
+      ? "Organization"
+      : "Person";
 
   return {
     "@context": "https://schema.org",
@@ -236,7 +323,7 @@ function buildPaperJsonLd(metadata: PaperMetadata, schemaType: "Article" | "Blog
     datePublished: metadata.datePublished,
     dateModified: metadata.dateModified,
     author: {
-      "@type": "Person",
+      "@type": authorSchemaType,
       name: metadata.authorName,
       url: metadata.authorUrl,
       identifier: metadata.authorId,

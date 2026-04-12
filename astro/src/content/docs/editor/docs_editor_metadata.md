@@ -36,3 +36,4 @@ Metadata dialog **Save** writes to the paper's in-editor state. Changes are pers
 ## When metadata takes effect
 
 Metadata affects public paper pages once the paper is publicly accessible and saved.
+\nLast updated: 12th April, 2026\n

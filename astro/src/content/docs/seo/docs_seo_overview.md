@@ -37,3 +37,4 @@ If fields are missing, Whitepapper applies fallback values built from paper titl
 - [Paper metadata](/docs/seo/paper-metadata)
 - [Public pages](/docs/seo/public-pages)
 - [Sitemaps](/docs/seo/sitemaps)
+\nLast updated: 12th April, 2026\n

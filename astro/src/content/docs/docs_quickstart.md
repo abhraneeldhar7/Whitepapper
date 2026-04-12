@@ -82,3 +82,4 @@ curl https://whitepapper.antk.in/api/dev/project \
 - [Projects](/docs/projects)
 - [Papers](/docs/papers)
 - [Dev API Overview](/docs/dev-api/overview)
+\nLast updated: 12th April, 2026\n

@@ -27,3 +27,4 @@ If distribution fails, Whitepapper surfaces platform error details when availabl
 - [Hashnode](/docs/distribution/hashnode)
 - [Dev.to](/docs/distribution/devto)
 - [Medium Import](/docs/distribution/medium-import)
+\nLast updated: 12th April, 2026\n

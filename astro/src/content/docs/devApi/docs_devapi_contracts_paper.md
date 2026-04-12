@@ -35,3 +35,4 @@ https://whitepapper.antk.in/{username}/{paper-slug}
 | `403` | Inactive key or cross-project paper |
 | `404` | Paper not found |
 | `429` | Monthly usage limit exceeded |
+\nLast updated: 12th April, 2026\n

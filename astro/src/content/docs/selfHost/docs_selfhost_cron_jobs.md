@@ -32,3 +32,4 @@ Usage counters stay synchronized and monthly limits reset correctly.
 
 - [FastAPI Env](/docs/self-host/environment-files/fastapi-env)
 - [Production Checklist](/docs/self-host/production-checklist)
+\nLast updated: 12th April, 2026\n

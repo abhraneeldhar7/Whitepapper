@@ -40,3 +40,4 @@ Dev API returns only content that passes public visibility checks:
 - [API Key Management](/docs/dev-api/api-key-management)
 - [Contracts](/docs/dev-api/contracts)
 - [Caching and Errors](/docs/dev-api/caching-and-errors)
+\nLast updated: 12th April, 2026\n

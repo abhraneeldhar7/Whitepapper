@@ -93,11 +93,13 @@ export async function updatePaper(
 
 export async function generatePaperMetadata(
   paperId: string,
-  input: UpdatePaperInput,
+  paperDoc: PaperDoc,
   client: ApiClient = apiClient,
 ): Promise<PaperMetadata> {
   return client.post<PaperMetadata>(`/papers/${paperId}/metadata/generate`, {
-    body: input,
+    body: {
+      payload: paperDoc,
+    },
   });
 }
 

@@ -46,3 +46,4 @@ A paper is publicly accessible only when visibility rules allow it.
 - Pages are server-rendered
 - Visibility changes apply immediately to access control
 - Internal linking from profile and project pages helps discovery
+\nLast updated: 12th April, 2026\n

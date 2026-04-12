@@ -23,3 +23,4 @@ Frontend pages load, auth routes work, and API requests target the configured ba
 
 - [Astro Env](/docs/self-host/environment-files/astro-env)
 - [Cloud Run Backend](/docs/self-host/cloud-run-backend)
+\nLast updated: 12th April, 2026\n

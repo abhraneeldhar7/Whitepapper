@@ -23,12 +23,13 @@ export const GET: APIRoute = ({ site, url }) => {
     "",
     `Reference: ${baseUrl}/llms-full.txt`,
     "",
+    `Product: Markdown-first content platform for developers`,
+    `For: Solo developers, indie builders, technical writers, and small technical teams`,
+    "",
+    `Primary pages: ${baseUrl}/pricing, ${baseUrl}/features, ${baseUrl}/use-cases, ${baseUrl}/docs, ${baseUrl}/blogs`,
+    `Key references: ${baseUrl}/features/content-api, ${baseUrl}/features/distribution, ${baseUrl}/features/seo-metadata, ${baseUrl}/glossary/llms-txt`,
+    "",
     `Sitemap: ${baseUrl}/sitemap.xml`,
-    `Sitemap: ${baseUrl}/sitemap-index.xml`,
-    `Sitemap: ${baseUrl}/sitemaps/public-pages.xml`,
-    `Sitemap: ${baseUrl}/sitemaps/docs-pages.xml`,
-    `Sitemap: ${baseUrl}/sitemaps/public-projects.xml`,
-    `Sitemap: ${baseUrl}/sitemaps/public-papers.xml`,
   ].join("\n");
 
   return new Response(body, {

@@ -61,3 +61,4 @@ A new paper directly inside a project inherits project visibility:
 
 - Public project: starts as `published`
 - Private project: starts as `draft`
+\nLast updated: 12th April, 2026\n

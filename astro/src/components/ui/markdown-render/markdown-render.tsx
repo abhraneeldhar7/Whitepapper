@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import remarkHighlight from 'remark-highlight';
 import rehypeRaw from 'rehype-raw';
 import { createHighlighter, type BuiltinLanguage } from 'shiki';
+import { isInternalHref, isPlaceholderHref } from '@/lib/seo';
 
 const SHIKI_THEME = 'one-dark-pro';
 const SHIKI_LANGS: BuiltinLanguage[] = [
@@ -104,6 +105,7 @@ function MarkdownActionIcon({ className, dataAttr }: { className?: string; dataA
 }
 
 export default function MarkdownRender({ content, contentContainerId }: PostRenderProps) {
+    const siteUrl = String(import.meta.env.PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://whitepapper.antk.in')).trim();
 
     return (
         <div>
@@ -114,11 +116,35 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                     rehypePlugins={[rehypeRaw]}
                     components={{
                         a: ({ node, ...props }) => {
+                            const href = String(props.href || '').trim();
+                            if (isPlaceholderHref(href)) {
+                                return <span {...props}>{props.children}</span>;
+                            }
+
+                            const external = href ? !isInternalHref(href, siteUrl) : false;
                             return (
                                 <a
-                                    href={props.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    href={href}
+                                    target={external ? "_blank" : undefined}
+                                    rel={external ? "noopener noreferrer" : undefined}
+                                    {...props}
+                                />
+                            );
+                        },
+                        img: ({ node, alt, src, ...props }) => {
+                            const fallbackAlt = String(src || '')
+                                .split('/')
+                                .pop()
+                                ?.replace(/\.[a-z0-9]+$/i, '')
+                                ?.replace(/[-_]+/g, ' ')
+                                ?.trim() || 'Article image';
+
+                            return (
+                                <img
+                                    src={src}
+                                    alt={String(alt || fallbackAlt)}
+                                    loading="lazy"
+                                    decoding="async"
                                     {...props}
                                 />
                             );
@@ -127,7 +153,7 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                             const match = /language-(\w+)/.exec(className || '');
                             const codeText = String(children).replace(/\n$/, '');
                             const inline = !className;
-                            
+
                             return !inline ? (
                                 <div className="markdownCodeBlock">
                                     <button

@@ -59,3 +59,4 @@ A new paper inside a collection inherits collection visibility:
 
 - Public collection: starts as `published`
 - Private collection: starts as `draft`
+\nLast updated: 12th April, 2026\n

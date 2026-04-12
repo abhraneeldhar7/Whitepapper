@@ -65,3 +65,4 @@ If metadata is partial or missing, fallback values are generated from paper and 
 ## When fields are rendered
 
 Metadata is rendered on public paper pages. Private or non-publicly accessible content is not indexable.
+\nLast updated: 12th April, 2026\n

@@ -47,3 +47,4 @@ See [Distribution overview](/docs/distribution/overview).
 ## Archive
 
 Archived papers are not publicly accessible and are excluded from collection visibility propagation.
+\nLast updated: 12th April, 2026\n

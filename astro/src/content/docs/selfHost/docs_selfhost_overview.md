@@ -29,3 +29,4 @@ A production setup where public pages, dashboard, Dev API, distribution, and cro
 - [Environment Files](/docs/self-host/environment-files)
 - [Local Run](/docs/self-host/local-run)
 - [Production Checklist](/docs/self-host/production-checklist)
+\nLast updated: 12th April, 2026\n

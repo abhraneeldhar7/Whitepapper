@@ -1,0 +1,17 @@
+---
+import ContentPageShell from "@/components/site/ContentPageShell.astro";
+import { getUseCasePage, useCasePages } from "@/lib/sitePages";
+
+export function getStaticPaths() {
+  return useCasePages.map((page) => ({ params: { slug: page.slug } }));
+}
+
+const slug = Astro.params.slug as string;
+const page = getUseCasePage(slug);
+
+if (!page) {
+  return new Response(null, { status: 404 });
+}
+---
+
+<ContentPageShell page={page} path={`/use-cases/${page.slug}`} parentHref="/use-cases" parentLabel="Use Cases" />

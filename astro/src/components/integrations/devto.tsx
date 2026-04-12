@@ -22,7 +22,7 @@ export function DevtoCard({ user, onUserUpdated }: DevtoCardProps) {
 
     return (<div className="">
         <div className="flex gap-4 items-center">
-            <img alt="" src={devto_logo.src} className="rounded-[5px] dark:invert" height={35} width={35} />
+            <img alt="Dev.to logo" src={devto_logo.src} className="rounded-[5px] dark:invert" height={35} width={35} />
             <h3 className="text-[19px]">Dev.to</h3>
         </div>
         <p className="text-[15px] mt-3">Connect Dev.to to cross post your content. Lorem ipsum dolor sit amet consectetur adipisicing elit. Qui, hic!</p>

@@ -1,0 +1,14 @@
+---
+import SectionIndexPage from "@/components/site/SectionIndexPage.astro";
+import { sectionIndexPages } from "@/lib/sitePages";
+
+const page = sectionIndexPages.features;
+---
+
+<SectionIndexPage
+  eyebrow={page.eyebrow}
+  title={page.title}
+  description={page.description}
+  path="/features"
+  links={page.links}
+/>

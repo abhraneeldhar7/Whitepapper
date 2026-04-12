@@ -1,0 +1,14 @@
+---
+import SectionIndexPage from "@/components/site/SectionIndexPage.astro";
+import { sectionIndexPages } from "@/lib/sitePages";
+
+const page = sectionIndexPages.compare;
+---
+
+<SectionIndexPage
+  eyebrow={page.eyebrow}
+  title={page.title}
+  description={page.description}
+  path="/compare"
+  links={page.links}
+/>

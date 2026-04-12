@@ -39,3 +39,4 @@ FastAPI can start, authenticate users, access Firestore/Storage, and run cache +
 
 - [Environment Files](/docs/self-host/environment-files)
 - [Cloud Run Backend](/docs/self-host/cloud-run-backend)
+\nLast updated: 12th April, 2026\n

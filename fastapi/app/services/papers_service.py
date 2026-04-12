@@ -364,15 +364,9 @@ class PapersService:
                 owner_username = None
         payload["updatedAt"] = utc_now()
         merged_doc = {**current, **payload}
-        metadata_in_payload = "metadata" in payload
 
         if force_metadata_refresh:
             payload["metadata"] = self._build_metadata(merged_doc)
-        elif not metadata_in_payload:
-            next_status = merged_doc.get(PAPER_STATUS_KEY) or "draft"
-            metadata_value = merged_doc.get("metadata")
-            if next_status == PAPER_STATUS_PUBLISHED and not metadata_value:
-                payload["metadata"] = self._build_metadata(merged_doc)
 
         firestore_store.update(PAPERS_COLLECTION, paper_id, payload)
         current.update(payload)
@@ -384,17 +378,11 @@ class PapersService:
         )
         return current
 
-    def generate_metadata_preview(self, paper_id: str, payload: dict) -> dict:
-        current = firestore_store.get(PAPERS_COLLECTION, paper_id)
-        if not current:
-            raise HTTPException(status_code=404, detail="Paper not found.")
-
-        preview_payload = dict(payload)
+    def generate_metadata_preview(self, paper_doc: dict) -> dict:
+        preview_payload = dict(paper_doc)
         if preview_payload.get("slug"):
             preview_payload["slug"] = normalize_slug(preview_payload["slug"])
-
-        merged_doc = {**current, **preview_payload}
-        return self._build_metadata(merged_doc)
+        return self._build_metadata(preview_payload)
 
     async def upload_thumbnail(self, paper_id: str, file: UploadFile) -> dict[str, str]:
         paper = self.get_by_id(paper_id)

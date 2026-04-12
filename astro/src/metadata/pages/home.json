@@ -1,7 +1,7 @@
 {
   "path": "/",
-  "title": "Whitepapper",
-  "description": "Whitepapper is a markdown-first CMS for developers to write once, publish to Dev.to, Hashnode, and Medium, and serve content through a fast read API.",
+  "title": "Whitepapper | Markdown-First Content Platform for Developers",
+  "description": "Whitepapper is a markdown-first content platform for developers who want to write once, publish across channels, and serve content through a fast read API.",
   "canonical": "/",
   "image": "/appLogo.png",
   "keywords": "developer CMS, markdown publishing platform, headless blog API, content API for portfolio, SEO content workflow, multi-channel content distribution",
@@ -10,14 +10,14 @@
   "siteName": "Whitepapper",
   "locale": "en_US",
   "ogType": "website",
-  "ogTitle": "Home",
-  "ogDescription": "Whitepapper is a markdown-first CMS for developers to write once, publish to Dev.to, Hashnode, and Medium, and serve content through a fast read API.",
+  "ogTitle": "Whitepapper | Markdown-First Content Platform for Developers",
+  "ogDescription": "Whitepapper is a markdown-first content platform for developers who want to write once, publish across channels, and serve content through a fast read API.",
   "ogUrl": "/",
   "ogImage": "src/assets/orgImage.png",
   "ogImageAlt": "Whitepapper | SEO-First CMS engine",
   "twitterCard": "summary_large_image",
-  "twitterTitle": "Whitepapper",
-  "twitterDescription": "Whitepapper is a markdown-first CMS for developers to write once, publish to Dev.to, Hashnode, and Medium, and serve content through a fast read API.",
+  "twitterTitle": "Whitepapper | Markdown-First Content Platform for Developers",
+  "twitterDescription": "Whitepapper is a markdown-first content platform for developers who want to write once, publish across channels, and serve content through a fast read API.",
   "twitterImage": "src/assets/orgImage.png",
   "twitterImageAlt": "Whitepapper | SEO-First Content OS for Developers social preview",
   "jsonLd": [
@@ -26,14 +26,19 @@
       "@type": "WebSite",
       "name": "Whitepapper",
       "url": "https://whitepapper.antk.in/",
-      "description": "SEO-first content operating system for developers."
+      "description": "Markdown-first content platform for developers.",
+      "inLanguage": "en"
     },
     {
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "Whitepapper",
       "url": "https://whitepapper.antk.in/",
-      "founder": "Abhraneel Dhar"
+      "logo": "https://whitepapper.antk.in/appLogo.png",
+      "founder": "Abhraneel Dhar",
+      "sameAs": [
+        "https://github.com/abhraneeldhar7/Whitepapper"
+      ]
     },
     {
       "@context": "https://schema.org",
@@ -59,4 +64,3 @@
     }
   ]
 }
-

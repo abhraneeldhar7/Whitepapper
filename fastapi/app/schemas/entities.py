@@ -209,11 +209,7 @@ class PaperUpdate(BaseModel):
 
 
 class PaperMetadataGenerate(BaseModel):
-    title: str | None = Field(default=None, min_length=1, max_length=200)
-    slug: str | None = Field(default=None, min_length=2, max_length=120)
-    body: str | None = None
-    status: Literal["draft", "published", "archived"] | None = None
-    thumbnailUrl: str | None = None
+    payload: PaperDoc
 
 
 class DistributionPublishInput(BaseModel):

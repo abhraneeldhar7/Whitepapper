@@ -32,3 +32,4 @@ Whitepapper is built for developers who:
 - Collection papers
 
 A **paper** is the core content unit. A **collection** groups related papers inside a project. A **project** is the top-level container with visibility and API key scope.
+\nLast updated: 12th April, 2026\n

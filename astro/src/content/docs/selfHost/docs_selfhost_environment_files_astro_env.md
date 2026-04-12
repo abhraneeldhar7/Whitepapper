@@ -33,3 +33,4 @@ Astro can render public pages and authenticated flows, and can call backend endp
 
 - [Environment Files](/docs/self-host/environment-files)
 - [Vercel Frontend](/docs/self-host/vercel-frontend)
+\nLast updated: 12th April, 2026\n

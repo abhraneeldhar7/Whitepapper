@@ -25,3 +25,4 @@ type DevProjectResponse = {
 | `401` | Missing or invalid API key |
 | `403` | Inactive key |
 | `429` | Monthly usage limit exceeded |
+\nLast updated: 12th April, 2026\n

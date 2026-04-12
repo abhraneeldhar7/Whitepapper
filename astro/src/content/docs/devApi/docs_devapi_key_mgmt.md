@@ -44,3 +44,4 @@ Use `POST /api-keys/{key_id}/reset`.
 - [Dev API Overview](/docs/dev-api/overview)
 - [Authentication](/docs/dev-api/authentication)
 - [Caching and Errors](/docs/dev-api/caching-and-errors)
+\nLast updated: 12th April, 2026\n

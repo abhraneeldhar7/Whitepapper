@@ -68,10 +68,10 @@ const importantDocs = importantDocRoutes
   .slice(0, 6);
 
 const cardClass =
-  "group block rounded-xl border border-border/70 bg-card p-4 transition-all duration-200 hover:border-foreground/20 hover:bg-muted/30";
+  "group block rounded-[6px] border border-border/50 bg-card p-4 transition-all duration-200 hover:bg-muted/30";
 const docsIndexSeo = {
   path: "/docs",
-  title: "Whitepapper Docs",
+  title: "Documentation | Whitepapper",
   description:
     "Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides.",
   canonical: "/docs",
@@ -79,18 +79,18 @@ const docsIndexSeo = {
     "whitepapper docs, developer docs, technical documentation, content workflow docs, api documentation",
   robots: "index, follow",
   ogType: "website",
-  ogTitle: "Whitepapper Docs",
+  ogTitle: "Documentation | Whitepapper",
   ogDescription:
     "Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides.",
   ogUrl: "/docs",
   twitterCard: "summary_large_image",
-  twitterTitle: "Whitepapper Docs",
+  twitterTitle: "Documentation | Whitepapper",
   twitterDescription:
     "Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides.",
   jsonLd: {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: "Whitepapper Docs",
+    name: "Whitepapper Documentation",
     description:
       "Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides.",
     url: `${Astro.url.origin}/docs`,
@@ -104,7 +104,7 @@ const docsIndexSeo = {
 ---
 
 <Layout
-  title="Whitepapper Docs"
+  title="Documentation | Whitepapper"
   description="Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides."
   seo={docsIndexSeo}
 >
@@ -123,14 +123,14 @@ const docsIndexSeo = {
           >
             <div class="md:hidden">
               <DocsMobileNav
-                client:load
+                client:idle
                 navSections={docsNavSections}
                 currentPath="/docs"
               />
             </div>
            <div class="w-full h-[20px] md:h-[32px] relative ">
                 <h1 class="absolute left-0 top-1/2 -translate-y-1/2 right-0 text-[20px] md:text-[32px] truncate font-[500] leading-[1.5em] md:px-[10px]">
-                  Whitepapper Documentation
+                  Documentation
                 </h1>
               </div>
           </div>
@@ -143,8 +143,29 @@ const docsIndexSeo = {
           API contracts and self-hosting.
         </p>
 
-        <section class="mt-10 w-full">
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-10">
+        <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <a href="/features/content-api" class={cardClass}>
+            <h2 class="text-[16px] font-[520]">Content API</h2>
+            <p class="mt-2 text-[14px] text-muted-foreground">
+              See how projects, collections, and papers map to a frontend-ready content API.
+            </p>
+          </a>
+          <a href="/features/distribution" class={cardClass}>
+            <h2 class="text-[16px] font-[520]">Distribution</h2>
+            <p class="mt-2 text-[14px] text-muted-foreground">
+              Connect the editor workflow to Dev.to, Hashnode, and Medium import paths.
+            </p>
+          </a>
+          <a href="/pricing" class={cardClass}>
+            <h2 class="text-[16px] font-[520]">Pricing</h2>
+            <p class="mt-2 text-[14px] text-muted-foreground">
+              Review the current free plan and the machine-readable pricing references linked for AI agents.
+            </p>
+          </a>
+        </div>
+
+        <section class="mt-4 w-full">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {
               sectionCards.map((card) => {
                 const Icon = card.icon;

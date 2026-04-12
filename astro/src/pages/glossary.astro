@@ -1,0 +1,14 @@
+---
+import SectionIndexPage from "@/components/site/SectionIndexPage.astro";
+import { sectionIndexPages } from "@/lib/sitePages";
+
+const page = sectionIndexPages.glossary;
+---
+
+<SectionIndexPage
+  eyebrow={page.eyebrow}
+  title={page.title}
+  description={page.description}
+  path="/glossary"
+  links={page.links}
+/>

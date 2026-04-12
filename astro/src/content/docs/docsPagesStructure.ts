@@ -4,6 +4,7 @@ export type DocsPageEntry = {
   location: string;
   order: number;
   description: string;
+  sectionTitle: string;
   children?: DocsPageEntry[];
 };
 
@@ -18,7 +19,24 @@ export type DocsPageNeighbors = {
   next: DocsPageEntry | null;
 };
 
-export const docsNavSections: DocsNavSection[] = [
+type DocsPageSeed = {
+  title: string;
+  route: string;
+  location: string;
+  order: number;
+  description: string;
+  children?: DocsPageSeed[];
+};
+
+function enrichPage(page: DocsPageSeed, sectionTitle: string): DocsPageEntry {
+  return {
+    ...page,
+    sectionTitle,
+    children: page.children?.map((child) => enrichPage(child, sectionTitle)),
+  };
+}
+
+const rawDocsNavSections: Array<{ title: string; order: number; pages: DocsPageSeed[] }> = [
   {
     title: "Getting Started",
     order: 1,
@@ -78,7 +96,7 @@ export const docsNavSections: DocsNavSection[] = [
     order: 3,
     pages: [
       {
-        title: "Overview",
+        title: "Editor Overview",
         route: "/docs/editor/overview",
         location: "editor/docs_editor_overview.md",
         order: 1,
@@ -105,7 +123,7 @@ export const docsNavSections: DocsNavSection[] = [
     order: 4,
     pages: [
       {
-        title: "Overview",
+        title: "SEO Overview",
         route: "/docs/seo/overview",
         location: "seo/docs_seo_overview.md",
         order: 1,
@@ -139,7 +157,7 @@ export const docsNavSections: DocsNavSection[] = [
     order: 5,
     pages: [
       {
-        title: "Overview",
+        title: "Dev API Overview",
         route: "/docs/dev-api/overview",
         location: "devApi/docs_devapi_overview.md",
         order: 1,
@@ -160,7 +178,7 @@ export const docsNavSections: DocsNavSection[] = [
         description: "Create, view, enable, disable, reset, and usage tracking flow.",
       },
       {
-        title: "Contracts",
+        title: "Dev API Contracts",
         route: "/docs/dev-api/contracts",
         location: "devApi/docs_devapi_contracts.md",
         order: 4,
@@ -203,7 +221,7 @@ export const docsNavSections: DocsNavSection[] = [
     order: 6,
     pages: [
       {
-        title: "Overview",
+        title: "Distribution Overview",
         route: "/docs/distribution/overview",
         location: "distribution/docs_distribution_overview.md",
         order: 1,
@@ -244,7 +262,7 @@ export const docsNavSections: DocsNavSection[] = [
     order: 7,
     pages: [
       {
-        title: "Overview",
+        title: "Self Host Overview",
         route: "/docs/self-host/overview",
         location: "selfHost/docs_selfhost_overview.md",
         order: 1,
@@ -318,6 +336,12 @@ export const docsNavSections: DocsNavSection[] = [
     ],
   },
 ];
+
+export const docsNavSections: DocsNavSection[] = rawDocsNavSections.map((section) => ({
+  title: section.title,
+  order: section.order,
+  pages: section.pages.map((page) => enrichPage(page, section.title)),
+}));
 
 function sortByOrder<T extends { order: number }>(items: T[]): T[] {
   return items.slice().sort((a, b) => a.order - b.order);

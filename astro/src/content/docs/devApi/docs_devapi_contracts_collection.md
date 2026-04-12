@@ -28,3 +28,4 @@ type DevCollectionResponse = {
 | `403` | Inactive key or cross-project collection |
 | `404` | Collection not found |
 | `429` | Monthly usage limit exceeded |
+\nLast updated: 12th April, 2026\n
