@@ -29,7 +29,7 @@ export default function DocsMobileNav({ navSections, currentPath }: DocsMobileNa
           <MenuIcon />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="data-[side=left]:w-full p-1 bg-background/40 dark:bg-background/70">
+      <SheetContent side="left" className="data-[side=left]:w-full p-1 bg-background/60 dark:bg-background/70">
         <SheetHeader>
           <SheetTitle className="flex gap-4 items-center">
             <img src="/appLogo.png" height="30" width="30" alt="Whitepapper" />
