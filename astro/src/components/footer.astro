@@ -1,6 +1,44 @@
 ---
 import { FooterThemeToggler } from "./FooterThemeToggler";
 import { Label } from "./ui/label";
+
+const footerLinkGroups = [
+  {
+    title: "Content",
+    links: [
+      { href: "/blogs", label: "Blogs" },
+      { href: "/updates", label: "Updates" },
+      { href: "/resources", label: "Resources" },
+      { href: "/docs", label: "Docs" },
+    ],
+  },
+  {
+    title: "Product",
+    links: [
+      { href: "/components", label: "Components" },
+      { href: "/features", label: "Features" },
+      { href: "/integrations", label: "Integrations" },
+      { href: "/pricing", label: "Pricing" },
+    ],
+  },
+  {
+    title: "Explore",
+    links: [
+      { href: "/use-cases", label: "Use Cases" },
+      { href: "/compare", label: "Compare" },
+      { href: "/glossary", label: "Glossary" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { href: "/about", label: "About us" },
+      { href: "/contact", label: "Contact" },
+      { href: "/terms-of-service", label: "Terms of service" },
+      { href: "/privacy-policy", label: "Privacy policy" },
+    ],
+  },
+];
 ---
 
 <div
@@ -26,37 +64,18 @@ import { Label } from "./ui/label";
     </div>
 
     <div class="grid md:gap-12 gap-10 md:grid-cols-4 grid-cols-2 linkDiv">
-      <div class="flex flex-col gap-1">
-        <Label className="mb-1">Blogs</Label>
-        <a href="/blogs" data-astro-prefetch="viewport">Blogs</a>
-        <a href="/updates">Updates</a>
-        <a href="/resources">Resources</a>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <Label className="mb-1">Legal</Label>
-        <a href="/about" data-astro-prefetch="viewport">About us</a>
-        <a href="/terms-of-service" data-astro-prefetch="viewport">Terms of service</a>
-        <a href="/privacy-policy" data-astro-prefetch="viewport">Privacy policy</a>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <Label className="mb-1">Docs</Label>
-        <a href="/docs/intro" data-astro-prefetch="viewport">Introduction</a>
-        <a href="/docs/quickstart" data-astro-prefetch="viewport">Quickstart</a>
-        <a href="/docs/dev-api/overview" data-astro-prefetch="viewport">Dev API</a>
-        <a href="/use-cases" data-astro-prefetch="viewport">Use Cases</a>
-        <a href="/compare" data-astro-prefetch="viewport">Compare</a>
-        <a href="/pricing" data-astro-prefetch="viewport">Pricing</a>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <Label className="mb-1">Site</Label>
-        <a href="/contact" data-astro-prefetch="viewport">Contact</a>
-        <a href="/features" data-astro-prefetch="viewport">Features</a>
-        <a href="/integrations" data-astro-prefetch="viewport">Integrations</a>
-        <a href="/glossary" data-astro-prefetch="viewport">Glossary</a>
-      </div>
+      {
+        footerLinkGroups.map((group) => (
+          <div class="flex flex-col gap-1">
+            <Label className="mb-1">{group.title}</Label>
+            {
+              group.links.map((link) => (
+                <a href={link.href} data-astro-prefetch="viewport">{link.label}</a>
+              ))
+            }
+          </div>
+        ))
+      }
     </div>
   </div>
 

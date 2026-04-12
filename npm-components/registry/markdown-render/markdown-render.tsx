@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import remarkHighlight from 'remark-highlight';
 import rehypeRaw from 'rehype-raw';
 import { createHighlighter, type BuiltinLanguage } from 'shiki';
+import { isInternalHref, isPlaceholderHref } from '@/lib/seo';
 
 const SHIKI_THEME = 'one-dark-pro';
 const SHIKI_LANGS: BuiltinLanguage[] = [
@@ -73,6 +74,8 @@ type PostRenderProps = {
 }
 
 function MarkdownActionIcon({ className, dataAttr }: { className?: string; dataAttr: 'data-copy-icon' | 'data-check-icon' }) {
+    const isCheck = dataAttr === 'data-check-icon';
+
     return (
         <svg
             width="14"
@@ -83,13 +86,26 @@ function MarkdownActionIcon({ className, dataAttr }: { className?: string; dataA
             className={className}
             {...{ [dataAttr]: true }}
         >
-            <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2" />
-            <path d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            {isCheck ? (
+                <path
+                    d="M20 6L9 17L4 12"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            ) : (
+                <>
+                    <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2" />
+                    <path d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </>
+            )}
         </svg>
     );
 }
 
 export default function MarkdownRender({ content, contentContainerId }: PostRenderProps) {
+    const siteUrl = String(import.meta.env.PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://whitepapper.antk.in')).trim();
 
     return (
         <div>
@@ -100,18 +116,43 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                     rehypePlugins={[rehypeRaw]}
                     components={{
                         a: ({ node, ...props }) => {
+                            const href = String(props.href || '').trim();
+                            if (isPlaceholderHref(href)) {
+                                return <span {...props}>{props.children}</span>;
+                            }
+
+                            const external = href ? !isInternalHref(href, siteUrl) : false;
                             return (
                                 <a
-                                    href={props.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    href={href}
+                                    target={external ? "_blank" : undefined}
+                                    rel={external ? "noopener noreferrer" : undefined}
                                     {...props}
                                 />
                             );
                         },
-                        code({ node, inline, className, children, ...props }: any) {
+                        img: ({ node, alt, src, ...props }) => {
+                            const fallbackAlt = String(src || '')
+                                .split('/')
+                                .pop()
+                                ?.replace(/\.[a-z0-9]+$/i, '')
+                                ?.replace(/[-_]+/g, ' ')
+                                ?.trim() || 'Article image';
+
+                            return (
+                                <img
+                                    src={src}
+                                    alt={String(alt || fallbackAlt)}
+                                    loading="lazy"
+                                    decoding="async"
+                                    {...props}
+                                />
+                            );
+                        },
+                        code({ node, className, children, ...props }: any) {
                             const match = /language-(\w+)/.exec(className || '');
                             const codeText = String(children).replace(/\n$/, '');
+                            const inline = !className;
 
                             return !inline ? (
                                 <div className="markdownCodeBlock">

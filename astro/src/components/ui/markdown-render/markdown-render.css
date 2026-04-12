@@ -177,15 +177,18 @@
 
 
 /* Inline Code */
-/* .markdownDiv code:not(pre code) {
+.markdownDiv code:not(.shiki code) {
     font-size: 0.85em;
-    font-weight: 450;
+    font-weight: 500 !important;
     background-color: var(--muted) !important;
     color: var(--foreground, #1a1a1a) !important;
-    padding: 0.2em 0.4em;
+    padding: 0.35em 0.6em;
     border-radius: 4px;
-    margin: 0 2px;
-} */
+    margin: 1.5em 0;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
 
 .markdownHidden {
     display: none;
@@ -193,9 +196,6 @@
 
 
 /* Block Code */
-.markdownCodeBlock {
-    position: relative;
-}
 
 .markdownCopyButton {
     position: absolute;
@@ -225,14 +225,20 @@
     }
 }
 
-.markdownDiv pre pre {
+.markdownDiv .markdownCodeBlock{
+    position: relative;
+}
+.markdownDiv .markdownCodeBlock .shiki {
     background-color: var(--card) !important;
     font-size: 0.9em;
+    /* border: 1px solid var(--border) !important; */
     border-radius: 8px !important;
     padding: 0.8em 1.2em !important;
     max-height: 300px;
     overflow: auto !important;
     scrollbar-width: none !important;
+    margin: 1.5em 0;
+    font-weight: 500 !important;
 }
 
 .markdownDiv pre::-webkit-scrollbar {

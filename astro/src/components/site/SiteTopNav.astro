@@ -9,12 +9,21 @@ interface Props {
 
 const { isSignedIn = false } = Astro.props as Props;
 
-const navButtonsList = [
+const desktopNavButtonsList = [
   { title: "Docs", href: "/docs" },
   { title: "Use Cases", href: "/use-cases" },
   { title: "Blogs", href: "/blogs" },
-  // { title: "Compare", href: "/compare" },
-  // { title: "Features", href: "/features" },
+  { title: "Components", href: "/components" },
+  { title: "Integrations", href: "/integrations" },
+  { title: "Pricing", href: "/pricing" },
+];
+const mobileNavButtonsList = [
+  { title: "Docs", href: "/docs" },
+  { title: "Use Cases", href: "/use-cases" },
+  { title: "Blogs", href: "/blogs" },
+  { title: "Components", href: "/components" },
+  { title: "Compare", href: "/compare" },
+  { title: "Features", href: "/features" },
   { title: "Integrations", href: "/integrations" },
   { title: "Pricing", href: "/pricing" },
 ];
@@ -35,7 +44,7 @@ const navButtonsList = [
 
     <div class="hidden gap-3 text-[14px] leading-[1em] md:flex" role="list">
       {
-        navButtonsList.map((button) => (
+        desktopNavButtonsList.map((button) => (
           <a
             href={button.href}
             data-astro-prefetch="viewport"
@@ -64,7 +73,7 @@ const navButtonsList = [
       <div class="md:hidden">
         <LandingMobileMenu
           client:idle
-          navButtons={navButtonsList}
+          navButtons={mobileNavButtonsList}
           isSignedIn={isSignedIn}
         />
       </div>
