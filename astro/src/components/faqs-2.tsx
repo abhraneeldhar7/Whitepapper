@@ -42,13 +42,13 @@ export default function FAQs({
     description = "Your questions answered",
 }: FAQsProps) {
     return (
-        <section className="bg-background @container py-24">
-            <div className="mx-auto max-w-3xl px-6">
-                <div className="@xl:flex-row @xl:items-start @xl:gap-12 flex flex-col gap-8">
-                    <div className="@xl:sticky @xl:top-24 @xl:w-64 shrink-0">
-                        <h2 className="text-3xl font-medium">{title}</h2>
-                        <p className="text-muted-foreground mt-3 text-sm">{description}</p>
-                        <p className="text-muted-foreground @xl:block mt-6 hidden text-sm">
+        <section className=" py-24">
+            <div className="mx-auto max-w-[900px]">
+                <div className="md:flex-row md:items-start md:gap-12 flex flex-col gap-8">
+                    <div className="md:sticky md:top-24 self-start h-fit md:w-[340px]">
+                        <h2 className="text-[32px] font-[500]">{title}</h2>
+                        <p className="text-muted-foreground mt-1 text-[15px]">{description}</p>
+                        <p className="text-muted-foreground mt-1 text-[15px]">
                             Need more help?{' '}
                             <a
                                 href="/contact"

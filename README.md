@@ -52,6 +52,27 @@ Project owners can generate read-only API keys from the project dashboard settin
 - `GET /dev/projects?id={projectId}`
 - `GET /dev/projects?slug={projectSlug}`
 
+## MCP
+
+Whitepapper exposes one standard streamable HTTP MCP server from the FastAPI app:
+
+- Server URL: `/mcp`
+- OAuth metadata: `/.well-known/oauth-authorization-server` and `/.well-known/openid-configuration`
+- Project-scoped browser connect flow: `/mcp/authorize`
+
+Example manual config:
+
+```json
+{
+  "servers": {
+    "whitepapper": {
+      "type": "http",
+      "url": "http://127.0.0.1:8000/mcp"
+    }
+  }
+}
+```
+
 Example:
 
 ```bash

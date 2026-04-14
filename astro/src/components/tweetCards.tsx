@@ -1,81 +1,76 @@
-import { isDesktopUserAgent } from "@/lib/userAgent";
+import { useEffect, useState } from "react";
+
+interface Tweet {
+  id: string;
+  author: string;
+  handle: string;
+  content: string;
+  time: string;
+}
+
+const TWEETS_DATA: Tweet[] = Array.from({ length: 10 }).map((_, i) => ({
+  id: `tweet-${i}`,
+  author: `User ${i + 1}`,
+  handle: `@user${i + 1}_dev`,
+  content: `This is tweet number ${i + 1}. Building an awesome stacking card animation using pure React, Tailwind, and CSS transitions!`,
+  time: `${i + 1}h`,
+}));
+
+const MAX_VISIBLE_CARDS = 4;
+const SWIPE_INTERVAL_MS = 1500;
+const SWIPE_DURATION_MS = 500;
 
 export default function TweetStack() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
-  const isDesktop = isDesktopUserAgent(typeof navigator !== "undefined" ? navigator.userAgent : "");
+  const [cards, setCards] = useState<Tweet[]>(TWEETS_DATA);
+  const [isSwiping, setIsSwiping] = useState(false);
 
-  // Handle the auto-play timer
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
 
-    if (direction === 'forward') {
-      if (activeIndex < TWEETS_DATA.length - 1) {
-        // Swipe next card every 1.5 seconds
-        timer = setTimeout(() => {
-          setActiveIndex((prev) => prev + 1);
-        }, 1500);
-      } else {
-        // Reached the last card: wait 1.5s then trigger reverse
-        timer = setTimeout(() => {
-          setDirection('backward');
-        }, 1500);
-      }
+    if (cards.length === 0) {
+      return;
+    }
+
+    if (isSwiping) {
+      timer = setTimeout(() => {
+        setCards((prev) => {
+          if (prev.length <= 1) {
+            return prev;
+          }
+          return [...prev.slice(1), prev[0]];
+        });
+        setIsSwiping(false);
+      }, SWIPE_DURATION_MS);
     } else {
-      if (activeIndex > 0) {
-        // Reverse fast: every 0.2 seconds
-        timer = setTimeout(() => {
-          setActiveIndex((prev) => prev - 1);
-        }, 200);
-      } else {
-        // Back to start: wait 1.5s then go forward again
-        timer = setTimeout(() => {
-          setDirection('forward');
-        }, 1500);
-      }
+      timer = setTimeout(() => {
+        setIsSwiping(true);
+      }, SWIPE_INTERVAL_MS);
     }
 
     return () => clearTimeout(timer);
-  }, [activeIndex, direction]);
+  }, [cards.length, isSwiping]);
 
   return (
-    <div className="flex items-center justify-center w-full py-10 px-4">
-      {/* Container needs to be relative and large enough to hold the offset cards */}
-      <div className="relative w-full md:w-[400px]  h-[300px]">
-        {TWEETS_DATA.map((tweet, index) => {
-          // 'pos' represents the card's position relative to the active card
-          const pos = index - activeIndex;
+    <div className="flex items-center justify-center h-[360px] overflow-hidden">
+      <div className="relative w-[320px] sm:w-[400px] h-[220px]">
+        {cards.map((tweet, index) => {
+          const isTopCard = index === 0;
+          const isSwiped = isSwiping && isTopCard;
+          const visualPos = isSwiping ? index - 1 : index;
+          const clampedPos = Math.min(Math.max(visualPos, 0), MAX_VISIBLE_CARDS - 1);
 
-          // If pos < 0, it means the card has been swiped away
-          const isSwiped = pos < 0;
-
-          // Clamp the position so cards behind the MAX_VISIBLE_CARDS sit exactly 
-          // at the position of the last visible card (perfectly overshadowed).
-          const clampedPos = Math.min(Math.max(pos, 0), MAX_VISIBLE_CARDS - 1);
-
-          // Calculate visual offsets
           let translateX = 0;
           let translateY = 0;
-          let scale = 1;
           let opacity = 1;
-          
-          // Higher original index means it's deeper in the stack. 
-          // Z-index must be highest for the front-most cards.
-          const zIndex = TWEETS_DATA.length - index;
+          const zIndex = cards.length - index;
 
           if (isSwiped) {
-            // Swiped cards go right and fade out
-            translateX = 400; 
+            translateX = 400;
             opacity = 0;
           } else {
-            // Stack logic: Each consecutive card is lifted up (-Y) and left (-X)
-            translateX = isDesktop ? -clampedPos * 20 : 0; // X offset only on desktop
-            translateY = -clampedPos * 20; // 20px up per stack level
-            scale = isDesktop ? 1 : Math.max(0.85, 1 - clampedPos * 0.05); // Mobile cards get progressively smaller
-            
-            // Hide cards that are beyond the visible limit so their shadows/borders 
-            // don't bleed through the last visible card
-            if (pos >= MAX_VISIBLE_CARDS) {
+            translateX = -clampedPos * 20;
+            translateY = -clampedPos * 20;
+            if (visualPos >= MAX_VISIBLE_CARDS) {
               opacity = 0;
             }
           }
@@ -83,44 +78,34 @@ export default function TweetStack() {
           return (
             <div
               key={tweet.id}
-              className={`absolute top-0 left-0 w-full p-6 bg-white rounded-2xl shadow-xl border border-slate-100 ease-out`}
+              className="absolute top-0 left-0 w-full p-6 bg-white rounded-2xl shadow-xl border border-slate-100 ease-out"
               style={{
-                // duration-500 css transition creates the smooth slide in/out
-                transition: 'transform 0.5s ease-out, opacity 0.5s ease-out',
-                transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
-                opacity: opacity,
-                zIndex: zIndex,
+                transition: "transform 0.5s ease-out, opacity 0.5s ease-out",
+                transform: `translate(${translateX}px, ${translateY}px)`,
+                opacity,
+                zIndex,
               }}
             >
-              {/* Tweet Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 font-bold">
                     {tweet.author.charAt(0)}
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-bold text-slate-800 leading-tight">
-                      {tweet.author}
-                    </span>
-                    <span className="text-sm text-slate-500 leading-tight">
-                      {tweet.handle}
-                    </span>
+                    <span className="font-bold text-slate-800 leading-tight">{tweet.author}</span>
+                    <span className="text-sm text-slate-500 leading-tight">{tweet.handle}</span>
                   </div>
                 </div>
                 <span className="text-slate-400 text-sm">{tweet.time}</span>
               </div>
 
-              {/* Tweet Body */}
-              <p className="text-slate-700 leading-relaxed mb-4">
-                {tweet.content}
-              </p>
+              <p className="text-slate-700 leading-relaxed mb-4">{tweet.content}</p>
 
-              {/* Tweet Actions (Mock) */}
               <div className="flex items-center justify-between text-slate-400 text-sm pr-4">
-                <button className="hover:text-blue-500 transition-colors">💬 12</button>
-                <button className="hover:text-green-500 transition-colors">🔁 4</button>
-                <button className="hover:text-red-500 transition-colors">❤️ 48</button>
-                <button className="hover:text-blue-500 transition-colors">📊 1.2k</button>
+                <button className="hover:text-blue-500 transition-colors">Reply 12</button>
+                <button className="hover:text-green-500 transition-colors">Repost 4</button>
+                <button className="hover:text-red-500 transition-colors">Like 48</button>
+                <button className="hover:text-blue-500 transition-colors">Views 1.2k</button>
               </div>
             </div>
           );

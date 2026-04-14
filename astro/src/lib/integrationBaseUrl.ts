@@ -7,12 +7,10 @@ export function resolveIntegrationBaseUrl(
   }
 
   const isDev = Boolean(import.meta.env.DEV);
-  const productionBase = String(
-    (import.meta.env.PUBLIC_PRODUCTION_BASE_URL ?? import.meta.env.PRODUCTION_BASE_URL ?? "") as string,
-  ).trim();
   const publicSiteBase = String((import.meta.env.PUBLIC_SITE_URL ?? "") as string).trim();
 
-  const fromEnv = isDev ? productionBase : (publicSiteBase || productionBase);
+  // In local development we must not fall back to production domains.
+  const fromEnv = publicSiteBase;
   if (fromEnv) {
     return fromEnv.replace(/\/+$/, "");
   }

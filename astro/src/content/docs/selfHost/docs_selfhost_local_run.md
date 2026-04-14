@@ -30,6 +30,22 @@ uvicorn app.main:app --reload --port 8000
 
 - Frontend: `http://localhost:4321`
 - Backend health: `http://127.0.0.1:8000/health` returns `{"status":"ok"}`
+- MCP server: `http://127.0.0.1:8000/mcp`
+
+## MCP manual config
+
+Use the FastAPI backend as the single MCP server:
+
+```json
+{
+  "servers": {
+    "whitepapper": {
+      "type": "http",
+      "url": "http://127.0.0.1:8000/mcp"
+    }
+  }
+}
+```
 
 ## Common errors
 
@@ -38,6 +54,7 @@ uvicorn app.main:app --reload --port 8000
 | Frontend cannot reach API | Wrong `PUBLIC_API_BASE_URL` | Set to local backend URL |
 | Auth errors | Clerk dev keys mismatch | Update Clerk env values |
 | Redis/cache warnings | Valkey config missing | Configure Valkey env or run without cache dependency |
+| MCP browser auth redirects wrong | `PUBLIC_SITE_URL` or `PUBLIC_API_URL` points at production | Set both FastAPI URLs to local values when running locally |
 
 ## Related pages
 

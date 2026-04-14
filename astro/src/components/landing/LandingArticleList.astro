@@ -16,16 +16,24 @@ const { items, className = "" } = Astro.props as Props;
 <div class={`flex flex-col ${className}`}>
 	{
 		items.map((item, index) => (
-			<a href={item.href} class="" data-astro-prefetch="viewport">
-				<div class="group">
-					<h3 class="group-hover:underline text-[18px]">{item.title}</h3>
+			<div>
+				<a
+					href={item.href}
+					class="h-full w-full"
+					data-astro-prefetch="viewport"
+				>
+					<h3 class="hover:underline text-[18px]">{item.title}</h3>
 					<div class="flex justify-between mt-1">
-						<p class="text-[14px] text-muted-foreground">{item.readTime}</p>
-						<a href={item.href} class="text-[14px] hover:underline">Read</a>
+						<p class="text-[14px] text-muted-foreground">
+							{item.readTime}
+						</p>
+						<p class="text-xs">Read</p>
 					</div>
-				</div>
-				{index < items.length - 1 && <div class="border-b w-full my-5"></div>}
-			</a>
+				</a>
+				{index < items.length - 1 && (
+					<div class="border-b w-full my-5" />
+				)}
+			</div>
 		))
 	}
 </div>

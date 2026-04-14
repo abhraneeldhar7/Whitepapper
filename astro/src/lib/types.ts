@@ -156,3 +156,37 @@ export type ApiKeyDoc = ApiKeySummary;
 export type ApiKeyCreateResponse = ApiKeySummary & {
   rawKey: string;
 };
+
+export type McpTokenSummary = {
+  tokenId: string;
+  projectId: string;
+  workspaceId: string;
+  label?: string | null;
+  createdAt: string;
+  expiresAt: string;
+  usage: number;
+  limitPerMonth: number;
+};
+
+export type McpOAuthRequestSummary = {
+  requestId: string;
+  clientId: string;
+  clientName?: string | null;
+  scopes: string[];
+};
+
+export type McpConnectionInfo = {
+  serverName: string;
+  transport: "http";
+  endpointUrl: string;
+  manualConfig: {
+    servers: Record<
+      string,
+      {
+        url: string;
+        type: "http";
+      }
+    >;
+    inputs: unknown[];
+  };
+};

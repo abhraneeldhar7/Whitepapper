@@ -50,8 +50,8 @@ export default function IntegrationsSection() {
                     </div>
 
                     <div className="mt-12 grid gap-7 md:grid-cols-3 grid-cols-1">
-                        {integrations.map((item) => (
-                            <IntegrationCard title={item.title} description={item.description} logo={item.logo} link={item.href} />
+                        {integrations.map((item, index) => (
+                            <IntegrationCard title={item.title} description={item.description} logo={item.logo} key={index} link={item.href} />
                         ))}
 
                         <Card className="p-5">

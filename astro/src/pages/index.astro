@@ -11,6 +11,7 @@ import IntegrationsSection from "@/components/integrations-4";
 import FAQs from "@/components/faqs-2";
 
 import BlogsPageImg from "@/assets/landingPage/blogsPage.png";
+import TweetStack from "@/components/tweetCards";
 
 const featuredArticles = [
 	{
@@ -22,11 +23,6 @@ const featuredArticles = [
 		title: "How to Make Your Brand Recognizable to AI Systems",
 		readTime: "1 min read",
 		href: "/abhraneeldhar7/paper-5846b146-e7a0-424f-8eff-2818b695fe1e",
-	},
-	{
-		title: "GEO: The Complete Guide to Showing Up in AI Search Results",
-		readTime: "1 min read",
-		href: "/abhraneeldhar7/paper-a396d657-361a-4392-bf8f-819043c1f11b",
 	},
 ];
 
@@ -78,15 +74,87 @@ const homeExploreLinks = [
 	},
 ];
 
+import { MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
+import {
+	BookMarkedIcon,
+	BotIcon,
+	GithubIcon,
+	SearchCheckIcon,
+	SquareMIcon,
+	UnplugIcon,
+	WorkflowIcon,
+	ZapIcon,
+} from "lucide-react";
+
 Astro.response.headers.set(
 	"Cache-Control",
 	"public, max-age=600, s-maxage=3600, stale-while-revalidate=86400",
 );
+
+const featuresDivs = [
+	{
+		icon: ZapIcon,
+		title: "Fast",
+		description:
+			"Cached at edge using Cloudflare CDN for global fast access.",
+	},
+	{
+		icon: WorkflowIcon,
+		title: "Distribution",
+		description:
+			"One-click distribution to Dev.to, Hashnode, and Medium, Linkedin",
+	},
+	{
+		icon: SearchCheckIcon,
+		title: "SEO",
+		description:
+			"Automated SEO emtatags and JSON-LD generation for every paper.",
+	},
+	{
+		icon: UnplugIcon,
+		title: "Content API",
+		description: "Zero configuration API to power your websites",
+	},
+	{
+		icon: SquareMIcon,
+		title: "WYSIWYG Editor",
+		description: "Rich markdown editor with in-built SEO handling.",
+	},
+	{
+		icon: BotIcon,
+		title: "MCP ready",
+		description: "Make your agents write SEO rich structured content.",
+	},
+	{
+		icon: GithubIcon,
+		title: "Open Source",
+		description: "Fully open source on GitHub with a self hosting guide",
+	},
+	{
+		icon: BookMarkedIcon,
+		title: "Learn",
+		description:
+			"Read how whitepapper pushes your content above other platforms",
+	},
+];
+
+import worldmapDots from "@/assets/landingPage/worldmapDots.png";
+import {ApiShowcase} from "@/components/apiShowcase.tsx";
 ---
 
 <Layout reserveNavSpace={false}>
-	<main class="relative mb-20 overflow-hidden" aria-label="Whitepapper home">
-		<div class="mx-auto w-full">
+		<main class="relative mb-20" aria-label="Whitepapper home">
+			
+			<section
+			class="relative flex flex-col items-start justify-start pt-40 md:pt-50 h-full overflow-hidden px-5 md:px-15"
+			aria-labelledby="home-hero-title"
+			>
+			<div
+			class="pb-[50px] mx-auto w-full"
+			style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+			>
+			
+			<div class="mx-auto w-full"></div>
 			<div
 				class="absolute left-[-80%] top-[3%] z-[-1] h-[10px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-30%] md:top-[-2%]"
 				aria-hidden="true"
@@ -97,189 +165,86 @@ Astro.response.headers.set(
 				aria-hidden="true"
 			>
 			</div>
-
-			<section
-				class="relative flex flex-col items-start justify-start pt-28 md:pt-30 h-full overflow-hidden"
-				aria-labelledby="home-hero-title"
-			>
-				<div
-					class="px-5 md:px-15 pb-[50px] mx-auto w-full max-w-[1500px]"
+				<h1
+					id="home-hero-title"
+					class="heroText text-[30px] md:text-[45px] flex md:flex-row flex-col md:gap-4 font-[500]"
 				>
-					<h1
-						id="home-hero-title"
-						class="heroText text-[50px] md:text-[60px] flex md:flex-row flex-col md:gap-4 font-[450]"
-					>
-						<span>SEO first</span><span> content engine</span>
-					</h1>
+					Most powerful <br />Content managemenent system
+				</h1>
 
-					<div
-						class="my-4 space-y-2 text-[18px] text-muted-foreground md:w-[700px]"
-					>
-						<p class="heroText" style="animation-delay: 0.25s;">
-							Whitepapper is a SEO-enforced content platform for
-							developers who want one writing workflow for blogs,
-							docs, updates, public pages, and API-backed
-							frontends.<br /> <strong class="font-[450]">Own everything, distribute everywhere.</strong>
-						</p>
-					</div>
+				<div class="my-4 space-y-2 text-muted-foreground md:w-[700px]">
+					<p class="heroText" style="animation-delay: 0.25s;"></p>
+				</div>
 
-					<!-- <div class="flex gap-2 items-center justify-center w-full mt-5">
-			<p class="text-[12px]">Not backed by</p>
-			<div
-			class="bg-[#fb6518] text-[white] text-[11px] font-[400] leading-[12px] w-[20px] h-[20px] flex items-center justify-center"
-			>
-			Y
+				<div
+					class="heroText mt-8 relative p-3 md:p-10 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
+					style="animation-delay: 0.3s; animation-duration: 0.8s;"
+				>
+					<Image
+						src={BlueBgPattern}
+						alt="Green pattern background"
+						class="absolute left-0 top-0 z-[-1] h-full w-full"
+						loading="eager"
+						quality={60}
+					/>
+					<Image
+						src={HeroDashboardLight}
+						alt="Whitepapper dashboard preview"
+						class="h-fit w-full rounded-[10px]"
+						loading="eager"
+						fetchpriority="high"
+					/>
+				</div>
 			</div>
-			</div> -->
 
-					<div
-						class="heroText mt-8 relative p-3 md:p-15 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
-						style="animation-delay: 0.3s; animation-duration: 0.8s;"
-					>
-						<Image
-							src={BlueBgPattern}
-							alt="Green pattern background"
-							class="absolute left-0 top-0 z-[-1] h-full w-full"
-							loading="eager"
-							quality={60}
-						/>
-						<Image
-							src={HeroDashboardLight}
-							alt="Whitepapper dashboard preview"
-							class="h-fit w-full rounded-[10px]"
-							loading="eager"
-							fetchpriority="high"
-						/>
-					</div>
-				</div>
-
-				<div
-					class="heroText absolute bottom-[5%] md:bottom-[25%] left-[50%] z-[-1] h-[110vw] w-[200vw] translate-x-[-50%] translate-y-[54%] overflow-hidden rounded-[50%] md:w-[150vw] md:translate-y-[85%] ease-in"
-					style="animation-delay: 0.5s;"
-				>
-					<div
-						class="h-[110vw] w-full rounded-[50%] border-[5px] border-foreground/80 blur-[20px]"
-						aria-hidden="true"
-					>
-					</div>
-				</div>
-			</section>
-
-			<p class="px-5 md:px-15 text-center my-5 mx-auto">
-				The internet was yours first.
-			</p>
-
-			<section
-				class="mt-14 mx-auto flex w-full max-w-[1500px] flex-col gap-15 md:gap-40 px-5 md:px-15"
-				style="content-visibility:auto; contain-intrinsic-size: 1800px;"
-				aria-label="Product highlights"
+			<div
+				class="heroText absolute bottom-[5%] md:bottom-[25%] left-[50%] z-[-1] h-[110vw] w-[200vw] translate-x-[-50%] translate-y-[54%] overflow-hidden rounded-[50%] md:w-[150vw] md:translate-y-[85%] ease-in"
+				style="animation-delay: 0.5s;"
 			>
 				<div
-					class="flex w-full flex-col-reverse gap-6 md:flex-row md:items-start md:gap-20"
+					class="h-[110vw] w-full rounded-[50%] border-[5px] border-foreground/80 blur-[20px]"
+					aria-hidden="true"
 				>
-					<div class="flex-1">
-						<div
-							class="relative h-full w-full overflow-hidden rounded-[18px] md:rounded-[36px] p-3 md:p-8"
-						>
-							<Image
-								src={BlueBgPattern}
-								alt="Green pattern background"
-								class="absolute left-0 top-0 z-[-1] h-full w-full"
-								loading="lazy"
-								quality={70}
-								decoding="async"
-							/>
-							<Image
-								src={MetatagsEditorLight}
-								alt="Editor preview"
-								class="h-full w-full object-cover rounded-[8px] md:rounded-[12px]"
-								loading="lazy"
-								decoding="async"
-							/>
-						</div>
+				</div>
+			</div>
+		</section>
 
-						<LandingArticleList
-							items={featuredArticles}
-							className="md:hidden mt-5"
-						/>
-					</div>
-
-					<div class="md:flex-1">
-						<div>
-							<h2 class="text-[30px] font-[450]">
-								SEO defaults, out of the box
-							</h2>
-							<p
-								class="mt-1 text-[17px] text-muted-foreground leading-[1.7em]"
-							>
-								Every paper you publish on Whitepapper gets
-								title tags, meta descriptions, canonical URLs,
-								and Open Graph metadata generated automatically.
-								No SEO plugin, no manual fields, no forgetting.
-								Your content is search-ready from the moment you
-								hit publish.<br />
-								<span class="font-[550]">
-									The algorithm never believed in you, we do.
-								</span>
+		<div class="px-5 md:px-15">
+			<div
+				class="md:mt-12 md:mb-27 mt-4 mb-17 grid grid-cols-2 md:flex w-full mx-auto gap-3 md:justify-between"
+				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+			>
+				{
+					featuresDivs.slice(0, 4).map((item) => (
+						<div class="flex flex-col flex-1 gap-2 p-3 transition-all duration-300 hover:bg-card">
+							<div class="flex items-center gap-3">
+								<item.icon size={19} />
+								<h2 class="text-[17px] font-[450]">
+									{item.title}
+								</h2>
+							</div>
+							<p class="text-sm text-foreground">
+								{item.description}
 							</p>
 						</div>
-						<LandingArticleList
-							items={featuredArticles}
-							className="mt-50 hidden md:block"
-						/>
-					</div>
-				</div>
+					))
+				}
+			</div>
+		</div>
 
-				<div
-					class="flex md:flex-row flex-col gap-5 md:gap-10 my-5 items-center mx-auto max-w-[800px]"
-				>
-					<div
-						class="flex-1 flex flex-col items-center text-center relative"
-					>
-						<div
-							class="h-[30px] dark:h-[10px] w-[300px] rotate-[-10deg] rounded-[50%] bg-[#faae40] dark:blur-[45px] blur-[60px] absolute z-[-1] top-2"
-						>
-						</div>
-						<h3 class="font-[600] text-[40px]">~ 100ms</h3>
-						<p class="text-[16px] text-muted-foreground">
-							Accross the globe
-						</p>
-					</div>
-					<div
-						class="h-[80px] hidden md:block w-[1px] bg-foreground/50"
-					>
-					</div>
-					<div class="flex-1">
-						<p class="text-center text-[16px] leading-[1.8em]">
-							Whitepapper's API and public pages are cached at the
-							edge using Cloudflare Workers. Whether your reader
-							is in Mumbai or Munich, content loads in under
-							100ms. No configurations needed.
-						</p>
-					</div>
-				</div>
+		<!-- <TweetStack client:idle/> -->
 
-				<div class="">
+		<section
+			class="mx-auto flex w-full flex-col px-5 md:px-15"
+			aria-label="Product highlights"
+		>
+			<div
+				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+				class="flex w-full mx-auto flex-col-reverse gap-6 md:flex-row md:items-start md:gap-20"
+			>
+				<div class="flex-1">
 					<div
-						class="flex md:flex-row flex-col gap-3 justify-between items-start"
-					>
-						<h2
-							class="md:flex-1 text-[30px] md:text-[40px] font-[450]"
-						>
-							Make your sites searchable
-						</h2>
-						<p
-							class="md:flex-1 text-muted-foreground md:text-[20px] text-[16px]"
-						>
-							Every project gets a scoped API key. Use it to pull
-							your papers, collections, and project data directly
-							into your portfolio, personal site, or any frontend
-							you're building. Read-only, fast, and safe to expose
-							publicly.
-						</p>
-					</div>
-					<div
-						class="mt-8 md:mt-15 relative p-3 md:p-15 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
+						class="relative h-full w-full overflow-hidden rounded-[18px] md:rounded-[36px] p-3 md:p-8"
 					>
 						<Image
 							src={BlueBgPattern}
@@ -290,128 +255,153 @@ Astro.response.headers.set(
 							decoding="async"
 						/>
 						<Image
-							src={BlogsPageImg}
-							alt="Blogs page preview"
-							class="h-fit w-full rounded-[10px]"
+							src={MetatagsEditorLight}
+							alt="Editor preview"
+							class="h-full w-full object-cover rounded-[8px] md:rounded-[12px]"
 							loading="lazy"
 							decoding="async"
 						/>
 					</div>
-					<a href="/docs" class="w-fit">
-						<p
-							class="text-[14px] text-muted-foreground my-4 text-center"
-						>
-							Read the API docs
-						</p>
-					</a>
+
+					<LandingArticleList
+						items={featuredArticles}
+						className="md:hidden mt-10"
+					/>
 				</div>
 
-				<!-- <section
-					class="mt-[20px] mb-[70px] flex flex-col items-center gap-6"
-					style="content-visibility:auto; contain-intrinsic-size: 360px;"
-					aria-labelledby="home-trusted-logos"
-				>
-					<h2 class="text-[19px] text-muted-foreground">
-						<span id="home-trusted-logos"
-							>Look at these logos lmfao</span
-						>
-					</h2>
-					<div
-						class="flex gap-x-7 gap-y-5 grayscale flex-wrap justify-center items-center dark:invert"
-					>
-						<Image
-							src={OpenAILogo}
-							alt="OpenAI logo"
-							class="h-[30px] w-fit opacity-[0.5]"
-							loading="lazy"
-							decoding="async"
-						/>
-						<Image
-							src={GoogleLogo}
-							alt="Google logo"
-							class="h-[30px] w-fit"
-							loading="lazy"
-							decoding="async"
-						/>
-						<Image
-							src={AudiLogo}
-							alt="Audi logo"
-							class="h-[30px] w-fit opacity-[0.5]"
-							loading="lazy"
-							decoding="async"
-						/>
-						<Image
-							src={CursorLogo}
-							alt="Cursor logo"
-							class="h-[30px] w-fit opacity-[0.5]"
-							loading="lazy"
-							decoding="async"
-						/>
-						<Image
-							src={TeslaLogo}
-							alt="Tesla logo"
-							class="h-[30px] w-fit opacity-[0.5]"
-							loading="lazy"
-							decoding="async"
-						/>
-					</div>
-				</section> -->
+				<div class="md:flex-1">
+					<div>
+						<h2 class="text-[32px] font-[500]">
+							Automated SEO tags
+						</h2>
 
-				<IntegrationsSection />
-
-				<section class="space-y-4">
-					<div
-						class="flex md:flex-row flex-col md:items-end md:justify-between gap-3"
-					>
-						<div>
-							<h2 class="text-[30px] md:text-[40px] font-[450]">
-								Explore the product
-							</h2>
-							<p
-								class="mt-2 text-[16px] text-muted-foreground max-w-[760px]"
-							>
-								These pages are the clearest path through
-								Whitepapper if you are evaluating the workflow,
-								the API, or the SEO and GEO model.
-							</p>
-						</div>
-						<a
-							href="/docs"
-							class="text-[14px] text-muted-foreground hover:text-foreground"
-							>Browse documentation</a
-						>
+						<p class="mt-2 text-muted-foreground">
+							Every paper you publish on Whitepapper gets their
+							metatags, JSON-LD and open graph image
+							automatically. No manual hassle, no copy-pasting.<br
+							/> Your content is SEO ready the moment you hit publish.
+						</p>
 					</div>
-					<div
-						class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3"
-					>
-						{
-							homeExploreLinks.map((item) => (
-								<a
-									href={item.href}
-									class="rounded-[18px] p-4 hover:bg-muted/30 transition-all duration-200"
-								>
-									<h3 class="text-[17px] font-[520]">
-										{item.title}
-									</h3>
-									<p class="mt-2 text-[14px] leading-[1.7em] text-muted-foreground">
-										{item.description}
-									</p>
-								</a>
-							))
-						}
-					</div>
-				</section>
-
-				<section class="space-y-4">
-					<FAQs
-						client:idle
-						items={homeFaqs}
-						title="FAQ"
-						description="A quick overview of what Whitepapper is, who it serves, and why the public page layer matters."
+					<LandingArticleList
+						items={featuredArticles}
+						className="mt-65 hidden md:block"
 					/>
-				</section>
-			</section>
+				</div>
+			</div>
+
+			<div
+				class="w-full mx-auto mt-18 md:mt-40"
+				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+			>
+				<h2 class="text-[32px] font-[500]">Fast worldwide</h2>
+				<p class="mt-1 text-muted-foreground">
+					Whitepapper is cached at edge using <span
+						class="text-[#F48120] px-[2px]">cloudflare</span
+					> CDN to reach users at
+					<span class="font-[450] text-foreground">~ 100ms</span><br
+					/>
+					No confirugations needed.
+				</p>
+
+				<div class="relative mt-5">
+					<img
+						src="/appLogo.png"
+						class="object-contain h-[14px] w-[14px] md:h-[20px] md:w-[20px] z-[2] absolute top-[6%] left-[10%]"
+					/>
+					<img
+						src="/appLogo.png"
+						class="object-contain h-[14px] w-[14px] md:h-[20px] md:w-[20px] z-[2] absolute top-[32%] left-[25%]"
+					/>
+					<img
+						src="/appLogo.png"
+						class="object-contain h-[14px] w-[14px] md:h-[20px] md:w-[20px] z-[2] absolute top-[12%] right-[14%]"
+					/>
+					<img
+						src="/appLogo.png"
+						class="object-contain h-[14px] w-[14px] md:h-[20px] md:w-[20px] z-[2] absolute top-[20%] right-[30%]"
+					/>
+					<img
+						src="/appLogo.png"
+						class="object-contain h-[14px] w-[14px] md:h-[20px] md:w-[20px] z-[2] absolute top-[45%] right-[28%]"
+					/>
+					<img
+						src={worldmapDots.src}
+						class="w-full h-full object-contain invert dark:invert-0"
+					/>
+					<div
+						class="bg-gradient-to-t md:h-[50%] h-full w-full absolute bottom-0 left-0 from-background from-20% md:from-40% to-transparent to-100% z-3"
+					>
+					</div>
+				</div>
+			</div>
+
+			<div class="w-full mx-auto mt-20 md:mt-40 px-5 md:px-15 flex md:flex-row flex-col md:justify-between gap-10" style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}>
+									<div class="flex-1 shrink-0">
+					
+					<IntegrationsSection />
+				</div>
+				<div class="flex-1 shrink-0">
+
+					<ApiShowcase client:idle/>
+				</div>
+			</div>
+
+			<div class="mt-20 md:mt-40 px5- md:px-15">
+
+				<div style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}>
+					<div
+					class="flex md:flex-row flex-col gap-3 justify-between items-start"
+					>
+					<h2 class="md:flex-1 text-[30px] md:text-[40px] font-[450]">
+						Make your sites searchable
+					</h2>
+					<p class="md:flex-1 text-muted-foreground md:text-[20px]">
+						Every project gets a scoped API key. Use it to pull your
+						papers, collections, and project data directly into your
+						portfolio, personal site, or any frontend you're
+						building. Read-only, fast, and safe to expose publicly.
+					</p>
+				</div>
+				<div
+				class="mt-8 md:mt-15 relative p-3 md:p-15 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
+				>
+				<Image
+				src={BlueBgPattern}
+				alt="Green pattern background"
+				class="absolute left-0 top-0 z-[-1] h-full w-full"
+				loading="lazy"
+				quality={70}
+				decoding="async"
+				/>
+				<Image
+				src={BlogsPageImg}
+				alt="Blogs page preview"
+				class="h-fit w-full rounded-[10px]"
+				loading="lazy"
+				decoding="async"
+				/>
+			</div>
+			<a href="/docs" class="w-fit">
+				<p class="text-sm text-muted-foreground my-4 text-center">
+					Read the API docs
+				</p>
+			</a>
 		</div>
+	</div>
+
+
+
+
+
+			<section class="space-y-4">
+				<FAQs
+					client:idle
+					items={homeFaqs}
+					title="FAQ"
+					description="A quick overview of what Whitepapper is, who it serves, and why the public page layer matters."
+				/>
+			</section>
+		</section>
 	</main>
 </Layout>
 
@@ -426,7 +416,7 @@ Astro.response.headers.set(
 			opacity: 0;
 			transform: translateY(30px);
 		}
-
+		
 		to {
 			opacity: 1;
 			transform: translateY(0);

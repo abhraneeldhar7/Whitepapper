@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckIcon, CopyIcon, Ellipsis, FolderPlus, LockIcon, NotebookPen, PencilIcon, PlusIcon, RssIcon, SaveIcon, SquareArrowOutUpLeft, SquareArrowOutUpRight, SquareArrowUpRight, TrashIcon, XIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, Ellipsis, FolderPlus, LockIcon, NotebookPen, PencilIcon, PlusIcon, RssIcon, SaveIcon, SquareArrowOutUpRight, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import FolderNotes from "@/components/folderComponent";
 import TextEditor from "@/components/pre_made_components/editor/textEditor";
 import PostRender from "@/components/ui/markdown-render/markdown-render";
 import UserPopover from "@/components/userPopover";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,9 +22,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createCollection } from "@/lib/api/collections";
 import { createApiKey, resetApiKey, setApiKeyActive, type ApiKeySummary } from "@/lib/api/api_keys";
+import { revokeProjectMcpToken } from "@/lib/api/mcp";
 import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import {
   checkProjectSlugAvailable,
@@ -38,7 +43,7 @@ import {
   MAX_PROJECT_LOGO_HEIGHT,
   MAX_PROJECT_LOGO_WIDTH,
 } from "@/lib/constants";
-import type { CollectionDoc, PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
+import type { CollectionDoc, McpConnectionInfo, McpTokenSummary, PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
 import { compressImage, copyToClipboardWithToast, formatFirestoreDate, isImageFile } from "@/lib/utils";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
@@ -54,6 +59,8 @@ type ProjectWorkspaceProps = {
   initialPages: PaperDoc[];
   initialCollections: CollectionDoc[];
   initialApiDoc: ApiKeySummary | null;
+  initialMcpTokens: McpTokenSummary[];
+  mcpConnectionInfo: McpConnectionInfo | null;
   initialUser?: UserDoc | null;
   isMobileUA: boolean;
 };
@@ -93,12 +100,41 @@ function writeTabToQuery(tab: ProjectTab): void {
   window.history.pushState({}, "", url);
 }
 
+function resolveFallbackMcpConnectionInfo(): McpConnectionInfo | null {
+  const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
+  const fallbackBaseUrl =
+    apiBaseUrl ||
+    (typeof window !== "undefined" ? String(window.location.origin || "").trim().replace(/\/+$/, "") : "");
+
+  if (!fallbackBaseUrl) {
+    return null;
+  }
+
+  const endpointUrl = `${fallbackBaseUrl}/mcp`;
+  return {
+    serverName: "whitepapper",
+    transport: "http",
+    endpointUrl,
+    manualConfig: {
+      servers: {
+        whitepapper: {
+          url: endpointUrl,
+          type: "http",
+        },
+      },
+      inputs: [],
+    },
+  };
+}
+
 export default function ProjectWorkspace({
   projectId,
   initialProject,
   initialPages,
   initialCollections,
   initialApiDoc,
+  initialMcpTokens,
+  mcpConnectionInfo,
   initialUser,
   isMobileUA,
 }: ProjectWorkspaceProps) {
@@ -124,9 +160,13 @@ export default function ProjectWorkspace({
   const [slugCheckMessage, setSlugCheckMessage] = useState<string | null>(null);
   const [updatingProjectVisibility, setUpdatingProjectVisibility] = useState(false);
   const [apiDoc, setApiDoc] = useState<ApiKeySummary | null>(initialApiDoc);
+  const [mcpTokens, setMcpTokens] = useState<McpTokenSummary[]>(initialMcpTokens);
   const [creatingApiKey, setCreatingApiKey] = useState(false);
   const [togglingApiKey, setTogglingApiKey] = useState(false);
   const [resettingApiKey, setResettingApiKey] = useState(false);
+  const [mcpConfigCopied, setMcpConfigCopied] = useState(false);
+  const [revokingMcpTokenId, setRevokingMcpTokenId] = useState<string | null>(null);
+  const [revokeMcpDialogOpen, setRevokeMcpDialogOpen] = useState(false);
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
@@ -141,9 +181,10 @@ export default function ProjectWorkspace({
     setPages(sortPapersLatestFirst(initialPages));
     setCollections(initialCollections);
     setApiDoc(initialApiDoc);
+    setMcpTokens(initialMcpTokens);
     setEditingProject(false);
     setSlugCheckMessage(null);
-  }, [initialProject, initialPages, initialCollections, initialApiDoc]);
+  }, [initialProject, initialPages, initialCollections, initialApiDoc, initialMcpTokens]);
 
 
   useEffect(() => {
@@ -159,6 +200,10 @@ export default function ProjectWorkspace({
   useEffect(() => {
     setApiKeyCopied(false);
   }, [apiKeyDialogOpen, createdApiKey]);
+
+  useEffect(() => {
+    setMcpConfigCopied(false);
+  }, [activeTab]);
 
   function beginEditProject() {
     setDraftProject({ ...project });
@@ -482,6 +527,37 @@ export default function ProjectWorkspace({
     }
   }
 
+  async function handleCopyMcpConfig() {
+    const nextConnectionInfo = mcpConnectionInfo || resolveFallbackMcpConnectionInfo();
+    if (!nextConnectionInfo) {
+      toast.error("MCP connection info is unavailable.");
+      return;
+    }
+    const config = JSON.stringify(nextConnectionInfo.manualConfig, null, 2);
+    const ok = await copyToClipboardWithToast(config, "MCP config copied.", "Unable to copy MCP config.");
+    if (!ok) {
+      setMcpConfigCopied(false);
+      return;
+    }
+    setMcpConfigCopied(true);
+    window.setTimeout(() => setMcpConfigCopied(false), 1400);
+  }
+
+  async function handleRevokeMcpToken() {
+    if (!revokingMcpTokenId) {
+      return;
+    }
+    try {
+      await revokeProjectMcpToken(projectId, revokingMcpTokenId);
+      setMcpTokens((prev) => prev.filter((token) => token.tokenId !== revokingMcpTokenId));
+      setRevokeMcpDialogOpen(false);
+      setRevokingMcpTokenId(null);
+      toast.success("MCP connection revoked.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to revoke MCP connection.");
+    }
+  }
+
   function handlePaperDeleted(paperId: string) {
     setPages((prev) => prev.filter((paper) => paper.paperId !== paperId));
     setSelectedPaper((prev) => (prev?.paperId === paperId ? null : prev));
@@ -500,6 +576,10 @@ export default function ProjectWorkspace({
   const projectDescription = editableProject?.description || "";
   const logoPreview = tempUploadingProjectLogo || editableProject?.logoUrl || "";
   const projectPreviewKey = `${project.projectId}:${project.updatedAt}:${projectDescription.length}`;
+  const resolvedMcpConnectionInfo = mcpConnectionInfo || resolveFallbackMcpConnectionInfo();
+  const mcpEndpointUrl = resolvedMcpConnectionInfo?.endpointUrl || "";
+  const mcpManualConfig = resolvedMcpConnectionInfo ? JSON.stringify(resolvedMcpConnectionInfo.manualConfig, null, 2) : "";
+  const selectedMcpToken = mcpTokens.find((token) => token.tokenId === revokingMcpTokenId) || null;
 
   return (
     <div className="min-h-screen px-[15px] pt-15 pb-20">
@@ -890,61 +970,161 @@ export default function ProjectWorkspace({
           </TabsContent>
 
           <TabsContent value="api" className="mt-5">
-            <div className="space-y-6 max-w-[600px] w-full mx-auto">
+            <div className="space-y-6 max-w-[900px] w-full mx-auto">
+              <Card>
+                <CardHeader>
+                  <CardTitle>MCP Setup</CardTitle>
+                  <CardDescription>Use one standard HTTP MCP endpoint for Whitepapper projects, collections, and papers.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Alert>
+                    <AlertTitle>OAuth on first connect</AlertTitle>
+                    <AlertDescription>
+                      Your MCP client opens a browser flow once, you choose a project, and Whitepapper returns a scoped MCP token.
+                    </AlertDescription>
+                  </Alert>
 
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium">Manual config</p>
+                        <p className="text-xs text-muted-foreground">Standard streamable HTTP MCP configuration</p>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => { void handleCopyMcpConfig(); }} disabled={!resolvedMcpConnectionInfo}>
+                        {mcpConfigCopied ? <CheckIcon /> : <CopyIcon />}
+                        {mcpConfigCopied ? "Copied" : "Copy config"}
+                      </Button>
+                    </div>
+                    {resolvedMcpConnectionInfo ? (
+                      <>
+                        <p className="text-xs text-muted-foreground">HTTP endpoint: {mcpEndpointUrl}</p>
+                        <pre className="overflow-x-auto rounded-md border bg-muted/30 p-3 text-xs">{mcpManualConfig}</pre>
+                      </>
+                    ) : (
+                      <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                        MCP connection info is unavailable.
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
-              {!apiDoc ? (
-                <div className="rounded-md border p-4 space-y-4">
-                  <p className="text-sm text-muted-foreground">No API key created for this project.</p>
-                  <Button onClick={handleCreateApiKey} loading={creatingApiKey}>
-                    Create API key
-                  </Button>
-                </div>
-              ) : (
-                <div className="rounded-md border p-4 space-y-4">
-                  <div className="grid gap-2 text-sm">
-                    <div className="flex items-start gap-4">
-                      <p className="text-muted-foreground">Monthly Usage</p>
-                      <div className="flex flex-col gap-2 flex-1">
-                        <p className="font-[450] text-[12px]">{apiDoc.usage} / {apiDoc.limitPerMonth}</p>
-                        <Progress className="w-full" value={apiDoc.usage / apiDoc.limitPerMonth} />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Active Connections</CardTitle>
+                  <CardDescription>Each IDE connection gets its own scoped MCP token for this project.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {mcpTokens.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No active MCP connections for this project yet.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Label</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead>Expires</TableHead>
+                          <TableHead>Usage</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {mcpTokens.map((token) => (
+                          <TableRow key={token.tokenId}>
+                            <TableCell>
+                              <div className="flex flex-col gap-1">
+                                <span className="font-medium">{token.label || "Whitepapper MCP"}</span>
+                                <span className="text-xs text-muted-foreground">{token.workspaceId}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>{formatFirestoreDate(token.createdAt)}</TableCell>
+                            <TableCell>{formatFirestoreDate(token.expiresAt)}</TableCell>
+                            <TableCell>
+                              <div className="min-w-[140px] space-y-2">
+                                <p className="text-xs">{token.usage} / {token.limitPerMonth}</p>
+                                <Progress className="w-full" value={(token.usage / token.limitPerMonth) * 100} />
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => {
+                                  setRevokingMcpTokenId(token.tokenId);
+                                  setRevokeMcpDialogOpen(true);
+                                }}
+                              >
+                                Revoke
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Dev API</CardTitle>
+                  <CardDescription>Project-scoped API key access lives here with MCP so integrations stay in one place.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {!apiDoc ? (
+                    <div className="rounded-md border p-4 space-y-4">
+                      <p className="text-sm text-muted-foreground">No API key created for this project.</p>
+                      <Button onClick={handleCreateApiKey} loading={creatingApiKey}>
+                        Create API key
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="rounded-md border p-4 space-y-4">
+                      <div className="grid gap-3 text-sm">
+                        <div className="flex items-start gap-4">
+                          <p className="min-w-[90px] text-muted-foreground">Monthly Usage</p>
+                          <div className="flex flex-1 flex-col gap-2">
+                            <p className="font-[450] text-[12px]">{apiDoc.usage} / {apiDoc.limitPerMonth}</p>
+                            <Progress className="w-full" value={(apiDoc.usage / apiDoc.limitPerMonth) * 100} />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <p className="min-w-[90px] text-muted-foreground">Status</p>
+                          <Badge variant={apiDoc.isActive ? "secondary" : "outline"}>
+                            {apiDoc.isActive ? "Active" : "Disabled"}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <p className="min-w-[90px] text-muted-foreground">Created</p>
+                          <p className="font-[450]">{formatFirestoreDate(apiDoc.createdAt)}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant={apiDoc.isActive ? "secondary" : "default"}
+                          onClick={() => {
+                            void handleToggleApiKey(!apiDoc.isActive);
+                          }}
+                          loading={togglingApiKey}
+                          disabled={resettingApiKey}
+                        >
+                          {apiDoc.isActive ? "Disable" : "Enable"}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => setResetConfirmOpen(true)}
+                          disabled={togglingApiKey || resettingApiKey}
+                        >
+                          Reset
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <p className="text-muted-foreground">Status</p>
-                      <p className="font-[450]">{apiDoc.isActive ? "Active" : "Disabled"}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <p className="text-muted-foreground">Created</p>
-                      <p className="font-[450]">{formatFirestoreDate(apiDoc.createdAt)}</p>
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="flex justify-end gap-2">
-                    <Button
-
-                      variant={apiDoc.isActive ? "secondary" : "default"}
-                      onClick={() => {
-                        void handleToggleApiKey(!apiDoc.isActive);
-                      }}
-                      loading={togglingApiKey}
-                      disabled={resettingApiKey}
-                    >
-                      {apiDoc.isActive ? "Disable" : "Enable"}
-                    </Button>
-                    <Button
-
-                      variant="destructive"
-                      onClick={() => setResetConfirmOpen(true)}
-                      disabled={togglingApiKey || resettingApiKey}
-                    >
-                      Reset
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {apiDoc && <ApiShowcase />}
+                  {apiDoc ? <ApiShowcase /> : null}
+                </CardContent>
+              </Card>
             </div>
 
             <Dialog open={apiKeyDialogOpen} onOpenChange={setApiKeyDialogOpen}>
@@ -991,6 +1171,31 @@ export default function ProjectWorkspace({
                     loading={resettingApiKey}
                   >
                     Reset
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={revokeMcpDialogOpen} onOpenChange={setRevokeMcpDialogOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Revoke MCP connection?</DialogTitle>
+                  <DialogDescription>
+                    This will invalidate the selected IDE connection{selectedMcpToken?.label ? ` (${selectedMcpToken.label})` : ""}.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setRevokeMcpDialogOpen(false);
+                      setRevokingMcpTokenId(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button variant="destructive" onClick={() => { void handleRevokeMcpToken(); }}>
+                    Revoke
                   </Button>
                 </DialogFooter>
               </DialogContent>

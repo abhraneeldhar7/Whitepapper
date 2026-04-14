@@ -18,8 +18,9 @@ class Settings(BaseSettings):
     app_name: str = "Whitepapper_API"
     environment: str | None = None
     redis_prefix: str = "whitepapper"
-    cors_origins: str = "https://whitepapper.antk.in,http://localhost:4321"
+    cors_origins: str = "http://localhost:4321"
     public_site_url: str | None = None
+    public_api_url: str | None = None
 
     clerk_webhook_signing_secret: str | None = None
     clerk_secret_key: str | None = None

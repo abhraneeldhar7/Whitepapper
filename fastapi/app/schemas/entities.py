@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.core.limits import DEV_API_LIMIT_PER_MONTH
+from app.core.limits import MCP_TOKEN_LIMIT_PER_MONTH
 
 
 class AuthUser(BaseModel):
@@ -281,3 +282,14 @@ class ApiKeyCreateResponse(ApiKeySummary):
 
 class ApiKeyToggle(BaseModel):
     isActive: bool
+
+
+class McpTokenSummary(BaseModel):
+    tokenId: str
+    projectId: str
+    workspaceId: str
+    label: str | None = None
+    usage: int = 0
+    limitPerMonth: int = MCP_TOKEN_LIMIT_PER_MONTH
+    createdAt: datetime
+    expiresAt: datetime

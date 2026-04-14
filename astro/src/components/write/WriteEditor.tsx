@@ -583,7 +583,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
   const handleShare = async () => {
     const baseUrl = resolveIntegrationBaseUrl(integrationBaseUrl);
     if (!baseUrl) {
-      toast.error("PUBLIC_SITE_URL/PRODUCTION_BASE_URL is not configured.");
+      toast.error("PUBLIC_SITE_URL is not configured.");
       return;
     }
     if (!slugValue) {

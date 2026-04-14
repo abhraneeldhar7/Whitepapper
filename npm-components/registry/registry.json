@@ -18,13 +18,11 @@
         "lucide-react",
         "react-markdown",
         "remark-gfm",
-        "remark-highlight",
         "rehype-raw",
-        "react-syntax-highlighter"
+        "@shikijs/rehype",
+        "shiki"
       ],
-      "devDependencies": [
-        "@types/react-syntax-highlighter"
-      ]
+      "devDependencies": []
     },
     {
       "name": "toc",

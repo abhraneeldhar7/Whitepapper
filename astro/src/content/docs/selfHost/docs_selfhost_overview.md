@@ -22,7 +22,7 @@ Self-hosting Whitepapper means deploying three parts from this monorepo:
 
 ## Expected outcome
 
-A production setup where public pages, dashboard, Dev API, distribution, and cron sync jobs all work.
+A production setup where public pages, dashboard, Dev API, MCP, distribution, and cron sync jobs all work.
 
 ## Related pages
 

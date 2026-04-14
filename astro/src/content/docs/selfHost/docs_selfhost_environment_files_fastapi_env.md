@@ -7,6 +7,7 @@ APP_NAME=Whitepapper_API
 REDIS_PREFIX=whitepapper
 CORS_ORIGINS=https://your-domain.example,http://localhost:4321
 PUBLIC_SITE_URL=https://your-domain.example
+PUBLIC_API_URL=https://api.your-domain.example
 CLERK_SECRET_KEY=sk_test_xxx
 CLERK_JWT_KEY=-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----
 CLERK_AUTHORIZED_PARTIES=https://your-domain.example,http://localhost:4321
@@ -25,7 +26,7 @@ GROQ_API_KEY=gsk_xxx
 
 ## Expected outcome
 
-FastAPI can start, authenticate users, access Firestore/Storage, and run cache + cron endpoints.
+FastAPI can start, authenticate users, access Firestore/Storage, run cache + cron endpoints, and publish MCP OAuth metadata for `https://api.your-domain.example/mcp`.
 
 ## Common errors
 

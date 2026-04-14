@@ -1,0 +1,1 @@
+export const MAX_LANDING_PAGE_WIDTH = 1250;

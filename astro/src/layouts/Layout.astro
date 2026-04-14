@@ -78,7 +78,23 @@ const resolveAbsoluteUrl = (value?: string | null) => {
     return `${origin}${ogImageAsset.src.startsWith("/") ? "" : "/"}${ogImageAsset.src}`;
   }
 
-  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    try {
+      const parsed = new URL(raw);
+      const currentOrigin = Astro.url.origin.replace(/\/+$/, "");
+      const currentHost = new URL(currentOrigin).host;
+      const isKnownPublicHost = parsed.host === "whitepapper.antk.in" || parsed.host === "www.whitepapper.antk.in";
+      const isLocalRuntime = currentHost === "localhost:4321" || currentHost === "127.0.0.1:4321";
+
+      // Keep source JSON static while ensuring local dev URLs stay local.
+      if (isKnownPublicHost && isLocalRuntime) {
+        return `${currentOrigin}${parsed.pathname}${parsed.search}${parsed.hash}`;
+      }
+    } catch {
+      return raw;
+    }
+    return raw;
+  }
   const origin = Astro.url.origin.replace(/\/+$/, "");
   return `${origin}${raw.startsWith("/") ? "" : "/"}${raw}`;
 };

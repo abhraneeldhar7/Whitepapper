@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { cn, copyToClipboardWithToast } from "@/lib/utils";
 import { getDevCollection, getDevPaper, getDevProject } from "@/lib/api/dev";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import MarkdownRender from "./ui/markdown-render/markdown-render";
 
 const DEV_API_BASE_URL = `${String(import.meta.env.PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "")}/dev`;
 const API_KEY_FALLBACK = "wp_live_your_project_key";
@@ -333,6 +334,7 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
     };
 
     const currentCode = getCurrentCode();
+    const currentCodeAsMarkdown = `\`\`\`${language}\n${currentCode}\n\`\`\``;
 
     return (
         <div className="w-full">
@@ -345,7 +347,7 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
                         onClick={() => handleEndpointChange(endpoint)}
                     >
                         {endpoint.name.split(" ")[0]}
-                     <span className="md:block hidden">{endpoint.name.split(" ")[1]}</span>
+                        <span className="md:block hidden">{endpoint.name.split(" ")[1]}</span>
                     </Button>
                 ))}
             </div>
@@ -353,7 +355,7 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
 
             <p className="mt-3 max-w-[720px] text-sm leading-6 text-muted-foreground">{selectedEndpoint.description}</p>
 
-            <div className={`overflow-hidden relative rounded-lg border bg-muted mt-2 ${language == "typescript" ? "h-[260px]" : "h-[240px]"} transition-all duration-300`}>
+            <div className={`overflow-hidden relative mt-2 ${language == "typescript" ? "h-[260px]" : "h-[240px]"} transition-all duration-300`}>
                 <div
                     className={cn(
                         "flex gap-1 transition-all duration-300 ease-in-out absolute top-2 left-2 z-2",
@@ -377,21 +379,7 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
 
                 </div>
 
-                <ScrollArea>
-                    <ScrollBar orientation="horizontal" />
-                    <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="absolute top-2 right-2 z-2"
-                        onClick={handleCopyCode}
-                    >
-                        {copied ? <Check className="p-[1px]" /> : <Copy className="p-[1px]" />}
-                    </Button>
-
-                    <pre className="p-4 pt-12 overflow-x-auto text-sm">
-                        <code>{currentCode}</code>
-                    </pre>
-                </ScrollArea>
+                <MarkdownRender content={currentCodeAsMarkdown} />
             </div>
 
             <div className="mt-2 flex gap-2">

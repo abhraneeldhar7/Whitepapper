@@ -1,12 +1,13 @@
 import "./markdown-render.css";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import remarkHighlight from 'remark-highlight';
 import rehypeRaw from 'rehype-raw';
-import { createHighlighter, type BuiltinLanguage } from 'shiki';
+import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
+import { createHighlighter, type BuiltinLanguage, type BundledTheme } from 'shiki';
 import { isInternalHref, isPlaceholderHref } from '@/lib/seo';
 
-const SHIKI_THEME = 'one-dark-pro';
+const SHIKI_THEME_LIGHT:BundledTheme = "ayu-light";
+const SHIKI_THEME_DARK: BundledTheme = "vitesse-dark";
 const SHIKI_LANGS: BuiltinLanguage[] = [
     'tsx',
     'typescript',
@@ -22,50 +23,19 @@ const SHIKI_LANGS: BuiltinLanguage[] = [
 ];
 
 const shikiHighlighter = await createHighlighter({
-    themes: [SHIKI_THEME],
+    themes: [SHIKI_THEME_LIGHT, SHIKI_THEME_DARK],
     langs: SHIKI_LANGS,
 });
 
-function escapeHtml(value: string): string {
-    return value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-function normalizeLanguage(language?: string): BuiltinLanguage | 'text' {
-    const value = (language || '').toLowerCase();
-
-    if (!value) return 'text';
-    if (value === 'ts') return 'typescript';
-    if (value === 'js') return 'javascript';
-    if (value === 'md') return 'markdown';
-    if (value === 'yml') return 'yaml';
-    if (value === 'sh' || value === 'shell') return 'bash';
-
-    return (SHIKI_LANGS.includes(value as BuiltinLanguage) ? value : 'text') as BuiltinLanguage | 'text';
-}
-
-function highlightCodeWithShiki(code: string, language?: string): string {
-    try {
-        const lang = normalizeLanguage(language);
-        const html = shikiHighlighter.codeToHtml(code, {
-            lang,
-            theme: SHIKI_THEME,
+function rehypeShikiSync() {
+    return rehypeShikiFromHighlighter(shikiHighlighter,
+        {
+            themes: {
+                light: SHIKI_THEME_LIGHT,
+                dark: SHIKI_THEME_DARK,
+            },
+            defaultColor: 'light-dark()',
         });
-
-        return html.replace(/<pre([^>]*)style="([^"]*)"([^>]*)>/, (_full, before, style, after) => {
-            const normalizedStyle = style
-                .replace(/background-color:[^;]+;?/g, 'background-color: transparent;')
-                .replace(/(^|;)\s*color:[^;]+;?/g, '$1 color: var(--foreground);');
-
-            return `<pre${before}style="${normalizedStyle}"${after}>`;
-        });
-    } catch {
-        return `<pre><code>${escapeHtml(code)}</code></pre>`;
-    }
 }
 
 type PostRenderProps = {
@@ -105,15 +75,18 @@ function MarkdownActionIcon({ className, dataAttr }: { className?: string; dataA
 }
 
 export default function MarkdownRender({ content, contentContainerId }: PostRenderProps) {
-    const siteUrl = String(import.meta.env.PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://whitepapper.antk.in')).trim();
+    const siteUrl = String(import.meta.env.PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4321')).trim();
 
     return (
         <div>
             <div id={contentContainerId} className="markdownDiv">
                 <ReactMarkdown
                     children={content}
-                    remarkPlugins={[remarkGfm, remarkHighlight]}
-                    rehypePlugins={[rehypeRaw]}
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[
+                        rehypeRaw,
+                        rehypeShikiSync,
+                    ]}
                     components={{
                         a: ({ node, ...props }) => {
                             const href = String(props.href || '').trim();
@@ -149,32 +122,20 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                                 />
                             );
                         },
-                        code({ node, className, children, ...props }: any) {
-                            const match = /language-(\w+)/.exec(className || '');
-                            const codeText = String(children).replace(/\n$/, '');
-                            const inline = !className;
-
-                            return !inline ? (
-                                <div className="markdownCodeBlock">
-                                    <button
-                                        type="button"
-                                        data-copy-button
-                                        aria-label="Copy code"
-                                        className="markdownCopyButton"
-                                    >
-                                        <MarkdownActionIcon dataAttr="data-copy-icon" />
-                                        <MarkdownActionIcon dataAttr="data-check-icon" className="markdownHidden" />
-                                    </button>
-                                    <div
-                                        dangerouslySetInnerHTML={{
-                                            __html: highlightCodeWithShiki(codeText, match?.[1]),
-                                        }}
-                                    />
-                                </div>
-                            ) : (
-                                <code className={className} {...props}>{children}</code>
-                            );
-                        },
+                        pre: ({ node, children, ...props }) => (
+                            <div className="markdownCodeBlock">
+                                <button
+                                    type="button"
+                                    data-copy-button
+                                    aria-label="Copy code"
+                                    className="markdownCopyButton"
+                                >
+                                    <MarkdownActionIcon dataAttr="data-copy-icon" />
+                                    <MarkdownActionIcon dataAttr="data-check-icon" className="markdownHidden" />
+                                </button>
+                                <pre {...props}>{children}</pre>
+                            </div>
+                        ),
                         table: ({ node, children, ...props }) => (
                             <div className="markdownTableScrollArea">
                                 <table className="markdownTable" {...props}>

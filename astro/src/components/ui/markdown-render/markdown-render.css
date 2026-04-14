@@ -229,7 +229,7 @@
     position: relative;
 }
 .markdownDiv .markdownCodeBlock .shiki {
-    background-color: var(--card) !important;
+    /* background-color: var(--card) !important; */
     font-size: 0.9em;
     /* border: 1px solid var(--border) !important; */
     border-radius: 8px !important;

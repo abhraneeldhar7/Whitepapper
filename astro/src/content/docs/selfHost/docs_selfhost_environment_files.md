@@ -28,6 +28,7 @@ Both services can boot with valid credentials and URLs.
 | Missing env variable | Incomplete `.env` file | Copy all keys from example files |
 | Auth failures | Clerk keys mismatch | Verify publishable and secret key pairs |
 | API/frontend mismatch | Wrong base URLs | Align `PUBLIC_API_BASE_URL` and site URLs |
+| MCP connect opens but auth fails | Missing `PUBLIC_API_URL` or `PUBLIC_SITE_URL` in FastAPI | Set both URLs so OAuth can redirect to the right backend and frontend |
 
 ## Related pages
 
