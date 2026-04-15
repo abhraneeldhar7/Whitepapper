@@ -11,7 +11,8 @@ import IntegrationsSection from "@/components/integrations-4";
 import FAQs from "@/components/faqs-2";
 
 import BlogsPageImg from "@/assets/landingPage/blogsPage.png";
-import TweetStack from "@/components/tweetCards";
+
+import logoHandImg from "@/assets/landingPage/logo_hand.png";
 
 const featuredArticles = [
 	{
@@ -76,7 +77,10 @@ const homeExploreLinks = [
 
 import { MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
 import {
+	ArrowRight,
+	BookMarked,
 	BookMarkedIcon,
+	BookmarkIcon,
 	BotIcon,
 	GithubIcon,
 	SearchCheckIcon,
@@ -139,32 +143,31 @@ const featuresDivs = [
 ];
 
 import worldmapDots from "@/assets/landingPage/worldmapDots.png";
-import {ApiShowcase} from "@/components/apiShowcase.tsx";
+import npmLogo from "@/assets/logos/npm-logo.svg";
+import { Button } from "@/components/ui/button";
 ---
 
 <Layout reserveNavSpace={false}>
-		<main class="relative mb-20" aria-label="Whitepapper home">
-			
-			<section
+	<main class="relative mb-20" aria-label="Whitepapper home">
+		<section
 			class="relative flex flex-col items-start justify-start pt-40 md:pt-50 h-full overflow-hidden px-5 md:px-15"
 			aria-labelledby="home-hero-title"
-			>
+		>
 			<div
-			class="pb-[50px] mx-auto w-full"
-			style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+				class="pb-[50px] mx-auto w-full"
+				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
 			>
-			
-			<div class="mx-auto w-full"></div>
-			<div
-				class="absolute left-[-80%] top-[3%] z-[-1] h-[10px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-30%] md:top-[-2%]"
-				aria-hidden="true"
-			>
-			</div>
-			<div
-				class="absolute left-[-45%] top-[0%] z-[-1] h-[8px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-50%] md:top-[-3%]"
-				aria-hidden="true"
-			>
-			</div>
+				<div class="mx-auto w-full"></div>
+				<div
+					class="absolute left-[-80%] top-[3%] z-[-1] h-[10px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-30%] md:top-[-2%]"
+					aria-hidden="true"
+				>
+				</div>
+				<div
+					class="absolute left-[-45%] top-[0%] z-[-1] h-[8px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-50%] md:top-[-3%]"
+					aria-hidden="true"
+				>
+				</div>
 				<h1
 					id="home-hero-title"
 					class="heroText text-[30px] md:text-[45px] flex md:flex-row flex-col md:gap-4 font-[500]"
@@ -329,77 +332,224 @@ import {ApiShowcase} from "@/components/apiShowcase.tsx";
 						class="w-full h-full object-contain invert dark:invert-0"
 					/>
 					<div
-						class="bg-gradient-to-t md:h-[50%] h-full w-full absolute bottom-0 left-0 from-background from-20% md:from-40% to-transparent to-100% z-3"
+						class="bg-gradient-to-t md:h-[50%] h-[70%] w-full absolute bottom-0 left-0 from-background from-20% md:from-40% to-transparent to-100% z-3"
 					>
 					</div>
 				</div>
 			</div>
 
-			<div class="w-full mx-auto mt-20 md:mt-40 px-5 md:px-15 flex md:flex-row flex-col md:justify-between gap-10" style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}>
-									<div class="flex-1 shrink-0">
-					
+			<div
+				class="w-full mx-auto mt-10 md:mt-0 flex md:flex-row flex-col md:justify-center gap-10"
+				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+			>
+				<div class="flex-1">
 					<IntegrationsSection />
 				</div>
-				<div class="flex-1 shrink-0">
+				<div class="flex-1 flex items-center justify-center">
+					<div class="max-w-[400px] py-10">
+						<p class="text-center text-[19px] leading-[2.1em]">
+							Whitepapper
 
-					<ApiShowcase client:idle/>
+							<a
+								ata-astro-prefetch="viewport"
+								href="/docs"
+								class="px-2 py-1 text-[17px] shadow-sm rounded-[10px] w-fit
+							bg-gradient-to-t from-[#22eff7]/20 dark:from-[#22eff7]/35 from-0% to-transparent to-100% mx-1"
+							>
+								docs
+							</a>
+
+							<a
+								ata-astro-prefetch="viewport"
+								href="/components"
+								class="px-2 py-1 text-[17px] shadow-sm rounded-[10px] w-fit
+						bg-gradient-to-t from-[#f7228a]/20 dark:from-[#f7228a]/50 from-0% to-transparent to-100% mx-1"
+							>
+								components
+							</a>
+
+							<a
+								ata-astro-prefetch="viewport"
+								href="/blogs"
+								class="px-2 py-1 text-[17px] shadow-sm rounded-[10px] w-fit
+						bg-gradient-to-t from-foreground/10 dark:from-foreground/30 from-0% to-transparent to-100% mx-1"
+							>
+								blogs
+							</a>
+
+							pages are powered by the whitepapper <a
+								class="underline hover:text-muted-foreground inline-block"
+								href="/docs/dev-api/overview">dev api</a
+							>.
+							<br />
+							There's simply isn't any better alternative
+						</p>
+					</div>
 				</div>
 			</div>
 
-			<div class="mt-20 md:mt-40 px5- md:px-15">
+			<div
+				class="w-full mx-auto"
+				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+			>
+				<div
+					class="mt-15 md:mt-40 gap-10 md:gap-15 w-full relative overflow-hidden flex flex-col items-center justify-between px-5"
+				>
+					<div class="text-center">
+						<h2 class="text-[32px] font-[500]">Whitepapper MCP</h2>
+						<p class="mt-1 text-muted-foreground max-w-[400px]">
+							Connect whitepapper to agents and automate content
+							writing for your projects
+						</p>
+					</div>
 
+					<img
+						src={logoHandImg.src}
+						class="object-contain md:max-w-[500px] w-full"
+					/>
+					<div
+						class="bg-gradient-to-t h-[60px] w-full absolute bottom-0 left-0 from-background from-20% to-transparent to-90% z-3"
+					>
+					</div>
+					<div
+						class="bg-[#0278f6] md:h-[250px] md:w-[40%] rounded-[50%] blur-[120px] absolute bottom-0 left-[50%] translate-x-[-50%] z-[-1]"
+					>
+					</div>
+				</div>
+
+				<!-- <div class="mt-6 text-center">
+					<h2 class="text-[32px] font-[500]">
+						Works with every IDE and agent
+					</h2>
+				</div> -->
+			</div>
+
+			<div class="mt-15 md:mt-40 mx-auto">
 				<div style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}>
 					<div
-					class="flex md:flex-row flex-col gap-3 justify-between items-start"
+						class="flex md:flex-row flex-col gap-3 justify-between items-start"
 					>
-					<h2 class="md:flex-1 text-[30px] md:text-[40px] font-[450]">
-						Make your sites searchable
-					</h2>
-					<p class="md:flex-1 text-muted-foreground md:text-[20px]">
-						Every project gets a scoped API key. Use it to pull your
-						papers, collections, and project data directly into your
-						portfolio, personal site, or any frontend you're
-						building. Read-only, fast, and safe to expose publicly.
-					</p>
+						<h2
+							class="md:flex-1 text-[32px] font-[500] md:leading-[1em]"
+						>
+							Make your sites searchable
+						</h2>
+						<p
+							class="md:flex-1 text-muted-foreground md:text-[20px]"
+						>
+							Every project gets a scoped API key. Use it to pull
+							your papers, collections, and project data directly
+							into your portfolio, personal site, or any frontend
+							you're building. Read-only, fast, and safe to expose
+							publicly.
+						</p>
+					</div>
+					<div
+						class="mt-8 md:mt-15 relative p-3 md:p-10 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
+					>
+						<Image
+							src={BlueBgPattern}
+							alt="Green pattern background"
+							class="absolute left-0 top-0 z-[-1] h-full w-full"
+							loading="lazy"
+							quality={70}
+							decoding="async"
+						/>
+						<Image
+							src={BlogsPageImg}
+							alt="Blogs page preview"
+							class="h-fit w-full rounded-[10px]"
+							loading="lazy"
+							decoding="async"
+						/>
+					</div>
 				</div>
-				<div
-				class="mt-8 md:mt-15 relative p-3 md:p-15 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
-				>
-				<Image
-				src={BlueBgPattern}
-				alt="Green pattern background"
-				class="absolute left-0 top-0 z-[-1] h-full w-full"
-				loading="lazy"
-				quality={70}
-				decoding="async"
-				/>
-				<Image
-				src={BlogsPageImg}
-				alt="Blogs page preview"
-				class="h-fit w-full rounded-[10px]"
-				loading="lazy"
-				decoding="async"
-				/>
 			</div>
-			<a href="/docs" class="w-fit">
-				<p class="text-sm text-muted-foreground my-4 text-center">
-					Read the API docs
+
+			<div class="mt-20 md:mt-40">
+				<h2 class="text-[32px] font-[500] text-center">
+					Fully open-sourced
+				</h2>
+				<p
+					class="mt-1 text-foreground md:w-[400px] mx-auto text-center text-muted-foreground"
+				>
+					We highly encourage users to fork the <a href="https://github.com/abhraneeldhar7/Whitepapper" target="_blank" class="underline">repo</a> and self host
+					whitepapper for themselves
 				</p>
-			</a>
-		</div>
-	</div>
+				<div
+					class="mt-10 md:mt-15 mx-auto w-full flex md:flex-row flex-col gap-10"
+					style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+				>
+					<div class="md:flex-1 flex flex-col items-center gap-6">
+						<div class="flex h-[200px] w-[160px]">
+							<div class="flex shrink-0">
+								<div
+									class="rounded-tl-[15px] rounded-bl-[15px] border-r bg-[#151515] h-full w-[20px]"
+								>
+								</div>
+							</div>
+							<div
+								class="h-full flex-1 bg-card relative rounded-tr-[5px] rounded-br-[5px] p-3 pt-7"
+							>
+								<BookmarkIcon
+									color="#3291ff"
+									fill="#3291ff"
+									size={22}
+									className="absolute top-3 right-2 top-[-2px]"
+								/>
 
+								<h3 class="text-[16px] font-[460]">
+									Self host guide
+								</h3>
+								<p
+									class="mt-1 text-[11px] text-muted-foreground"
+								>
+									Whitepapper is open-sourced for schizo
+									users.
+								</p>
 
+								<img
+									src="/appLogo.png"
+									class="h-[22px] w-[22px] absolute bottom-3 right-3 z-2"
+								/>
+							</div>
+						</div>
 
+						<a
+							href="/docs/self-host/overview"
+							class="flex items-center gap-2"
+						>
+							Read the docs <ArrowRight size={17} />
+						</a>
+					</div>
 
+					<div
+						class="md:flex-1 flex items-center justify-center flex-col gap-6"
+					>
+						<img
+							src={npmLogo.src}
+							class="my-14 h-[100px] w-[100px]"
+						/>
+						<p class="text-center w-[250px] text-center mx-auto">
+							Ready to install components at <a
+								class="text-[#cc0000] font-[450] hover:text-[#cc0000]/80"
+								href="https://www.npmjs.com/package/whitepapper"
+								target="_blank">npm/whitepapper</a
+							>
+						</p>
+					</div>
+				</div>
+			</div>
 
-			<section class="space-y-4">
-				<FAQs
-					client:idle
-					items={homeFaqs}
-					title="FAQ"
-					description="A quick overview of what Whitepapper is, who it serves, and why the public page layer matters."
-				/>
+			<section class="space-y-4 mx-auto mt-20 md:mt-40">
+				<div style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}>
+					<FAQs
+						client:idle
+						items={homeFaqs}
+						title="FAQ"
+						description="A quick overview of what Whitepapper is, who it serves, and why the public page layer matters."
+					/>
+				</div>
 			</section>
 		</section>
 	</main>
@@ -416,7 +566,7 @@ import {ApiShowcase} from "@/components/apiShowcase.tsx";
 			opacity: 0;
 			transform: translateY(30px);
 		}
-		
+
 		to {
 			opacity: 1;
 			transform: translateY(0);

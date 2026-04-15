@@ -42,26 +42,18 @@ export default function FAQs({
     description = "Your questions answered",
 }: FAQsProps) {
     return (
-        <section className=" py-24">
-            <div className="mx-auto max-w-[900px]">
-                <div className="md:flex-row md:items-start md:gap-12 flex flex-col gap-8">
-                    <div className="md:sticky md:top-24 self-start h-fit md:w-[340px]">
+        <section className="">
+            <div className="mx-auto">
+                <div className="md:flex-row md:items-start md:gap-15 flex flex-col gap-4">
+                    <div className="md:sticky md:top-24 self-start h-fit md:w-[400px]">
                         <h2 className="text-[32px] font-[500]">{title}</h2>
                         <p className="text-muted-foreground mt-1 text-[15px]">{description}</p>
-                        <p className="text-muted-foreground mt-1 text-[15px]">
-                            Need more help?{' '}
-                            <a
-                                href="/contact"
-                                className="text-foreground font-[400] hover:underline">
-                                Contact us
-                            </a>
-                        </p>
                     </div>
                     <div className="flex-1">
                         <Accordion
                             type='multiple'
                             defaultValue={["item-1"]}
-                            >
+                        >
                             {items.map((item, index) => (
                                 <AccordionItem
                                     key={`${item.question}-${index}`}
@@ -78,7 +70,7 @@ export default function FAQs({
                             Need more help?{' '}
                             <a
                                 href="/contact"
-                                className="text-primary font-medium hover:underline">
+                                className="font-[450] hover:underline">
                                 Contact us
                             </a>
                         </p>
