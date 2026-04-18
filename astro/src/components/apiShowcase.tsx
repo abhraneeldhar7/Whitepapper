@@ -334,7 +334,8 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
     };
 
     const currentCode = getCurrentCode();
-    const currentCodeAsMarkdown = `\`\`\`${language}\n${currentCode}\n\`\`\``;
+    const requiresTopPadding = selectedEndpoint.id === "collection" || selectedEndpoint.id === "paper";
+    const currentCodeAsMarkdown = `\`\`\`${language}\n${requiresTopPadding ? "\n\n" : ""}${currentCode}\n\`\`\``;
 
     return (
         <div className="w-full">
@@ -355,13 +356,13 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
 
             <p className="mt-3 max-w-[720px] text-sm leading-6 text-muted-foreground">{selectedEndpoint.description}</p>
 
-            <div className={`overflow-hidden relative mt-2 ${language == "typescript" ? "h-[260px]" : "h-[240px]"} transition-all duration-300`}>
+            <div className={`overflow-hidden relative ${language == "typescript" ? "h-[260px]" : "h-[240px]"} transition-all duration-300`}>
                 <div
                     className={cn(
-                        "flex gap-1 transition-all duration-300 ease-in-out absolute top-2 left-2 z-2",
+                        "flex gap-1 transition-all duration-300 ease-in-out absolute top-[30px] left-2 z-2",
                         selectedEndpoint.hasIdentifierOptions
                             ? "translate-y-[0px]"
-                            : "translate-y-[-50px]")}>
+                            : "translate-y-[-70px]")}>
                     <Button
 
                         variant={identifierType === "id" ? "default" : "secondary"}

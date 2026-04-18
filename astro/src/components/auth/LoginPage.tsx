@@ -12,6 +12,25 @@ import styles from "./login.module.css"
 
 const DEFAULT_REDIRECT_PATH = "/dashboard";
 
+async function waitForSessionToken(clerk: any, timeoutMs = 2000): Promise<void> {
+    const startedAt = Date.now();
+
+    while (Date.now() - startedAt < timeoutMs) {
+        const token = await clerk?.session?.getToken?.().catch(() => null);
+        if (token) {
+            return;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+}
+
+async function finalizeAuthAndRedirect(clerk: any, sessionId: string, redirectUrl: string): Promise<void> {
+    await clerk.setActive({ session: sessionId });
+    await waitForSessionToken(clerk);
+    window.location.replace(redirectUrl);
+}
+
 type NewAccountFormProps = {
     redirectUrl: string;
     getClerk: () => Promise<any | null>;
@@ -110,9 +129,8 @@ function NewAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
                 return;
             }
 
-            await clerk.setActive({ session: completeSignUp.createdSessionId });
+            await finalizeAuthAndRedirect(clerk, completeSignUp.createdSessionId, redirectUrl);
             toast.success("Account created successfully!");
-            window.location.replace(redirectUrl);
         } catch (err: any) {
             toast.error(err.errors?.[0]?.message || "Invalid code");
         } finally {
@@ -294,9 +312,8 @@ function OldAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
             });
 
             if (result.status === "complete") {
-                await clerk.setActive({ session: result.createdSessionId });
+                await finalizeAuthAndRedirect(clerk, result.createdSessionId, redirectUrl);
                 toast.success("Login successful! Redirecting...");
-                window.location.replace(redirectUrl);
             } else {
                 toast.error("Login incomplete. Please check your credentials or try a different method.");
             }
@@ -430,9 +447,9 @@ export default function LoginPage() {
             <img src="/appLogo.png" height={80} width={80} alt="Whitepapper" />
 
             {authMode === "login" ? (
-                <h1 className="font-[Instrument] text-[36px]">Welcome back</h1>
+                <h1 className="text-[36px]">Welcome back</h1>
             ) : (
-                <h1 className="font-[Instrument] text-[36px]">Join Whitepapper</h1>
+                <h1 className="text-[36px]">Join Whitepapper</h1>
             )}
 
             <div className="flex w-full flex-col gap-[12px]">

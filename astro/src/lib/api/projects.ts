@@ -6,6 +6,7 @@ import type { ProjectDoc, PaperDoc, CollectionDoc } from "@/lib/types";
 type CreateProjectInput = {
   name?: string;
   description?: string | null;
+  contentGuidelines?: string | null;
   isPublic?: boolean;
 };
 
@@ -13,6 +14,7 @@ type UpdateProjectInput = {
   name?: string;
   slug?: string;
   description?: string | null;
+  contentGuidelines?: string | null;
   logoUrl?: string | null;
 };
 
@@ -46,14 +48,19 @@ export async function createProject(
   client: ApiClient = apiClient,
 ): Promise<ProjectDoc> {
   const description = input.description ?? null;
+  const contentGuidelines = input.contentGuidelines ?? null;
   if (description && description.length > MAX_DESCRIPTION_LENGTH) {
     throw new Error(`Project description is too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
+  }
+  if (contentGuidelines && contentGuidelines.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(`Project content guidelines are too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
   }
 
   return client.post<ProjectDoc>("/projects", {
     body: {
       name: input.name,
       description,
+      contentGuidelines,
       isPublic: input.isPublic ?? true,
     },
   });
@@ -65,14 +72,19 @@ export async function updateProject(
   client: ApiClient = apiClient,
 ): Promise<ProjectDoc> {
   const description = input.description ?? undefined;
+  const contentGuidelines = input.contentGuidelines ?? undefined;
   if (typeof description === "string" && description.length > MAX_DESCRIPTION_LENGTH) {
     throw new Error(`Project description is too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
+  }
+  if (typeof contentGuidelines === "string" && contentGuidelines.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(`Project content guidelines are too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
   }
 
   return client.patch<ProjectDoc>(`/projects/${projectId}`, {
     body: {
       ...input,
       description,
+      contentGuidelines,
     },
   });
 }

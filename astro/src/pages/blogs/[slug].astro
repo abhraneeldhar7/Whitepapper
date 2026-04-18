@@ -32,6 +32,10 @@ Astro.response.headers.set(
     "Cache-Control",
     "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
 );
+Astro.response.headers.set(
+    "CDN-Cache-Control",
+    "public, max-age=600, stale-while-revalidate=600",
+);
 
 const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
     .trim()
@@ -187,14 +191,14 @@ const seo = buildPaperSeoConfig(metadata, {
                 isDesktopUA ? (
                     <div class="sticky top-[140px] hidden md:block">
                         <LinearTableOfContent
-                            client:idle
+                            client:load
                             containerId={contentContainerId}
                         />
                     </div>
                 ) : (
                     <MobileTableOfContent
                         topOffset={80}
-                        client:idle
+                        client:load
                         contentContainerId={contentContainerId}
                     />
                 )

@@ -4,6 +4,7 @@ interface TocItem {
   id: string;
   text: string;
   level: number;
+  element: HTMLElement;
 }
 
 interface LinearTableOfContentProps {
@@ -29,20 +30,46 @@ export function LinearTableOfContent({
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const elements = Array.from(container.querySelectorAll("h1, h2, h3, h4, h5, h6"));
-    const parsedHeadings = elements.map((el) => {
+    const scanHeadings = () => {
+      const elements = Array.from(container.querySelectorAll("h1, h2, h3, h4, h5, h6")) as HTMLElement[];
+      const parsedHeadings = elements.map((el, index) => {
       // Auto-generate an ID if the heading doesn't have one
       if (!el.id) {
-        el.id = el.textContent?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "heading";
+        el.id =
+          el.textContent?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") ||
+          `heading-${index}`;
       }
       return {
         id: el.id,
         text: el.textContent || "",
         level: Number(el.tagName.replace("H", "")),
+        element: el,
       };
     });
 
-    setHeadings(parsedHeadings);
+      setHeadings((prev) => {
+        if (
+          prev.length === parsedHeadings.length &&
+          prev.every((item, idx) => item.id === parsedHeadings[idx]?.id && item.text === parsedHeadings[idx]?.text)
+        ) {
+          return prev;
+        }
+        return parsedHeadings;
+      });
+    };
+
+    scanHeadings();
+
+    const observer = new MutationObserver(() => {
+      scanHeadings();
+    });
+    observer.observe(container, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    return () => observer.disconnect();
   }, [containerId]);
 
   // 2. Scroll Spy logic
@@ -55,8 +82,8 @@ export function LinearTableOfContent({
       ticking = false;
 
       const headingElements = headings
-        .map((heading) => document.getElementById(heading.id))
-        .filter((el): el is HTMLElement => el !== null);
+        .map((heading) => heading.element)
+        .filter((el): el is HTMLElement => Boolean(el));
 
       if (headingElements.length === 0) return;
 

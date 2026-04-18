@@ -3,14 +3,19 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Label } from "../ui/label";
 import { ScrollArea } from "../ui/scroll-area";
-import type { DocsNavSection } from "@/content/docs/docsPagesStructure";
+import type { DocsNavSection, DocsPageEntry } from "@/content/docs/docsPagesStructure";
 
 type Props = {
   navSections: DocsNavSection[];
   currentPath: string;
+  previousPage?: DocsPageEntry | null;
+  nextPage?: DocsPageEntry | null;
 };
 
-const { navSections, currentPath } = Astro.props as Props;
+const { navSections, currentPath, previousPage, nextPage } = Astro.props as Props;
+const prefetchRoutes = new Set<string>();
+if (previousPage?.route) prefetchRoutes.add(previousPage.route);
+if (nextPage?.route) prefetchRoutes.add(nextPage.route);
 ---
 
 <aside class="hidden md:block ml-5 shrink-0">
@@ -27,7 +32,7 @@ const { navSections, currentPath } = Astro.props as Props;
                   return (
                     <>
                       <li>
-                        <a href={page.route} class="w-full">
+                        <a href={page.route} class="w-full" rel={prefetchRoutes.has(page.route) ? "prefetch" : undefined}>
                           <Button
                             variant={isPageActive ? "secondary" : "ghost"}
                             className="w-full font-[400] justify-start"
@@ -41,7 +46,7 @@ const { navSections, currentPath } = Astro.props as Props;
                         const isChildActive = currentPath === child.route;
                         return (
                           <li>
-                            <a href={child.route}>
+                            <a href={child.route} rel={prefetchRoutes.has(child.route) ? "prefetch" : undefined}>
                               <Button
                                 variant="ghost"
                                 size="sm"

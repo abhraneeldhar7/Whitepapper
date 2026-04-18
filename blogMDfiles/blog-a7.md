@@ -189,4 +189,4 @@ A sitemap that's broken or stale is often worse than no sitemap  it wastes Googl
 
 ---
 
-*Part of our series on Programmatic SEO for API-First CMS. Read the [full pillar guide](#) or learn about [generating SEO metadata automatically](#).*
+*Part of our series on Programmatic SEO for API-First CMS. Read the [full pillar guide](/blog/programmatic-seo-api-first-cms) or learn about [generating SEO metadata automatically](/blog/auto-generate-seo-metadata-content-api).*

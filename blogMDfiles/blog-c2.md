@@ -124,4 +124,4 @@ Build topical depth across your site, not just a single great page. One strong a
 
 ---
 
-*Part of our series on AI Search Readiness. Start with [the complete GEO guide](#) or continue with [how to design pages for Google AI Overviews](#).*
+*Part of our series on AI Search Readiness. Start with [the complete GEO guide](/blog/geo-guide-ai-search-visibility) or continue with [how to design pages for Google AI Overviews](/blog/design-pages-google-ai-overviews).*

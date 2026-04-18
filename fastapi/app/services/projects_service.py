@@ -160,6 +160,15 @@ class ProjectsService:
                     f"Maximum length is {MAX_DESCRIPTION_LENGTH} characters."
                 ),
             )
+        content_guidelines = payload.get("contentGuidelines") or ""
+        if len(content_guidelines) > MAX_DESCRIPTION_LENGTH:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Project content guidelines are too long. "
+                    f"Maximum length is {MAX_DESCRIPTION_LENGTH} characters."
+                ),
+            )
 
         created = {
             PROJECT_ID_KEY: project_id,
@@ -167,6 +176,7 @@ class ProjectsService:
             "name": name,
             PROJECT_SLUG_KEY: self._unique_slug(owner_id, payload.get("slug") or name),
             "description": description,
+            "contentGuidelines": content_guidelines,
             "logoUrl": payload.get("logoUrl") or None,
             "isPublic": bool(payload.get("isPublic", True)),
             "pagesNumber": 0,
@@ -179,7 +189,7 @@ class ProjectsService:
     def update(self, project_id: str, payload: dict) -> dict:
         current = self.get_by_id(project_id)
 
-        allowed_update_fields = {"name", "slug", "description", "logoUrl", "isPublic", "pagesNumber"}
+        allowed_update_fields = {"name", "slug", "description", "contentGuidelines", "logoUrl", "isPublic", "pagesNumber"}
         payload = {key: value for key, value in payload.items() if key in allowed_update_fields}
 
         if "name" in payload:
@@ -191,6 +201,16 @@ class ProjectsService:
                     status_code=400,
                     detail=(
                         "Project description is too long. "
+                        f"Maximum length is {MAX_DESCRIPTION_LENGTH} characters."
+                    ),
+                )
+        if "contentGuidelines" in payload:
+            payload["contentGuidelines"] = payload.get("contentGuidelines") or ""
+            if len(payload["contentGuidelines"]) > MAX_DESCRIPTION_LENGTH:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Project content guidelines are too long. "
                         f"Maximum length is {MAX_DESCRIPTION_LENGTH} characters."
                     ),
                 )

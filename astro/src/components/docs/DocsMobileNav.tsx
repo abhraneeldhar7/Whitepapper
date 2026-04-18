@@ -33,7 +33,7 @@ export default function DocsMobileNav({ navSections, currentPath }: DocsMobileNa
         <SheetHeader>
           <SheetTitle className="flex gap-4 items-center">
             <img src="/appLogo.png" height="30" width="30" alt="Whitepapper" />
-            <h1 className="text-[20px]">Documentation</h1>
+            <p className="text-[20px]">Documentation</p>
           </SheetTitle>
         </SheetHeader>
         <ScrollArea className="h-full">

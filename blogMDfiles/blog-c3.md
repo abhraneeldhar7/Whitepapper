@@ -148,4 +148,4 @@ A page that passes all of these checks is in a strong position to be cited. One 
 
 ---
 
-*Part of our series on AI Search Readiness. Read [the complete GEO guide](#) or explore [entity SEO for developer products](#).*
+*Part of our series on AI Search Readiness. Read [the complete GEO guide](/blog/geo-guide-ai-search-visibility) or explore [entity SEO for developer products](/blog/entity-seo-brand-ai-search).*

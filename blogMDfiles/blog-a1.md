@@ -158,6 +158,6 @@ When your content model is clean, your metadata is automatic, your URLs are cano
 
 ## Further Reading
 
-- [How to avoid keyword cannibalization in a content hub](#)
-- [Building scalable internal linking with structured content](#)
-- [Multi-channel distribution automation for developer publishers](#)
+- [How to avoid keyword cannibalization in a content hub](/blog/keyword-cannibalization-content-hub)
+- [Building scalable internal linking with structured content](/blog/scalable-internal-linking-structured-content)
+- [Multi-channel distribution automation for developer publishers](/features/distribution)

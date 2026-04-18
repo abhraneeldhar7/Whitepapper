@@ -133,4 +133,4 @@ The practical implication: start now. Publish your consistent description. Get y
 
 ---
 
-*Part of our series on AI Search Readiness. Start with [the complete GEO guide](#) or learn about [how to write content AI assistants actually quote](#).*
+*Part of our series on AI Search Readiness. Start with [the complete GEO guide](/blog/geo-guide-ai-search-visibility) or learn about [how to write content AI assistants actually quote](/blog/write-content-ai-assistants-quote).*

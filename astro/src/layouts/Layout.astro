@@ -1,7 +1,7 @@
 ---
 import Footer from "@/components/footer.astro";
 import SiteTopNav from "@/components/site/SiteTopNav.astro";
-import { getPageSeoConfig, type PageSeoConfig } from "@/metadata/pages";
+import { getPageSeoConfig, mergePageSeoConfig, type PageSeoConfig } from "@/metadata/pages";
 import ogImageAsset from "@/assets/ogImage.png";
 import { Toaster } from "@/components/ui/sonner";
 import { ClientRouter } from "astro:transitions";
@@ -52,7 +52,7 @@ const authHelpers = showSiteNav ? Astro.locals.auth() : null;
 const token = authHelpers ? await authHelpers.getToken().catch(() => null) : null;
 const isSignedIn = Boolean(token);
 const routeSeoConfig = getPageSeoConfig(pathname);
-const pageSeoConfig = seo ?? routeSeoConfig;
+const pageSeoConfig = mergePageSeoConfig(routeSeoConfig, seo);
 
 const pathToTitle = (path: string) => {
   if (path === "/") return "Whitepapper";

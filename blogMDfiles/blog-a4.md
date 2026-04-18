@@ -197,4 +197,4 @@ That leverage is why building this system early  even before you have a lot of c
 
 ---
 
-*Part of our series on Programmatic SEO for API-First CMS. Start with [the pillar guide](#) or read about [handling canonical URLs at scale](#).*
+*Part of our series on Programmatic SEO for API-First CMS. Start with [the pillar guide](/blog/programmatic-seo-api-first-cms) or read about [handling canonical URLs at scale](/blog/canonical-urls-scale-dynamic-sites).*

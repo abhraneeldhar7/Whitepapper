@@ -187,4 +187,4 @@ Both are necessary. But for most sites that have been publishing for a year or m
 
 ---
 
-*Part of our series on Programmatic SEO and Content Operations. Start with [the pillar guide](#) or explore [how to build a content hub that ranks](#).*
+*Part of our series on Programmatic SEO and Content Operations. Start with [the pillar guide](/blog/programmatic-seo-api-first-cms) or explore [how to build a content hub that ranks](/blog/build-content-hub-that-ranks).*

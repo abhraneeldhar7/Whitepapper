@@ -112,4 +112,4 @@ A blog posts accumulate. A content hub compounds. That's the difference  and aft
 
 ---
 
-*Explore more from our series on Programmatic SEO and Content Operations, starting with [the complete pillar guide](#).*
+*Explore more from our series on Programmatic SEO and Content Operations, starting with [the complete pillar guide](/blog/programmatic-seo-api-first-cms).*

@@ -20,6 +20,7 @@ import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import { createProject } from "@/lib/api/projects";
 import { MAX_PAPERS_PER_USER, MAX_PROJECTS_PER_USER } from "@/lib/limits";
 import { sortPapersLatestFirst } from "@/lib/paperSort";
+import { readTabFromQuery, writeTabToQuery } from "@/lib/queryTab";
 import type { PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
 import FolderNotes from "../folderComponent";
 import EmptyPaperNotes from "../emptyPagesComp";
@@ -48,6 +49,7 @@ function buildOptimisticProject(ownerId?: string, name?: string, isPublic?: bool
     name: name?.trim() || "Creating project...",
     slug: `creating-project-${nonce}`,
     description: "",
+    contentGuidelines: "",
     isPublic: Boolean(isPublic),
     pagesNumber: 0,
     createdAt: now,
@@ -55,29 +57,10 @@ function buildOptimisticProject(ownerId?: string, name?: string, isPublic?: bool
   };
 }
 
-function readTabFromQuery(): DashboardTab {
-  if (typeof window === "undefined") {
-    return "pages";
-  }
-
-  const rawTab = new URLSearchParams(window.location.search).get("tab");
-  if (rawTab && dashboardTabs.includes(rawTab as DashboardTab)) {
-    return rawTab as DashboardTab;
-  }
-
-  return "pages";
-}
-
-function writeTabToQuery(tab: DashboardTab): void {
-  const params = new URLSearchParams(window.location.search);
-  params.set("tab", tab);
-  const query = params.toString();
-  const url = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
-  window.history.pushState({}, "", url);
-}
-
 export default function DashboardApp({ initialProjects, initialPages, initialUser, isMobileUA }: DashboardAppProps) {
-  const [activeTab, setActiveTab] = useState<DashboardTab>(readTabFromQuery);
+  const [activeTab, setActiveTab] = useState<DashboardTab>(() =>
+    readTabFromQuery<DashboardTab>(dashboardTabs as readonly DashboardTab[], "pages"),
+  );
   const [projects, setProjects] = useState<ProjectDoc[]>(initialProjects);
   const [pages, setPages] = useState<PaperDoc[]>(() => sortPapersLatestFirst(initialPages));
   const [creatingPage, setCreatingPage] = useState(false);

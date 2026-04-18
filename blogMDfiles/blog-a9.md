@@ -150,4 +150,4 @@ For a platform that's planning to scale to thousands of users and tens of thousa
 
 ---
 
-*Part of our series on Programmatic SEO and Content Operations. Read the [full pillar guide](#) or explore [sitemap strategy for content-heavy sites](#).*
+*Part of our series on Programmatic SEO and Content Operations. Read the [full pillar guide](/blog/programmatic-seo-api-first-cms) or explore [sitemap strategy for content-heavy sites](/blog/sitemap-strategy-api-first-sites).*

@@ -65,6 +65,7 @@ class ProjectDoc(BaseModel):
     name: str
     slug: str
     description: str
+    contentGuidelines: str = ""
     logoUrl: str | None = None
     isPublic: bool = False
     pagesNumber: int = 0
@@ -75,6 +76,7 @@ class ProjectDoc(BaseModel):
 class ProjectCreate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     description: str | None = None
+    contentGuidelines: str | None = None
     logoUrl: str | None = None
     isPublic: bool = True
 
@@ -83,6 +85,7 @@ class ProjectUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     slug: str | None = Field(default=None, min_length=2, max_length=80)
     description: str | None = None
+    contentGuidelines: str | None = None
     logoUrl: str | None = None
 
 
@@ -292,4 +295,3 @@ class McpTokenSummary(BaseModel):
     usage: int = 0
     limitPerMonth: int = MCP_TOKEN_LIMIT_PER_MONTH
     createdAt: datetime
-    expiresAt: datetime

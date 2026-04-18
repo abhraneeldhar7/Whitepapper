@@ -1,15 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { CheckIcon, CopyIcon, Ellipsis, FolderPlus, LockIcon, NotebookPen, PencilIcon, PlusIcon, RssIcon, SaveIcon, SquareArrowOutUpRight, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import FolderNotes from "@/components/folderComponent";
 import TextEditor from "@/components/pre_made_components/editor/textEditor";
-import PostRender from "@/components/ui/markdown-render/markdown-render";
+import MarkdownRender from "@/components/ui/markdown-render/markdown-render";
 import UserPopover from "@/components/userPopover";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { createCollection } from "@/lib/api/collections";
 import { createApiKey, resetApiKey, setApiKeyActive, type ApiKeySummary } from "@/lib/api/api_keys";
 import { revokeProjectMcpToken } from "@/lib/api/mcp";
@@ -65,9 +64,9 @@ type ProjectWorkspaceProps = {
   isMobileUA: boolean;
 };
 
-type ProjectTab = "overview" | "api";
+type ProjectTab = "overview" | "api" | "mcp";
 
-const projectTabs: ProjectTab[] = ["overview", "api"];
+const projectTabs: ProjectTab[] = ["overview", "api", "mcp"];
 
 function normalizeProjectSlug(value: string): string {
   return value
@@ -166,6 +165,7 @@ export default function ProjectWorkspace({
   const [resettingApiKey, setResettingApiKey] = useState(false);
   const [mcpConfigCopied, setMcpConfigCopied] = useState(false);
   const [revokingMcpTokenId, setRevokingMcpTokenId] = useState<string | null>(null);
+  const [revokingMcpToken, setRevokingMcpToken] = useState(false);
   const [revokeMcpDialogOpen, setRevokeMcpDialogOpen] = useState(false);
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
@@ -228,6 +228,10 @@ export default function ProjectWorkspace({
       toast.error(`Project description is too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
       return;
     }
+    if ((draftProject.contentGuidelines || "").length > MAX_DESCRIPTION_LENGTH) {
+      toast.error(`Project content guidelines are too long. Maximum length is ${MAX_DESCRIPTION_LENGTH} characters.`);
+      return;
+    }
 
     const normalizedSlug = normalizeProjectSlug(draftProject.slug || "");
     if (!normalizedSlug) {
@@ -262,6 +266,7 @@ export default function ProjectWorkspace({
       name: draftProject.name.trim(),
       slug: normalizedSlug,
       description: draftProject.description || null,
+      contentGuidelines: draftProject.contentGuidelines || null,
       logoUrl: draftProject.logoUrl ?? null,
     });
     toast.promise(savePromise, {
@@ -547,6 +552,7 @@ export default function ProjectWorkspace({
     if (!revokingMcpTokenId) {
       return;
     }
+    setRevokingMcpToken(true);
     try {
       await revokeProjectMcpToken(projectId, revokingMcpTokenId);
       setMcpTokens((prev) => prev.filter((token) => token.tokenId !== revokingMcpTokenId));
@@ -555,6 +561,8 @@ export default function ProjectWorkspace({
       toast.success("MCP connection revoked.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to revoke MCP connection.");
+    } finally {
+      setRevokingMcpToken(false);
     }
   }
 
@@ -574,12 +582,19 @@ export default function ProjectWorkspace({
   const projectNameForDisplay = editableProject?.name || project.name;
   const projectSlugForDisplay = editableProject?.slug || project.slug;
   const projectDescription = editableProject?.description || "";
+  const projectContentGuidelines = editableProject?.contentGuidelines || "";
   const logoPreview = tempUploadingProjectLogo || editableProject?.logoUrl || "";
   const projectPreviewKey = `${project.projectId}:${project.updatedAt}:${projectDescription.length}`;
   const resolvedMcpConnectionInfo = mcpConnectionInfo || resolveFallbackMcpConnectionInfo();
   const mcpEndpointUrl = resolvedMcpConnectionInfo?.endpointUrl || "";
   const mcpManualConfig = resolvedMcpConnectionInfo ? JSON.stringify(resolvedMcpConnectionInfo.manualConfig, null, 2) : "";
+  // SDK connect snippet removed as per user request
   const selectedMcpToken = mcpTokens.find((token) => token.tokenId === revokingMcpTokenId) || null;
+  const mcpMonthlyUsage = mcpTokens[0]?.usage ?? 0;
+  const mcpMonthlyLimit = mcpTokens[0]?.limitPerMonth ?? 0;
+  const mcpMonthlyProgress = mcpMonthlyLimit > 0
+    ? Math.min(100, Math.max(0, (mcpMonthlyUsage / mcpMonthlyLimit) * 100))
+    : 0;
 
   return (
     <div className="min-h-screen px-[15px] pt-15 pb-20">
@@ -608,6 +623,7 @@ export default function ProjectWorkspace({
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="api">API</TabsTrigger>
+            <TabsTrigger value="mcp">MCP</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-5">
@@ -833,7 +849,7 @@ export default function ProjectWorkspace({
                         placeholder="Write your project description..."
                       />
                     ) : projectDescription.trim().length > 0 ? (
-                      <PostRender key={projectPreviewKey} content={projectDescription} />
+                      <MarkdownRender key={projectPreviewKey} content={projectDescription} />
                     ) : (
                       <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground h-[250px]">
                         <NotebookPen size={35} />
@@ -970,161 +986,59 @@ export default function ProjectWorkspace({
           </TabsContent>
 
           <TabsContent value="api" className="mt-5">
-            <div className="space-y-6 max-w-[900px] w-full mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle>MCP Setup</CardTitle>
-                  <CardDescription>Use one standard HTTP MCP endpoint for Whitepapper projects, collections, and papers.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Alert>
-                    <AlertTitle>OAuth on first connect</AlertTitle>
-                    <AlertDescription>
-                      Your MCP client opens a browser flow once, you choose a project, and Whitepapper returns a scoped MCP token.
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium">Manual config</p>
-                        <p className="text-xs text-muted-foreground">Standard streamable HTTP MCP configuration</p>
+            <div className="space-y-6 max-w-[800px] w-full mx-auto">
+              {!apiDoc ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">No API key created for this project.</p>
+                  <Button onClick={handleCreateApiKey} loading={creatingApiKey}>
+                    Create API key
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid gap-3 text-sm">
+                    <div className="flex items-start gap-4">
+                      <p className="min-w-[90px] text-muted-foreground">Monthly Usage</p>
+                      <div className="flex flex-1 flex-col gap-2">
+                        <p className="font-[450] text-[12px]">{apiDoc.usage} / {apiDoc.limitPerMonth}</p>
+                        <Progress className="w-full" value={(apiDoc.usage / apiDoc.limitPerMonth) * 100} />
                       </div>
-                      <Button size="sm" variant="outline" onClick={() => { void handleCopyMcpConfig(); }} disabled={!resolvedMcpConnectionInfo}>
-                        {mcpConfigCopied ? <CheckIcon /> : <CopyIcon />}
-                        {mcpConfigCopied ? "Copied" : "Copy config"}
-                      </Button>
                     </div>
-                    {resolvedMcpConnectionInfo ? (
-                      <>
-                        <p className="text-xs text-muted-foreground">HTTP endpoint: {mcpEndpointUrl}</p>
-                        <pre className="overflow-x-auto rounded-md border bg-muted/30 p-3 text-xs">{mcpManualConfig}</pre>
-                      </>
-                    ) : (
-                      <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
-                        MCP connection info is unavailable.
-                      </div>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <p className="min-w-[90px] text-muted-foreground">Status</p>
+                      <Badge variant={apiDoc.isActive ? "secondary" : "outline"}>
+                        {apiDoc.isActive ? "Active" : "Disabled"}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="min-w-[90px] text-muted-foreground">Created</p>
+                      <p className="font-[450]">{formatFirestoreDate(apiDoc.createdAt)}</p>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Active Connections</CardTitle>
-                  <CardDescription>Each IDE connection gets its own scoped MCP token for this project.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {mcpTokens.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No active MCP connections for this project yet.</p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Label</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead>Expires</TableHead>
-                          <TableHead>Usage</TableHead>
-                          <TableHead className="text-right">Action</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {mcpTokens.map((token) => (
-                          <TableRow key={token.tokenId}>
-                            <TableCell>
-                              <div className="flex flex-col gap-1">
-                                <span className="font-medium">{token.label || "Whitepapper MCP"}</span>
-                                <span className="text-xs text-muted-foreground">{token.workspaceId}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>{formatFirestoreDate(token.createdAt)}</TableCell>
-                            <TableCell>{formatFirestoreDate(token.expiresAt)}</TableCell>
-                            <TableCell>
-                              <div className="min-w-[140px] space-y-2">
-                                <p className="text-xs">{token.usage} / {token.limitPerMonth}</p>
-                                <Progress className="w-full" value={(token.usage / token.limitPerMonth) * 100} />
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => {
-                                  setRevokingMcpTokenId(token.tokenId);
-                                  setRevokeMcpDialogOpen(true);
-                                }}
-                              >
-                                Revoke
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant={apiDoc.isActive ? "secondary" : "default"}
+                      onClick={() => {
+                        void handleToggleApiKey(!apiDoc.isActive);
+                      }}
+                      loading={togglingApiKey}
+                      disabled={resettingApiKey}
+                    >
+                      {apiDoc.isActive ? "Disable" : "Enable"}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => setResetConfirmOpen(true)}
+                      disabled={togglingApiKey || resettingApiKey}
+                    >
+                      Reset
+                    </Button>
+                  </div>
+                </div>
+              )}
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Dev API</CardTitle>
-                  <CardDescription>Project-scoped API key access lives here with MCP so integrations stay in one place.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {!apiDoc ? (
-                    <div className="rounded-md border p-4 space-y-4">
-                      <p className="text-sm text-muted-foreground">No API key created for this project.</p>
-                      <Button onClick={handleCreateApiKey} loading={creatingApiKey}>
-                        Create API key
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="rounded-md border p-4 space-y-4">
-                      <div className="grid gap-3 text-sm">
-                        <div className="flex items-start gap-4">
-                          <p className="min-w-[90px] text-muted-foreground">Monthly Usage</p>
-                          <div className="flex flex-1 flex-col gap-2">
-                            <p className="font-[450] text-[12px]">{apiDoc.usage} / {apiDoc.limitPerMonth}</p>
-                            <Progress className="w-full" value={(apiDoc.usage / apiDoc.limitPerMonth) * 100} />
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <p className="min-w-[90px] text-muted-foreground">Status</p>
-                          <Badge variant={apiDoc.isActive ? "secondary" : "outline"}>
-                            {apiDoc.isActive ? "Active" : "Disabled"}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <p className="min-w-[90px] text-muted-foreground">Created</p>
-                          <p className="font-[450]">{formatFirestoreDate(apiDoc.createdAt)}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant={apiDoc.isActive ? "secondary" : "default"}
-                          onClick={() => {
-                            void handleToggleApiKey(!apiDoc.isActive);
-                          }}
-                          loading={togglingApiKey}
-                          disabled={resettingApiKey}
-                        >
-                          {apiDoc.isActive ? "Disable" : "Enable"}
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={() => setResetConfirmOpen(true)}
-                          disabled={togglingApiKey || resettingApiKey}
-                        >
-                          Reset
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {apiDoc ? <ApiShowcase /> : null}
-                </CardContent>
-              </Card>
+              {apiDoc ? <ApiShowcase /> : null}
             </div>
 
             <Dialog open={apiKeyDialogOpen} onOpenChange={setApiKeyDialogOpen}>
@@ -1176,7 +1090,136 @@ export default function ProjectWorkspace({
               </DialogContent>
             </Dialog>
 
-            <Dialog open={revokeMcpDialogOpen} onOpenChange={setRevokeMcpDialogOpen}>
+          </TabsContent>
+
+          <TabsContent value="mcp" className="mt-5">
+            <div className="space-y-6 max-w-[800px] w-full mx-auto">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label>MCP Setup</Label>
+                  
+                </div>
+                {resolvedMcpConnectionInfo ? (
+                  <>
+                  
+                    <div className="">
+                      <MarkdownRender content={
+                        `\n\n\`\`\`json\n${mcpManualConfig}\n\`\`\``
+                      } />
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                    MCP connection info is unavailable.
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <Label>Active Connections</Label>
+                {mcpTokens.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No active MCP connections for this project yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid gap-3 text-sm">
+                      <div className="flex items-start gap-4">
+                        <p className="min-w-[90px] text-muted-foreground">Monthly Usage</p>
+                        <div className="flex flex-1 flex-col gap-2">
+                          <p className="font-[450] text-[12px]">{mcpMonthlyUsage} / {mcpMonthlyLimit}</p>
+                          <Progress className="w-full" value={mcpMonthlyProgress} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Label</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {mcpTokens.map((token) => (
+                          <TableRow key={token.tokenId}>
+                            <TableCell>
+                              <div className="flex flex-col gap-1">
+                                <span className="font-medium">{token.label || "Whitepapper MCP"}</span>
+                                <span className="text-xs text-muted-foreground">{token.workspaceId}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>{formatFirestoreDate(token.createdAt)}</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => {
+                                  setRevokingMcpTokenId(token.tokenId);
+                                  setRevokeMcpDialogOpen(true);
+                                }}
+                              >
+                                Revoke
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <Label>Content guidelines</Label>
+                {editingProject ? (
+                  <>
+                    <Textarea
+                      value={draftProject?.contentGuidelines ?? ""}
+                      onChange={(event) =>
+                        setDraftProject((prev) => (prev ? { ...prev, contentGuidelines: event.target.value } : prev))
+                      }
+                      placeholder="Describe the audience, tone, style, and constraints the AI should follow."
+                      className="min-h-[140px]"
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        variant="secondary"
+                        onClick={cancelEditProject}
+                        disabled={savingProject}
+                      >
+                        <XIcon /> Cancel
+                      </Button>
+                      <Button
+                        onClick={handleSaveProjectDetails}
+                        loading={savingProject}
+                        disabled={savingProject}
+                      >
+                        <SaveIcon /> Save
+                      </Button>
+                    </div>
+                  </>
+                ) : projectContentGuidelines.trim().length > 0 ? (
+                  <div className="rounded-md border bg-muted/20 p-4 text-sm whitespace-pre-wrap">
+                    {projectContentGuidelines}
+                    <div className="flex mt-2">
+                      <Button size="sm" variant="outline" onClick={beginEditProject}>
+                        <PencilIcon /> Edit
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                    No content guidelines provided.
+                    <div className="flex mt-2">
+                      <Button size="sm" variant="outline" onClick={beginEditProject}>
+                        <PencilIcon /> Add
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <Dialog open={revokeMcpDialogOpen} onOpenChange={setRevokeMcpDialogOpen}>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Revoke MCP connection?</DialogTitle>
@@ -1194,13 +1237,13 @@ export default function ProjectWorkspace({
                   >
                     Cancel
                   </Button>
-                  <Button variant="destructive" onClick={() => { void handleRevokeMcpToken(); }}>
+                  <Button variant="destructive" loading={revokingMcpToken} onClick={() => { void handleRevokeMcpToken(); }}>
                     Revoke
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-
+            </div>
           </TabsContent>
         </Tabs>
       </div>

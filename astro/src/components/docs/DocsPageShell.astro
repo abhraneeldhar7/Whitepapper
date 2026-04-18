@@ -10,6 +10,7 @@ import type {
   DocsNavSection,
   DocsPageEntry,
 } from "@/content/docs/docsPagesStructure";
+import type { PageSeoConfig } from "@/metadata/pages";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { LinearTableOfContent } from "../ui/toc/linearTableOfContent";
 
@@ -19,6 +20,7 @@ type Props = {
   pageTitle: string;
   pageDescription: string;
   pageSection: string;
+  seo?: PageSeoConfig | null;
   navSections: DocsNavSection[];
   previousPage: DocsPageEntry | null;
   nextPage: DocsPageEntry | null;
@@ -30,6 +32,7 @@ const {
   pageTitle,
   pageDescription,
   pageSection,
+  seo = null,
   navSections,
   previousPage,
   nextPage,
@@ -115,23 +118,31 @@ const docsPageSeo = {
     },
   ],
 };
+const resolvedSeo = seo ?? docsPageSeo;
 ---
 
 <Layout
   title={pageTitleWithBrand}
   description={pageDescription}
-  seo={docsPageSeo}
+  seo={resolvedSeo}
 >
   <Fragment slot="head">
     {previousPage ? <link rel="prev" href={previousPage.route} /> : null}
     {nextPage ? <link rel="next" href={nextPage.route} /> : null}
+    {previousPage ? <link rel="prefetch" href={previousPage.route} /> : null}
+    {nextPage ? <link rel="prefetch" href={nextPage.route} /> : null}
   </Fragment>
 
   <div class="pb-5 md:pb-10 px-4">
     <div class="flex gap-10 justify-between">
-      {
+        {
         !shouldRenderMobileToc && (
-          <DocsSidebar navSections={navSections} currentPath={currentPath} />
+          <DocsSidebar
+            navSections={navSections}
+            currentPath={currentPath}
+            previousPage={previousPage}
+            nextPage={nextPage}
+          />
         )
       }
 
@@ -185,6 +196,7 @@ const docsPageSeo = {
               previousPage ? (
                 <a
                   href={previousPage.route}
+                  rel="prefetch"
                   class="rounded-lg border border-border/70 p-4 hover:bg-muted/70 transition-all duration-300 flex flex-col"
                 >
                   <div class="flex gap-1 items-center  text-muted-foreground">
@@ -204,6 +216,7 @@ const docsPageSeo = {
               nextPage ? (
                 <a
                   href={nextPage.route}
+                  rel="prefetch"
                   class="rounded-lg border border-border/70 p-4 hover:bg-muted/70 transition-all duration-300 flex flex-col items-end"
                 >
                   <div class="flex gap-1 items-center  text-muted-foreground">
@@ -227,7 +240,7 @@ const docsPageSeo = {
           !shouldRenderMobileToc && (
             <div class="fixed top-[80px] w-[320px] right-10">
               <LinearTableOfContent
-                client:idle
+                client:load
                 offset={125}
                 containerId={docsContentContainerId}
               />
@@ -241,7 +254,7 @@ const docsPageSeo = {
   {
     shouldRenderMobileToc ? (
       <MobileTableOfContent
-        client:idle
+        client:load
         contentContainerId={docsContentContainerId}
         topOffset={110}
       />

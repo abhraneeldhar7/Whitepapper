@@ -255,4 +255,4 @@ Each one builds on a working template, applies automatically to all pages of tha
 
 ---
 
-*Part of our series on Programmatic SEO and Content Operations. Start with [the complete pillar guide](#) or read about [crawl budget management](#).*
+*Part of our series on Programmatic SEO and Content Operations. Start with [the complete pillar guide](/blog/programmatic-seo-api-first-cms) or read about [crawl budget management](/blog/crawl-budget-content-platforms).*

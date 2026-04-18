@@ -57,7 +57,7 @@ export type PageSeoConfig = {
   jsonLd?: JsonLdValue;
 };
 
-const PAGE_SEO_BY_PATH: Record<string, PageSeoConfig> = {
+const CODE_PAGE_SEO_BY_PATH: Record<string, PageSeoConfig> = {
   [home.path]: home,
   [about.path]: about,
   [blogs.path]: blogs,
@@ -77,6 +77,36 @@ const PAGE_SEO_BY_PATH: Record<string, PageSeoConfig> = {
   [error404.path]: error404,
 };
 
+let runtimePageSeoByPath: Record<string, PageSeoConfig> = {};
+
+function normalizeJsonLdItems(value?: JsonLdValue): Record<string, unknown>[] {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+export function mergePageSeoConfig(
+  base: PageSeoConfig | null,
+  override: PageSeoConfig | null,
+): PageSeoConfig | null {
+  if (!base && !override) {
+    return null;
+  }
+
+  const merged: PageSeoConfig = {
+    ...(base || {}),
+    ...(override || {}),
+    path: override?.path || base?.path || "/",
+  };
+
+  const baseJsonLd = normalizeJsonLdItems(base?.jsonLd);
+  const overrideJsonLd = normalizeJsonLdItems(override?.jsonLd);
+  if (baseJsonLd.length || overrideJsonLd.length) {
+    merged.jsonLd = [...baseJsonLd, ...overrideJsonLd];
+  }
+
+  return merged;
+}
+
 function normalizePathname(pathname: string): string {
   if (!pathname) return "/";
   const normalized = pathname.trim();
@@ -84,24 +114,52 @@ function normalizePathname(pathname: string): string {
   return normalized.replace(/\/+$/, "");
 }
 
+function resolveAliasPath(pathname: string): string {
+  if (pathname.startsWith("/dashboard/")) {
+    return "/dashboard";
+  }
+
+  if (pathname.startsWith("/settings/")) {
+    return "/settings";
+  }
+
+  if (pathname.startsWith("/write/")) {
+    return "/write";
+  }
+
+  return pathname;
+}
+
+function getSeoFromSources(pathname: string): PageSeoConfig | null {
+  const fromCode = CODE_PAGE_SEO_BY_PATH[pathname] || null;
+  const fromRuntime = runtimePageSeoByPath[pathname] || null;
+  return mergePageSeoConfig(fromCode, fromRuntime);
+}
+
+export function setRuntimePageSeoConfig(config: PageSeoConfig): void {
+  if (!config?.path) return;
+  const key = normalizePathname(config.path);
+  runtimePageSeoByPath = {
+    ...runtimePageSeoByPath,
+    [key]: config,
+  };
+}
+
+export function setRuntimePageSeoConfigs(configs: PageSeoConfig[]): void {
+  const next: Record<string, PageSeoConfig> = {};
+  for (const config of configs || []) {
+    if (!config?.path) continue;
+    next[normalizePathname(config.path)] = config;
+  }
+  runtimePageSeoByPath = next;
+}
+
 export function getPageSeoConfig(pathname: string): PageSeoConfig | null {
   const normalizedPathname = normalizePathname(pathname);
-
-  if (PAGE_SEO_BY_PATH[normalizedPathname]) {
-    return PAGE_SEO_BY_PATH[normalizedPathname];
+  const direct = getSeoFromSources(normalizedPathname);
+  if (direct) {
+    return direct;
   }
 
-  if (normalizedPathname.startsWith("/dashboard/")) {
-    return PAGE_SEO_BY_PATH["/dashboard"];
-  }
-
-  if (normalizedPathname.startsWith("/settings/")) {
-    return PAGE_SEO_BY_PATH["/settings"];
-  }
-
-  if (normalizedPathname.startsWith("/write/")) {
-    return PAGE_SEO_BY_PATH["/write"];
-  }
-
-  return null;
+  return getSeoFromSources(resolveAliasPath(normalizedPathname));
 }

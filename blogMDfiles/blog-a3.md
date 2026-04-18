@@ -143,4 +143,4 @@ That clarity  for Google and for your team  is what separates a content hub that
 
 ---
 
-*Part of our series on Programmatic SEO for API-First CMS. Read the [pillar guide](#) or explore [how to avoid keyword cannibalization](#).*
+*Part of our series on Programmatic SEO for API-First CMS. Read the [pillar guide](/blog/programmatic-seo-api-first-cms) or explore [how to avoid keyword cannibalization](/blog/keyword-cannibalization-content-hub).*

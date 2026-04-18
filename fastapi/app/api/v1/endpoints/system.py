@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.core.config import get_settings
 from app.services._dev_api_service import _dev_api_service
-from app.utils.mcp_auth import mcp_token_service
+from app.services.mcp_auth import mcp_token_service
 
 router = APIRouter(tags=["system"])
 

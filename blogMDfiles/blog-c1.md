@@ -162,9 +162,9 @@ If you're starting from zero on GEO, here's a practical sequence:
 
 ## Further Reading
 
-- [How AI tools retrieve and cite web content  a technical breakdown](#)
-- [How to design pages for Google AI Overviews](#)
-- [Entity SEO: how to make your brand recognizable to AI systems](#)
-- [How to write content that AI assistants actually quote](#)
-- [llms.txt  what it is and how to create yours](#)
-- [GEO metrics: how to measure your AI search visibility](#)
+- [How AI tools retrieve and cite web content  a technical breakdown](/blog/how-ai-tools-retrieve-cite-web-content)
+- [How to design pages for Google AI Overviews](/blog/design-pages-google-ai-overviews)
+- [Entity SEO: how to make your brand recognizable to AI systems](/blog/entity-seo-brand-ai-search)
+- [How to write content that AI assistants actually quote](/blog/write-content-ai-assistants-quote)
+- [llms.txt  what it is and how to create yours](/blog/llms-txt-guide)
+- [GEO metrics: how to measure your AI search visibility](/resources)

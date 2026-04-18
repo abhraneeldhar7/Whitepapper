@@ -22,7 +22,7 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentCon
   const lineRefs = useRef<Array<HTMLDivElement | null>>([]);
   const lineCount: number = 40;
   const scrollRootRef = useRef<HTMLElement | Window | null>(null);
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollRafRef = useRef<number | null>(null);
   const initialActiveSetRef = useRef<boolean>(false);
   const headingLineMapRef = useRef<Map<number, number>>(new Map());
 
@@ -94,21 +94,31 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentCon
         };
       });
 
-      setHeadings(headingData);
+      setHeadings((prev) => {
+        if (
+          prev.length === headingData.length &&
+          prev.every((item, index) => item.id === headingData[index]?.id && item.text === headingData[index]?.text)
+        ) {
+          return prev;
+        }
+        return headingData;
+      });
     };
 
     extractHeadings();
 
-    // Retry a few times for dynamic content
+    // Retry briefly for async markdown paint without a long-running interval.
     let attempts = 0;
-    const retryId = window.setInterval(() => {
+    const retry = () => {
       attempts += 1;
       extractHeadings();
       const contentEl = document.getElementById(contentContainerId) as HTMLElement | null;
-      if (attempts >= 20 || (contentEl?.querySelector('h1, h2, h3, h4, h5, h6'))) {
-        window.clearInterval(retryId);
+      if (attempts >= 10 || (contentEl?.querySelector('h1, h2, h3, h4, h5, h6'))) {
+        return;
       }
-    }, 120);
+      window.requestAnimationFrame(retry);
+    };
+    window.requestAnimationFrame(retry);
 
     const observer = new MutationObserver(extractHeadings);
     const contentEl = document.getElementById(contentContainerId) as HTMLElement | null;
@@ -121,7 +131,6 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentCon
     }
 
     return () => {
-      window.clearInterval(retryId);
       observer.disconnect();
     };
   }, [contentContainerId, getAbsoluteTop]);
@@ -187,11 +196,11 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentCon
   const handleScroll = useCallback(() => {
     if (headings.length === 0) return;
 
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
+    if (scrollRafRef.current !== null) {
+      window.cancelAnimationFrame(scrollRafRef.current);
     }
 
-    scrollTimeoutRef.current = setTimeout(() => {
+    scrollRafRef.current = window.requestAnimationFrame(() => {
       const scrollRoot = scrollRootRef.current ?? window;
       // Find active heading (the one that crossed 50px from top)
       let activeHeading: Heading | null = null;
@@ -217,18 +226,16 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentCon
       }
 
       initialActiveSetRef.current = true;
-    }, 16);
+      scrollRafRef.current = null;
+    });
   }, [headings]);
 
   // Set initial active heading on mount
   useEffect(() => {
     if (headings.length > 0 && !initialActiveSetRef.current) {
-      // Small delay to ensure DOM is ready
-      const timer = setTimeout(() => {
-        handleScroll();
-      }, 100);
+      const raf = window.requestAnimationFrame(handleScroll);
 
-      return () => clearTimeout(timer);
+      return () => window.cancelAnimationFrame(raf);
     }
   }, [headings, handleScroll]);
 
@@ -251,7 +258,9 @@ export const LinesTableOfContent: React.FC<TableOfContentsProps> = ({ contentCon
       } else {
         root.removeEventListener('scroll', handleScroll);
       }
-      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      if (scrollRafRef.current !== null) {
+        window.cancelAnimationFrame(scrollRafRef.current);
+      }
     };
   }, [handleScroll]);
 

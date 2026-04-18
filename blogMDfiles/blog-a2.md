@@ -110,4 +110,4 @@ Fix the conflicts that exist, build the keyword map, and enforce it going forwar
 
 ---
 
-*This post is part of our series on Programmatic SEO for API-First CMS. Start with [the pillar guide](#) or continue with [how to build scalable internal linking](#).*
+*This post is part of our series on Programmatic SEO for API-First CMS. Start with [the pillar guide](/blog/programmatic-seo-api-first-cms) or continue with [how to build scalable internal linking](/blog/scalable-internal-linking-structured-content).*

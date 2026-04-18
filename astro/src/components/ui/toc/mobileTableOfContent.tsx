@@ -54,7 +54,7 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
 
     const tocRef = useRef<HTMLDivElement>(null)
     const scrollListRef = useRef<HTMLDivElement>(null)
-    const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const scrollRafRef = useRef<number | null>(null)
     const pillRef = useRef<HTMLDivElement>(null)
     const scrollRootRef = useRef<HTMLElement | Window | null>(null)
 
@@ -122,11 +122,11 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
     const handleScroll = useCallback(() => {
         if (headings.length === 0) return
 
-        if (scrollTimeoutRef.current) {
-            clearTimeout(scrollTimeoutRef.current)
+        if (scrollRafRef.current !== null) {
+            window.cancelAnimationFrame(scrollRafRef.current)
         }
 
-        scrollTimeoutRef.current = setTimeout(() => {
+        scrollRafRef.current = window.requestAnimationFrame(() => {
             const contentEl = document.getElementById(contentContainerId) as HTMLElement | null
             if (!contentEl) return
 
@@ -184,7 +184,8 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
                 setCurrentHeadingText(currentActive.text)
             }
 
-        }, 16)
+            scrollRafRef.current = null
+        })
     }, [contentContainerId, headings, topOffset])
 
     // Attach scroll listener
@@ -203,7 +204,9 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
             } else {
                 root.removeEventListener('scroll', handleScroll)
             }
-            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current)
+            if (scrollRafRef.current !== null) {
+                window.cancelAnimationFrame(scrollRafRef.current)
+            }
         }
     }, [handleScroll])
 
@@ -212,10 +215,9 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
         if (isExpanded && activeId && scrollListRef.current) {
             const activeElement = document.getElementById(`toc-btn-${activeId}`)
             if (activeElement) {
-                // Wait for the expansion transition to finish slightly for smoother visual
-                setTimeout(() => {
+                window.requestAnimationFrame(() => {
                     activeElement.scrollIntoView({ block: 'center', behavior: 'smooth' })
-                }, 100)
+                })
             }
         }
     }, [isExpanded, activeId])

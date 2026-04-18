@@ -91,17 +91,17 @@ const isLinesToc = componentName === "lines-toc";
           shouldRenderMobilePreview &&
             (isLinearToc ? (
               <LinearTableOfContent
-                client:idle
+                client:load
                 containerId={contentContainerId}
               />
             ) : isMobileToc ? (
               <MobileTableOfContent
-                client:idle
+                client:load
                 contentContainerId={contentContainerId}
               />
             ) : isLinesToc ? (
               <LinesTableOfContent
-                client:idle
+                client:load
                 contentContainerId={contentContainerId}
               />
             ) : null)
@@ -147,18 +147,18 @@ const isLinesToc = componentName === "lines-toc";
           (isLinearToc ? (
             <div class="sticky top-23 self-start">
               <LinearTableOfContent
-                client:idle
+                client:load
                 containerId={contentContainerId}
               />
             </div>
           ) : isMobileToc ? (
             <MobileTableOfContent
-              client:idle
+              client:load
               contentContainerId={contentContainerId}
             />
           ) : isLinesToc ? (
             <LinesTableOfContent
-              client:idle
+              client:load
               contentContainerId={contentContainerId}
             />
           ) : null)

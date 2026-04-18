@@ -160,4 +160,4 @@ It's the kind of infrastructure work that doesn't produce immediate visible resu
 
 ---
 
-*Part of our series on Programmatic SEO for API-First CMS. Read [the pillar guide](#) or learn about [auto-generating SEO metadata from a content API](#).*
+*Part of our series on Programmatic SEO for API-First CMS. Read [the pillar guide](/blog/programmatic-seo-api-first-cms) or learn about [auto-generating SEO metadata from a content API](/blog/auto-generate-seo-metadata-content-api).*

@@ -39,6 +39,7 @@ export type ProjectDoc = {
   name: string;
   slug: string;
   description: string;
+  contentGuidelines: string;
   logoUrl?: string | null;
   isPublic: boolean;
   pagesNumber: number;
@@ -163,7 +164,6 @@ export type McpTokenSummary = {
   workspaceId: string;
   label?: string | null;
   createdAt: string;
-  expiresAt: string;
   usage: number;
   limitPerMonth: number;
 };

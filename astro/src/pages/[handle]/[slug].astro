@@ -141,9 +141,9 @@ const seo = buildPaperSeoConfig(metadata, {
         <PostRender content={paper.body || ""} contentContainerId={contentContainerId} />
         {
           isDesktopUA ? (
-            <LinesTableOfContent client:idle contentContainerId={contentContainerId} />
+            <LinesTableOfContent client:load contentContainerId={contentContainerId} />
           ) : (
-            <MobileTableOfContent client:idle contentContainerId={contentContainerId} />
+            <MobileTableOfContent client:load contentContainerId={contentContainerId} />
           )
         }
       </section>

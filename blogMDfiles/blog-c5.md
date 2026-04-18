@@ -165,4 +165,4 @@ Revising existing content through this lens is often more impactful than writing
 
 ---
 
-*Part of our series on AI Search Readiness. Read [the complete GEO guide](#) or explore [how to create and use an llms.txt file](#).*
+*Part of our series on AI Search Readiness. Read [the complete GEO guide](/blog/geo-guide-ai-search-visibility) or explore [how to create and use an llms.txt file](/blog/llms-txt-guide).*
