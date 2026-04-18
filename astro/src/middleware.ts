@@ -1,7 +1,9 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/astro/server";
+import type { APIContext, MiddlewareNext } from "astro";
 
 const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/write(.*)", "/settings(.*)"]);
 const isLoginRoute = createRouteMatcher(["/login"]);
+const isMcpConnectRoute = createRouteMatcher(["/mcp/connect(.*)"]);
 const isNoIndexRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/write(.*)",
@@ -13,7 +15,7 @@ const isNoIndexRoute = createRouteMatcher([
   "/unauthorized(.*)",
 ]);
 
-export const onRequest = clerkMiddleware(async (auth, context, next) => {
+const clerkHandler = clerkMiddleware(async (auth, context, next) => {
   const { isAuthenticated } = auth();
 
   if (!isAuthenticated && isProtectedRoute(context.request)) {
@@ -33,3 +35,12 @@ export const onRequest = clerkMiddleware(async (auth, context, next) => {
 
   return response;
 });
+
+export const onRequest = async (context: APIContext, next: MiddlewareNext) => {
+  // Avoid Clerk handshake loops in MCP OAuth browser popups/proxy contexts.
+  if (isMcpConnectRoute(context.request)) {
+    return next();
+  }
+
+  return clerkHandler(context, next);
+};

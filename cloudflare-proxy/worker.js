@@ -25,6 +25,9 @@ export default {
       const upstreamRequestInit = {
         method: request.method,
         headers: upstreamHeaders,
+        // Preserve upstream redirect responses (302/303/etc.) so the client browser
+        // executes OAuth navigation with its own cookie/session context.
+        redirect: "manual",
       };
       if (request.method !== "GET" && request.method !== "HEAD") {
         upstreamRequestInit.body = request.body;
