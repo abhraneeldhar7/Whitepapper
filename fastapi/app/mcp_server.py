@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -11,12 +11,18 @@ from mcp.server.auth.middleware.auth_context import get_access_token  # pyright:
 from mcp.server.auth.provider import TokenError  # pyright: ignore[reportMissingImports]
 from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions  # pyright: ignore[reportMissingImports]
 from mcp.server.fastmcp import FastMCP  # pyright: ignore[reportMissingImports]
+from mcp.server.transport_security import TransportSecuritySettings  # pyright: ignore[reportMissingImports]
 from pydantic import ValidationError
 
 from app.schemas.entities import PaperMetadata
 from app.services.auth_service import get_verified_id
 from app.services.collections_service import collections_service
-from app.services.mcp_oauth_service import get_public_api_url, mcp_oauth_service, mcp_token_verifier
+from app.services.mcp_oauth_service import (
+    get_public_api_url,
+    get_public_site_url,
+    mcp_oauth_service,
+    mcp_token_verifier,
+)
 from app.services.mcp_auth import list_mcp_tokens_for_user, mcp_token_service, revoke_mcp_token
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
@@ -97,6 +103,43 @@ def _mcp_auth_settings() -> AuthSettings:
         resource_server_url=_mcp_url(),
         required_scopes=MCP_REQUIRED_SCOPES,
         client_registration_options=ClientRegistrationOptions(enabled=False),
+    )
+
+
+def _mcp_transport_security_settings() -> TransportSecuritySettings:
+    allowed_hosts: list[str] = []
+    allowed_origins: list[str] = []
+
+    def add_unique(items: list[str], value: str | None) -> None:
+        normalized = str(value or "").strip()
+        if normalized and normalized not in items:
+            items.append(normalized)
+
+    public_api = urlparse(get_public_api_url())
+    public_site = urlparse(get_public_site_url())
+
+    # Allow the public API host (with/without explicit port) plus local development hosts.
+    add_unique(allowed_hosts, public_api.netloc)
+    if public_api.hostname:
+        add_unique(allowed_hosts, public_api.hostname)
+        add_unique(allowed_hosts, f"{public_api.hostname}:*")
+    add_unique(allowed_hosts, "127.0.0.1:*")
+    add_unique(allowed_hosts, "localhost:*")
+    add_unique(allowed_hosts, "[::1]:*")
+
+    # Origin is optional for non-browser clients, but if present it should match known origins.
+    if public_site.scheme and public_site.netloc:
+        add_unique(allowed_origins, f"{public_site.scheme}://{public_site.netloc}")
+    if public_api.scheme and public_api.netloc:
+        add_unique(allowed_origins, f"{public_api.scheme}://{public_api.netloc}")
+    add_unique(allowed_origins, "http://127.0.0.1:*")
+    add_unique(allowed_origins, "http://localhost:*")
+    add_unique(allowed_origins, "http://[::1]:*")
+
+    return TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=allowed_hosts,
+        allowed_origins=allowed_origins,
     )
 
 
@@ -305,6 +348,7 @@ Whitepapper is a markdown-first CMS. All content is written in markdown.
 """,
             token_verifier=mcp_token_verifier,
             auth=_mcp_auth_settings(),
+            transport_security=_mcp_transport_security_settings(),
             streamable_http_path="/",
         )
 
@@ -978,6 +1022,7 @@ def build_mcp_router() -> APIRouter:
         if not token_doc or str(token_doc.get("projectId") or "") != project_id:
             raise HTTPException(status_code=404, detail="MCP token not found.")
         revoke_mcp_token(token_id)
+        mcp_oauth_service.cleanup_expired_oauth_data()
         return {"ok": True}
 
     router.include_router(mcp_router)

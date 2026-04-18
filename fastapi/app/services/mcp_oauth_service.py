@@ -16,9 +16,10 @@ from app.core.firestore_store import firestore_store, utc_now
 from app.core.limits import MCP_AUTH_CODE_TTL_SECONDS, MCP_AUTH_REQUEST_TTL_SECONDS
 from app.services.mcp_auth import mcp_token_service
 
-MCP_OAUTH_REQUESTS_COLLECTION = "mcp_oauth_requests"
-MCP_OAUTH_CODES_COLLECTION = "mcp_oauth_codes"
 MCP_OAUTH_CLIENTS_COLLECTION = "mcp_oauth_clients"
+MCP_OAUTH_SESSIONS_COLLECTION = "mcp_oauth_sessions"
+LEGACY_MCP_OAUTH_REQUESTS_COLLECTION = "mcp_oauth_requests"
+LEGACY_MCP_OAUTH_CODES_COLLECTION = "mcp_oauth_codes"
 
 
 def _require_url(value: str | None, env_name: str) -> str:
@@ -186,9 +187,11 @@ class WhitepapperMcpOAuthService:
         request_id = str(uuid4())
         now = utc_now()
         firestore_store.create(
-            MCP_OAUTH_REQUESTS_COLLECTION,
+            MCP_OAUTH_SESSIONS_COLLECTION,
             {
+                "sessionId": request_id,
                 "requestId": request_id,
+                "status": "pending",
                 "clientId": client_id,
                 "clientName": client_name,
                 "redirectUri": normalized_redirect_uri,
@@ -198,17 +201,19 @@ class WhitepapperMcpOAuthService:
                 "codeChallengeMethod": normalized_challenge_method,
                 "resource": resource,
                 "createdAt": now,
-                "expiresAt": now + timedelta(seconds=MCP_AUTH_REQUEST_TTL_SECONDS),
+                "requestExpiresAt": now + timedelta(seconds=MCP_AUTH_REQUEST_TTL_SECONDS),
             },
             doc_id=request_id,
         )
         return f"{get_public_site_url()}/mcp/connect?{urlencode({'request': request_id})}"
 
     def get_pending_request(self, request_id: str) -> dict | None:
-        doc = firestore_store.get(MCP_OAUTH_REQUESTS_COLLECTION, request_id)
+        doc = firestore_store.get(MCP_OAUTH_SESSIONS_COLLECTION, request_id)
         if not doc:
             return None
-        expires_at = doc.get("expiresAt")
+        if str(doc.get("status") or "") != "pending":
+            return None
+        expires_at = doc.get("requestExpiresAt")
         if expires_at and expires_at <= utc_now():
             return None
         return doc
@@ -219,31 +224,22 @@ class WhitepapperMcpOAuthService:
             raise ValueError("Authorization request has expired.")
 
         code = f"wc_{uuid4().hex}{uuid4().hex}"
-        code_id = str(uuid4())
         now = utc_now()
         state = request_doc.get("state")
         redirect_uri = str(request_doc.get("redirectUri") or "").strip()
-        firestore_store.create(
-            MCP_OAUTH_CODES_COLLECTION,
+        firestore_store.update(
+            MCP_OAUTH_SESSIONS_COLLECTION,
+            request_id,
             {
-                "codeId": code_id,
+                "status": "code_issued",
                 "code": code,
-                "clientId": request_doc.get("clientId"),
-                "clientName": request_doc.get("clientName"),
                 "userId": user_id,
                 "projectId": project_id,
-                "redirectUri": redirect_uri,
-                "codeChallenge": request_doc.get("codeChallenge"),
-                "codeChallengeMethod": request_doc.get("codeChallengeMethod") or "S256",
-                "resource": request_doc.get("resource"),
-                "scopes": list(request_doc.get("scopes") or ["mcp"]),
-                "createdAt": now,
-                "expiresAt": now + timedelta(seconds=MCP_AUTH_CODE_TTL_SECONDS),
+                "codeIssuedAt": now,
+                "codeExpiresAt": now + timedelta(seconds=MCP_AUTH_CODE_TTL_SECONDS),
                 "used": False,
             },
-            doc_id=code_id,
         )
-        firestore_store.delete(MCP_OAUTH_REQUESTS_COLLECTION, request_id)
 
         query = {"code": code}
         if state:
@@ -251,15 +247,17 @@ class WhitepapperMcpOAuthService:
         return f"{redirect_uri}{'&' if '?' in redirect_uri else '?'}{urlencode(query)}"
 
     def load_authorization_code(self, *, code: str, client_id: str) -> dict | None:
-        matches = firestore_store.find_by_fields(MCP_OAUTH_CODES_COLLECTION, {"code": code})
+        matches = firestore_store.find_by_fields(MCP_OAUTH_SESSIONS_COLLECTION, {"code": code})
         doc = matches[0] if matches else None
         if not doc:
+            return None
+        if str(doc.get("status") or "") != "code_issued":
             return None
         if bool(doc.get("used")):
             return None
         if str(doc.get("clientId") or "") != client_id:
             return None
-        expires_at = doc.get("expiresAt")
+        expires_at = doc.get("codeExpiresAt")
         if expires_at and expires_at <= utc_now():
             return None
         return doc
@@ -300,18 +298,51 @@ class WhitepapperMcpOAuthService:
             client_id=client_id,
             scopes=[str(item) for item in code_doc.get("scopes") or ["mcp"]],
         )
-        firestore_store.update(
-            MCP_OAUTH_CODES_COLLECTION,
-            str(code_doc.get("codeId") or ""),
-            {
-                "used": True,
-                "tokenId": access_doc.get("tokenId"),
-            },
-        )
+        session_id = str(code_doc.get("requestId") or code_doc.get("sessionId") or "").strip()
+        if not session_id:
+            raise ValueError("Authorization session is invalid.")
+        # Keep only active auth data: once code is exchanged, session state is no longer needed.
+        firestore_store.delete(MCP_OAUTH_SESSIONS_COLLECTION, session_id)
         return OAuthToken(
             access_token=str(access_doc["rawToken"]),
             scope=" ".join([str(item) for item in code_doc.get("scopes") or ["mcp"]]),
         )
+
+    def cleanup_expired_oauth_data(self) -> int:
+        now = utc_now()
+        removed = 0
+
+        sessions = firestore_store.list_all(MCP_OAUTH_SESSIONS_COLLECTION)
+        for session in sessions:
+            session_id = str(session.get("requestId") or session.get("sessionId") or "").strip()
+            if not session_id:
+                continue
+
+            status = str(session.get("status") or "").strip().lower()
+            expires_at = None
+            if status == "pending":
+                expires_at = session.get("requestExpiresAt")
+            elif status == "code_issued":
+                expires_at = session.get("codeExpiresAt")
+
+            if expires_at and expires_at <= now:
+                firestore_store.delete(MCP_OAUTH_SESSIONS_COLLECTION, session_id)
+                removed += 1
+
+        # One-time legacy cleanup for pre-refactor collections.
+        for legacy_collection, id_key in (
+            (LEGACY_MCP_OAUTH_REQUESTS_COLLECTION, "requestId"),
+            (LEGACY_MCP_OAUTH_CODES_COLLECTION, "codeId"),
+        ):
+            legacy_items = firestore_store.list_all(legacy_collection)
+            for item in legacy_items:
+                doc_id = str(item.get(id_key) or "").strip()
+                if not doc_id:
+                    continue
+                firestore_store.delete(legacy_collection, doc_id)
+                removed += 1
+
+        return removed
 
 
 mcp_oauth_service = WhitepapperMcpOAuthService()

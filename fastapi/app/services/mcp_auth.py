@@ -16,10 +16,12 @@ from app.core.redis_client import get_cache_prefix, get_redis_client
 logger = logging.getLogger(__name__)
 
 MCP_TOKENS_COLLECTION = "mcp_tokens"
-MCP_PROJECT_MONTHLY_USAGE_COLLECTION = "mcp_project_monthly_usage"
+LEGACY_MCP_PROJECT_MONTHLY_USAGE_COLLECTION = "mcp_project_monthly_usage"
 MCP_TOKEN_ID_KEY = "tokenId"
 MCP_TOKEN_HASH_KEY = "tokenHash"
 MCP_TOKEN_CACHE_TTL_SECONDS = 60 * 60
+MCP_TOKEN_DOC_KIND = "token"
+MCP_USAGE_DOC_KIND = "usage"
 
 
 class McpTokenService:
@@ -35,12 +37,29 @@ class McpTokenService:
     def _get_project_month_usage_doc(self, project_id: str, month_key: str | None = None) -> dict:
         resolved_month = (month_key or self._current_month_key()).strip()
         doc_id = self._project_month_usage_doc_id(project_id, resolved_month)
-        existing = firestore_store.get(MCP_PROJECT_MONTHLY_USAGE_COLLECTION, doc_id)
-        if existing:
+        existing = firestore_store.get(MCP_TOKENS_COLLECTION, doc_id)
+        if existing and str(existing.get("docKind") or "") == MCP_USAGE_DOC_KIND:
             return existing
+
+        # Backward compatibility: migrate legacy usage docs into mcp_tokens.
+        legacy = firestore_store.get(LEGACY_MCP_PROJECT_MONTHLY_USAGE_COLLECTION, doc_id)
+        if legacy:
+            migrated = {
+                "docKind": MCP_USAGE_DOC_KIND,
+                "usageId": doc_id,
+                "projectId": project_id,
+                "month": resolved_month,
+                "usage": int(legacy.get("usage", 0)),
+                "limitPerMonth": int(legacy.get("limitPerMonth", MCP_TOKEN_LIMIT_PER_MONTH)),
+                "createdAt": legacy.get("createdAt") or utc_now(),
+                "updatedAt": legacy.get("updatedAt") or utc_now(),
+            }
+            firestore_store.update(MCP_TOKENS_COLLECTION, doc_id, migrated)
+            return migrated
 
         now = utc_now()
         doc = {
+            "docKind": MCP_USAGE_DOC_KIND,
             "usageId": doc_id,
             "projectId": project_id,
             "month": resolved_month,
@@ -49,7 +68,7 @@ class McpTokenService:
             "createdAt": now,
             "updatedAt": now,
         }
-        firestore_store.create(MCP_PROJECT_MONTHLY_USAGE_COLLECTION, doc, doc_id=doc_id)
+        firestore_store.create(MCP_TOKENS_COLLECTION, doc, doc_id=doc_id)
         return doc
 
     def _increment_project_month_usage(self, project_id: str) -> int:
@@ -57,12 +76,12 @@ class McpTokenService:
         doc_id = self._project_month_usage_doc_id(project_id)
         # Ensure document exists before atomic increment.
         firestore_store.update(
-            MCP_PROJECT_MONTHLY_USAGE_COLLECTION,
+            MCP_TOKENS_COLLECTION,
             doc_id,
             {"updatedAt": utc_now()},
         )
-        firestore_store.increment(MCP_PROJECT_MONTHLY_USAGE_COLLECTION, doc_id, "usage", 1)
-        refreshed = firestore_store.get(MCP_PROJECT_MONTHLY_USAGE_COLLECTION, doc_id) or doc
+        firestore_store.increment(MCP_TOKENS_COLLECTION, doc_id, "usage", 1)
+        refreshed = firestore_store.get(MCP_TOKENS_COLLECTION, doc_id) or doc
         return int(refreshed.get("usage", 0))
 
     def _is_project_usage_within_limit(self, project_id: str) -> bool:
@@ -150,6 +169,7 @@ class McpTokenService:
         token_id = str(uuid4())
         now = utc_now()
         doc = {
+            "docKind": MCP_TOKEN_DOC_KIND,
             MCP_TOKEN_ID_KEY: token_id,
             MCP_TOKEN_HASH_KEY: self.hash_token(raw_token),
             "userId": user_id,
@@ -206,7 +226,7 @@ class McpTokenService:
         current = firestore_store.get(MCP_TOKENS_COLLECTION, token_id)
         if not current:
             return
-        firestore_store.update(MCP_TOKENS_COLLECTION, token_id, {"revoked": True})
+        firestore_store.delete(MCP_TOKENS_COLLECTION, token_id)
         self._delete_cached_doc(current.get(MCP_TOKEN_HASH_KEY))
 
     def increment_usage_for_raw_token(self, raw_token: str | None) -> None:
@@ -235,6 +255,8 @@ class McpTokenService:
         project_usage_map: dict[str, dict] = {}
         items: list[dict] = []
         for item in matches:
+            if str(item.get("docKind") or MCP_TOKEN_DOC_KIND) != MCP_TOKEN_DOC_KIND:
+                continue
             if bool(item.get("revoked")):
                 continue
             project_id = str(item.get("projectId") or "")
@@ -256,15 +278,14 @@ class McpTokenService:
         return items
 
     def sync_cache_with_firestore(self) -> int:
-        # Token cache only stores immutable auth context now; usage is tracked in
-        # project-month documents directly in Firestore.
+        # Token cache only stores immutable auth context now.
         return 0
 
     def reset_all_usage(self) -> int:
         # Monthly usage naturally rolls over by month key. This maintenance step
         # only cleans up historical usage docs from past months.
         current_month = self._current_month_key()
-        usage_docs = firestore_store.list_all(MCP_PROJECT_MONTHLY_USAGE_COLLECTION)
+        usage_docs = firestore_store.find_by_fields(MCP_TOKENS_COLLECTION, {"docKind": MCP_USAGE_DOC_KIND})
         removed = 0
         for usage_doc in usage_docs:
             month = str(usage_doc.get("month") or "").strip()
@@ -273,7 +294,19 @@ class McpTokenService:
             doc_id = usage_id or (f"{project_id}:{month}" if project_id and month else "")
             if not doc_id or month == current_month:
                 continue
-            firestore_store.delete(MCP_PROJECT_MONTHLY_USAGE_COLLECTION, doc_id)
+            firestore_store.delete(MCP_TOKENS_COLLECTION, doc_id)
+            removed += 1
+
+        # Backward compatibility cleanup for pre-refactor collection.
+        legacy_docs = firestore_store.list_all(LEGACY_MCP_PROJECT_MONTHLY_USAGE_COLLECTION)
+        for usage_doc in legacy_docs:
+            month = str(usage_doc.get("month") or "").strip()
+            usage_id = str(usage_doc.get("usageId") or "").strip()
+            project_id = str(usage_doc.get("projectId") or "").strip()
+            doc_id = usage_id or (f"{project_id}:{month}" if project_id and month else "")
+            if not doc_id or month == current_month:
+                continue
+            firestore_store.delete(LEGACY_MCP_PROJECT_MONTHLY_USAGE_COLLECTION, doc_id)
             removed += 1
         return removed
 
