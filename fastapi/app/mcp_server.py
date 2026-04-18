@@ -104,6 +104,7 @@ def _json_no_cache(payload: dict[str, Any], status_code: int = 200) -> JSONRespo
     return JSONResponse(payload, status_code=status_code, headers={"Cache-Control": "no-store, no-cache"})
 
 
+
 def _oauth_error(error: str, error_description: str, status_code: int = 400) -> JSONResponse:
     return _json_no_cache(
         {
