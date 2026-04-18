@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -19,7 +19,6 @@ from app.services.auth_service import get_verified_id
 from app.services.collections_service import collections_service
 from app.services.mcp_oauth_service import (
     get_public_api_url,
-    get_public_site_url,
     mcp_oauth_service,
     mcp_token_verifier,
 )
@@ -107,39 +106,10 @@ def _mcp_auth_settings() -> AuthSettings:
 
 
 def _mcp_transport_security_settings() -> TransportSecuritySettings:
-    allowed_hosts: list[str] = []
-    allowed_origins: list[str] = []
-
-    def add_unique(items: list[str], value: str | None) -> None:
-        normalized = str(value or "").strip()
-        if normalized and normalized not in items:
-            items.append(normalized)
-
-    public_api = urlparse(get_public_api_url())
-    public_site = urlparse(get_public_site_url())
-
-    # Allow the public API host (with/without explicit port) plus local development hosts.
-    add_unique(allowed_hosts, public_api.netloc)
-    if public_api.hostname:
-        add_unique(allowed_hosts, public_api.hostname)
-        add_unique(allowed_hosts, f"{public_api.hostname}:*")
-    add_unique(allowed_hosts, "127.0.0.1:*")
-    add_unique(allowed_hosts, "localhost:*")
-    add_unique(allowed_hosts, "[::1]:*")
-
-    # Origin is optional for non-browser clients, but if present it should match known origins.
-    if public_site.scheme and public_site.netloc:
-        add_unique(allowed_origins, f"{public_site.scheme}://{public_site.netloc}")
-    if public_api.scheme and public_api.netloc:
-        add_unique(allowed_origins, f"{public_api.scheme}://{public_api.netloc}")
-    add_unique(allowed_origins, "http://127.0.0.1:*")
-    add_unique(allowed_origins, "http://localhost:*")
-    add_unique(allowed_origins, "http://[::1]:*")
-
+    # Requests arrive through Cloudflare Worker -> Cloud Run, where Host may be rewritten
+    # to the upstream service domain. Strict MCP host validation causes false 421s in this setup.
     return TransportSecuritySettings(
-        enable_dns_rebinding_protection=True,
-        allowed_hosts=allowed_hosts,
-        allowed_origins=allowed_origins,
+        enable_dns_rebinding_protection=False,
     )
 
 
