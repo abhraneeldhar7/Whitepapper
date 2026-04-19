@@ -101,6 +101,11 @@ const docsIndexSeo = {
     },
   },
 };
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+);
 ---
 
 <Layout
@@ -144,19 +149,19 @@ const docsIndexSeo = {
         </p>
 
         <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <a href="/features/content-api" class={cardClass}>
+          <a href="/features/content-api" class={cardClass} data-astro-prefetch="viewport">
             <h2 class="text-[16px] font-[520]">Content API</h2>
             <p class="mt-2 text-[14px] text-muted-foreground">
               See how projects, collections, and papers map to a frontend-ready content API.
             </p>
           </a>
-          <a href="/features/distribution" class={cardClass}>
+          <a href="/features/distribution" class={cardClass} data-astro-prefetch="viewport">
             <h2 class="text-[16px] font-[520]">Distribution</h2>
             <p class="mt-2 text-[14px] text-muted-foreground">
               Connect the editor workflow to Dev.to, Hashnode, and Medium import paths.
             </p>
           </a>
-          <a href="/pricing" class={cardClass}>
+          <a href="/pricing" class={cardClass} data-astro-prefetch="viewport">
             <h2 class="text-[16px] font-[520]">Pricing</h2>
             <p class="mt-2 text-[14px] text-muted-foreground">
               Review the current free plan and the machine-readable pricing references linked for AI agents.
@@ -170,7 +175,7 @@ const docsIndexSeo = {
               sectionCards.map((card) => {
                 const Icon = card.icon;
                 return (
-                  <a href={card.route} class={cardClass}>
+                  <a href={card.route} class={cardClass} data-astro-prefetch="viewport">
                     <div class="flex items-start justify-between gap-3">
                       <span class="flex h-8 w-8 items-center justify-center rounded-md border border-border/80 bg-muted/40 text-muted-foreground group-hover:text-foreground">
                         <Icon size={16} />
@@ -197,7 +202,7 @@ const docsIndexSeo = {
               importantDocs.map((card) => {
                 const Icon = card.icon;
                 return (
-                  <a href={card.route} class={cardClass}>
+                  <a href={card.route} class={cardClass} data-astro-prefetch="viewport">
                     <div class="flex items-start justify-between gap-3">
                       <span class="flex h-8 w-8 items-center justify-center rounded-md border border-border/80 bg-muted/40 text-muted-foreground group-hover:text-foreground">
                         <Icon size={16} />
@@ -228,6 +233,7 @@ const docsIndexSeo = {
             <div></div>
             <a
               href={"/docs/intro"}
+              data-astro-prefetch="viewport"
               class="rounded-lg border border-border/70 p-4 hover:bg-muted/70 transition-all duration-300 flex flex-col items-end"
             >
               <div class="flex gap-1 items-center text-muted-foreground">

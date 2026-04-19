@@ -47,6 +47,11 @@ const seo = {
         },
     ],
 };
+
+Astro.response.headers.set(
+    "Cache-Control",
+    "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+);
 ---
 
 <Layout seo={seo}>
@@ -139,6 +144,7 @@ const seo = {
             <a
                 href="/components/lines-toc"
                 class="flex flex-col gap-3 group"
+                data-astro-prefetch="viewport"
             >
                 <div
                     class="overflow-hidden relative rounded-[10px] md:aspect-square md:h-auto h-[200px] p-7 pb-0 pl-0"

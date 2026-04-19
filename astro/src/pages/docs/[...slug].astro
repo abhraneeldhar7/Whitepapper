@@ -6,6 +6,7 @@ import {
   docsNavSections,
   getDocsPageByRoute,
   getDocsPageNeighbors,
+  getDocsPaperSlugByRoute,
 } from "@/content/docs/docsPagesStructure";
 
 const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
@@ -16,13 +17,6 @@ const whitepapperApiKey = String(import.meta.env.WHITEPAPPER_API_KEY ?? "").trim
 if (!apiBaseUrl || !whitepapperApiKey) {
   throw new Error("PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.");
 }
-
-const manifestModule = await import("../../content/docs/docs-manifest.json");
-const docsManifest = (manifestModule && (manifestModule.default ?? manifestModule)) as Array<{
-  route: string;
-  title: string;
-  paperSlug: string;
-}>;
 
 const slugParam = Astro.params.slug || "";
 const slugValue = Array.isArray(slugParam) ? slugParam.join("/") : slugParam;
@@ -41,8 +35,8 @@ if (!page) {
   return new Response(null, { status: 404 });
 }
 
-const manifestEntry = docsManifest.find((m) => m.route === currentPath);
-if (!manifestEntry || !manifestEntry.paperSlug) {
+const paperSlug = getDocsPaperSlugByRoute(currentPath);
+if (!paperSlug) {
   // Papers are not yet available in DB — show simple 404 as requested
   return new Response(null, { status: 404 });
 }
@@ -62,7 +56,7 @@ async function fetchSitePaperBySlug(slug: string) {
   return response;
 }
 
-const paperResponse = await fetchSitePaperBySlug(manifestEntry.paperSlug);
+const paperResponse = await fetchSitePaperBySlug(paperSlug);
 if (!paperResponse.ok) {
   if (paperResponse.status === 404) {
     return new Response(null, { status: 404 });

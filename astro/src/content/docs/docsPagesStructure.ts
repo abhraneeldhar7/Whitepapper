@@ -19,6 +19,45 @@ export type DocsPageNeighbors = {
   next: DocsPageEntry | null;
 };
 
+const docsPaperSlugByRoute: Record<string, string> = {
+  "/docs/intro": "introduction",
+  "/docs/quickstart": "quickstart",
+  "/docs/projects": "docs-projects",
+  "/docs/collections": "docs-collections",
+  "/docs/papers": "docs-papers",
+  "/docs/slug-collision-checks": "docs-slug-collision-checks",
+  "/docs/editor/overview": "docs-editor-overview",
+  "/docs/editor/media-uploads": "docs-editor-media-uploads",
+  "/docs/editor/metadata-workflow": "docs-editor-metadata-workflow",
+  "/docs/seo/overview": "docs-seo-overview",
+  "/docs/seo/paper-metadata": "docs-seo-paper-metadata",
+  "/docs/seo/public-pages": "docs-seo-public-pages",
+  "/docs/seo/sitemaps": "docs-seo-sitemaps",
+  "/docs/dev-api/overview": "docs-dev-api-overview",
+  "/docs/dev-api/authentication": "docs-dev-api-authentication",
+  "/docs/dev-api/api-key-management": "docs-dev-api-api-key-management",
+  "/docs/dev-api/contracts": "docs-dev-api-contracts",
+  "/docs/dev-api/contracts/project-endpoint": "docs-dev-api-contracts-project-endpoint",
+  "/docs/dev-api/contracts/collection-endpoint": "docs-dev-api-contracts-collection-endpoint",
+  "/docs/dev-api/contracts/paper-endpoint": "docs-dev-api-contracts-paper-endpoint",
+  "/docs/dev-api/caching-and-errors": "docs-dev-api-caching-and-errors",
+  "/docs/distribution/overview": "docs-distribution-overview",
+  "/docs/distribution/hashnode": "docs-distribution-hashnode",
+  "/docs/distribution/devto": "docs-distribution-devto",
+  "/docs/distribution/medium-import": "docs-distribution-medium-import",
+  "/docs/distribution/platform-status": "docs-distribution-platform-status",
+  "/docs/self-host/overview": "docs-self-host-overview",
+  "/docs/self-host/environment-files": "docs-self-host-environment-files",
+  "/docs/self-host/environment-files/astro-env": "docs-self-host-environment-files-astro-env",
+  "/docs/self-host/environment-files/fastapi-env": "docs-self-host-environment-files-fastapi-env",
+  "/docs/self-host/local-run": "docs-self-host-local-run",
+  "/docs/self-host/vercel-frontend": "docs-self-host-vercel-frontend",
+  "/docs/self-host/cloud-run-backend": "docs-self-host-cloud-run-backend",
+  "/docs/self-host/cloudflare-worker": "docs-self-host-cloudflare-worker",
+  "/docs/self-host/cron-jobs": "docs-self-host-cron-jobs",
+  "/docs/self-host/production-checklist": "docs-self-host-production-checklist",
+};
+
 type DocsPageSeed = {
   title: string;
   route: string;
@@ -376,4 +415,9 @@ export function getDocsPageNeighbors(route: string): DocsPageNeighbors {
     previous: currentIndex > 0 ? docsPageEntries[currentIndex - 1] : null,
     next: currentIndex < docsPageEntries.length - 1 ? docsPageEntries[currentIndex + 1] : null,
   };
+}
+
+export function getDocsPaperSlugByRoute(route: string): string | null {
+  const normalizedRoute = route.replace(/\/+$/, "") || "/";
+  return docsPaperSlugByRoute[normalizedRoute] ?? null;
 }

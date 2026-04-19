@@ -62,7 +62,7 @@ const isLinesToc = componentName === "lines-toc";
         <div class="flex gap-2">
           {
             previous && (
-              <a href={previous?.href}>
+              <a href={previous?.href} data-astro-prefetch="viewport">
                 <Button variant="secondary" size="icon">
                   <ArrowLeft />
                 </Button>
@@ -71,7 +71,7 @@ const isLinesToc = componentName === "lines-toc";
           }
           {
             next && (
-              <a href={next?.href}>
+              <a href={next?.href} data-astro-prefetch="viewport">
                 <Button variant="secondary" size="icon">
                   <ArrowRight />
                 </Button>
@@ -119,7 +119,7 @@ const isLinesToc = componentName === "lines-toc";
         <div>
           {
             previous && (
-              <a href={previous.href}>
+              <a href={previous.href} data-astro-prefetch="viewport">
                 <Button variant="secondary">
                   <ChevronLeft /> {previous.label}
                 </Button>
@@ -130,7 +130,7 @@ const isLinesToc = componentName === "lines-toc";
         <div class="ml-auto">
           {
             next && (
-              <a href={next.href}>
+              <a href={next.href} data-astro-prefetch="viewport">
                 <Button variant="secondary">
                   {next.label} <ChevronRight />{" "}
                 </Button>

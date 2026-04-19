@@ -126,13 +126,6 @@ const resolvedSeo = seo ?? docsPageSeo;
   description={pageDescription}
   seo={resolvedSeo}
 >
-  <Fragment slot="head">
-    {previousPage ? <link rel="prev" href={previousPage.route} /> : null}
-    {nextPage ? <link rel="next" href={nextPage.route} /> : null}
-    {previousPage ? <link rel="prefetch" href={previousPage.route} /> : null}
-    {nextPage ? <link rel="prefetch" href={nextPage.route} /> : null}
-  </Fragment>
-
   <div class="pb-5 md:pb-10 px-4">
     <div class="flex gap-10 justify-between">
         {
@@ -196,7 +189,7 @@ const resolvedSeo = seo ?? docsPageSeo;
               previousPage ? (
                 <a
                   href={previousPage.route}
-                  rel="prefetch"
+                  data-astro-prefetch="viewport"
                   class="rounded-lg border border-border/70 p-4 hover:bg-muted/70 transition-all duration-300 flex flex-col"
                 >
                   <div class="flex gap-1 items-center  text-muted-foreground">
@@ -216,7 +209,7 @@ const resolvedSeo = seo ?? docsPageSeo;
               nextPage ? (
                 <a
                   href={nextPage.route}
-                  rel="prefetch"
+                  data-astro-prefetch="viewport"
                   class="rounded-lg border border-border/70 p-4 hover:bg-muted/70 transition-all duration-300 flex flex-col items-end"
                 >
                   <div class="flex gap-1 items-center  text-muted-foreground">

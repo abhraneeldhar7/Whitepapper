@@ -2,10 +2,10 @@
 import Layout from "@/layouts/Layout.astro";
 import ComponentDocPage from "@/components/component-docs/ComponentDocPage.astro";
 
-import markdownDocs from "@/content/components/markdown.md?raw";
-import linearDocs from "@/content/components/linear-toc.md?raw";
-import mobileDocs from "@/content/components/mobile-toc.md?raw";
-import linesDocs from "@/content/components/lines-toc.md?raw";
+import markdownDocs from "../../../../backupContentFiles/components/markdown.md?raw";
+import linearDocs from "../../../../backupContentFiles/components/linear-toc.md?raw";
+import mobileDocs from "../../../../backupContentFiles/components/mobile-toc.md?raw";
+import linesDocs from "../../../../backupContentFiles/components/lines-toc.md?raw";
 
 import markdownCode from "@/components/ui/markdown-render/markdown-render.tsx?raw";
 import linearCode from "@/components/ui/toc/linearTableOfContent.tsx?raw";
@@ -91,6 +91,16 @@ const previous = previousSlug
 const next = nextSlug
   ? { href: `/components/${nextSlug}`, label: componentMeta[nextSlug].title }
   : null;
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+);
+Astro.response.headers.set(
+  "CDN-Cache-Control",
+  "public, max-age=600, stale-while-revalidate=600",
+);
+
 const seo = {
   path: `/components/${active.componentName}`,
   title: `${active.title} | Whitepapper Components`,

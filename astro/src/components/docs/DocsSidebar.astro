@@ -13,9 +13,6 @@ type Props = {
 };
 
 const { navSections, currentPath, previousPage, nextPage } = Astro.props as Props;
-const prefetchRoutes = new Set<string>();
-if (previousPage?.route) prefetchRoutes.add(previousPage.route);
-if (nextPage?.route) prefetchRoutes.add(nextPage.route);
 ---
 
 <aside class="hidden md:block ml-5 shrink-0">
@@ -32,7 +29,7 @@ if (nextPage?.route) prefetchRoutes.add(nextPage.route);
                   return (
                     <>
                       <li>
-                        <a href={page.route} class="w-full" rel={prefetchRoutes.has(page.route) ? "prefetch" : undefined}>
+                        <a href={page.route} class="w-full" data-astro-prefetch="viewport">
                           <Button
                             variant={isPageActive ? "secondary" : "ghost"}
                             className="w-full font-[400] justify-start"
@@ -46,7 +43,7 @@ if (nextPage?.route) prefetchRoutes.add(nextPage.route);
                         const isChildActive = currentPath === child.route;
                         return (
                           <li>
-                            <a href={child.route} rel={prefetchRoutes.has(child.route) ? "prefetch" : undefined}>
+                            <a href={child.route} data-astro-prefetch="viewport">
                               <Button
                                 variant="ghost"
                                 size="sm"
