@@ -54,6 +54,8 @@ Project owners can generate read-only API keys from the project dashboard settin
 
 ## MCP
 
+> For a detailed implementation walkthrough, see [MCP.md](./MCP.md).
+
 Whitepapper exposes one standard streamable HTTP MCP server from the FastAPI app:
 
 - Server URL: `/mcp`
