@@ -30,7 +30,6 @@ const {
   seo = null,
   noindex = false,
   showSiteNav = true,
-  reserveNavSpace = true,
   enableClientRouter = pathname.startsWith("/dashboard") ||
     pathname.startsWith("/settings") ||
     pathname.startsWith("/write") ||
@@ -253,7 +252,7 @@ const jsonLdItems = Array.isArray(pageSeoConfig?.jsonLd)
   </head>
   <body>
     {showSiteNav && <SiteTopNav isSignedIn={isSignedIn} />}
-    {showSiteNav && reserveNavSpace && <div class="h-[58px] w-full"></div>}
+    <!-- {showSiteNav && reserveNavSpace && <div class="h-[58px] w-full"></div>} -->
     <slot />
     {!hideFooter && <Footer />}
     {enableToaster ? <Toaster client:idle /> : null}

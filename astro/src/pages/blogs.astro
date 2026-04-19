@@ -1,6 +1,6 @@
 ﻿---
 import Layout from "@/layouts/Layout.astro";
-import BlogListingPage from "@/components/blogs/BlogListingPage.astro";
+import SiteContentListingPage from "@/components/site/SiteContentListingPage.astro";
 import type { PaperDoc } from "@/lib/types";
 
 type SiteBlogCollectionResponse = {
@@ -48,7 +48,7 @@ Astro.response.headers.set(
 
 <Layout>
   <main aria-label="Blogs listing">
-    <BlogListingPage
+      <SiteContentListingPage
       pageTitle="blogs"
       primaryTitle="Latest at Whitepapper"
       secondaryTitle="Resources"

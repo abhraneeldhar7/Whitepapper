@@ -1,0 +1,130 @@
+---
+import BlogCard from "@/components/blogs/BlogCard";
+import type { PaperDoc } from "@/lib/types";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+interface Props {
+  pageTitle: string;
+  primaryTitle: string;
+  primaryPapers?: PaperDoc[];
+  primaryBlogs?: PaperDoc[];
+  secondaryTitle?: string | null;
+  secondaryPapers?: PaperDoc[];
+  secondaryBlogs?: PaperDoc[];
+  backHref?: string | null;
+  backLabel?: string | null;
+}
+
+const {
+  pageTitle,
+  primaryTitle,
+  primaryPapers = [],
+  primaryBlogs = [],
+  secondaryTitle = null,
+  secondaryPapers = [],
+  secondaryBlogs = [],
+  backHref = null,
+  backLabel = null,
+} = Astro.props as Props;
+
+const resolvedPrimaryPapers = primaryPapers.length > 0 ? primaryPapers : primaryBlogs;
+const resolvedSecondaryPapers = secondaryPapers.length > 0 ? secondaryPapers : secondaryBlogs;
+const splitTopTwoPageTitles = new Set(["use-cases", "features", "glossary", "compare"]);
+const shouldSplitPrimaryIntoTwoSections = splitTopTwoPageTitles.has(pageTitle);
+const topSectionPapers = shouldSplitPrimaryIntoTwoSections
+  ? resolvedPrimaryPapers.slice(0, 2)
+  : resolvedPrimaryPapers;
+const lowerSectionPapers = shouldSplitPrimaryIntoTwoSections
+  ? resolvedPrimaryPapers.slice(2)
+  : resolvedSecondaryPapers;
+const effectiveSecondaryTitle = shouldSplitPrimaryIntoTwoSections ? "More" : secondaryTitle;
+const secondaryCardsToRender = shouldSplitPrimaryIntoTwoSections
+  ? lowerSectionPapers
+  : lowerSectionPapers.slice(0, 6);
+const sectionBasePathByPageTitle: Record<string, string> = {
+  blogs: "/blogs",
+  updates: "/blogs",
+  resources: "/blogs",
+  features: "/features",
+  "use-cases": "/use-cases",
+  glossary: "/glossary",
+  compare: "/compare",
+};
+const cardBasePath = sectionBasePathByPageTitle[pageTitle] ?? "/blogs";
+---
+
+<main class="mx-auto w-full max-w-[1100px] px-4 pt-15 md:pt-24 pb-10">
+  <section aria-labelledby="site-content-latest-heading">
+    <div class="h-[20px] mb-4">
+      {
+        backHref && backLabel ? (
+          <a
+            href={backHref}
+            class="text-[14px] w-fit text-muted-foreground hover:text-foreground flex items-center gap-1"
+            data-astro-prefetch="viewport"
+          >
+            <ChevronLeft size={14} /> {backLabel}
+          </a>
+        ) : null
+      }
+    </div>
+
+    <h1
+      id="site-content-latest-heading"
+      class="text-[30px] md:text-[40px] font-[400] leading-[1.2em]"
+    >
+      {primaryTitle}
+    </h1>
+
+    <div class="mt-5 md:mt-7 grid grid-cols-1 gap-10 md:gap-15 md:grid-cols-2">
+      {topSectionPapers.map((data) => <BlogCard blogData={data} basePath={cardBasePath} />)}
+    </div>
+
+    {
+      pageTitle === "blogs" ? (
+        <div class="mt-6 flex justify-end items-center gap-1">
+          <a
+            class="text-[14px] w-fit text-muted-foreground hover:text-foreground"
+            href="/updates"
+            data-astro-prefetch="viewport"
+          >
+            Updates
+          </a>{" "}
+          <ChevronRight size={14} />
+        </div>
+      ) : null
+    }
+  </section>
+
+  {
+    effectiveSecondaryTitle && secondaryCardsToRender.length > 0 ? (
+      <section class="mt-12" aria-labelledby="site-content-secondary-heading">
+        <h2
+          id="site-content-secondary-heading"
+          class="text-[24px] font-[500] leading-[1.2em] md:text-[30px]"
+        >
+          {effectiveSecondaryTitle}
+        </h2>
+
+        <div class="mt-5 md:mt-7 grid grid-cols-1 gap-10 md:gap-15 md:grid-cols-3">
+          {secondaryCardsToRender.map((data) => <BlogCard blogData={data} showDesc={false} basePath={cardBasePath} />)}
+        </div>
+
+        {
+          pageTitle === "blogs" ? (
+            <div class="mt-8 flex justify-end items-center gap-1">
+              <a
+                class="text-[14px] w-fit text-muted-foreground hover:text-foreground"
+                href="/resources"
+                data-astro-prefetch="viewport"
+              >
+                Resources
+              </a>{" "}
+              <ChevronRight size={14} />
+            </div>
+          ) : null
+        }
+      </section>
+    ) : null
+  }
+</main>

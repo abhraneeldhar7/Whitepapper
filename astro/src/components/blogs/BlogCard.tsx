@@ -5,13 +5,15 @@ import abstractDarkPic from "@/assets/abstract_dark.jpg";
 
 export default function BlogCard({
     blogData,
-    showDesc = true
+    showDesc = true,
+    basePath = "/blogs"
 }: {
     blogData: PaperDoc,
-    showDesc?: boolean
+    showDesc?: boolean,
+    basePath?: string
 }) {
     return (
-        <a href={`/blogs/${blogData.slug}`} className="relative flex flex-col" data-astro-prefetch="viewport">
+        <a href={`${basePath}/${blogData.slug}`} className="relative flex flex-col" data-astro-prefetch="viewport">
             <div className="overflow-hidden aspect-5/3">
                 {
                     blogData.thumbnailUrl ?

@@ -2,15 +2,12 @@
 import Layout from "@/layouts/Layout.astro";
 import ComponentDocPage from "@/components/component-docs/ComponentDocPage.astro";
 
-import markdownDocs from "../../../../backupContentFiles/components/markdown.md?raw";
-import linearDocs from "../../../../backupContentFiles/components/linear-toc.md?raw";
-import mobileDocs from "../../../../backupContentFiles/components/mobile-toc.md?raw";
-import linesDocs from "../../../../backupContentFiles/components/lines-toc.md?raw";
-
 import markdownCode from "@/components/ui/markdown-render/markdown-render.tsx?raw";
 import linearCode from "@/components/ui/toc/linearTableOfContent.tsx?raw";
 import mobileCode from "@/components/ui/toc/mobileTableOfContent.tsx?raw";
 import linesCode from "@/components/ui/toc/linesTableOfContent.tsx?raw";
+import type { PaperDoc } from "@/lib/types";
+import { buildBlogPaperMetadata, buildPaperSeoConfig } from "@/metadata/dynamic";
 
 const componentOrder = [
   "markdown",
@@ -19,6 +16,9 @@ const componentOrder = [
   "lines-toc",
 ] as const;
 type ComponentSlug = (typeof componentOrder)[number];
+type SitePaperResponse = {
+  paper: PaperDoc;
+};
 
 const componentMeta: Record<
   ComponentSlug,
@@ -26,7 +26,6 @@ const componentMeta: Record<
     componentName: string;
     title: string;
     description: string;
-    docs: string;
     code: string;
   }
 > = {
@@ -35,7 +34,6 @@ const componentMeta: Record<
     title: "Markdown Render",
     description:
       "A reading-first markdown renderer with copyable code blocks, GitHub-flavored markdown support, and a clean article layout.",
-    docs: markdownDocs,
     code: markdownCode,
   },
   "linear-toc": {
@@ -43,7 +41,6 @@ const componentMeta: Record<
     title: "Linear Table Of Content",
     description:
       "A quiet, structured table-of-content rail that tracks the active heading and gives long-form pages a steady navigation spine.",
-    docs: linearDocs,
     code: linearCode,
   },
   "mobile-toc": {
@@ -51,7 +48,6 @@ const componentMeta: Record<
     title: "Mobile Table Of Content",
     description:
       "A compact bottom-sheet table of contents for phones that tracks progress, surfaces the current heading, and expands when readers need orientation.",
-    docs: mobileDocs,
     code: mobileCode,
   },
   "lines-toc": {
@@ -59,7 +55,6 @@ const componentMeta: Record<
     title: "Lines Table Of Content",
     description:
       "An expressive desktop-only table-of-content rail that turns heading navigation into a visual reading instrument on the right edge of the screen.",
-    docs: linesDocs,
     code: linesCode,
   },
 };
@@ -81,7 +76,6 @@ const nextSlug =
     ? componentOrder[activeIndex + 1]
     : null;
 const contentContainerId = `component-doc-${componentParam}`;
-const markdown = `## Code\n\n\`\`\`\`tsx\n${active.code.trim()}\n\`\`\`\`\n\n${active.docs.trim()}`;
 const previous = previousSlug
   ? {
       href: `/components/${previousSlug}`,
@@ -101,58 +95,65 @@ Astro.response.headers.set(
   "public, max-age=600, stale-while-revalidate=600",
 );
 
-const seo = {
-  path: `/components/${active.componentName}`,
-  title: `${active.title} | Whitepapper Components`,
-  description: active.description,
-  canonical: `/components/${active.componentName}`,
-  robots: "index, follow",
-  ogType: "article",
-  ogTitle: `${active.title} | Whitepapper Components`,
-  ogDescription: active.description,
-  ogUrl: `/components/${active.componentName}`,
-  twitterCard: "summary_large_image",
-  twitterTitle: `${active.title} | Whitepapper Components`,
-  twitterDescription: active.description,
-  jsonLd: [
+const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
+  .trim()
+  .replace(/\/+$/, "");
+const whitepapperApiKey = String(import.meta.env.WHITEPAPPER_API_KEY ?? "").trim();
+const siteUrl = String(import.meta.env.PUBLIC_SITE_URL ?? "")
+  .trim()
+  .replace(/\/+$/, "");
+
+if (!apiBaseUrl || !whitepapperApiKey) {
+  throw new Error("PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.");
+}
+
+const componentPaperSlugByRoute: Record<ComponentSlug, string> = {
+  markdown: "components-markdown",
+  "linear-toc": "components-linear-toc",
+  "mobile-toc": "components-mobile-toc",
+  "lines-toc": "components-lines-toc",
+};
+
+const componentPaperSlug = componentPaperSlugByRoute[componentParam];
+const paperResponse = await fetch(
+  `${apiBaseUrl}/dev/paper?slug=${encodeURIComponent(componentPaperSlug)}`,
+  {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      "x-api-key": whitepapperApiKey,
+    },
+  },
+);
+
+if (!paperResponse.ok) {
+  const message = await paperResponse.text();
+  throw new Error(message || `Upstream request failed with ${paperResponse.status}`);
+}
+
+const { paper } = (await paperResponse.json()) as SitePaperResponse;
+const markdown = `## Code\n\n\`\`\`\`tsx\n${active.code.trim()}\n\`\`\`\`\n\n${(paper.body || "").trim()}`;
+const resolvedSiteUrl = siteUrl || Astro.url.origin.replace(/\/+$/, "");
+const metadata = {
+  ...buildBlogPaperMetadata({ paper, siteUrl: resolvedSiteUrl }),
+  canonical: `${resolvedSiteUrl}/components/${active.componentName}`,
+};
+
+const seo = buildPaperSeoConfig(metadata, {
+  schemaType: "Article",
+  breadcrumbItems: [
     {
-      "@context": "https://schema.org",
-      "@type": "TechArticle",
-      headline: active.title,
-      description: active.description,
-      url: `${Astro.url.origin}/components/${active.componentName}`,
-      isPartOf: {
-        "@type": "CollectionPage",
-        name: "Whitepapper Components",
-        url: `${Astro.url.origin}/components`,
-      },
+      position: 1,
+      name: "Components",
+      item: `${resolvedSiteUrl}/components`,
     },
     {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        {
-          "@type": "ListItem",
-          position: 1,
-          name: "Home",
-          item: Astro.url.origin,
-        },
-        {
-          "@type": "ListItem",
-          position: 2,
-          name: "Components",
-          item: `${Astro.url.origin}/components`,
-        },
-        {
-          "@type": "ListItem",
-          position: 3,
-          name: active.title,
-          item: `${Astro.url.origin}/components/${active.componentName}`,
-        },
-      ],
+      position: 2,
+      name: metadata.headline,
+      item: metadata.canonical,
     },
   ],
-};
+});
 ---
 
 <Layout seo={seo}>

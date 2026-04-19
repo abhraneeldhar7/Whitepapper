@@ -1,0 +1,132 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import MarkdownRender from "@/components/ui/markdown-render/markdown-render";
+import { LinearTableOfContent } from "@/components/ui/toc/linearTableOfContent";
+import MobileTableOfContent from "@/components/ui/toc/mobileTableOfContent";
+import { isDesktopUserAgent } from "@/lib/userAgent";
+import type { PaperDoc, PaperMetadata } from "@/lib/types";
+import { formatFirestoreDate } from "@/lib/utils";
+import type { PageSeoConfig } from "@/metadata/pages";
+import { ChevronLeft, DotIcon } from "lucide-react";
+
+type Props = {
+  paper: PaperDoc;
+  metadata: PaperMetadata;
+  parentHref: string;
+  parentLabel: string;
+  seo: PageSeoConfig;
+};
+
+const { paper, metadata, parentHref, parentLabel, seo } = Astro.props as Props;
+const contentContainerId = `site-content-${paper.paperId || paper.slug}`;
+const userAgent = Astro.request.headers.get("user-agent") ?? "";
+const isDesktopUA = isDesktopUserAgent(userAgent);
+const updatedDate = formatFirestoreDate(paper.updatedAt);
+const readingTimeMinutes = Math.max(1, metadata.readingTimeMinutes || 1);
+---
+
+<Layout seo={seo as PageSeoConfig}>
+  <div class="flex justify-between px-[15px] md:px-[35px] md:gap-10">
+    <div class="md:w-[300px] hidden md:block"></div>
+    <main class="mx-auto min-h-screen max-w-[700px] w-full pt-20 md:pt-30 pb-20">
+      <a
+        href={parentHref}
+        class="text-[14px] w-fit text-muted-foreground hover:text-foreground flex items-center gap-1"
+        data-astro-prefetch="viewport"
+      >
+        <ChevronLeft size={14} /> {parentLabel}
+      </a>
+
+      <article itemscope itemtype="https://schema.org/Article">
+        <header>
+          <h1
+            itemprop="headline"
+            class="text-[28px] md:text-[35px] font-[600] mt-5"
+            style={{ lineHeight: "1.4em" }}
+          >
+            {paper.title}
+          </h1>
+
+          <div class="mt-4 flex items-center justify-between gap-3">
+            <address class="not-italic">
+              <a
+                href="/"
+                rel="author"
+                itemprop="author"
+                class="flex items-center gap-2 w-fit"
+                data-astro-prefetch="viewport"
+              >
+                <img
+                  src="/appLogo.png"
+                  height="25"
+                  width="22"
+                  alt="Whitepapper logo"
+                />
+                <p
+                  class="text-[15px] text-muted-foreground hover:text-foreground transition-all duration-300"
+                >
+                  Whitepapper
+                </p>
+              </a>
+            </address>
+
+            <div
+              class="flex items-center gap-1 text-[14px] text-muted-foreground"
+            >
+              <time
+                datetime={metadata.dateModified}
+                itemprop="dateModified"
+              >
+                {updatedDate}
+              </time>
+              <DotIcon size={20} />
+              <span>{readingTimeMinutes} min read</span>
+            </div>
+          </div>
+        </header>
+
+        {
+          paper.thumbnailUrl ? (
+            <figure class="mt-6 border rounded-[8px] overflow-hidden">
+              <img
+                src={paper.thumbnailUrl}
+                alt={metadata.ogImageAlt || paper.title}
+                itemprop="image"
+                class="h-full w-full object-contain"
+                loading="eager"
+                decoding="async"
+                fetchpriority="high"
+              />
+            </figure>
+          ) : null
+        }
+
+        <section class="mt-6" aria-label="Article content" itemprop="articleBody">
+          <MarkdownRender
+            content={paper.body || ""}
+            contentContainerId={contentContainerId}
+          />
+        </section>
+      </article>
+    </main>
+
+    <aside class="md:w-[300px]">
+      {
+        isDesktopUA ? (
+          <div class="sticky top-[140px] hidden md:block">
+            <LinearTableOfContent
+              client:load
+              containerId={contentContainerId}
+            />
+          </div>
+        ) : (
+          <MobileTableOfContent
+            topOffset={80}
+            client:load
+            contentContainerId={contentContainerId}
+          />
+        )
+      }
+    </aside>
+  </div>
+</Layout>

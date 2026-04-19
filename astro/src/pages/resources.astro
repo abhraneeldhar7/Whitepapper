@@ -1,5 +1,5 @@
 ﻿---
-import BlogListingPage from "@/components/blogs/BlogListingPage.astro";
+import SiteContentListingPage from "@/components/site/SiteContentListingPage.astro";
 import Layout from "@/layouts/Layout.astro";
 import type { PaperDoc } from "@/lib/types";
 
@@ -48,7 +48,7 @@ Astro.response.headers.set(
 
 <Layout>
   <main aria-label="Resources listing">
-    <BlogListingPage
+    <SiteContentListingPage
       pageTitle="resources"
       primaryTitle="Resources"
       primaryBlogs={resourcesBlogs.papers.slice(0, 2)}

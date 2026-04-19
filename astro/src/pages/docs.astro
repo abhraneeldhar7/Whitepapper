@@ -69,38 +69,6 @@ const importantDocs = importantDocRoutes
 
 const cardClass =
   "group block rounded-[6px] border border-border/50 bg-card p-4 transition-all duration-200 hover:bg-muted/30";
-const docsIndexSeo = {
-  path: "/docs",
-  title: "Documentation | Whitepapper",
-  description:
-    "Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides.",
-  canonical: "/docs",
-  keywords:
-    "whitepapper docs, developer docs, technical documentation, content workflow docs, api documentation",
-  robots: "index, follow",
-  ogType: "website",
-  ogTitle: "Documentation | Whitepapper",
-  ogDescription:
-    "Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides.",
-  ogUrl: "/docs",
-  twitterCard: "summary_large_image",
-  twitterTitle: "Documentation | Whitepapper",
-  twitterDescription:
-    "Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides.",
-  jsonLd: {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    name: "Whitepapper Documentation",
-    description:
-      "Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides.",
-    url: `${Astro.url.origin}/docs`,
-    isPartOf: {
-      "@type": "WebSite",
-      name: "Whitepapper",
-      url: Astro.url.origin,
-    },
-  },
-};
 
 Astro.response.headers.set(
   "Cache-Control",
@@ -111,7 +79,6 @@ Astro.response.headers.set(
 <Layout
   title="Documentation | Whitepapper"
   description="Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides."
-  seo={docsIndexSeo}
 >
   <div class="pb-5 md:pb-10 px-5">
     <div class="flex gap-10 justify-between">

@@ -1,14 +1,51 @@
 ---
-import SectionIndexPage from "@/components/site/SectionIndexPage.astro";
-import { sectionIndexPages } from "@/lib/sitePages";
+import Layout from "@/layouts/Layout.astro";
+import SiteContentListingPage from "@/components/site/SiteContentListingPage.astro";
+import type { PaperDoc } from "@/lib/types";
 
-const page = sectionIndexPages.compare;
+type SiteCollectionResponse = {
+  papers: PaperDoc[];
+};
+
+const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
+  .trim()
+  .replace(/\/+$/, "");
+const whitepapperApiKey = String(import.meta.env.WHITEPAPPER_API_KEY ?? "").trim();
+
+if (!apiBaseUrl || !whitepapperApiKey) {
+  throw new Error("PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.");
+}
+
+const response = await fetch(
+  `${apiBaseUrl}/dev/collection?slug=${encodeURIComponent("compare")}`,
+  {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      "x-api-key": whitepapperApiKey,
+    },
+  },
+);
+
+if (!response.ok) {
+  const message = await response.text();
+  throw new Error(message || `Upstream request failed with ${response.status}`);
+}
+
+const comparePages = (await response.json()) as SiteCollectionResponse;
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+);
 ---
 
-<SectionIndexPage
-  eyebrow={page.eyebrow}
-  title={page.title}
-  description={page.description}
-  path="/compare"
-  links={page.links}
-/>
+<Layout>
+  <main aria-label="Compare listing">
+    <SiteContentListingPage
+      pageTitle="compare"
+      primaryTitle="Compare"
+      primaryPapers={comparePages.papers}
+    />
+  </main>
+</Layout>

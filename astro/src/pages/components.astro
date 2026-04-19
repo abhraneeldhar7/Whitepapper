@@ -6,55 +6,13 @@ import LinearTocImg from "@/assets/components/linearToc.png";
 import mobileTocImg from "@/assets/components/mobileToc.png";
 import linesTocImg from "@/assets/components/linesToc.png";
 
-const seo = {
-    path: "/components",
-    title: "Whitepapper Components | Reading-Focused React Components",
-    description: "Explore the reusable React components behind Whitepapper, including markdown rendering and table-of-content patterns for docs and long-form content.",
-    canonical: "/components",
-    robots: "index, follow",
-    ogType: "website",
-    ogTitle: "Whitepapper Components | Reading-Focused React Components",
-    ogDescription: "Explore the reusable React components behind Whitepapper, including markdown rendering and table-of-content patterns for docs and long-form content.",
-    ogUrl: "/components",
-    twitterCard: "summary_large_image",
-    twitterTitle: "Whitepapper Components | Reading-Focused React Components",
-    twitterDescription: "Explore the reusable React components behind Whitepapper, including markdown rendering and table-of-content patterns for docs and long-form content.",
-    jsonLd: [
-        {
-            "@context": "https://schema.org",
-            "@type": "CollectionPage",
-            name: "Whitepapper Components",
-            description: "Reading-focused React components for markdown rendering and table-of-content patterns.",
-            url: `${Astro.url.origin}/components`,
-        },
-        {
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-                {
-                    "@type": "ListItem",
-                    position: 1,
-                    name: "Home",
-                    item: Astro.url.origin,
-                },
-                {
-                    "@type": "ListItem",
-                    position: 2,
-                    name: "Components",
-                    item: `${Astro.url.origin}/components`,
-                },
-            ],
-        },
-    ],
-};
-
 Astro.response.headers.set(
     "Cache-Control",
     "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
 );
 ---
 
-<Layout seo={seo}>
+<Layout>
     <div class="max-w-[800px] px-4 w-full mx-auto md:py-10 py-5 min-h-screen">
         <h1 class="text-[30px] md:text-[40px] font-[400]">Components</h1>
         <p class="text-[16px] text-muted-foreground mt-2">

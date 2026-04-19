@@ -1,17 +1,89 @@
 ---
-import ContentPageShell from "@/components/site/ContentPageShell.astro";
-import { featurePages, getFeaturePage } from "@/lib/sitePages";
+import SiteContentPaperPage from "@/components/site/SiteContentPaperPage.astro";
+import type { PaperDoc } from "@/lib/types";
+import { buildBlogPaperMetadata, buildPaperSeoConfig } from "@/metadata/dynamic";
 
-export function getStaticPaths() {
-  return featurePages.map((page) => ({ params: { slug: page.slug } }));
+type SitePaperResponse = {
+  paper: PaperDoc;
+};
+
+const pageSlug = Astro.params.slug as string;
+const normalizedSlug = pageSlug.trim().toLowerCase();
+const siteUrl = String(import.meta.env.PUBLIC_SITE_URL ?? "")
+  .trim()
+  .replace(/\/+$/, "");
+
+if (pageSlug !== normalizedSlug) {
+  return Astro.redirect(`/features/${normalizedSlug}`, 301);
 }
 
-const slug = Astro.params.slug as string;
-const page = getFeaturePage(slug);
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+);
+Astro.response.headers.set(
+  "CDN-Cache-Control",
+  "public, max-age=600, stale-while-revalidate=600",
+);
 
-if (!page) {
-  return new Response(null, { status: 404 });
+const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
+  .trim()
+  .replace(/\/+$/, "");
+const whitepapperApiKey = String(import.meta.env.WHITEPAPPER_API_KEY ?? "").trim();
+
+if (!apiBaseUrl || !whitepapperApiKey) {
+  throw new Error("PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.");
 }
+
+const paperResponse = await fetch(
+  `${apiBaseUrl}/dev/paper?slug=${encodeURIComponent(normalizedSlug)}`,
+  {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      "x-api-key": whitepapperApiKey,
+    },
+  },
+);
+
+if (!paperResponse.ok) {
+  const message = await paperResponse.text();
+  throw new Error(message || `Upstream request failed with ${paperResponse.status}`);
+}
+
+const { paper } = (await paperResponse.json()) as SitePaperResponse;
+
+if (paper.slug !== normalizedSlug) {
+  return Astro.redirect(`/features/${paper.slug}`, 301);
+}
+
+const resolvedSiteUrl = siteUrl || Astro.url.origin.replace(/\/+$/, "");
+const metadata = {
+  ...buildBlogPaperMetadata({ paper, siteUrl: resolvedSiteUrl }),
+  canonical: `${resolvedSiteUrl}/features/${normalizedSlug}`,
+};
+
+const seo = buildPaperSeoConfig(metadata, {
+  schemaType: "Article",
+  breadcrumbItems: [
+    {
+      position: 1,
+      name: "Features",
+      item: `${resolvedSiteUrl}/features`,
+    },
+    {
+      position: 2,
+      name: metadata.headline,
+      item: metadata.canonical,
+    },
+  ],
+});
 ---
 
-<ContentPageShell page={page} path={`/features/${page.slug}`} parentHref="/features" parentLabel="Features" />
+<SiteContentPaperPage
+  paper={paper}
+  metadata={metadata}
+  parentHref="/features"
+  parentLabel="Features"
+  seo={seo}
+/>

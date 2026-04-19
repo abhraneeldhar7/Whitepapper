@@ -1,16 +1,10 @@
 ---
-import Layout from "@/layouts/Layout.astro";
-import { formatFirestoreDate } from "@/lib/utils";
-import MobileTableOfContent from "@/components/ui/toc/mobileTableOfContent";
 import type { PaperDoc } from "@/lib/types";
-import { ChevronLeft, DotIcon } from "lucide-react";
+import SiteContentPaperPage from "@/components/site/SiteContentPaperPage.astro";
 import {
     buildBlogPaperMetadata,
     buildPaperSeoConfig,
 } from "@/metadata/dynamic";
-import { isDesktopUserAgent } from "@/lib/userAgent";
-import { LinearTableOfContent } from "@/components/ui/toc/linearTableOfContent";
-import MarkdownRender from "@/components/ui/markdown-render/markdown-render";
 
 type SiteBlogPaperResponse = {
     paper: PaperDoc;
@@ -21,8 +15,6 @@ const normalizedSlug = pageSlug.trim().toLowerCase();
 const siteUrl = String(import.meta.env.PUBLIC_SITE_URL ?? "")
     .trim()
     .replace(/\/+$/, "");
-const userAgent = Astro.request.headers.get("user-agent") ?? "";
-const isDesktopUA = isDesktopUserAgent(userAgent);
 
 if (pageSlug !== normalizedSlug) {
     return Astro.redirect(`/blogs/${normalizedSlug}`, 301);
@@ -69,11 +61,8 @@ if (!paperResponse.ok) {
 }
 
 const { paper } = (await paperResponse.json()) as SiteBlogPaperResponse;
-const contentContainerId = `post-preview-${paper.paperId || normalizedSlug}`;
-const updatedDate = formatFirestoreDate(paper.updatedAt);
 const resolvedSiteUrl = siteUrl || Astro.url.origin.replace(/\/+$/, "");
 const metadata = buildBlogPaperMetadata({ paper, siteUrl: resolvedSiteUrl });
-const readingTimeMinutes = Math.max(1, metadata.readingTimeMinutes || 1);
 
 if (paper.slug !== normalizedSlug) {
     return Astro.redirect(`/blogs/${paper.slug}`, 301);
@@ -96,113 +85,10 @@ const seo = buildPaperSeoConfig(metadata, {
 });
 ---
 
-<Layout seo={seo}>
-    <div class="flex justify-between px-[15px] md:px-[35px] md:gap-10">
-        <div class="md:w-[300px] hidden md:block"></div>
-        <main class="mx-auto min-h-screen max-w-[700px] pt-15 md:pt-20 pb-20">
-            <a
-                href="/blogs"
-                class="text-[14px] w-fit text-muted-foreground hover:text-foreground flex items-center gap-1"
-            >
-                <ChevronLeft size={14} /> Blogs
-            </a>
-
-            <article itemscope itemtype="https://schema.org/Article">
-                <header>
-                    <h1
-                        itemprop="headline"
-                        class="text-[28px] md:text-[35px] font-[600] mt-5"
-                        style={{ lineHeight: "1.4em" }}
-                    >
-                        {paper.title}
-                    </h1>
-
-                    <div class="mt-4 flex items-center justify-between gap-3">
-                        <address class="not-italic">
-                            <a
-                                href="/"
-                                rel="author"
-                                itemprop="author"
-                                class="flex items-center gap-2 w-fit"
-                            >
-                                <img
-                                    src="/appLogo.png"
-                                    height="25"
-                                    width="22"
-                                    alt="Whitepapper logo"
-                                />
-                                <p
-                                    class="text-[15px] text-muted-foreground hover:text-foreground transition-all duration-300"
-                                >
-                                    Whitepapper
-                                </p>
-                            </a>
-                        </address>
-
-                        <div
-                            class="flex items-center gap-1 text-[14px] text-muted-foreground"
-                        >
-                            <time
-                                datetime={metadata.dateModified}
-                                itemprop="dateModified"
-                            >
-                                {updatedDate}
-                            </time>
-                            <DotIcon size={20} />
-                            <span>{readingTimeMinutes} min read</span>
-                        </div>
-                    </div>
-                </header>
-
-                {
-                    paper.thumbnailUrl ? (
-                        <figure class="mt-6 border rounded-[8px] overflow-hidden">
-                            <img
-                                src={paper.thumbnailUrl}
-                                alt={metadata.ogImageAlt || paper.title}
-                                itemprop="image"
-                                class="h-full w-full object-contain"
-                                loading="eager"
-                                decoding="async"
-                                fetchpriority="high"
-                            />
-                        </figure>
-                    ) : null
-                }
-
-                <section
-                    class="mt-6"
-                    aria-label="Article content"
-                    itemprop="articleBody"
-                >
-                    <!-- <PostRender
-                        content={paper.body || ""}
-                        contentContainerId={contentContainerId}
-                    /> -->
-                    <MarkdownRender
-                        content={paper.body || ""}
-                        contentContainerId={contentContainerId}
-                    />
-                </section>
-            </article>
-        </main>
-        <aside class="md:w-[300px]">
-            {
-                isDesktopUA ? (
-                    <div class="sticky top-[140px] hidden md:block">
-                        <LinearTableOfContent
-                            client:load
-                            containerId={contentContainerId}
-                        />
-                    </div>
-                ) : (
-                    <MobileTableOfContent
-                        topOffset={80}
-                        client:load
-                        contentContainerId={contentContainerId}
-                    />
-                )
-            }
-        </aside>
-    </div>
-</Layout>
+<SiteContentPaperPage
+    paper={paper}
+    metadata={metadata}
+    parentHref="/blogs"
+    parentLabel="Blogs"
+    seo={seo}
+/>
