@@ -2,9 +2,12 @@ import "./markdown-render.css";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
 import { createHighlighter, type BuiltinLanguage, type BundledTheme } from 'shiki';
 import { isInternalHref, isPlaceholderHref } from '@/lib/seo';
+import MarkdownCopyButtonClient from './MarkdownCopyButtonClient';
+import type { ReactNode } from 'react';
 
 const SHIKI_THEME_LIGHT:BundledTheme = "github-light"
 const SHIKI_THEME_DARK: BundledTheme = "vitesse-dark";
@@ -38,43 +41,14 @@ function rehypeShikiSync() {
             },
             defaultColor: 'light-dark()',
             addLanguageClass: true,
+            defaultLanguage: 'txt',
+            fallbackLanguage: 'txt',
         });
 }
 
 type PostRenderProps = {
     content: string
     contentContainerId?: string
-}
-
-function MarkdownActionIcon({ className, dataAttr }: { className?: string; dataAttr: 'data-copy-icon' | 'data-check-icon' }) {
-    const isCheck = dataAttr === 'data-check-icon';
-
-    return (
-        <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className={className}
-            {...{ [dataAttr]: true }}
-        >
-            {isCheck ? (
-                <path
-                    d="M20 6L9 17L4 12"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-            ) : (
-                <>
-                    <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2" />
-                    <path d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </>
-            )}
-        </svg>
-    );
 }
 
 function getPreLanguage(node: unknown): string {
@@ -84,11 +58,21 @@ function getPreLanguage(node: unknown): string {
     const className = Array.isArray(rawClass) ? rawClass.join(' ') : String(rawClass || '');
     const match = /language-(\w+)/.exec(className || '');
     const language = match?.[1];
-    return language || '';
+    return language === 'txt' ? '' : (language || '');
+}
+
+function extractTextContent(node: ReactNode): string {
+    if (typeof node === 'string' || typeof node === 'number') return String(node);
+    if (!node || typeof node !== 'object') return '';
+    if (Array.isArray(node)) return node.map(extractTextContent).join('');
+
+    const reactNode = node as { props?: { children?: ReactNode } };
+    return extractTextContent(reactNode.props?.children);
 }
 
 export default function MarkdownRender({ content, contentContainerId }: PostRenderProps) {
     const siteUrl = String(import.meta.env.PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4321')).trim();
+    let imageIndex = 0;
 
     return (
         <div>
@@ -98,6 +82,7 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[
                         rehypeRaw,
+                        [rehypeSanitize, defaultSchema],
                         rehypeShikiSync,
                     ]}
                     components={{
@@ -118,6 +103,8 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                             );
                         },
                         img: ({ node, alt, src, ...props }) => {
+                            imageIndex += 1;
+                            const isFirstImage = imageIndex === 1;
                             const fallbackAlt = String(src || '')
                                 .split('/')
                                 .pop()
@@ -129,29 +116,23 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                                 <img
                                     src={src}
                                     alt={String(alt || fallbackAlt)}
-                                    loading="lazy"
+                                    loading={isFirstImage ? "eager" : "lazy"}
                                     decoding="async"
+                                    fetchPriority={isFirstImage ? "high" : undefined}
                                     {...props}
                                 />
                             );
                         },
                         pre: ({ node, children, ...props }) => {
                             const language = getPreLanguage(node);
+                            const codeText = extractTextContent(children).replace(/\n$/, '');
 
                             return (
                                 <div className="markdownCodeBlock">
                                     <div className="markdownCodeBlockHeader">
                                         <span className="markdownCodeBlockLanguage">{language}</span>
                                         <div className="markdownCodeBlockActions">
-                                            <button
-                                                type="button"
-                                                data-copy-button
-                                                aria-label="Copy code"
-                                                className="markdownCopyButton"
-                                            >
-                                                <MarkdownActionIcon dataAttr="data-copy-icon" />
-                                                <MarkdownActionIcon dataAttr="data-check-icon" className="markdownHidden" />
-                                            </button>
+                                            <MarkdownCopyButtonClient codeText={codeText} />
                                         </div>
                                     </div>
                                     <pre {...props}>{children}</pre>
@@ -183,53 +164,5 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                     }} />
             </div>
 
-            <script
-                dangerouslySetInnerHTML={{
-                    __html: `(function(){
-    var bindCopyButtons = function() {
-        var buttons = document.querySelectorAll('button[data-copy-button]');
-        for (var i = 0; i < buttons.length; i++) {
-            var button = buttons[i];
-            if (!(button instanceof HTMLButtonElement)) continue;
-            if (button.dataset.copyBound === '1') continue;
-            button.dataset.copyBound = '1';
-            button.addEventListener('click', async function() {
-                var copyIcon = this.querySelector('[data-copy-icon]');
-                var checkIcon = this.querySelector('[data-check-icon]');
-                var block = this.closest('.markdownCodeBlock');
-                var codeEl = block ? block.querySelector('pre code') : null;
-                var text = codeEl && codeEl.textContent ? codeEl.textContent : '';
-                if (!text.trim()) return;
-                try {
-                    await navigator.clipboard.writeText(text);
-                    if (copyIcon) copyIcon.classList.add('markdownHidden');
-                    if (checkIcon) checkIcon.classList.remove('markdownHidden');
-                    window.setTimeout(function() {
-                        if (checkIcon) checkIcon.classList.add('markdownHidden');
-                        if (copyIcon) copyIcon.classList.remove('markdownHidden');
-                    }, 1200);
-                } catch (_) {}
-            });
-        }
-    };
-
-    if (window.__whitepapperCopyInit) {
-        if (typeof window.__whitepapperBindCopyButtons === 'function') {
-            window.__whitepapperBindCopyButtons();
-        }
-        return;
-    }
-
-    window.__whitepapperCopyInit = true;
-    window.__whitepapperBindCopyButtons = bindCopyButtons;
-
-    bindCopyButtons();
-    document.addEventListener('astro:page-load', bindCopyButtons);
-    document.addEventListener('astro:after-swap', function() {
-        window.setTimeout(bindCopyButtons, 0);
-    });
-})();`,
-                }}
-            />
         </div>)
 }
