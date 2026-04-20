@@ -306,6 +306,7 @@ Whitepapper is a markdown-first CMS. All content is written in markdown.
 - When creating multiple papers in the same collection, create the collection once then batch the paper creates.
 - Never call create_collection more than once for the same normalized name in a session.
 - Do not call update_paper immediately after create_paper unless the user asks for a change.
+- Do not call regenerate_paper_seo unless the user explicitly asks for SEO regeneration.
 - Do not confirm each action with the user unless they ask for confirmation mode.
 
 ## Error handling rules
@@ -475,8 +476,50 @@ paper_id comes from the papers array in get_project_context output.
             "title": paper.get("title"),
             "markdown": paper.get("body") or "",
             "collection_id": paper.get("collectionId"),
+            "thumbnail_url": paper.get("thumbnailUrl"),
             "metadata": paper.get("metadata") or None,
             "seo": _paper_seo(paper),
+        }
+
+    @server.tool(description="""
+Get a random thumbnail public URL from Firebase Storage/defaultThumbnails.
+This tool ONLY returns the URL and does not modify any paper.
+Use this as a building block with update_paper(thumbnail_url=...) to assign the thumbnail.
+""")
+    def get_random_default_thumbnail_url() -> dict[str, Any]:
+        context = _require_tool_context()
+        if not context.project_id:
+            return {"error": "project_not_found"}
+
+        try:
+            url = papers_service.get_random_default_thumbnail_url()
+        except HTTPException as exc:
+            return {"error": "thumbnail_unavailable", "message": str(exc.detail)}
+
+        return {"url": url}
+
+    @server.tool(description="""
+Delete the current thumbnail for a paper.
+This tool ONLY executes thumbnail cleanup and clears the paper thumbnail field.
+Use update_paper(thumbnail_url=...) when you want to set or overwrite a thumbnail URL.
+""")
+    def delete_paper_thumbnail(paper_id: str) -> dict[str, Any]:
+        context = _require_tool_context()
+        paper = _get_project_paper(paper_id, context.project_id)
+        if not paper:
+            return {"error": "not_found"}
+
+        owner_id = str(paper.get("ownerId") or "").strip()
+        if not owner_id:
+            return {"error": "owner_missing", "message": "Paper owner is missing."}
+
+        deleted = papers_service.delete_thumbnail(owner_id, paper_id)
+        updated = papers_service.update(paper_id, {"thumbnailUrl": None})
+        return {
+            "updated": True,
+            "id": paper_id,
+            "thumbnail_deleted": bool(deleted),
+            "thumbnail_url": updated.get("thumbnailUrl"),
         }
 
     @server.tool(description="""
@@ -545,13 +588,35 @@ If create returns slug_taken, append a short qualifier to the slug and retry onc
         return {
             "id": paper_id,
             "slug": normalized_slug,
+            "thumbnail_url": (paper or {}).get("thumbnailUrl") if paper else None,
             "metadata": (paper or {}).get("metadata") if paper else None,
             "seo": _paper_seo(paper),
         }
 
     @server.tool(description="""
+Regenerate SEO tags for an existing paper using the same metadata generation flow used by normal app updates.
+This refreshes metadata from current paper content, title, slug, project, and author context.
+Only run this when the user explicitly asks for SEO regeneration.
+""")
+    def regenerate_paper_seo(paper_id: str) -> dict[str, Any]:
+        context = _require_tool_context()
+        paper = _get_project_paper(paper_id, context.project_id)
+        if not paper:
+            return {"error": "not_found"}
+
+        refreshed = papers_service.update(paper_id, {}, force_metadata_refresh=True)
+        return {
+            "updated": True,
+            "id": paper_id,
+            "slug": refreshed.get("slug"),
+            "metadata": refreshed.get("metadata") or None,
+            "seo": _paper_seo(refreshed),
+        }
+
+    @server.tool(description="""
 Update an existing paper. Only pass fields you want to change. Unpassed fields are not touched.
 Use this to rewrite content, fix SEO fields, or update the title.
+Use thumbnail_url to set/overwrite thumbnail directly using a public URL.
 paper_id comes from get_project_context or a previous create_paper response.
 Do not call this immediately after create_paper unless changes are needed.
 """)
@@ -561,6 +626,7 @@ Do not call this immediately after create_paper unless changes are needed.
         slug: str | None = None,
         markdown: str | None = None,
         collection_id: str | None = None,
+        thumbnail_url: str | None = None,
         status: str | None = None,
         seo_title: str | None = None,
         seo_description: str | None = None,
@@ -594,6 +660,9 @@ Do not call this immediately after create_paper unless changes are needed.
                     return {"error": "collection_not_found"}
                 payload["collectionId"] = str(resolved_collection.get("collectionId") or "")
                 payload["projectId"] = context.project_id
+        if thumbnail_url is not None:
+            clean_thumbnail_url = str(thumbnail_url).strip()
+            payload["thumbnailUrl"] = clean_thumbnail_url or None
         if status is not None:
             normalized_status = str(status).strip().lower()
             if normalized_status not in {"draft", "published", "archived"}:

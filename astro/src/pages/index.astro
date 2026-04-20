@@ -235,7 +235,7 @@ import { Button } from "@/components/ui/button";
 			</div>
 		</div>
 
-		<!-- <TweetStack client:idle/> -->
+		<!-- <TweetStack client:load/> -->
 
 		<section
 			class="mx-auto flex w-full flex-col px-5 md:px-15"
@@ -408,7 +408,7 @@ import { Button } from "@/components/ui/button";
 						class="object-contain md:max-w-[500px] w-full"
 					/>
 					<div
-						class="bg-gradient-to-t h-[60px] w-full absolute bottom-0 left-0 from-background from-20% to-transparent to-90% z-3"
+						class="bg-gradient-to-t h-[140px] w-full absolute bottom-[-3px] left-0 from-background from-20% to-transparent to-90% z-3"
 					>
 					</div>
 					<div
@@ -473,70 +473,80 @@ import { Button } from "@/components/ui/button";
 				<p
 					class="mt-1 text-foreground md:w-[400px] mx-auto text-center text-muted-foreground"
 				>
-					We highly encourage users to fork the <a href="https://github.com/abhraneeldhar7/Whitepapper" target="_blank" class="underline">repo</a> and self host
-					whitepapper for themselves
+					We highly encourage users to fork the <a
+						href="https://github.com/abhraneeldhar7/Whitepapper"
+						target="_blank"
+						class="underline">repo</a
+					> and self host whitepapper for themselves
 				</p>
 				<div
 					class="mt-10 md:mt-15 mx-auto w-full flex md:flex-row flex-col gap-10"
 					style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
 				>
-					<div class="md:flex-1 flex flex-col items-center gap-6">
-						<div class="flex h-[200px] w-[160px]">
-							<div class="flex shrink-0">
-								<div
-									class="rounded-tl-[15px] rounded-bl-[15px] border-r bg-[#151515] h-full w-[20px]"
-								>
-								</div>
-							</div>
-							<div
-								class="h-full flex-1 bg-card relative rounded-tr-[5px] rounded-br-[5px] p-3 pt-7"
-							>
-								<BookmarkIcon
-									color="#3291ff"
-									fill="#3291ff"
-									size={22}
-									className="absolute top-3 right-2 top-[-2px]"
-								/>
-
-								<h3 class="text-[16px] font-[460]">
-									Self host guide
-								</h3>
-								<p
-									class="mt-1 text-[11px] text-muted-foreground"
-								>
-									Whitepapper is open-sourced for schizo
-									users.
-								</p>
-
-								<img
-									src="/appLogo.png"
-									class="h-[22px] w-[22px] absolute bottom-3 right-3 z-2"
-								/>
-							</div>
-						</div>
-
+					<div class="md:flex-1">
 						<a
 							href="/docs/self-host/overview"
-							class="flex items-center gap-2"
+							class="flex flex-col items-center h-fit gap-8 w-fit mx-auto"
 						>
-							Read the docs <ArrowRight size={17} />
+							<div class="flex h-[200px] w-[160px]">
+								<div class="flex shrink-0">
+									<div
+										class="rounded-tl-[15px] rounded-bl-[15px] border-r bg-[#151515] h-full w-[20px]"
+									>
+									</div>
+								</div>
+								<div
+									class="h-full flex-1 bg-card relative rounded-tr-[5px] rounded-br-[5px] p-3 pt-7"
+								>
+									<BookmarkIcon
+										color="#3291ff"
+										fill="#3291ff"
+										size={22}
+										className="absolute right-2 top-[-4px]"
+									/>
+
+									<h3 class="text-[16px] font-[460]">
+										Self host guide
+									</h3>
+									<p
+										class="mt-1 text-[11px] text-muted-foreground"
+									>
+										Whitepapper is open-sourced for schizo
+										users.
+									</p>
+
+									<img
+										src="/appLogo.png"
+										class="h-[22px] w-[22px] absolute bottom-3 right-3 z-2"
+									/>
+								</div>
+							</div>
+
+							<p class="flex items-center gap-2">
+								Read the docs <ArrowRight size={17} />
+							</p>
 						</a>
 					</div>
 
-					<div
-						class="md:flex-1 flex items-center justify-center flex-col gap-6"
-					>
-						<img
-							src={npmLogo.src}
-							class="my-14 h-[100px] w-[100px]"
-						/>
-						<p class="text-center w-[250px] text-center mx-auto">
-							Ready to install components at <a
-								class="text-[#cc0000] font-[450] hover:text-[#cc0000]/80"
-								href="https://www.npmjs.com/package/whitepapper"
-								target="_blank">npm/whitepapper</a
+					<div class="md:flex-1">
+						<a
+							href="https://www.npmjs.com/package/whitepapper"
+							target="_blank"
+							class="flex items-center justify-center flex-col w-fit mx-auto"
+						>
+							<img
+								src={npmLogo.src}
+								class="my-14 h-[100px] w-[100px]"
+							/>
+							<p
+								class="text-center w-[250px] text-center mx-auto"
 							>
-						</p>
+								Ready to install components at <span
+									class="text-[#cc0000] font-[450] hover:text-[#cc0000]/80"
+									>npm/whitepapper</span
+								>
+							</p>
+						</a>
 					</div>
 				</div>
 			</div>
@@ -544,7 +554,7 @@ import { Button } from "@/components/ui/button";
 			<section class="space-y-4 mx-auto mt-20 md:mt-40">
 				<div style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}>
 					<FAQs
-						client:idle
+						client:load
 						items={homeFaqs}
 						title="FAQ"
 						description="A quick overview of what Whitepapper is, who it serves, and why the public page layer matters."

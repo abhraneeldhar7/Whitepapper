@@ -84,7 +84,7 @@ Astro.response.headers.set(
     <div class="flex gap-10 justify-between">
       <DocsSidebar navSections={docsNavSections} currentPath="/docs" />
 
-      <main class="w-full pt-15 md:pt-17" aria-label="Documentation home">
+      <main class="w-full pt-30 md:pt-35" aria-label="Documentation home">
         <div
           class="fixed top-[50px] md:top-[55px] left-0 w-full z-[2] flex justify-between items-center gap-10"
         >
@@ -95,7 +95,7 @@ Astro.response.headers.set(
           >
             <div class="md:hidden">
               <DocsMobileNav
-                client:idle
+                client:load
                 navSections={docsNavSections}
                 currentPath="/docs"
               />

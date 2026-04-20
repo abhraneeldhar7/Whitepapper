@@ -1,219 +1,210 @@
-# Whitepapper - Complete App Context
+# Whitepapper App Context
 
-Use this file as the canonical source of truth for content generation (SEO pages, blog posts, social content, ads, docs, sales collateral, onboarding copy, and product messaging).
+Use this file as the full product context source for strategy, marketing, metadata writing, onboarding copy, docs planning, and campaign messaging.
 
-## 1. Product in one line
+## Purpose
 
-Whitepapper is an SEO-first content operating system for developers and indie builders to write, organize, publish, and distribute content from one place.
+Whitepapper exists to remove content fragmentation for developers and builder teams.
 
-## 2. Product summary
+One source of truth should be enough: write once in markdown, organize it cleanly, publish it on your own surface, distribute to external platforms, and serve it anywhere through API.
 
-Whitepapper is a markdown-first CMS with a developer API, edge-cached content delivery, and built-in multi-platform distribution. It is built for developers who maintain blogs, document projects, and want their content accessible via API in their own portfolio or site — without copy-pasting across platforms.
+## Product One-Liner
 
-## 3. Problem statement
+Whitepapper is a markdown-first content platform for developers to write once, publish everywhere, and reuse content through a fast read API.
 
-Developers who write face a fragmented workflow: writing in one place, manually republishing to Dev.to, Hashnode, and Medium, copy-pasting into their portfolio, and managing SEO metadata by hand. Whitepapper solves this by being the single source of truth for your content, with distribution and API access built in.
+## Core Promise
 
-## 4. Ideal users and buyers
+- One place to create and manage content.
+- One canonical source for all channels.
+- One API-ready content layer for websites, portfolios, docs, and apps.
+- Distribution workflows without repeated copy-paste.
 
-- Developers who maintain a blog or document their projects publicly.
-- Indie makers who want their writing on their portfolio site via API.
-- Builders who publish across Dev.to, Hashnode, and Medium regularly.
-- Solo founders and students running lean content operations without a team.
+## Main Users
 
-## 5. Core entities (domain model)
+- Indie developers maintaining technical blogs and project docs.
+- Solo founders who need lightweight but structured content operations.
+- Small startup teams shipping content without enterprise CMS overhead.
+- Technical writers and makers who publish to multiple channels.
 
-Hierarchy: **Project > Collection > Paper**
+## Main Problems Solved
 
-- **User**: account owner with access to dashboard and all owned content.
-- **Project**: top-level workspace with branding, API key scope, collections, and papers.
-- **Collection**: optional grouping for thematic or structured content sets within a project.
-- **Paper**: the core content unit. Markdown content with title, metadata, thumbnail, and distribution state. Papers can be standalone inside or outside a project.
-- **API Key**: one key per project, scoped to that project. Used for external read access.
+- Content is scattered across docs tools, publishing platforms, and private notes.
+- Teams or individuals repeat formatting and republishing work manually.
+- SEO metadata and canonical consistency are hard to keep clean across channels.
+- Portfolio or app integrations require custom content plumbing every time.
 
-## 6. Core product capabilities
+## Domain Model
 
-- Markdown-first writing with a minimal, distraction-free editor.
-- Project and collection-based content organization.
-- SEO defaults: title, description, canonical, Open Graph, Twitter metadata — automated.
-- Public content surfaces for blogs, resources, updates, docs, integrations, legal pages.
-- Developer API for reading project, collection, and paper data externally.
-- One API key per project, read-oriented and safe for public-facing frontends.
-- Multi-platform distribution: direct publish to Hashnode and Dev.to via their APIs, Medium via Import Tool URL.
-- Markdown export available for all papers.
-- Edge caching via Cloudflare Workers for API responses and public pages (sub-100ms).
-- Redis caching for dashboard data (smooth internal experience without stale reads).
-- Dashboards always show live data. Cache is for public/API traffic only.
-- Content visibility control: private papers are owner-only, public papers are open to all including API consumers.
+Primary hierarchy: Project -> Collection -> Paper
 
-## 7. Distribution channels
+- User: workspace owner and authenticated operator.
+- Project: top-level workspace with branding, API key scope, and content groups.
+- Collection: optional grouping layer for related papers.
+- Paper: markdown-first content unit with metadata, status, and visibility.
+- API Key: project-scoped key for developer read access.
 
-| Platform | Method | Status |
-|---|---|---|
-| Hashnode | Direct API publish | Live |
-| Dev.to | Direct API publish | Live |
-| Medium | Import Tool URL (Medium pulls content) | Live |
-| Threads | Direct distribution | Pending platform approval |
-| Reddit | Direct distribution | Pending platform approval |
-| LinkedIn | Direct distribution | Pending platform approval |
-| Markdown export | Manual export | Always available |
+## Product Features
 
-Use in copy as: "publish once, distribute everywhere."
+### Content Creation and Management
 
-## 8. Public site and documentation IA
+- Markdown-first editor focused on low-friction writing.
+- Structured organization through projects and collections.
+- Paper-level metadata and visibility controls.
+- Markdown export for portability.
 
-- Home: value proposition and product showcases.
-- Blogs: combined latest/resources listing view.
-- Resources: educational and evergreen content.
-- Updates: product and release updates.
-- About: product story, stack, distribution, API overview.
-- Docs:
-  - /docs (Quickstart)
-  - /docs/best-practices
-  - /docs/advanced
-- Integrations: connected publishing ecosystem.
-- Contact page.
-- Legal pages:
-  - /privacy-policy
-  - /terms-of-service
+### SEO and Discovery
 
-## 9. API and access model
+- Canonical URL support.
+- Open Graph and Twitter metadata support.
+- Robots controls and sitemap surfaces.
+- Campaign-ready metadata layers per public page.
 
-### 9.1 Auth and authorization
+### Distribution
 
-- User auth: Clerk-based sign-in/sign-up/callback workflows.
-- Developer API access: one project-scoped API key per project, passed via `x-api-key` header.
+- Publish workflows for Dev.to and Hashnode (API-based).
+- Medium distribution via import workflow.
+- Additional channels planned (pending platform approvals).
 
-### 9.2 Current endpoint patterns
+### Developer API
 
-- Health and app domain endpoints exist in FastAPI.
-- Owner-managed API key lifecycle:
-  - GET /projects/{projectId}/api-key
-  - POST /projects/{projectId}/api-key
-  - PATCH /api-keys/{keyId}
-  - DELETE /api-keys/{keyId}
-- Dev content access (read-oriented):
-  - GET /dev/projects?id={projectId}
-  - GET /dev/projects?slug={projectSlug}
-  - Additional dev endpoints for project/collection/paper retrieval by id or slug.
+- Project-scoped read API.
+- Content fetch by ID and slug patterns.
+- Suitable for portfolio sites, docs frontends, and custom apps.
 
-### 9.3 API positioning
+### AI and MCP
 
-- Read-only for external usage. Safe to use in public-facing frontends.
-- One key per project. Keys are scoped and revocable.
-- Responses cached at the edge via Cloudflare Workers for sub-100ms delivery.
-- API surface will expand as distribution and publishing features mature.
+- MCP server support for AI-assisted content workflows.
+- Intended for IDE-native content operations via tools like Copilot/Claude/Cursor.
 
-## 10. Performance architecture
+### Performance and Delivery
 
-- **Edge layer**: Cloudflare Worker reverse-proxies and caches API responses and public pages. Readers anywhere in the world get responses in under 100ms.
-- **Dashboard layer**: Redis caches entity data (projects, collections, papers) for smooth internal reads. Dashboards always reflect live data — Redis is not used to serve stale dashboard state.
-- **Backend**: FastAPI on Google Cloud Run. Scales to zero when idle.
-- **Database**: Firestore for content and entity storage.
+- Edge proxy with CDN caching for public/API responses.
+- Fast global response behavior for frequently read pages.
+- Dashboard remains live-data oriented, not stale-cache driven.
 
-## 11. Full technology stack
+## Public Site Pages
 
-### 11.1 Frontend app (astro/)
+### Core Marketing and Product Pages
 
-- Framework/runtime:
-  - Astro 6 (ships near-zero JS to browser by default, best-in-class Core Web Vitals)
-  - React 19 (islands inside Astro)
-  - Vite 6
-  - TypeScript 5
-- Styling/UI:
-  - Tailwind CSS 4
-  - tw-animate-css
-  - class-variance-authority, clsx, tailwind-merge
-  - shadcn, Radix UI primitives
-- Content/rendering/editor:
-  - markdown-it, react-markdown, remark-gfm
-  - @gravity-ui/markdown-editor
-  - @diplodoc/transform
-- Auth and deployment:
-  - @clerk/astro
-  - @astrojs/vercel
+- /
+- /about
+- /features
+- /integrations
+- /components
+- /pricing
+- /contact
 
-### 11.2 Backend API app (fastapi/)
+### Content Surfaces
 
-- FastAPI 0.135.1 + Uvicorn
-- Pydantic 2, pydantic-settings, python-dotenv
-- clerk-backend-api, svix (webhooks)
-- firebase-admin, redis, Pillow, python-multipart, groq
+- /blogs
+- /blogs/[slug]
+- /updates
+- /resources
+- /docs
+- /docs/[...slug]
+- /compare
+- /compare/[slug]
+- /use-cases
+- /use-cases/[slug]
+- /glossary
+- /glossary/[slug]
 
-### 11.3 Edge/proxy layer (cloudflare-proxy/)
+### Authenticated Product Experience
 
-- Cloudflare Worker (JavaScript runtime)
-- Reverse proxy to upstream Cloud Run URL
-- GET response caching via caches.default
+- /login
+- /sign-in
+- /sign-up
+- /welcome
+- /dashboard
+- /dashboard/[projectId]
+- /dashboard/[projectId]/[collectionId]
+- /settings
+- /write/[id]
 
-### 11.4 Architecture pattern
+### Account and Public Profile/Project Routes
 
-- Monorepo: frontend (Astro) + backend (FastAPI) + edge proxy (Cloudflare Worker)
-- Frontend: SEO/public pages and authenticated dashboard
-- Backend: domain APIs and auth-connected workflows, deployed on Google Cloud Run
-- Edge worker: proxying, caching, routing control
+- /[handle]
+- /[handle]/[slug]
+- /[handle]/p/[projectSlug]
 
-## 12. Operator and legal
+### Utility and Infra Pages
 
-- Built and maintained by **Abhraneel Dhar**, indie developer, Kolkata, India.
-- Domain: whitepapper.antk.in (subdomain of antk.in)
-- No payments currently. Free to use.
-- Governed by Indian law (IT Act, 2000). Jurisdiction: Kolkata, West Bengal.
-- Privacy Policy and Terms of Service available at /privacy-policy and /terms-of-service.
+- /404
+- /unauthorized
+- /privacy-policy
+- /terms-of-service
+- /robots.txt
+- /rss.xml
+- /sitemap.xml
+- /sitemap-index.xml
+- /sitemaps/public-pages.xml
+- /sitemaps/public-projects.xml
+- /sitemaps/public-papers.xml
+- /sitemaps/docs-pages.xml
+- /llms.txt
+- /llms-full.txt
 
-## 13. SEO and content positioning
+## Distribution Channels and Status
 
-### 13.1 Positioning pillars
+- Dev.to: live integration flow.
+- Hashnode: live integration flow.
+- Medium: import flow supported.
+- Threads: pending rollout/approval.
+- Reddit: pending rollout/approval.
+- LinkedIn: pending rollout/approval.
 
-- SEO-first content engine for developers.
-- Developer-friendly CMS with a read API safe for portfolio use.
-- Multi-channel publishing from a single markdown source.
-- Edge-cached, fast by default — no extra configuration needed.
-- Minimal UI designed for zero cognitive overhead.
+## Access and Auth Model
 
-### 13.2 Blog content clusters
+- User auth handled through Clerk-based flow.
+- Developer API uses project-scoped API keys.
+- API keys are revocable and intended for read access patterns.
 
-- **Cluster 1 (developer workflow)**: targeting devs actively looking for a Whitepapper-type solution.
-- **Cluster 2 (technical deep-dives)**: Cloudflare Workers, Astro, FastAPI+Firestore, Redis caching.
-- **Cluster 3 (SEO and content ops)**: headless blog API, developer CMS, content distribution workflow.
-- **Cluster 4 (indie builder / build-in-public)**: personal story, solo shipping, college indie dev.
+## Architecture Summary
 
-### 13.3 Keywords and topic clusters
+- Frontend app for marketing pages, docs surfaces, and dashboard UX.
+- Backend app for auth-aware domain APIs and content workflows.
+- Edge proxy for domain mapping and CDN caching.
 
-- "developer CMS"
-- "headless blog API"
-- "markdown publishing platform"
-- "publish to Dev.to Hashnode Medium"
-- "content API for portfolio"
-- "multi-channel content distribution"
-- "SEO content workflow"
-- "Astro blog with API"
+## Positioning
 
-## 14. Brand and voice guidance
+Whitepapper is a developer-first content operating layer.
 
-- Tone: practical, direct, builder-focused. Personal on about/blog pages, not corporate.
-- Voice: confident, honest about product state, no AI slop or LinkedIn fluff.
-- Messaging style: show outcomes first (speed, no copy-paste, API access), then mechanism.
-- Avoid: "revolutionize", "seamless", "game-changer", em dashes, filler superlatives.
+It is not trying to be:
 
-## 15. Competitive framing
+- A general drag-and-drop website builder.
+- A heavy enterprise editorial suite.
+- A social-media scheduling-only tool.
 
-Whitepapper is not:
-- A bloated CMS like WordPress or Ghost.
-- A docs-only tool.
-- A social media scheduler.
+It is focused on:
 
-It is a unified content layer for developers: write in markdown, expose via API, distribute to every platform you publish on.
+- Markdown-based authoring.
+- API-first reuse.
+- Multi-channel publishing from one source.
+- Clean SEO and metadata hygiene by default.
 
-## 16. Current constraints and maturity notes
+## Brand and Voice Direction
 
-- Threads, Reddit, and LinkedIn distribution pending platform approvals.
-- API is currently read-oriented for external use.
-- No payments or paid tiers yet.
-- Product is live, actively maintained, and used in production by the builder.
+- Tone: direct, practical, builder-focused.
+- Voice: clear and specific, no hype language.
+- Messaging pattern: outcome first, implementation second.
+- Avoid fluffy claims and generic AI/marketing filler.
 
-## 17. Short reusable pitch variants
+## Campaign Messaging Anchors
 
-- Whitepapper is a markdown-first CMS with a developer API and built-in distribution to Dev.to, Hashnode, and Medium.
-- Write once in Whitepapper. Serve it via API to your portfolio. Publish it everywhere else in one click.
-- Whitepapper gives developers a fast, structured content workflow with edge-cached API access and zero copy-paste distribution.
+- Write once, distribute everywhere.
+- One source of truth for developer content.
+- API-first content reuse for portfolio and product surfaces.
+- SEO-ready publishing without repetitive setup overhead.
+
+## Current Constraints
+
+- Some distribution channels are still pending approvals.
+- External API surface is currently read-oriented.
+- Pricing/paid tier mechanics are not yet activated.
+- Edge routing for some realtime endpoints remains intentionally restricted until token handling is hardened.
+
+## Short Reusable Pitches
+
+- Whitepapper helps developers write once and distribute everywhere from one markdown-first workspace.
+- Whitepapper is a content source-of-truth platform with API-ready delivery and cross-platform publishing workflows.
+- Whitepapper combines markdown authoring, metadata control, API reuse, and distribution into one developer-focused content system.

@@ -2,7 +2,18 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Moon, Sun } from "lucide-react"
 import { flushSync } from "react-dom"
 
-import { cn } from "@/lib/utils"
+function cn(...inputs: any[]) {
+  const classes: string[] = [];
+  inputs.forEach((input) => {
+    if (!input) return;
+    if (Array.isArray(input)) {
+      input.forEach(i => { if (i) classes.push(String(i)); });
+      return;
+    }
+    classes.push(String(input));
+  });
+  return classes.join(' ');
+}
 
 interface AnimatedThemeTogglerProps extends React.ComponentPropsWithoutRef<"button"> {
   duration?: number,
@@ -53,6 +64,7 @@ export const AnimatedThemeToggler = ({
       setIsDark(newTheme)
       document.documentElement.classList.toggle("dark")
       localStorage.setItem("theme", newTheme ? "dark" : "light")
+      document.cookie = `theme=${newTheme ? "dark" : "light"}; path=/; max-age=31536000`
     }
 
     if (typeof document.startViewTransition !== "function") {
@@ -60,27 +72,35 @@ export const AnimatedThemeToggler = ({
       return
     }
 
-    const transition = document.startViewTransition(() => {
-      flushSync(applyTheme)
-    })
-
-    const ready = transition?.ready
-    if (ready && typeof ready.then === "function") {
-      ready.then(() => {
-        document.documentElement.animate(
-          {
-            clipPath: [
-              `circle(0px at ${x}px ${y}px)`,
-              `circle(${maxRadius}px at ${x}px ${y}px)`,
-            ],
-          },
-          {
-            duration,
-            easing: "ease-in-out",
-            pseudoElement: "::view-transition-new(root)",
-          }
-        )
+    try {
+      const transition = document.startViewTransition(() => {
+        flushSync(applyTheme)
       })
+
+      const ready = transition?.ready
+      if (ready && typeof ready.then === "function") {
+        ready
+          .then(() => {
+            document.documentElement.animate(
+              {
+                clipPath: [
+                  `circle(0px at ${x}px ${y}px)`,
+                  `circle(${maxRadius}px at ${x}px ${y}px)`,
+                ],
+              },
+              {
+                duration,
+                easing: "ease-in-out",
+                pseudoElement: "::view-transition-new(root)",
+              }
+            )
+          })
+          .catch(() => {
+            // Ignore animation failures; theme is already applied.
+          })
+      }
+    } catch {
+      applyTheme()
     }
   }, [isDark, duration])
 

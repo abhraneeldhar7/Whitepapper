@@ -40,6 +40,12 @@ type ProjectSeoOptions = {
   logoUrl: string;
 };
 
+const DEFAULT_OG_IMAGE_PATH = "/assets/ogImages/root.png";
+
+function defaultOgImage(siteUrl: string): string {
+  return `${siteUrl}${DEFAULT_OG_IMAGE_PATH}`;
+}
+
 function ensureSiteUrl(value: string): string {
   return String(value || "").trim().replace(/\/+$/, "");
 }
@@ -64,7 +70,7 @@ function resolveMeaningfulText(...values: Array<string | undefined | null>): str
 
 function toPaperMetadataBase(paper: PaperDoc, siteUrl: string) {
   const metadataInput = paper.metadata;
-  const fallbackImage = paper.thumbnailUrl || `${siteUrl}/appLogo.png`;
+  const fallbackImage = paper.thumbnailUrl || defaultOgImage(siteUrl);
   const inferredExcerpt = excerptFromMarkdown(paper.body || paper.title, 160) || paper.title;
   const inferredAbstract = excerptFromMarkdown(paper.body || paper.title, 320) || paper.title;
   const inferredWordCount = countWords(paper.body || paper.title);
@@ -409,24 +415,25 @@ export function buildPaperSeoConfig(metadata: PaperMetadata, options: {
 
 export function buildProfileSeo(options: ProfileSeoOptions): PageSeoConfig {
   const normalizedTitle = `${options.displayName} | Whitepapper`;
+  const defaultImage = DEFAULT_OG_IMAGE_PATH;
 
   return {
     path: options.canonical,
     title: normalizedTitle,
     description: options.description,
     canonical: options.canonical,
-    image: options.avatarUrl,
+    image: defaultImage,
     robots: "index,follow",
     author: options.displayName,
     ogType: "profile",
     ogTitle: normalizedTitle,
     ogDescription: options.description,
     ogUrl: options.canonical,
-    ogImage: options.avatarUrl,
+    ogImage: defaultImage,
     twitterCard: "summary",
     twitterTitle: normalizedTitle,
     twitterDescription: options.description,
-    twitterImage: options.avatarUrl,
+    twitterImage: defaultImage,
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "ProfilePage",
@@ -450,6 +457,7 @@ export function buildProjectSeo(options: ProjectSeoOptions): PageSeoConfig {
   const siteUrl = ensureSiteUrl(options.siteUrl);
   const canonical = `${siteUrl}/${options.handle}/p/${options.project.slug}`;
   const pageTitle = `${options.project.name} | ${options.ownerName} | Whitepapper`;
+  const defaultImage = defaultOgImage(siteUrl);
 
   const collectionPageJsonLd = {
     "@context": "https://schema.org",
@@ -462,7 +470,7 @@ export function buildProjectSeo(options: ProjectSeoOptions): PageSeoConfig {
       name: options.ownerName,
       url: `${siteUrl}/${options.handle}`,
     },
-    image: options.logoUrl,
+    image: defaultImage,
     dateCreated: options.project.createdAt,
     dateModified: options.project.updatedAt,
     hasPart: (options.papers || [])
@@ -488,11 +496,11 @@ export function buildProjectSeo(options: ProjectSeoOptions): PageSeoConfig {
     ogTitle: `${options.project.name} | Whitepapper`,
     ogDescription: options.description,
     ogUrl: canonical,
-    ogImage: options.logoUrl,
+    ogImage: defaultImage,
     twitterCard: "summary_large_image",
     twitterTitle: `${options.project.name} | Whitepapper`,
     twitterDescription: options.description,
-    twitterImage: options.logoUrl,
+    twitterImage: defaultImage,
     jsonLd: collectionPageJsonLd,
   };
 }

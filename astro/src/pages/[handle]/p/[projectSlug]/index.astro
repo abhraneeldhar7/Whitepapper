@@ -169,7 +169,7 @@ const sortedStandalonePapers = [...standalonePapers].sort(
         {
           (data.collections ?? []).length > 0 && (
             <ProjectCollectionsViewer
-              client:idle
+              client:load
               handle={handle}
               collections={data.collections ?? []}
               papers={data.papers ?? []}

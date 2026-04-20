@@ -2,7 +2,7 @@
 import Footer from "@/components/footer.astro";
 import SiteTopNav from "@/components/site/SiteTopNav.astro";
 import { getPageSeoConfig, mergePageSeoConfig, type PageSeoConfig } from "@/metadata/pages";
-import ogImageAsset from "@/assets/ogImage.png";
+import rootOgImageAsset from "@/assets/ogImages/root.png";
 import { Toaster } from "@/components/ui/sonner";
 import { ClientRouter } from "astro:transitions";
 import "../styles/global.css";
@@ -72,9 +72,13 @@ const resolveAbsoluteUrl = (value?: string | null) => {
   if (!raw) return "";
 
   const normalizedRaw = raw.replace(/^\/+/, "");
-  if (normalizedRaw === "src/assets/orgImage.png" || normalizedRaw === "src/assets/ogImage.png") {
+  if (
+    normalizedRaw === "src/assets/orgImage.png" ||
+    normalizedRaw === "src/assets/ogImage.png" ||
+    normalizedRaw === "src/assets/ogImages/root.png"
+  ) {
     const origin = Astro.url.origin.replace(/\/+$/, "");
-    return `${origin}${ogImageAsset.src.startsWith("/") ? "" : "/"}${ogImageAsset.src}`;
+    return `${origin}${rootOgImageAsset.src.startsWith("/") ? "" : "/"}${rootOgImageAsset.src}`;
   }
 
   if (raw.startsWith("http://") || raw.startsWith("https://")) {
@@ -106,7 +110,7 @@ const siteDescription =
 const siteImage =
   resolveAbsoluteUrl(pageSeoConfig?.image) ||
   image ||
-  `${Astro.url.origin}/appLogo.png`;
+  `${Astro.url.origin}${rootOgImageAsset.src}`;
 const canonical =
   resolveAbsoluteUrl(pageSeoConfig?.canonical) || `${Astro.url.origin}${pathname}`;
 const robotsMeta = noindex
@@ -255,7 +259,7 @@ const jsonLdItems = Array.isArray(pageSeoConfig?.jsonLd)
     <!-- {showSiteNav && reserveNavSpace && <div class="h-[58px] w-full"></div>} -->
     <slot />
     {!hideFooter && <Footer />}
-    {enableToaster ? <Toaster client:idle /> : null}
+    {enableToaster ? <Toaster client:load /> : null}
   </body>
 </html>
 

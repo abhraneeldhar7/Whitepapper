@@ -1,25 +1,25 @@
 {
   "path": "/",
-  "title": "Whitepapper | Markdown-First Content Platform for Developers",
-  "description": "Whitepapper is a markdown-first content platform for developers who want to write once, publish across channels, and serve content through a fast read API.",
+  "title": "Whitepapper | Write Once, Publish and Distribute",
+  "description": "Whitepapper is a markdown-first content platform where developers write once, publish across channels, and serve content through a fast read API.",
   "canonical": "/",
-  "image": "/appLogo.png",
-  "keywords": "developer CMS, markdown publishing platform, headless blog API, content API for portfolio, SEO content workflow, multi-channel content distribution",
+  "image": "src/assets/ogImages/root.png",
+  "keywords": "developer CMS, markdown-first CMS, content API, publish once distribute everywhere, developer publishing workflow",
   "robots": "index, follow",
   "author": "Abhraneel Dhar",
   "siteName": "Whitepapper",
   "locale": "en_US",
   "ogType": "website",
-  "ogTitle": "Whitepapper | Markdown-First Content Platform for Developers",
-  "ogDescription": "Whitepapper is a markdown-first content platform for developers who want to write once, publish across channels, and serve content through a fast read API.",
+  "ogTitle": "Whitepapper | Write Once, Publish and Distribute",
+  "ogDescription": "Whitepapper helps developers write once, publish everywhere, and reuse the same content through a read API.",
   "ogUrl": "/",
-  "ogImage": "src/assets/orgImage.png",
-  "ogImageAlt": "Whitepapper | SEO-First CMS engine",
+  "ogImage": "src/assets/ogImages/root.png",
+  "ogImageAlt": "Whitepapper campaign cover image",
   "twitterCard": "summary_large_image",
-  "twitterTitle": "Whitepapper | Markdown-First Content Platform for Developers",
-  "twitterDescription": "Whitepapper is a markdown-first content platform for developers who want to write once, publish across channels, and serve content through a fast read API.",
-  "twitterImage": "src/assets/orgImage.png",
-  "twitterImageAlt": "Whitepapper | SEO-First Content OS for Developers social preview",
+  "twitterTitle": "Whitepapper | Write Once, Publish and Distribute",
+  "twitterDescription": "Write in markdown once, publish across platforms, and serve content via API from one source of truth.",
+  "twitterImage": "src/assets/ogImages/root.png",
+  "twitterImageAlt": "Whitepapper campaign cover image",
   "jsonLd": [
     {
       "@context": "https://schema.org",
@@ -49,7 +49,7 @@
           "name": "What is Whitepapper?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Whitepapper is an SEO-first content engine for developers to publish and distribute technical content."
+            "text": "Whitepapper is a markdown-first content platform for developers to write once, distribute across channels, and reuse content via API."
           }
         },
         {
@@ -57,7 +57,7 @@
           "name": "How does Whitepapper improve SEO and GEO?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Whitepapper provides canonical metadata defaults, structured data, sitemap endpoints, robots controls, and LLM-focused context documents."
+            "text": "Whitepapper ships with metadata defaults, canonical controls, structured data, and sitemap support so published pages stay search and AI-discovery ready."
           }
         }
       ]

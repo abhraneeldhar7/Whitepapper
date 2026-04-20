@@ -1,5 +1,5 @@
 ---
-import { FooterThemeToggler } from "./FooterThemeToggler";
+import { AnimatedThemeToggler } from "./ui/animated-theme-toggler";
 import { Label } from "./ui/label";
 
 const footerLinkGroups = [
@@ -91,7 +91,7 @@ const footerLinkGroups = [
             <span
               class="absolute left-1/2 -translate-x-1/2 top-[0.25em] bg-foreground rounded-full text-background p-[4px] h-[0.25em] w-[0.25em] flex items-center justify-center cursor-pointer select-none"
             >
-              <FooterThemeToggler client:load />
+              <AnimatedThemeToggler client:load />
             </span>
           </span>
           <span class="z-[1]">n</span>

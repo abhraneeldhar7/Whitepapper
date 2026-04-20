@@ -1,9 +1,8 @@
 import { MenuIcon } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import DocsNavMenu from "@/components/docs/DocsNavMenu";
 
 type NavPage = {
   title: string;
@@ -22,8 +21,10 @@ type DocsMobileNavProps = {
 };
 
 export default function DocsMobileNav({ navSections, currentPath }: DocsMobileNavProps) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost">
           <MenuIcon />
@@ -36,50 +37,13 @@ export default function DocsMobileNav({ navSections, currentPath }: DocsMobileNa
             <p className="text-[20px]">Documentation</p>
           </SheetTitle>
         </SheetHeader>
-        <ScrollArea className="h-full">
-          <nav className="p-4 pb-10 space-y-4">
-            {navSections.map((section) => (
-              <div key={section.title} className="space-y-1 mb-5">
-                <Label>{section.title}</Label>
-                <ul className="space-y-1 mt-3">
-                  {section.pages.map((item) => {
-                    const isActive = item.route === currentPath;
-                    return (
-                      <li key={item.route}>
-                        <a href={item.route}>
-                          <Button
-                            size="lg"
-                            variant={isActive ? "default" : "ghost"}
-                            className="w-full justify-start"
-                          >
-                            {item.title}
-                          </Button>
-                        </a>
-                        {item.children?.map((child) => {
-                          const isChildActive = child.route === currentPath;
-                          return (
-                            <a key={child.route} href={child.route} className="block">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className={cn(
-                                  "ml-5 w-[calc(100%-1.25rem)] justify-start",
-                                  isChildActive ? "bg-muted text-foreground" : ""
-                                )}
-                              >
-                                {child.title}
-                              </Button>
-                            </a>
-                          );
-                        })}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
-          </nav>
-        </ScrollArea>
+        <DocsNavMenu
+          navSections={navSections}
+          currentPath={currentPath}
+          className="h-[calc(100vh-92px)]"
+          navClassName="p-4 pb-10"
+          onNavigate={() => setOpen(false)}
+        />
       </SheetContent>
     </Sheet>
   );

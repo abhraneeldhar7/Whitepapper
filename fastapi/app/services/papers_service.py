@@ -404,6 +404,21 @@ class PapersService:
         self.update(paper_id, {"thumbnailUrl": url})
         return {"url": url}
 
+    def get_random_default_thumbnail_url(self) -> str:
+        url = storage_service.get_random_public_url_by_prefix("defaultThumbnails/")
+        if not url:
+            raise HTTPException(status_code=404, detail="No default thumbnails found in storage.")
+        return add_cache_buster(url)
+
+    def apply_random_default_thumbnail(self, paper_id: str) -> dict[str, str]:
+        paper = self.get_by_id(paper_id)
+        if not paper:
+            raise HTTPException(status_code=404, detail="Paper not found.")
+
+        url = self.get_random_default_thumbnail_url()
+        self.update(paper_id, {"thumbnailUrl": url})
+        return {"url": url}
+
     async def upload_metadata_image(self, paper_id: str, field: str, file: UploadFile) -> dict[str, str]:
         paper = self.get_by_id(paper_id)
         if not paper:

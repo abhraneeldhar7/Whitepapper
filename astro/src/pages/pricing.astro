@@ -10,14 +10,19 @@ const seo = {
   title: `${pricingPage.title} | Whitepapper`,
   description: pricingPage.description,
   canonical: "/pricing",
+  image: "src/assets/ogImages/root.png",
   robots: "index, follow",
   ogType: "website",
   ogTitle: `${pricingPage.title} | Whitepapper`,
   ogDescription: pricingPage.description,
   ogUrl: "/pricing",
+  ogImage: "src/assets/ogImages/root.png",
+  ogImageAlt: "Whitepapper pricing cover image",
   twitterCard: "summary_large_image",
   twitterTitle: `${pricingPage.title} | Whitepapper`,
   twitterDescription: pricingPage.description,
+  twitterImage: "src/assets/ogImages/root.png",
+  twitterImageAlt: "Whitepapper pricing cover image",
   jsonLd: [
     {
       "@context": "https://schema.org",
@@ -109,7 +114,7 @@ const seo = {
       pricingPage.faq?.length ? (
         <section class="mt-12">
           <FAQs
-            client:idle
+            client:load
             items={pricingPage.faq}
             title="FAQs"
             description="Common questions about Whitepapper pricing."

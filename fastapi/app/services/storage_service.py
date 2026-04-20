@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import random
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 from uuid import uuid4
@@ -139,5 +140,26 @@ class StorageService:
             if max_count is not None and total >= max_count:
                 break
         return total
+
+    def get_random_public_url_by_prefix(self, prefix: str) -> str | None:
+        candidates = [blob for blob in self._bucket().list_blobs(prefix=prefix) if not str(blob.name or "").endswith("/")]
+        if not candidates:
+            return None
+
+        public_candidates = []
+        for blob in candidates:
+            try:
+                # Force public readability for pre-existing default thumbnails.
+                # This mirrors upload_image behavior where each uploaded blob is made public.
+                blob.make_public()
+                public_candidates.append(blob)
+            except Exception:
+                continue
+
+        if not public_candidates:
+            return None
+
+        blob = random.choice(public_candidates)
+        return blob.public_url
 
 storage_service = StorageService()

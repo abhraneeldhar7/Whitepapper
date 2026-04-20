@@ -7,6 +7,7 @@ interface Props {
   isSignedIn?: boolean;
 }
 import { MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
+import { AnimatedThemeToggler } from "../ui/animated-theme-toggler";
 const { isSignedIn = false } = Astro.props as Props;
 
 const desktopNavButtonsList = [
@@ -30,8 +31,9 @@ const mobileNavButtonsList = [
 ---
 
 <header
-  class="fixed left-0 top-0 z-[10] flex w-full items-center justify-center gap-5 border-b border-border/50 bg-background/80 px-4 py-2 backdrop-blur-[20px]"
+  class="fixed left-0 top-0 z-[10] flex w-full items-center justify-between gap-5 border-b border-border/50 bg-background/80 px-4 py-2 md:px-10 backdrop-blur-[20px]"
 >
+  <div class="hidden md:block"></div>
   <nav
     style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
     class="w-full flex items-center justify-between gap-10"
@@ -76,11 +78,15 @@ const mobileNavButtonsList = [
 
       <div class="md:hidden">
         <LandingMobileMenu
-          client:idle
+          client:load
           navButtons={mobileNavButtonsList}
           isSignedIn={isSignedIn}
         />
       </div>
     </div>
   </nav>
+
+  <div class="hidden md:block relative z-[20] pointer-events-auto">
+    <AnimatedThemeToggler size={16} client:load />
+  </div>
 </header>
