@@ -6,14 +6,16 @@ import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
 import { createHighlighter, type BuiltinLanguage, type BundledTheme } from 'shiki';
 import { isInternalHref, isPlaceholderHref } from '@/lib/seo';
 
-const SHIKI_THEME_LIGHT:BundledTheme = "ayu-light";
+const SHIKI_THEME_LIGHT:BundledTheme = "github-light"
 const SHIKI_THEME_DARK: BundledTheme = "vitesse-dark";
 const SHIKI_LANGS: BuiltinLanguage[] = [
+    'ts',
     'tsx',
     'typescript',
     'javascript',
     'jsx',
     'json',
+    'http',
     'bash',
     'markdown',
     'html',
@@ -35,6 +37,7 @@ function rehypeShikiSync() {
                 dark: SHIKI_THEME_DARK,
             },
             defaultColor: 'light-dark()',
+            addLanguageClass: true,
         });
 }
 
@@ -72,6 +75,16 @@ function MarkdownActionIcon({ className, dataAttr }: { className?: string; dataA
             )}
         </svg>
     );
+}
+
+function getPreLanguage(node: unknown): string {
+    const preNode = node as { children?: Array<{ tagName?: string; properties?: { class?: string | string[]; className?: string | string[] } }> } | undefined;
+    const codeNode = (preNode?.children || []).find((child) => child?.tagName === 'code');
+    const rawClass = codeNode?.properties?.class ?? codeNode?.properties?.className ?? '';
+    const className = Array.isArray(rawClass) ? rawClass.join(' ') : String(rawClass || '');
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match?.[1];
+    return language || '';
 }
 
 export default function MarkdownRender({ content, contentContainerId }: PostRenderProps) {
@@ -122,20 +135,29 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
                                 />
                             );
                         },
-                        pre: ({ node, children, ...props }) => (
-                            <div className="markdownCodeBlock">
-                                <button
-                                    type="button"
-                                    data-copy-button
-                                    aria-label="Copy code"
-                                    className="markdownCopyButton"
-                                >
-                                    <MarkdownActionIcon dataAttr="data-copy-icon" />
-                                    <MarkdownActionIcon dataAttr="data-check-icon" className="markdownHidden" />
-                                </button>
-                                <pre {...props}>{children}</pre>
-                            </div>
-                        ),
+                        pre: ({ node, children, ...props }) => {
+                            const language = getPreLanguage(node);
+
+                            return (
+                                <div className="markdownCodeBlock">
+                                    <div className="markdownCodeBlockHeader">
+                                        <span className="markdownCodeBlockLanguage">{language}</span>
+                                        <div className="markdownCodeBlockActions">
+                                            <button
+                                                type="button"
+                                                data-copy-button
+                                                aria-label="Copy code"
+                                                className="markdownCopyButton"
+                                            >
+                                                <MarkdownActionIcon dataAttr="data-copy-icon" />
+                                                <MarkdownActionIcon dataAttr="data-check-icon" className="markdownHidden" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <pre {...props}>{children}</pre>
+                                </div>
+                            );
+                        },
                         table: ({ node, children, ...props }) => (
                             <div className="markdownTableScrollArea">
                                 <table className="markdownTable" {...props}>

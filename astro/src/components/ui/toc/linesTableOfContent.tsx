@@ -1,5 +1,5 @@
 import type { JSX } from 'astro/jsx-runtime';
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 interface Heading {
   element: Element;

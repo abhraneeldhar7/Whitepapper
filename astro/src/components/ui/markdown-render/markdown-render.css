@@ -177,7 +177,7 @@
 
 
 /* Inline Code */
-.markdownDiv code:not(.shiki code) {
+.markdownDiv :not(pre)>code {
     font-size: 0.85em;
     font-weight: 500 !important;
     background-color: var(--muted) !important;
@@ -198,25 +198,27 @@
 /* Block Code */
 
 .markdownCopyButton {
-    position: absolute;
-    top: 0.54rem;
-    right: 0.54rem;
+    position: static;
     z-index: 2;
-    padding: 7px;
+    padding: 8px;
     border-radius: 5px;
-    background-color: var(--foreground);
-    color: var(--background);
+    background-color: transparent;
+    color: var(--muted-foreground);
     transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .markdownCopyButton:hover,
 .markdownCopyButton:focus-visible {
-    background-color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    background-color: color-mix(in srgb, var(--muted-foreground) 10%, transparent);
+    color: var(--foreground);
 }
 
 @media (min-width: 768px) {
     .markdownCopyButton {
-        opacity: 0;
+        opacity: 1;
     }
 
     .markdownCodeBlock:hover .markdownCopyButton,
@@ -225,19 +227,48 @@
     }
 }
 
-.markdownDiv .markdownCodeBlock{
+.markdownDiv .markdownCodeBlock {
     position: relative;
+    margin: 1.5em 0;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    padding: 3px;
+    padding-top: 1px;
+    background-color: var(--muted);
 }
+
+.markdownCodeBlockHeader {
+    padding: 4px 0.5em;
+    padding-left: 0.7em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.markdownCodeBlockLanguage {
+    font-size: 0.9em;
+    line-height: 1em;
+    font-weight: 500;
+}
+
+.markdownCodeBlockActions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
 .markdownDiv .markdownCodeBlock .shiki {
     /* background-color: var(--card) !important; */
     font-size: 0.9em;
     /* border: 1px solid var(--border) !important; */
-    border-radius: 8px !important;
+    border-radius: 9px !important;
     padding: 0.8em 1.2em !important;
     max-height: 300px;
     overflow: auto !important;
     scrollbar-width: none !important;
-    margin: 1.5em 0;
+    margin: 0 !important;
     font-weight: 500 !important;
 }
 
