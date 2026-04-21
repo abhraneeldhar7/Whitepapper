@@ -1,5 +1,4 @@
 import logging
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +8,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.api.v1.router import api_router
 from app.core.config import get_settings, parse_csv
 from app.core.redis_client import init_redis_client
-from app.mcp_server import MCP_HTTP_PREFIX, build_mcp_app, build_mcp_router, get_mcp_session_manager
+from app.mcp_server import MCP_HTTP_PREFIX, MCP_SCOPES, build_mcp_app, build_mcp_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -39,21 +38,13 @@ class McpAuthChallengeCompatibilityMiddleware(BaseHTTPMiddleware):
         if 'resource="' not in normalized:
             next_challenge = f'{next_challenge}, resource="{_mcp_resource_url}"'
         if 'scope="' not in normalized:
-            next_challenge = f'{next_challenge}, scope="mcp"'
+            next_challenge = f'{next_challenge}, scope="{" ".join(MCP_SCOPES)}"'
 
         response.headers["www-authenticate"] = next_challenge
         return response
 
 
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    # Required by FastMCP streamable-http transport to initialize internal task group.
-    build_mcp_app()
-    async with get_mcp_session_manager().run():
-        yield
-
-
-app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app = FastAPI(title=settings.app_name)
 cors_origins = parse_csv(settings.cors_origins)
 
 app.add_middleware(

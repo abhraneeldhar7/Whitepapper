@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { createCollection } from "@/lib/api/collections";
 import { createApiKey, resetApiKey, setApiKeyActive, type ApiKeySummary } from "@/lib/api/api_keys";
-import { revokeProjectMcpToken } from "@/lib/api/mcp";
+import { revokeMcpAuthorization } from "@/lib/api/mcp";
 import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import {
   checkProjectSlugAvailable,
@@ -42,7 +42,7 @@ import {
   MAX_PROJECT_LOGO_HEIGHT,
   MAX_PROJECT_LOGO_WIDTH,
 } from "@/lib/constants";
-import type { CollectionDoc, McpConnectionInfo, McpTokenSummary, PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
+import type { CollectionDoc, McpAuthorizationListResponse, McpAuthorizationSummary, McpConnectionInfo, PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
 import { compressImage, copyToClipboardWithToast, formatFirestoreDate, isImageFile } from "@/lib/utils";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
@@ -58,7 +58,7 @@ type ProjectWorkspaceProps = {
   initialPages: PaperDoc[];
   initialCollections: CollectionDoc[];
   initialApiDoc: ApiKeySummary | null;
-  initialMcpTokens: McpTokenSummary[];
+  initialMcpAuthorizations: McpAuthorizationListResponse;
   mcpConnectionInfo: McpConnectionInfo | null;
   initialUser?: UserDoc | null;
   isMobileUA: boolean;
@@ -132,7 +132,7 @@ export default function ProjectWorkspace({
   initialPages,
   initialCollections,
   initialApiDoc,
-  initialMcpTokens,
+  initialMcpAuthorizations,
   mcpConnectionInfo,
   initialUser,
   isMobileUA,
@@ -159,13 +159,15 @@ export default function ProjectWorkspace({
   const [slugCheckMessage, setSlugCheckMessage] = useState<string | null>(null);
   const [updatingProjectVisibility, setUpdatingProjectVisibility] = useState(false);
   const [apiDoc, setApiDoc] = useState<ApiKeySummary | null>(initialApiDoc);
-  const [mcpTokens, setMcpTokens] = useState<McpTokenSummary[]>(initialMcpTokens);
+  const [mcpAuthorizations, setMcpAuthorizations] = useState<McpAuthorizationSummary[]>(initialMcpAuthorizations.authorizations);
+  const [mcpUsage, setMcpUsage] = useState(initialMcpAuthorizations.usage);
+  const [mcpLimitPerMonth, setMcpLimitPerMonth] = useState(initialMcpAuthorizations.limitPerMonth);
   const [creatingApiKey, setCreatingApiKey] = useState(false);
   const [togglingApiKey, setTogglingApiKey] = useState(false);
   const [resettingApiKey, setResettingApiKey] = useState(false);
   const [mcpConfigCopied, setMcpConfigCopied] = useState(false);
-  const [revokingMcpTokenId, setRevokingMcpTokenId] = useState<string | null>(null);
-  const [revokingMcpToken, setRevokingMcpToken] = useState(false);
+  const [revokingMcpAuthorizationId, setRevokingMcpAuthorizationId] = useState<string | null>(null);
+  const [revokingMcpAuthorization, setRevokingMcpAuthorization] = useState(false);
   const [revokeMcpDialogOpen, setRevokeMcpDialogOpen] = useState(false);
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
@@ -181,10 +183,12 @@ export default function ProjectWorkspace({
     setPages(sortPapersLatestFirst(initialPages));
     setCollections(initialCollections);
     setApiDoc(initialApiDoc);
-    setMcpTokens(initialMcpTokens);
+    setMcpAuthorizations(initialMcpAuthorizations.authorizations);
+    setMcpUsage(initialMcpAuthorizations.usage);
+    setMcpLimitPerMonth(initialMcpAuthorizations.limitPerMonth);
     setEditingProject(false);
     setSlugCheckMessage(null);
-  }, [initialProject, initialPages, initialCollections, initialApiDoc, initialMcpTokens]);
+  }, [initialProject, initialPages, initialCollections, initialApiDoc, initialMcpAuthorizations]);
 
 
   useEffect(() => {
@@ -548,21 +552,23 @@ export default function ProjectWorkspace({
     window.setTimeout(() => setMcpConfigCopied(false), 1400);
   }
 
-  async function handleRevokeMcpToken() {
-    if (!revokingMcpTokenId) {
+  async function handleRevokeMcpAuthorization() {
+    if (!revokingMcpAuthorizationId) {
       return;
     }
-    setRevokingMcpToken(true);
+    setRevokingMcpAuthorization(true);
     try {
-      await revokeProjectMcpToken(projectId, revokingMcpTokenId);
-      setMcpTokens((prev) => prev.filter((token) => token.tokenId !== revokingMcpTokenId));
+      await revokeMcpAuthorization(revokingMcpAuthorizationId);
+      setMcpAuthorizations((prev) =>
+        prev.filter((authorization) => authorization.authorizationId !== revokingMcpAuthorizationId),
+      );
       setRevokeMcpDialogOpen(false);
-      setRevokingMcpTokenId(null);
+      setRevokingMcpAuthorizationId(null);
       toast.success("MCP connection revoked.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to revoke MCP connection.");
     } finally {
-      setRevokingMcpToken(false);
+      setRevokingMcpAuthorization(false);
     }
   }
 
@@ -589,9 +595,10 @@ export default function ProjectWorkspace({
   const mcpEndpointUrl = resolvedMcpConnectionInfo?.endpointUrl || "";
   const mcpManualConfig = resolvedMcpConnectionInfo ? JSON.stringify(resolvedMcpConnectionInfo.manualConfig, null, 2) : "";
   // SDK connect snippet removed as per user request
-  const selectedMcpToken = mcpTokens.find((token) => token.tokenId === revokingMcpTokenId) || null;
-  const mcpMonthlyUsage = mcpTokens[0]?.usage ?? 0;
-  const mcpMonthlyLimit = mcpTokens[0]?.limitPerMonth ?? 0;
+  const selectedMcpAuthorization =
+    mcpAuthorizations.find((authorization) => authorization.authorizationId === revokingMcpAuthorizationId) || null;
+  const mcpMonthlyUsage = mcpUsage;
+  const mcpMonthlyLimit = mcpLimitPerMonth;
   const mcpMonthlyProgress = mcpMonthlyLimit > 0
     ? Math.min(100, Math.max(0, (mcpMonthlyUsage / mcpMonthlyLimit) * 100))
     : 0;
@@ -1117,8 +1124,8 @@ export default function ProjectWorkspace({
 
               <div className="space-y-3">
                 <Label>Active Connections</Label>
-                {mcpTokens.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No active MCP connections for this project yet.</p>
+                {mcpAuthorizations.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No active MCP connections for this account yet.</p>
                 ) : (
                   <div className="space-y-4">
                     <div className="grid gap-3 text-sm">
@@ -1134,27 +1141,29 @@ export default function ProjectWorkspace({
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Label</TableHead>
+                          <TableHead>Agent</TableHead>
                           <TableHead>Created</TableHead>
+                          <TableHead>Last active</TableHead>
                           <TableHead className="text-right">Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {mcpTokens.map((token) => (
-                          <TableRow key={token.tokenId}>
+                        {mcpAuthorizations.map((authorization) => (
+                          <TableRow key={authorization.authorizationId}>
                             <TableCell>
                               <div className="flex flex-col gap-1">
-                                <span className="font-medium">{token.label || "Whitepapper MCP"}</span>
-                                <span className="text-xs text-muted-foreground">{token.workspaceId}</span>
+                                <span className="font-medium">{authorization.agentName || "Whitepapper MCP client"}</span>
+                                <span className="text-xs text-muted-foreground">{authorization.clientId}</span>
                               </div>
                             </TableCell>
-                            <TableCell>{formatFirestoreDate(token.createdAt)}</TableCell>
+                            <TableCell>{formatFirestoreDate(authorization.createdAt)}</TableCell>
+                            <TableCell>{authorization.lastActive ? formatFirestoreDate(authorization.lastActive) : "Never"}</TableCell>
                             <TableCell className="text-right">
                               <Button
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => {
-                                  setRevokingMcpTokenId(token.tokenId);
+                                  setRevokingMcpAuthorizationId(authorization.authorizationId);
                                   setRevokeMcpDialogOpen(true);
                                 }}
                               >
@@ -1224,7 +1233,7 @@ export default function ProjectWorkspace({
                 <DialogHeader>
                   <DialogTitle>Revoke MCP connection?</DialogTitle>
                   <DialogDescription>
-                    This will invalidate the selected IDE connection{selectedMcpToken?.label ? ` (${selectedMcpToken.label})` : ""}.
+                    This will invalidate the selected IDE connection{selectedMcpAuthorization?.agentName ? ` (${selectedMcpAuthorization.agentName})` : ""}.
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
@@ -1232,12 +1241,12 @@ export default function ProjectWorkspace({
                     variant="secondary"
                     onClick={() => {
                       setRevokeMcpDialogOpen(false);
-                      setRevokingMcpTokenId(null);
+                      setRevokingMcpAuthorizationId(null);
                     }}
                   >
                     Cancel
                   </Button>
-                  <Button variant="destructive" loading={revokingMcpToken} onClick={() => { void handleRevokeMcpToken(); }}>
+                  <Button variant="destructive" loading={revokingMcpAuthorization} onClick={() => { void handleRevokeMcpAuthorization(); }}>
                     Revoke
                   </Button>
                 </DialogFooter>

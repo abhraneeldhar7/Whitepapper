@@ -1,142 +1,98 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
-from mcp.server.auth.middleware.auth_context import get_access_token  # pyright: ignore[reportMissingImports]
-from mcp.server.auth.provider import TokenError  # pyright: ignore[reportMissingImports]
-from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions  # pyright: ignore[reportMissingImports]
-from mcp.server.fastmcp import FastMCP  # pyright: ignore[reportMissingImports]
-from mcp.server.transport_security import TransportSecuritySettings  # pyright: ignore[reportMissingImports]
+from fastmcp import FastMCP
+from fastmcp.exceptions import AuthorizationError
+from fastmcp.server.auth.providers.clerk import ClerkProvider
+from fastmcp.server.dependencies import get_access_token
+from fastmcp.server.middleware import Middleware, MiddlewareContext
 from pydantic import ValidationError
 
+from app.core.config import get_settings
 from app.schemas.entities import PaperMetadata
 from app.services.auth_service import get_verified_id
 from app.services.collections_service import collections_service
-from app.services.mcp_oauth_service import (
-    get_public_api_url,
-    mcp_oauth_service,
-    mcp_token_verifier,
-)
-from app.services.mcp_auth import list_mcp_tokens_for_user, mcp_token_service, revoke_mcp_token
+from app.services.mcp_auth import mcp_authorization_service
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
+from app.services.user_service import user_service
 
-MCP_REQUIRED_SCOPES = ["mcp"]
 MCP_HTTP_PREFIX = "/mcp"
+MCP_SCOPES = ["openid", "email", "profile"]
 
 
-def _join_url(base_url: str, path: str | None = None) -> str:
-    normalized_base = str(base_url or "").strip().rstrip("/")
-    normalized_path = str(path or "").strip().strip("/")
-    if not normalized_path:
-        return normalized_base
-    return f"{normalized_base}/{normalized_path}"
+def _settings():
+    return get_settings()
 
 
-def _metadata_payload(*, issuer_url: str) -> dict[str, Any]:
-    return {
-        "issuer": issuer_url.rstrip("/"),
-        "authorization_endpoint": _mcp_url("/authorize"),
-        "token_endpoint": _mcp_url("/token"),
-        "registration_endpoint": _mcp_url("/register"),
-        "response_types_supported": ["code"],
-        "grant_types_supported": ["authorization_code"],
-        # Support both methods for broader client compatibility.
-        "code_challenge_methods_supported": ["S256", "plain"],
-        "token_endpoint_auth_methods_supported": ["none"],
-        "scopes_supported": MCP_REQUIRED_SCOPES,
-    }
+def _required_env(value: str | None, env_name: str) -> str:
+    normalized = str(value or "").strip()
+    if not normalized:
+        raise RuntimeError(f"{env_name} must be configured.")
+    return normalized
 
 
-def _protected_resource_payload(*, resource_url: str) -> dict[str, Any]:
-    mcp_issuer = _mcp_url()
-    root_issuer = get_public_api_url()
-    authorization_servers = [mcp_issuer]
-    if root_issuer != mcp_issuer:
-        authorization_servers.append(root_issuer)
-    # RFC 9728 protected resource metadata advertised via WWW-Authenticate resource_metadata.
-    return {
-        "resource": resource_url,
-        "authorization_servers": authorization_servers,
-        "bearer_methods_supported": ["header"],
-        "scopes_supported": MCP_REQUIRED_SCOPES,
-    }
+def _public_api_url() -> str:
+    return _required_env(_settings().public_api_url, "PUBLIC_API_URL").rstrip("/")
 
 
-def _mcp_url(path: str = "") -> str:
-    return _join_url(get_public_api_url(), f"{MCP_HTTP_PREFIX}/{str(path or '').lstrip('/')}")
+def _public_site_url() -> str:
+    return _required_env(_settings().public_site_url, "PUBLIC_SITE_URL").rstrip("/")
 
 
-def _mcp_http_endpoint_url() -> str:
-    return f"{_mcp_url()}/"
+def _mcp_base_url() -> str:
+    return f"{_public_api_url()}{MCP_HTTP_PREFIX}"
 
 
-def _mcp_connection_payload() -> dict[str, Any]:
-    mcp_url = _mcp_http_endpoint_url()
-    manual_config = {
-        "servers": {
-            "whitepapper": {
-                "url": mcp_url,
-                "type": "http",
-            }
-        },
-        "inputs": [],
-    }
-    return {
-        "serverName": "whitepapper",
-        "transport": "http",
-        "endpointUrl": mcp_url,
-        "manualConfig": manual_config,
-    }
+def _clerk_oauth_domain() -> str:
+    discovery_url = _required_env(_settings().clerk_oauth_discovery_url, "CLERK_OAUTH_DISCOVERY_URL")
+    parsed = urlparse(discovery_url)
+    if not parsed.netloc:
+        raise RuntimeError("CLERK_OAUTH_DISCOVERY_URL must be a valid URL.")
+    return parsed.netloc
 
 
-def _mcp_auth_settings() -> AuthSettings:
-    return AuthSettings(
-        issuer_url=_mcp_url(),
-        resource_server_url=_mcp_url(),
-        required_scopes=MCP_REQUIRED_SCOPES,
-        client_registration_options=ClientRegistrationOptions(enabled=False),
-    )
+def _clerk_oauth_redirect_path() -> str:
+    redirect_uri = _required_env(_settings().clerk_oauth_redirect_uri, "CLERK_OAUTH_REDIRECT_URI")
+    parsed_redirect = urlparse(redirect_uri)
+    if not parsed_redirect.path:
+        raise RuntimeError("CLERK_OAUTH_REDIRECT_URI must include a path.")
+
+    mcp_path = urlparse(_mcp_base_url()).path.rstrip("/")
+    redirect_path = parsed_redirect.path
+    if mcp_path and redirect_path.startswith(mcp_path):
+        redirect_path = redirect_path[len(mcp_path):] or "/"
+    if not redirect_path.startswith("/"):
+        redirect_path = f"/{redirect_path}"
+    return redirect_path
 
 
-def _mcp_transport_security_settings() -> TransportSecuritySettings:
-    # Requests arrive through Cloudflare Worker -> Cloud Run, where Host may be rewritten
-    # to the upstream service domain. Strict MCP host validation causes false 421s in this setup.
-    return TransportSecuritySettings(
-        enable_dns_rebinding_protection=False,
-    )
-
-
-def _json_no_cache(payload: dict[str, Any], status_code: int = 200) -> JSONResponse:
+def _json_no_cache(payload: Any, status_code: int = 200) -> JSONResponse:
     return JSONResponse(payload, status_code=status_code, headers={"Cache-Control": "no-store, no-cache"})
 
 
-
-def _oauth_error(error: str, error_description: str, status_code: int = 400) -> JSONResponse:
-    return _json_no_cache(
-        {
-            "error": error,
-            "error_description": error_description,
+def _mcp_connection_payload() -> dict[str, Any]:
+    endpoint_url = _mcp_base_url()
+    return {
+        "serverName": "whitepapper",
+        "transport": "http",
+        "endpointUrl": endpoint_url,
+        "manualConfig": {
+            "servers": {
+                "whitepapper": {
+                    "url": endpoint_url,
+                    "type": "http",
+                }
+            },
+            "inputs": [],
         },
-        status_code=status_code,
-    )
-
-
-def _parse_requested_scopes(raw_scope: str | None) -> list[str]:
-    requested = [scope.strip() for scope in str(raw_scope or "").split(" ") if scope.strip()]
-    return requested or ["mcp"]
-
-
-@dataclass(frozen=True)
-class McpRequestContext:
-    user_id: str
-    project_id: str
+    }
 
 
 def _project_payload(project: dict[str, Any]) -> dict[str, Any]:
@@ -168,57 +124,60 @@ def _collection_payload(collection: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _resolve_collection_for_context(context: McpRequestContext, collection_ref: str) -> dict[str, Any] | None:
-    ref = str(collection_ref or "").strip()
+def _paper_seo(paper: dict[str, Any] | None) -> dict[str, str]:
+    metadata = (paper or {}).get("metadata") or {}
+    title = str(metadata.get("ogTitle") or metadata.get("title") or (paper or {}).get("title") or "").strip()
+    description = str(metadata.get("metaDescription") or "").strip()
+    return {
+        "title": title or str((paper or {}).get("title") or "").strip(),
+        "description": description,
+    }
+
+
+def _list_owned_projects(user_id: str) -> list[dict[str, Any]]:
+    projects = projects_service.list_owned(user_id)
+    projects.sort(key=lambda item: str(item.get("updatedAt") or item.get("createdAt") or ""), reverse=True)
+    return projects
+
+
+def _resolve_project_for_user(user_id: str, project_ref: str) -> dict[str, Any]:
+    ref = str(project_ref or "").strip()
     if not ref:
-        return None
+        raise HTTPException(status_code=400, detail="project_id is required.")
 
     try:
-        direct = collections_service.get_by_id(ref)
-        if str(direct.get("projectId") or "") == context.project_id:
-            return direct
+        project = projects_service.get_by_id(ref)
+        if str(project.get("ownerId") or "") == user_id:
+            return project
     except HTTPException:
         pass
 
     lowered = ref.lower()
-    for collection in collections_service.list_project_collections(context.project_id):
-        slug = str(collection.get("slug") or "").lower()
-        name = str(collection.get("name") or "").strip().lower()
+    for project in _list_owned_projects(user_id):
+        slug = str(project.get("slug") or "").lower()
+        name = str(project.get("name") or "").strip().lower()
         if lowered == slug or lowered == name:
-            return collection
-    return None
+            return project
+
+    raise HTTPException(status_code=404, detail="Project not found.")
 
 
-def _normalized_collection_name(value: str) -> str:
-    return " ".join(str(value or "").strip().lower().split())
+def _require_owned_collection(user_id: str, collection_id: str) -> dict[str, Any]:
+    collection = collections_service.get_by_id(collection_id)
+    if str(collection.get("ownerId") or "") != user_id:
+        raise HTTPException(status_code=404, detail="Collection not found.")
+    return collection
 
 
-def _require_owned_project(project_id: str, user_id: str) -> dict[str, Any]:
-    project = projects_service.get_by_id(project_id)
-    if str(project.get("ownerId") or "") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
-    return project
+def _require_owned_paper(user_id: str, paper_id: str) -> dict[str, Any]:
+    paper = papers_service.get_by_id(paper_id)
+    if not paper or str(paper.get("ownerId") or "") != user_id:
+        raise HTTPException(status_code=404, detail="Paper not found.")
+    return paper
 
 
-def _require_tool_context() -> McpRequestContext:
-    access_token = get_access_token()
-    raw_token = str(access_token.token if access_token else "").strip()
-    if not raw_token:
-        raise TokenError("invalid_token", "Missing bearer token.")
-
-    token_doc = mcp_token_service.resolve_token_doc(raw_token)
-    if not token_doc:
-        raise TokenError("invalid_token", "Bearer token is invalid or expired.")
-
-    mcp_token_service.increment_usage_for_raw_token(raw_token)
-    return McpRequestContext(
-        user_id=str(token_doc.get("userId") or ""),
-        project_id=str(token_doc.get("projectId") or ""),
-    )
-
-
-def _get_project_context_payload(project_id: str) -> dict[str, Any]:
-    project = projects_service.get_by_id(project_id)
+def _get_project_context_payload(project: dict[str, Any]) -> dict[str, Any]:
+    project_id = str(project.get("projectId") or "")
     collections = collections_service.list_project_collections(project_id)
     collection_payload: list[dict[str, Any]] = []
     for collection in collections:
@@ -258,149 +217,194 @@ def _get_project_context_payload(project_id: str) -> dict[str, Any]:
     }
 
 
-def _get_project_paper(paper_id: str, project_id: str) -> dict[str, Any] | None:
-    paper = papers_service.get_by_id(paper_id)
-    if not paper or str(paper.get("projectId") or "") != project_id:
+def _build_metadata_for_paper(paper: dict[str, Any], *, seo_title: str | None, seo_description: str | None) -> dict[str, Any]:
+    metadata = papers_service.generate_metadata_preview(paper)
+    if seo_title:
+        clean_title = seo_title.strip()
+        if clean_title:
+            metadata["title"] = clean_title
+            metadata["ogTitle"] = clean_title
+            metadata["twitterTitle"] = clean_title
+            metadata["headline"] = clean_title
+    if seo_description is not None:
+        clean_description = seo_description.strip()
+        metadata["metaDescription"] = clean_description
+        metadata["ogDescription"] = clean_description
+        metadata["twitterDescription"] = clean_description
+        metadata["abstract"] = clean_description or metadata.get("abstract", "")
+    return metadata
+
+
+def _normalize_metadata_payload_for_paper(paper: dict[str, Any], metadata: dict[str, Any]) -> dict[str, Any]:
+    generated = papers_service.generate_metadata_preview(paper)
+    merged = {**generated, **metadata}
+    return PaperMetadata.model_validate(merged).model_dump(mode="json")
+
+
+def _current_mcp_user_id() -> str:
+    token = get_access_token()
+    user_id = str((token.claims if token else {}).get("sub") or "").strip()
+    if not user_id:
+        raise AuthorizationError("Missing authenticated Whitepapper user.")
+    return user_id
+
+
+def _token_hash_from_access_token() -> str:
+    token = get_access_token()
+    raw_token = str(getattr(token, "token", "") or "").strip()
+    return mcp_authorization_service.hash_token(raw_token) if raw_token else ""
+
+
+async def _resolve_client_name(provider: ClerkProvider, client_id: str) -> str | None:
+    if not client_id:
         return None
-    return paper
+    try:
+        client = await provider.get_client(client_id)
+    except Exception:
+        return None
+    return str(getattr(client, "client_name", "") or "").strip() or None
+
+
+class WhitepapperClerkProvider(ClerkProvider):
+    async def _show_consent_page(self, request: Request) -> RedirectResponse:
+        txn_id = request.query_params.get("txn_id")
+        if not txn_id:
+            raise HTTPException(status_code=400, detail="Invalid or expired transaction.")
+
+        txn_model = await self._transaction_store.get(key=txn_id)
+        if not txn_model:
+            raise HTTPException(status_code=400, detail="Invalid or expired transaction.")
+
+        site_url = _public_site_url()
+        consent_url = f"{site_url}/mcp/connect?txn_id={urlencode({'txn_id': txn_id})[7:]}"
+        return RedirectResponse(url=consent_url, status_code=302)
+
+
+class WhitepapperAuthorizationMiddleware(Middleware):
+    def __init__(self, provider: WhitepapperClerkProvider) -> None:
+        super().__init__()
+        self.provider = provider
+
+    async def on_request(self, context: MiddlewareContext, call_next):
+        token = get_access_token()
+        if token is None:
+            return await call_next(context)
+
+        user_id = str(token.claims.get("sub") or "").strip()
+        client_id = str(token.client_id or token.claims.get("azp") or token.claims.get("client_id") or "").strip()
+        authorization_id = mcp_authorization_service.authorization_id(user_id, client_id)
+        token_hash = _token_hash_from_access_token()
+        if not user_id or not client_id:
+            raise AuthorizationError("Missing MCP authorization context.")
+        if mcp_authorization_service.is_token_revoked(authorization_id, token_hash):
+            raise AuthorizationError("This MCP connection has been revoked. Reconnect to continue.")
+        if not mcp_authorization_service.is_user_usage_within_limit(user_id):
+            raise AuthorizationError("Monthly MCP usage limit reached for this Whitepapper account.")
+
+        client_name = await _resolve_client_name(self.provider, client_id)
+        mcp_authorization_service.upsert_authorization(
+            user_id=user_id,
+            client_id=client_id,
+            agent_name=client_name,
+            scopes=list(token.scopes or []),
+            token_hash=token_hash,
+        )
+
+        result = await call_next(context)
+        if context.method not in {"initialize", "notifications/initialized", "ping"}:
+            mcp_authorization_service.increment_user_usage(user_id)
+        return result
 
 
 @lru_cache(maxsize=1)
 def _build_mcp_server() -> FastMCP:
+    settings = _settings()
+    provider = WhitepapperClerkProvider(
+        domain=_clerk_oauth_domain(),
+        client_id=_required_env(settings.clerk_oauth_client_id, "CLERK_OAUTH_CLIENT_ID"),
+        client_secret=_required_env(settings.clerk_oauth_client_secret, "CLERK_OAUTH_CLIENT_SECRET"),
+        base_url=_mcp_base_url(),
+        issuer_url=_public_api_url(),
+        redirect_path=_clerk_oauth_redirect_path(),
+        required_scopes=MCP_SCOPES,
+        valid_scopes=MCP_SCOPES,
+    )
+
     server = FastMCP(
-            name="whitepapper",
-            instructions="""
-You are a content editor connected to a Whitepapper CMS project.
-Whitepapper is a markdown-first CMS. All content is written in markdown.
+        name="whitepapper",
+        instructions="""
+You are connected to Whitepapper at the account level.
+You can work across all projects owned by the signed-in user.
 
-## Session startup — do this exactly once
-1. Call get_project_context. Do not call it again unless the user explicitly asks to refresh.
-2. Read project_description fully. It defines what the project is, who the audience is, and what tone to use.
-3. Read content_guidelines if present. It contains explicit writing rules for this project.
-4. Read every collection name and description. These define where content is routed.
-5. Read existing paper titles to avoid creating duplicates.
-- Standalone papers (no collection_id) are for project-root content only: changelog, index page, overview, landing copy.
-- Never guess a collection_id. Always derive it from get_project_context output.
-- Do not use em dashes (—). Prefer commas or a double hyphen (`--`) instead.
-- Do not append "Last updated" timestamps or similar freshness lines at the end of a page; the platform already records and displays update dates.
-- The page title is the H1. Do not add additional H1 headings in the content body; use H2/H3 for section headings.
-- Do not truncate. Write the full content in one create_paper or update_paper call.
-- Titles should be clear and descriptive, not clever.
-- seo_description: maximum 155 characters. One to two sentences. Describes the page for search engines. No clickbait.
-- slug: lowercase, hyphen-separated, no special characters, derived from the title. Example: "getting-started-with-payments-api".
-- Do not call regenerate_paper_seo unless the user explicitly asks for SEO regeneration.
-- Do not confirm each action with the user unless they ask for confirmation mode.
-- If get_paper returns not_found, do not retry. Tell the user the paper does not exist.
-- Never invent a project_id, paper_id, or collection_id. All IDs come from tool responses only.
-""",
-            token_verifier=mcp_token_verifier,
-            auth=_mcp_auth_settings(),
-            transport_security=_mcp_transport_security_settings(),
-            streamable_http_path="/",
-        )
+Session startup:
+1. Call list_projects first.
+2. Pick the relevant project and call get_project_context(project_id) before writing content for that project.
+3. Never guess project, collection, or paper IDs. Use IDs returned by tools.
 
-    def _paper_seo(paper: dict | None) -> dict[str, str]:
-        metadata = (paper or {}).get("metadata") or {}
-        title = str(metadata.get("ogTitle") or metadata.get("title") or (paper or {}).get("title") or "").strip()
-        description = str(metadata.get("metaDescription") or "").strip()
-        return {
-            "title": title or str((paper or {}).get("title") or "").strip(),
-            "description": description,
-        }
+Rules:
+- Project-scoped tools require a project_id.
+- Collection and paper tools use entity IDs returned by prior tool calls.
+- The page title is the H1. Do not add another H1 inside markdown.
+- Do not use em dashes. Prefer commas or double hyphens.
+- Keep slugs lowercase and hyphenated.
+- Do not regenerate SEO unless explicitly requested.
+""".strip(),
+        auth=provider,
+        middleware=[WhitepapperAuthorizationMiddleware(provider)],
+    )
 
-    def _build_metadata_for_paper(paper: dict, *, seo_title: str | None, seo_description: str | None) -> dict | None:
-        metadata = papers_service.generate_metadata_preview(paper)
-        if seo_title:
-            clean_title = seo_title.strip()
-            if clean_title:
-                metadata["title"] = clean_title
-                metadata["ogTitle"] = clean_title
-                metadata["twitterTitle"] = clean_title
-                metadata["headline"] = clean_title
-        if seo_description is not None:
-            clean_description = seo_description.strip()
-            metadata["metaDescription"] = clean_description
-            metadata["ogDescription"] = clean_description
-            metadata["twitterDescription"] = clean_description
-            metadata["abstract"] = clean_description or metadata.get("abstract", "")
-        return metadata
+    @server.tool(description="List every project owned by the authenticated Whitepapper account.")
+    def list_projects() -> list[dict[str, Any]]:
+        user_id = _current_mcp_user_id()
+        return [_project_payload(project) for project in _list_owned_projects(user_id)]
 
-    def _normalize_metadata_payload_for_paper(paper: dict, metadata: dict[str, Any]) -> dict:
-        generated = papers_service.generate_metadata_preview(paper)
-        merged = {**generated, **metadata}
-        # Keep MCP metadata contract aligned with the browser editor schema.
-        return PaperMetadata.model_validate(merged).model_dump(mode="json")
+    @server.tool(description="Get full project context, including collections and paper titles, for one project.")
+    def get_project_context(project_id: str) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        project = _resolve_project_for_user(user_id, project_id)
+        return _get_project_context_payload(project)
 
-    @server.resource(
-            uri="whitepapper://project/context",
-            name="Project Context",
-            description="Full project structure including description, content guidelines, collections, and paper list. Read this before writing any content.",
-            mime_type="application/json",
-        )
-    def project_context_resource() -> dict[str, Any]:
-        import json
-        context = _require_tool_context()
-        project = projects_service.get_by_id(context.project_id)
-        collections = collections_service.list_project_collections(context.project_id)
-        collection_payload = []
-        for collection in collections:
-            collection_id = str(collection.get("collectionId") or "")
-            papers = papers_service.list_by_collection_id(collection_id)
-            collection_payload.append({
-                "id": collection_id,
-                "name": collection.get("name"),
-                "description": collection.get("description") or "",
-                "papers": [
-                    {"id": p.get("paperId"), "slug": p.get("slug"), "title": p.get("title")}
-                    for p in papers
-                ],
-            })
-        standalone_papers = papers_service.list_by_project_id(context.project_id, standalone=True)
-        return json.dumps({
-            "project_id": context.project_id,
-            "project_name": project.get("name"),
-            "project_description": project.get("description") or "",
-            "content_guidelines": project.get("contentGuidelines") or "",
-            "collections": collection_payload,
-            "standalone_papers": [
-                {"id": p.get("paperId"), "slug": p.get("slug"), "title": p.get("title")}
-                for p in standalone_papers
-            ],
-        })
-
-    @server.tool(description="""
-Call this ONCE at the start of every session before any other tool.
-Returns the complete project structure: project description, content guidelines,
-all collections with descriptions, all paper titles per collection, and standalone papers.
-Use the collection descriptions to decide where new content belongs.
-Use existing paper titles to avoid duplicates.
-Do not call this again mid-session unless the user says the project structure has changed.
-""")
-    def get_project_context() -> dict[str, Any]:
-        context = _require_tool_context()
-        return _get_project_context_payload(context.project_id)
-
-    @server.tool(description="""
-Get the current project details for this MCP session.
-Use this when you need project fields before updating them.
-""")
-    def get_project() -> dict[str, Any]:
-        context = _require_tool_context()
-        project = projects_service.get_by_id(context.project_id)
+    @server.tool(description="Get one project by ID, slug, or exact name.")
+    def get_project(project_id: str) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        project = _resolve_project_for_user(user_id, project_id)
         return _project_payload(project)
 
-    @server.tool(description="""
-Update project fields (same behavior as browser project settings).
-Only pass fields you want to change.
-""")
+    @server.tool(description="Create a new project in the authenticated Whitepapper account.")
+    def create_project(
+        name: str,
+        slug: str | None = None,
+        description: str | None = None,
+        content_guidelines: str | None = None,
+        logo_url: str | None = None,
+        is_public: bool | None = None,
+    ) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        payload: dict[str, Any] = {"name": name}
+        if slug is not None:
+            payload["slug"] = slug
+        if description is not None:
+            payload["description"] = description
+        if content_guidelines is not None:
+            payload["contentGuidelines"] = content_guidelines
+        if logo_url is not None:
+            payload["logoUrl"] = logo_url
+        if is_public is not None:
+            payload["isPublic"] = is_public
+        created = projects_service.create(user_id, payload)
+        return _project_payload(created)
+
+    @server.tool(description="Update project fields. Only pass values that should change.")
     def update_project(
+        project_id: str,
         name: str | None = None,
         slug: str | None = None,
         description: str | None = None,
         content_guidelines: str | None = None,
         logo_url: str | None = None,
     ) -> dict[str, Any]:
-        context = _require_tool_context()
+        user_id = _current_mcp_user_id()
+        project = _resolve_project_for_user(user_id, project_id)
         payload: dict[str, Any] = {}
         if name is not None:
             payload["name"] = name
@@ -412,195 +416,104 @@ Only pass fields you want to change.
             payload["contentGuidelines"] = content_guidelines
         if logo_url is not None:
             payload["logoUrl"] = logo_url
-
-        updated = projects_service.update(context.project_id, payload) if payload else projects_service.get_by_id(context.project_id)
+        updated = projects_service.update(str(project.get("projectId") or ""), payload) if payload else project
         return _project_payload(updated)
 
-    @server.tool(description="""
-Set project visibility (same behavior as browser toggle and propagation).
-""")
-    def set_project_visibility(is_public: bool) -> dict[str, Any]:
-        context = _require_tool_context()
-        updated = projects_service.set_visibility(context.project_id, is_public)
+    @server.tool(description="Set project visibility.")
+    def set_project_visibility(project_id: str, is_public: bool) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        project = _resolve_project_for_user(user_id, project_id)
+        updated = projects_service.set_visibility(str(project.get("projectId") or ""), is_public)
         return _project_payload(updated)
 
-    @server.tool(description="""
-Delete the current project (same behavior as browser delete).
-Set confirm=true to execute the deletion.
-""")
-    def delete_project(confirm: bool = False) -> dict[str, Any]:
-        context = _require_tool_context()
+    @server.tool(description="Delete a project permanently. Requires confirm=true.")
+    def delete_project(project_id: str, confirm: bool = False) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        project = _resolve_project_for_user(user_id, project_id)
         if not confirm:
             return {"error": "confirm_required", "message": "Set confirm=true to delete this project."}
-        projects_service.delete(context.project_id)
+        projects_service.delete(str(project.get("projectId") or ""))
         return {"deleted": True}
 
-    @server.tool(description="""
-Fetch the full markdown body and SEO fields of one paper.
-Only call this when you need to read or edit the actual content of a paper.
-Do not call this just to check if a paper exists — use the paper list from get_project_context for that.
-paper_id comes from the papers array in get_project_context output.
-""")
-    def get_paper(paper_id: str) -> dict[str, Any]:
-        context = _require_tool_context()
-        paper = _get_project_paper(paper_id, context.project_id)
-        if not paper:
-            return {"error": "not_found"}
-        return {
-            "id": paper.get("paperId"),
-            "slug": paper.get("slug"),
-            "title": paper.get("title"),
-            "markdown": paper.get("body") or "",
-            "collection_id": paper.get("collectionId"),
-            "thumbnail_url": paper.get("thumbnailUrl"),
-            "metadata": paper.get("metadata") or None,
-            "seo": _paper_seo(paper),
-        }
+    @server.tool(description="Overwrite the project description markdown for one project.")
+    def update_project_description(project_id: str, markdown: str) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        project = _resolve_project_for_user(user_id, project_id)
+        updated = projects_service.update(str(project.get("projectId") or ""), {"description": markdown})
+        return _project_payload(updated)
 
-    @server.tool(description="""
-Get a random thumbnail public URL from Firebase Storage/defaultThumbnails.
-This tool ONLY returns the URL and does not modify any paper.
-Use this as a building block with update_paper(thumbnail_url=...) to assign the thumbnail.
-""")
-    def get_random_default_thumbnail_url() -> dict[str, Any]:
-        context = _require_tool_context()
-        if not context.project_id:
-            return {"error": "project_not_found"}
-
-        try:
-            url = papers_service.get_random_default_thumbnail_url()
-        except HTTPException as exc:
-            return {"error": "thumbnail_unavailable", "message": str(exc.detail)}
-
-        return {"url": url}
-
-    @server.tool(description="""
-Delete the current thumbnail for a paper.
-This tool ONLY executes thumbnail cleanup and clears the paper thumbnail field.
-Use update_paper(thumbnail_url=...) when you want to set or overwrite a thumbnail URL.
-""")
-    def delete_paper_thumbnail(paper_id: str) -> dict[str, Any]:
-        context = _require_tool_context()
-        paper = _get_project_paper(paper_id, context.project_id)
-        if not paper:
-            return {"error": "not_found"}
-
-        owner_id = str(paper.get("ownerId") or "").strip()
-        if not owner_id:
-            return {"error": "owner_missing", "message": "Paper owner is missing."}
-
-        deleted = papers_service.delete_thumbnail(owner_id, paper_id)
-        updated = papers_service.update(paper_id, {"thumbnailUrl": None})
-        return {
-            "updated": True,
-            "id": paper_id,
-            "thumbnail_deleted": bool(deleted),
-            "thumbnail_url": updated.get("thumbnailUrl"),
-        }
-
-    @server.tool(description="""
-Create a new paper in the project.
-collection_id is optional. Omit it only for standalone root-level content like changelog or overview pages.
-For all other content, always supply the collection_id from get_project_context output.
-Always supply seo_title (max 60 chars, contains primary keyword) and seo_description (max 155 chars).
-slug must be unique within the project. Check existing slugs in get_project_context before creating.
-slug format: lowercase, hyphen-separated, no special characters. Example: "quickstart-nodejs".
-If create returns slug_taken, append a short qualifier to the slug and retry once.
-""")
-    def create_paper(
-        title: str,
-        slug: str,
-        markdown: str,
-        collection_id: str | None = None,
-        seo_title: str | None = None,
-        seo_description: str | None = None,
-        metadata: dict[str, Any] | None = None,
+    @server.tool(description="Create a collection inside a project.")
+    def create_collection(
+        project_id: str,
+        name: str,
+        description: str,
+        slug: str | None = None,
+        is_public: bool | None = None,
     ) -> dict[str, Any]:
-        context = _require_tool_context()
-
-        normalized_slug = normalize_slug(slug)
-        if not normalized_slug:
-            return {"error": "invalid_slug", "message": "Slug is invalid."}
-
-        if not papers_service.is_slug_available(context.user_id, normalized_slug):
-            return {"error": "slug_taken", "message": "A paper with this slug already exists"}
-
-        resolved_collection_id: str | None = None
-        if collection_id:
-            collection = _resolve_collection_for_context(context, collection_id)
-            if not collection:
-                return {"error": "collection_not_found"}
-            resolved_collection_id = str(collection.get("collectionId") or "")
-        created = papers_service.create(
-            context.user_id,
-            {
-                "projectId": context.project_id,
-                "collectionId": resolved_collection_id,
-                "title": title,
-                "slug": normalized_slug,
-                "body": markdown or "",
-            },
-        )
-        paper_id = str(created.get("paperId") or "")
-        paper = papers_service.get_by_id(paper_id)
-        if paper:
-            next_metadata: dict[str, Any] | None = None
-            try:
-                if metadata is not None:
-                    next_metadata = _normalize_metadata_payload_for_paper(paper, metadata)
-                elif seo_title is not None or seo_description is not None:
-                    next_metadata = _build_metadata_for_paper(
-                        paper,
-                        seo_title=seo_title or title,
-                        seo_description=seo_description,
-                    )
-            except ValidationError as exc:
-                return {"error": "invalid_metadata", "message": str(exc)}
-
-            if next_metadata is not None:
-                papers_service.update(paper_id, {"metadata": next_metadata})
-                paper = papers_service.get_by_id(paper_id)
-
-        return {
-            "id": paper_id,
-            "slug": normalized_slug,
-            "thumbnail_url": (paper or {}).get("thumbnailUrl") if paper else None,
-            "metadata": (paper or {}).get("metadata") if paper else None,
-            "seo": _paper_seo(paper),
+        user_id = _current_mcp_user_id()
+        project = _resolve_project_for_user(user_id, project_id)
+        payload: dict[str, Any] = {
+            "projectId": str(project.get("projectId") or ""),
+            "name": name,
+            "description": description,
         }
+        if slug is not None:
+            payload["slug"] = slug
+        if is_public is not None:
+            payload["isPublic"] = is_public
+        created = collections_service.create(user_id, payload)
+        return _collection_payload(created)
 
-    @server.tool(description="""
-Regenerate SEO tags for an existing paper using the same metadata generation flow used by normal app updates.
-This refreshes metadata from current paper content, title, slug, project, and author context.
-Only run this when the user explicitly asks for SEO regeneration.
-""")
-    def regenerate_paper_seo(paper_id: str) -> dict[str, Any]:
-        context = _require_tool_context()
-        paper = _get_project_paper(paper_id, context.project_id)
-        if not paper:
-            return {"error": "not_found"}
+    @server.tool(description="Get one collection by ID.")
+    def get_collection(collection_id: str) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        collection = _require_owned_collection(user_id, collection_id)
+        return _collection_payload(collection)
 
-        refreshed = papers_service.update(paper_id, {}, force_metadata_refresh=True)
-        return {
-            "updated": True,
-            "id": paper_id,
-            "slug": refreshed.get("slug"),
-            "metadata": refreshed.get("metadata") or None,
-            "seo": _paper_seo(refreshed),
-        }
+    @server.tool(description="Update a collection.")
+    def update_collection(
+        collection_id: str,
+        name: str | None = None,
+        slug: str | None = None,
+        description: str | None = None,
+        is_public: bool | None = None,
+    ) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        collection = _require_owned_collection(user_id, collection_id)
+        payload: dict[str, Any] = {}
+        if name is not None:
+            payload["name"] = name
+        if slug is not None:
+            payload["slug"] = slug
+        if description is not None:
+            payload["description"] = description
+        updated = collections_service.update(str(collection.get("collectionId") or ""), payload) if payload else collection
+        if is_public is not None:
+            updated = collections_service.set_visibility(str(collection.get("collectionId") or ""), is_public)
+        return _collection_payload(updated)
 
-    @server.tool(description="""
-Update an existing paper. Only pass fields you want to change. Unpassed fields are not touched.
-Use this to rewrite content, fix SEO fields, or update the title.
-Use thumbnail_url to set/overwrite thumbnail directly using a public URL.
-paper_id comes from get_project_context or a previous create_paper response.
-Do not call this immediately after create_paper unless changes are needed.
-""")
-    def update_paper(
-        paper_id: str,
-        title: str | None = None,
+    @server.tool(description="Set collection visibility.")
+    def set_collection_visibility(collection_id: str, is_public: bool) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        collection = _require_owned_collection(user_id, collection_id)
+        updated = collections_service.set_visibility(str(collection.get("collectionId") or ""), is_public)
+        return _collection_payload(updated)
+
+    @server.tool(description="Delete a collection permanently. Requires confirm=true.")
+    def delete_collection(collection_id: str, confirm: bool = False) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        collection = _require_owned_collection(user_id, collection_id)
+        if not confirm:
+            return {"error": "confirm_required", "message": "Set confirm=true to delete this collection."}
+        collections_service.delete(str(collection.get("collectionId") or ""))
+        return {"deleted": True}
+
+    @server.tool(description="Create a paper in a project or collection.")
+    def create_paper(
+        title: str = "Untitled Paper",
         slug: str | None = None,
         markdown: str | None = None,
+        project_id: str | None = None,
         collection_id: str | None = None,
         thumbnail_url: str | None = None,
         status: str | None = None,
@@ -608,46 +521,28 @@ Do not call this immediately after create_paper unless changes are needed.
         seo_description: str | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        context = _require_tool_context()
-        paper = _get_project_paper(paper_id, context.project_id)
-        if not paper:
-            return {"error": "not_found"}
-
-        payload: dict[str, Any] = {}
-        if title is not None:
-            payload["title"] = title
+        user_id = _current_mcp_user_id()
+        payload: dict[str, Any] = {
+            "title": title,
+            "body": markdown or "",
+        }
         if slug is not None:
-            normalized_slug = normalize_slug(slug)
-            if not normalized_slug:
-                return {"error": "invalid_slug", "message": "Slug is invalid."}
-            if not papers_service.is_slug_available(context.user_id, normalized_slug, paper_id):
-                return {"error": "slug_taken", "message": "A paper with this slug already exists"}
-            payload["slug"] = normalized_slug
-        if markdown is not None:
-            payload["body"] = markdown
-        if collection_id is not None:
-            next_collection = str(collection_id).strip()
-            if not next_collection:
-                payload["collectionId"] = None
-                payload["projectId"] = context.project_id
-            else:
-                resolved_collection = _resolve_collection_for_context(context, next_collection)
-                if not resolved_collection:
-                    return {"error": "collection_not_found"}
-                payload["collectionId"] = str(resolved_collection.get("collectionId") or "")
-                payload["projectId"] = context.project_id
+            payload["slug"] = slug
         if thumbnail_url is not None:
-            clean_thumbnail_url = str(thumbnail_url).strip()
-            payload["thumbnailUrl"] = clean_thumbnail_url or None
+            payload["thumbnailUrl"] = thumbnail_url
         if status is not None:
-            normalized_status = str(status).strip().lower()
-            if normalized_status not in {"draft", "published", "archived"}:
-                return {"error": "invalid_status", "message": "Allowed values: draft, published, archived."}
-            payload["status"] = normalized_status
+            payload["status"] = status
 
-        if payload:
-            papers_service.update(paper_id, payload)
-            paper = papers_service.get_by_id(paper_id)
+        if collection_id:
+            collection = _require_owned_collection(user_id, collection_id)
+            payload["collectionId"] = str(collection.get("collectionId") or "")
+            payload["projectId"] = str(collection.get("projectId") or "")
+        elif project_id:
+            project = _resolve_project_for_user(user_id, project_id)
+            payload["projectId"] = str(project.get("projectId") or "")
+
+        created = papers_service.create(user_id, payload)
+        paper = _require_owned_paper(user_id, str(created.get("paperId") or ""))
 
         if paper:
             next_metadata: dict[str, Any] | None = None
@@ -664,149 +559,127 @@ Do not call this immediately after create_paper unless changes are needed.
                 return {"error": "invalid_metadata", "message": str(exc)}
 
             if next_metadata is not None:
-                papers_service.update(paper_id, {"metadata": next_metadata})
-                paper = papers_service.get_by_id(paper_id)
+                papers_service.update(str(paper.get("paperId") or ""), {"metadata": next_metadata})
+                paper = _require_owned_paper(user_id, str(paper.get("paperId") or ""))
 
         return {
-            "updated": True,
-            "id": paper_id,
-            "slug": (paper or {}).get("slug"),
-            "metadata": (paper or {}).get("metadata") if paper else None,
+            "id": paper.get("paperId"),
+            "project_id": paper.get("projectId"),
+            "collection_id": paper.get("collectionId"),
+            "slug": paper.get("slug"),
+            "title": paper.get("title"),
+            "metadata": paper.get("metadata"),
             "seo": _paper_seo(paper),
         }
 
-    @server.tool(description="""
-Permanently delete a paper. Cannot be undone.
-Only call this if the user explicitly asks to delete a specific paper.
-Returns the deleted paper title for confirmation.
-""")
+    @server.tool(description="Get one paper by ID.")
+    def get_paper(paper_id: str) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        paper = _require_owned_paper(user_id, paper_id)
+        return {
+            "id": paper.get("paperId"),
+            "slug": paper.get("slug"),
+            "title": paper.get("title"),
+            "markdown": paper.get("body") or "",
+            "collection_id": paper.get("collectionId"),
+            "project_id": paper.get("projectId"),
+            "thumbnail_url": paper.get("thumbnailUrl"),
+            "metadata": paper.get("metadata") or None,
+            "seo": _paper_seo(paper),
+        }
+
+    @server.tool(description="Update a paper. Only pass values that should change.")
+    def update_paper(
+        paper_id: str,
+        title: str | None = None,
+        slug: str | None = None,
+        markdown: str | None = None,
+        collection_id: str | None = None,
+        thumbnail_url: str | None = None,
+        status: str | None = None,
+        seo_title: str | None = None,
+        seo_description: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        paper = _require_owned_paper(user_id, paper_id)
+        payload: dict[str, Any] = {}
+
+        if title is not None:
+            payload["title"] = title
+        if slug is not None:
+            normalized_slug = normalize_slug(slug)
+            if not normalized_slug:
+                return {"error": "invalid_slug", "message": "Slug is invalid."}
+            if not papers_service.is_slug_available(user_id, normalized_slug, paper_id):
+                return {"error": "slug_taken", "message": "A paper with this slug already exists."}
+            payload["slug"] = normalized_slug
+        if markdown is not None:
+            payload["body"] = markdown
+        if thumbnail_url is not None:
+            payload["thumbnailUrl"] = str(thumbnail_url).strip() or None
+        if status is not None:
+            normalized_status = str(status).strip().lower()
+            if normalized_status not in {"draft", "published", "archived"}:
+                return {"error": "invalid_status", "message": "Allowed values: draft, published, archived."}
+            payload["status"] = normalized_status
+        if collection_id is not None:
+            if not str(collection_id).strip():
+                payload["collectionId"] = None
+                payload["projectId"] = paper.get("projectId")
+            else:
+                collection = _require_owned_collection(user_id, collection_id)
+                payload["collectionId"] = str(collection.get("collectionId") or "")
+                payload["projectId"] = str(collection.get("projectId") or "")
+
+        if payload:
+            papers_service.update(paper_id, payload)
+            paper = _require_owned_paper(user_id, paper_id)
+
+        try:
+            next_metadata: dict[str, Any] | None = None
+            if metadata is not None:
+                next_metadata = _normalize_metadata_payload_for_paper(paper, metadata)
+            elif seo_title is not None or seo_description is not None:
+                next_metadata = _build_metadata_for_paper(
+                    paper,
+                    seo_title=seo_title,
+                    seo_description=seo_description,
+                )
+        except ValidationError as exc:
+            return {"error": "invalid_metadata", "message": str(exc)}
+
+        if next_metadata is not None:
+            papers_service.update(paper_id, {"metadata": next_metadata})
+            paper = _require_owned_paper(user_id, paper_id)
+
+        return {
+            "updated": True,
+            "id": paper.get("paperId"),
+            "slug": paper.get("slug"),
+            "metadata": paper.get("metadata"),
+            "seo": _paper_seo(paper),
+        }
+
+    @server.tool(description="Delete a paper permanently.")
     def delete_paper(paper_id: str) -> dict[str, Any]:
-        context = _require_tool_context()
-        paper = _get_project_paper(paper_id, context.project_id)
-        if not paper:
-            return {"error": "not_found"}
+        user_id = _current_mcp_user_id()
+        paper = _require_owned_paper(user_id, paper_id)
         title = str(paper.get("title") or "")
         papers_service.delete(paper_id)
         return {"deleted": True, "title": title}
 
-    @server.tool(description="""
-Overwrite the project description. This is the main context document for the project.
-It defines what the project is, who the audience is, tone, and content goals.
-Call this when the user asks to update or rewrite the project description.
-Write in markdown. Be specific — agents use this document to understand how to write for this project.
-""")
-    def update_project_description(markdown: str) -> dict[str, Any]:
-        context = _require_tool_context()
-        updated = projects_service.update(context.project_id, {"description": markdown})
-        return _project_payload(updated)
+    @server.tool(description="Return one random default thumbnail URL.")
+    def get_random_default_thumbnail_url() -> dict[str, Any]:
+        return {"url": papers_service.get_random_default_thumbnail_url()}
 
-    @server.tool(description="""
-Create a new collection before creating papers that belong in it.
-description is required. Write exactly one sentence that answers:
-"What kind of content belongs in this collection?"
-Examples of good descriptions:
-- "Step-by-step tutorials for common integration patterns."
-- "Technical reference for every API endpoint and parameter."
-- "Answers to common questions from new users."
-Bad descriptions: "Docs", "Content", "Misc", or anything vague.
-After creating a collection, use the returned id as collection_id in create_paper calls.
-""")
-    def create_collection(
-        name: str,
-        description: str = "",
-        slug: str | None = None,
-        is_public: bool | None = None,
-    ) -> dict[str, Any]:
-        context = _require_tool_context()
-        clean_description = description.strip()
-        if not clean_description:
-            return {
-                "error": "description_required",
-                "message": "Provide a one-sentence description of what content belongs in this collection.",
-            }
-
-        normalized_name = _normalized_collection_name(name)
-        for existing in collections_service.list_project_collections(context.project_id):
-            if _normalized_collection_name(str(existing.get("name") or "")) == normalized_name:
-                return _collection_payload(existing)
-
-        payload: dict[str, Any] = {
-            "projectId": context.project_id,
-            "name": name,
-            "description": clean_description,
-        }
-        if slug is not None:
-            payload["slug"] = slug
-        if is_public is not None:
-            payload["isPublic"] = is_public
-        created = collections_service.create(
-            context.user_id,
-            payload,
-        )
-        return _collection_payload(created)
-
-    @server.tool(description="""
-Get one collection by id, slug, or exact name in the current project.
-""")
-    def get_collection(collection_id: str) -> dict[str, Any]:
-        context = _require_tool_context()
-        collection = _resolve_collection_for_context(context, collection_id)
-        if not collection:
-            return {"error": "not_found"}
-        return _collection_payload(collection)
-
-    @server.tool(description="""
-Update a collection name or description.
-Use this to improve a vague collection description that was set previously.
-Only pass fields you want to change.
-""")
-    def update_collection(
-        collection_id: str,
-        name: str | None = None,
-        slug: str | None = None,
-        description: str | None = None,
-        is_public: bool | None = None,
-    ) -> dict[str, Any]:
-        context = _require_tool_context()
-        collection = _resolve_collection_for_context(context, collection_id)
-        if not collection:
-            return {"error": "not_found"}
-        payload: dict[str, Any] = {}
-        if name is not None:
-            payload["name"] = name
-        if slug is not None:
-            payload["slug"] = slug
-        if description is not None:
-            payload["description"] = description
-        resolved_id = str(collection.get("collectionId") or "")
-        updated = collections_service.update(resolved_id, payload) if payload else collection
-        if is_public is not None:
-            updated = collections_service.set_visibility(resolved_id, is_public)
-        return _collection_payload(updated)
-
-    @server.tool(description="""
-Set collection visibility (same behavior as browser toggle and propagation).
-""")
-    def set_collection_visibility(collection_id: str, is_public: bool) -> dict[str, Any]:
-        context = _require_tool_context()
-        collection = _resolve_collection_for_context(context, collection_id)
-        if not collection:
-            return {"error": "not_found"}
-        updated = collections_service.set_visibility(str(collection.get("collectionId") or ""), is_public)
-        return _collection_payload(updated)
-
-    @server.tool(description="""
-Delete a collection (same behavior as browser delete).
-This also deletes all papers inside that collection.
-""")
-    def delete_collection(collection_id: str, confirm: bool = False) -> dict[str, Any]:
-        context = _require_tool_context()
-        if not confirm:
-            return {"error": "confirm_required", "message": "Set confirm=true to delete this collection."}
-        collection = _resolve_collection_for_context(context, collection_id)
-        if not collection:
-            return {"error": "not_found"}
-        collections_service.delete(str(collection.get("collectionId") or ""))
+    @server.tool(description="Delete the current thumbnail for a paper.")
+    def delete_paper_thumbnail(paper_id: str) -> dict[str, Any]:
+        user_id = _current_mcp_user_id()
+        paper = _require_owned_paper(user_id, paper_id)
+        owner_id = str(paper.get("ownerId") or "")
+        papers_service.delete_thumbnail(owner_id, paper_id)
+        papers_service.update(paper_id, {"thumbnailUrl": None})
         return {"deleted": True}
 
     return server
@@ -814,231 +687,126 @@ This also deletes all papers inside that collection.
 
 @lru_cache(maxsize=1)
 def build_mcp_app():
-    return _build_mcp_server().streamable_http_app()
+    return _build_mcp_server().http_app(path="/", transport="http")
 
 
-def get_mcp_session_manager():
-    return _build_mcp_server().session_manager
+def _get_mcp_provider() -> WhitepapperClerkProvider:
+    provider = _build_mcp_server().auth
+    if not isinstance(provider, WhitepapperClerkProvider):
+        raise RuntimeError("MCP auth provider is not configured.")
+    return provider
 
 
 def build_mcp_router() -> APIRouter:
     router = APIRouter(tags=["mcp"])
 
-    def _root_discovery_payload() -> dict[str, Any]:
-        return _metadata_payload(issuer_url=get_public_api_url())
-
-    def _mcp_discovery_payload() -> dict[str, Any]:
-        # For path-scoped discovery aliases, issuer must include the resource path.
-        return _metadata_payload(issuer_url=_mcp_url())
-
     @router.get("/.well-known/oauth-authorization-server")
-    async def oauth_metadata() -> JSONResponse:
-        return _json_no_cache(_root_discovery_payload())
+    async def oauth_authorization_server_alias() -> RedirectResponse:
+        return RedirectResponse(url=f"{MCP_HTTP_PREFIX}/.well-known/oauth-authorization-server", status_code=307)
 
     @router.get("/.well-known/oauth-protected-resource")
-    async def protected_resource_metadata() -> JSONResponse:
-        return _json_no_cache(_protected_resource_payload(resource_url=_mcp_http_endpoint_url()))
+    async def oauth_protected_resource_alias() -> RedirectResponse:
+        return RedirectResponse(url=f"{MCP_HTTP_PREFIX}/.well-known/oauth-protected-resource/mcp/", status_code=307)
 
-    @router.get("/.well-known/oauth-protected-resource/mcp")
-    async def protected_resource_metadata_mcp_suffix() -> JSONResponse:
-        return _json_no_cache(_protected_resource_payload(resource_url=_mcp_http_endpoint_url()))
-
-    @router.get("/.well-known/openid-configuration")
-    async def openid_metadata() -> JSONResponse:
-        return _json_no_cache(_root_discovery_payload())
-
-    @router.get("/.well-known/oauth-authorization-server/mcp")
-    async def oauth_metadata_mcp_suffix() -> JSONResponse:
-        return _json_no_cache(_mcp_discovery_payload())
-
-    @router.get("/.well-known/openid-configuration/mcp")
-    async def openid_metadata_mcp_suffix() -> JSONResponse:
-        return _json_no_cache(_mcp_discovery_payload())
-
-    mcp_router = APIRouter(prefix=MCP_HTTP_PREFIX)
-
-    @mcp_router.get("/.well-known/oauth-authorization-server")
-    async def oauth_metadata_mcp_prefix() -> JSONResponse:
-        return _json_no_cache(_mcp_discovery_payload())
-
-    @mcp_router.get("/.well-known/oauth-protected-resource")
-    async def protected_resource_metadata_mcp_prefix() -> JSONResponse:
-        return _json_no_cache(_protected_resource_payload(resource_url=_mcp_http_endpoint_url()))
-
-    @mcp_router.get("/.well-known/openid-configuration")
-    async def openid_metadata_mcp_prefix() -> JSONResponse:
-        return _json_no_cache(_mcp_discovery_payload())
-
-    @mcp_router.get("/config")
+    @router.get(f"{MCP_HTTP_PREFIX}/config")
     async def get_mcp_connection_info() -> dict[str, Any]:
         return _mcp_connection_payload()
 
-    @mcp_router.post("/register")
-    async def register_client(request: Request) -> JSONResponse:
-        try:
-            payload = await request.json()
-        except Exception:
-            return _oauth_error("invalid_client_metadata", "Request body must be valid JSON.")
+    @router.get(f"{MCP_HTTP_PREFIX}/consent/context")
+    async def get_mcp_consent_context(
+        txn_id: str,
+        user_id: str = Depends(get_verified_id),
+    ) -> dict[str, Any]:
+        provider = _get_mcp_provider()
+        txn_model = await provider._transaction_store.get(key=txn_id)
+        if not txn_model:
+            raise HTTPException(status_code=404, detail="Authorization request not found or expired.")
 
-        if not isinstance(payload, dict):
-            return _oauth_error("invalid_client_metadata", "Request body must be a JSON object.")
-
-        redirect_uris_raw = payload.get("redirect_uris")
-        if not isinstance(redirect_uris_raw, list):
-            return _oauth_error("invalid_client_metadata", "redirect_uris must be an array.")
-
-        try:
-            client_info = mcp_oauth_service.register_client(
-                client_name=str(payload.get("client_name") or "").strip() or None,
-                redirect_uris=[str(item) for item in redirect_uris_raw],
-                grant_types=[str(item) for item in payload.get("grant_types") or []] or None,
-                token_endpoint_auth_method=(
-                    str(payload.get("token_endpoint_auth_method") or "").strip()
-                    or None
-                ),
-                response_types=[str(item) for item in payload.get("response_types") or []] or None,
-                scope=str(payload.get("scope") or "").strip() or None,
-            )
-        except ValueError as exc:
-            message = str(exc)
-            error = "invalid_scope" if "scope" in message else "invalid_client_metadata"
-            return _oauth_error(error, message)
-
-        return _json_no_cache(client_info, status_code=201)
-
-    @mcp_router.get("/authorize")
-    async def authorize_get(request: Request):
-        params = request.query_params
-        response_type = str(params.get("response_type") or "").strip()
-        client_id = str(params.get("client_id") or "").strip()
-        redirect_uri = str(params.get("redirect_uri") or "").strip()
-        state = str(params.get("state") or "").strip() or None
-        code_challenge = str(params.get("code_challenge") or "").strip()
-        code_challenge_method = str(params.get("code_challenge_method") or "").strip() or "S256"
-        resource = str(params.get("resource") or "").strip() or None
-
-        if response_type != "code":
-            return _oauth_error("unsupported_response_type", "Only response_type=code is supported.")
-        if not client_id:
-            return _oauth_error("invalid_request", "client_id is required.")
-        if not redirect_uri:
-            return _oauth_error("invalid_request", "redirect_uri is required.")
-        if not code_challenge:
-            return _oauth_error("invalid_request", "code_challenge is required.")
-        if code_challenge_method not in {"S256", "plain"}:
-            return _oauth_error("invalid_request", "Supported code_challenge_method values: S256, plain.")
-
-        try:
-            redirect_to = mcp_oauth_service.create_authorization_request(
-                client_id=client_id,
-                redirect_uri=redirect_uri,
-                state=state,
-                code_challenge=code_challenge,
-                code_challenge_method=code_challenge_method,
-                scopes=_parse_requested_scopes(params.get("scope")),
-                resource=resource,
-            )
-        except ValueError as exc:
-            message = str(exc)
-            error = "invalid_scope" if "scope" in message else "invalid_request"
-            return _oauth_error(error, message)
-
-        return RedirectResponse(url=redirect_to, status_code=302, headers={"Cache-Control": "no-store"})
-
-    @mcp_router.post("/authorize")
-    async def authorize_post(request: Request):
-        form = await request.form()
-        query_string = urlencode({key: str(value) for key, value in form.items()})
-        redirected_request = Request(
-            scope={**request.scope, "query_string": query_string.encode("utf-8"), "method": "GET"},
-            receive=request.receive,
-        )
-        return await authorize_get(redirected_request)
-
-    @mcp_router.post("/token")
-    async def token_exchange(request: Request):
-        form = await request.form()
-        grant_type = str(form.get("grant_type") or "").strip()
-        client_id = str(form.get("client_id") or "").strip()
-        code = str(form.get("code") or "").strip()
-        redirect_uri = str(form.get("redirect_uri") or "").strip()
-        code_verifier = str(form.get("code_verifier") or "").strip()
-
-        if grant_type != "authorization_code":
-            return _oauth_error("unsupported_grant_type", "Only authorization_code is supported.")
-        if not client_id:
-            return _oauth_error("invalid_request", "client_id is required.")
-        if not code:
-            return _oauth_error("invalid_request", "code is required.")
-        if not redirect_uri:
-            return _oauth_error("invalid_request", "redirect_uri is required.")
-        if not code_verifier:
-            return _oauth_error("invalid_request", "code_verifier is required.")
-
-        try:
-            token = mcp_oauth_service.exchange_authorization_code(
-                client_id=client_id,
-                code=code,
-                redirect_uri=redirect_uri,
-                code_verifier=code_verifier,
-            )
-        except ValueError as exc:
-            message = str(exc)
-            error = "invalid_grant" if "code_verifier" in message or "Authorization code" in message else "invalid_request"
-            return _oauth_error(error, message)
-
-        return _json_no_cache(token.model_dump(exclude_none=True))
-
-    @mcp_router.get("/oauth/request/{request_id}")
-    async def get_oauth_request(request_id: str) -> dict[str, Any]:
-        request_doc = mcp_oauth_service.get_pending_request(request_id)
-        if not request_doc:
-            raise HTTPException(status_code=404, detail="Authorization request not found.")
+        txn = txn_model.model_dump()
+        client = await provider.get_client(str(txn.get("client_id") or ""))
+        client_name = str(getattr(client, "client_name", "") or txn.get("client_id") or "").strip()
+        user_doc = user_service.get_by_id(user_id)
         return {
-            "requestId": request_doc.get("requestId"),
-            "clientId": request_doc.get("clientId"),
-            "clientName": request_doc.get("clientName"),
-            "scopes": request_doc.get("scopes") or [],
+            "txnId": txn_id,
+            "clientId": txn.get("client_id"),
+            "clientName": client_name,
+            "redirectUri": txn.get("client_redirect_uri"),
+            "scopes": txn.get("scopes") or [],
+            "user": {
+                "displayName": user_doc.get("displayName"),
+                "username": user_doc.get("username"),
+                "email": user_doc.get("email"),
+                "avatarUrl": user_doc.get("avatarUrl"),
+            },
         }
 
-    @mcp_router.post("/oauth/complete")
-    async def complete_oauth_request(
+    @router.post(f"{MCP_HTTP_PREFIX}/consent/decision")
+    async def complete_mcp_consent(
         payload: dict[str, str],
         user_id: str = Depends(get_verified_id),
-    ) -> dict[str, str]:
-        request_id = str(payload.get("requestId") or "").strip()
-        project_id = str(payload.get("projectId") or "").strip()
-        if not request_id or not project_id:
-            raise HTTPException(status_code=400, detail="requestId and projectId are required.")
-        _require_owned_project(project_id, user_id)
-        try:
-            redirect_to = mcp_oauth_service.complete_authorization_request(
-                request_id=request_id,
-                user_id=user_id,
-                project_id=project_id,
+    ) -> dict[str, Any]:
+        txn_id = str(payload.get("txnId") or "").strip()
+        action = str(payload.get("action") or "").strip().lower()
+        if not txn_id:
+            raise HTTPException(status_code=400, detail="txnId is required.")
+        if action not in {"approve", "deny"}:
+            raise HTTPException(status_code=400, detail="action must be approve or deny.")
+
+        provider = _get_mcp_provider()
+        txn_model = await provider._transaction_store.get(key=txn_id)
+        if not txn_model:
+            raise HTTPException(status_code=404, detail="Authorization request not found or expired.")
+
+        txn = txn_model.model_dump()
+        client_id = str(txn.get("client_id") or "").strip()
+        client_name = await _resolve_client_name(provider, client_id)
+
+        if action == "approve":
+            mcp_authorization_service.clear_token_revocation(
+                mcp_authorization_service.authorization_id(user_id, client_id),
             )
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-        return {"redirectTo": redirect_to}
+            redirect_to = provider._build_upstream_authorize_url(txn_id, txn)
+            return {
+                "redirectTo": redirect_to,
+                "clientId": client_id,
+                "clientName": client_name,
+            }
 
-    @router.get("/projects/{project_id}/mcp-tokens")
-    def get_project_mcp_tokens(project_id: str, user_id: str = Depends(get_verified_id)) -> list[dict]:
-        _require_owned_project(project_id, user_id)
-        return [
-            token
-            for token in list_mcp_tokens_for_user(user_id)
-            if str(token.get("projectId") or "") == project_id
-        ]
+        callback_params = {
+            "error": "access_denied",
+            "state": str(txn.get("client_state") or ""),
+        }
+        redirect_uri = str(txn.get("client_redirect_uri") or "").strip()
+        separator = "&" if "?" in redirect_uri else "?"
+        return {
+            "redirectTo": f"{redirect_uri}{separator}{urlencode(callback_params)}",
+            "clientId": client_id,
+            "clientName": client_name,
+        }
 
-    @router.delete("/projects/{project_id}/mcp-tokens/{token_id}")
-    def delete_project_mcp_token(project_id: str, token_id: str, user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
-        _require_owned_project(project_id, user_id)
-        token_doc = mcp_token_service.get_by_id(token_id)
-        if not token_doc or str(token_doc.get("projectId") or "") != project_id:
-            raise HTTPException(status_code=404, detail="MCP token not found.")
-        revoke_mcp_token(token_id)
-        mcp_oauth_service.cleanup_expired_oauth_data()
+    @router.get(f"{MCP_HTTP_PREFIX}/authorizations")
+    async def list_mcp_authorizations(user_id: str = Depends(get_verified_id)) -> dict[str, Any]:
+        usage_doc = mcp_authorization_service.get_user_month_usage(user_id)
+        return {
+            "authorizations": [
+                {
+                    "authorizationId": item.get("authorizationId"),
+                    "clientId": item.get("clientId"),
+                    "agentName": item.get("agentName"),
+                    "scopes": item.get("scopes") or [],
+                    "createdAt": item.get("createdAt"),
+                    "lastActive": item.get("lastActive"),
+                }
+                for item in mcp_authorization_service.list_authorizations_for_user(user_id)
+            ],
+            "usage": int(usage_doc.get("usage", 0)),
+            "limitPerMonth": int(usage_doc.get("limitPerMonth", 0)),
+        }
+
+    @router.delete(f"{MCP_HTTP_PREFIX}/authorizations/{{authorization_id}}")
+    async def revoke_mcp_authorization(authorization_id: str, user_id: str = Depends(get_verified_id)) -> dict[str, Any]:
+        if not mcp_authorization_service.revoke_authorization(user_id, authorization_id):
+            raise HTTPException(status_code=404, detail="MCP authorization not found.")
         return {"ok": True}
 
-    router.include_router(mcp_router)
     return router

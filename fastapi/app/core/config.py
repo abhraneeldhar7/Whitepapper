@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     clerk_secret_key: str | None = None
     clerk_jwt_key: str | None = None
     clerk_authorized_parties: str | None = None
+    clerk_oauth_client_id: str | None = None
+    clerk_oauth_client_secret: str | None = None
+    clerk_oauth_discovery_url: str | None = None
+    clerk_oauth_redirect_uri: str | None = None
 
     firebase_service_account_json: str | None = None
     firebase_storage_bucket: str | None = None

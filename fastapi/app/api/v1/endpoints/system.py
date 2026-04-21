@@ -4,8 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from app.core.config import get_settings
 from app.services._dev_api_service import _dev_api_service
-from app.services.mcp_auth import mcp_token_service
-from app.services.mcp_oauth_service import mcp_oauth_service
+from app.services.mcp_auth import mcp_authorization_service
 
 router = APIRouter(tags=["system"])
 
@@ -24,14 +23,12 @@ def reset_api_usage(request: Request) -> dict[str, object]:
     ):
         raise HTTPException(status_code=401, detail="Unauthorized.")
     api_keys_reset = _dev_api_service.reset_all_usage()
-    mcp_tokens_reset = mcp_token_service.reset_all_usage()
-    mcp_oauth_cleanup = mcp_oauth_service.cleanup_expired_oauth_data()
+    mcp_usage_reset = mcp_authorization_service.reset_all_usage()
     return {
         "ok": True,
-        "reset": api_keys_reset + mcp_tokens_reset,
+        "reset": api_keys_reset + mcp_usage_reset,
         "apiKeysReset": api_keys_reset,
-        "mcpTokensReset": mcp_tokens_reset,
-        "mcpOAuthCleanup": mcp_oauth_cleanup,
+        "mcpUsageReset": mcp_usage_reset,
     }
 
 
@@ -44,5 +41,4 @@ def sync_api_keys_cache(request: Request) -> dict[str, object]:
     ):
         raise HTTPException(status_code=401, detail="Unauthorized.")
     api_keys_synced = _dev_api_service.sync_cache_with_firestore()
-    mcp_tokens_synced = mcp_token_service.sync_cache_with_firestore()
-    return {"ok": True, "synced": api_keys_synced + mcp_tokens_synced, "apiKeysSynced": api_keys_synced, "mcpTokensSynced": mcp_tokens_synced}
+    return {"ok": True, "synced": api_keys_synced, "apiKeysSynced": api_keys_synced, "mcpTokensSynced": 0}

@@ -158,21 +158,33 @@ export type ApiKeyCreateResponse = ApiKeySummary & {
   rawKey: string;
 };
 
-export type McpTokenSummary = {
-  tokenId: string;
-  projectId: string;
-  workspaceId: string;
-  label?: string | null;
+export type McpAuthorizationSummary = {
+  authorizationId: string;
+  clientId: string;
+  agentName?: string | null;
+  scopes: string[];
   createdAt: string;
+  lastActive?: string | null;
+};
+
+export type McpAuthorizationListResponse = {
+  authorizations: McpAuthorizationSummary[];
   usage: number;
   limitPerMonth: number;
 };
 
-export type McpOAuthRequestSummary = {
-  requestId: string;
+export type McpConsentContext = {
+  txnId: string;
   clientId: string;
   clientName?: string | null;
+  redirectUri: string;
   scopes: string[];
+  user: {
+    displayName?: string | null;
+    username?: string | null;
+    email?: string | null;
+    avatarUrl?: string | null;
+  };
 };
 
 export type McpConnectionInfo = {

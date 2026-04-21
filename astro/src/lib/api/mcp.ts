@@ -1,13 +1,12 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
-import type { McpConnectionInfo, McpOAuthRequestSummary, McpTokenSummary } from "@/lib/types";
+import type { McpAuthorizationListResponse, McpConnectionInfo, McpConsentContext } from "@/lib/types";
 
 const MCP_API_PREFIX = "/mcp";
 
-export async function listProjectMcpTokens(
-  projectId: string,
+export async function listMcpAuthorizations(
   client: ApiClient = apiClient,
-): Promise<McpTokenSummary[]> {
-  return client.get<McpTokenSummary[]>(`/projects/${projectId}/mcp-tokens`);
+): Promise<McpAuthorizationListResponse> {
+  return client.get<McpAuthorizationListResponse>(`${MCP_API_PREFIX}/authorizations`);
 }
 
 export async function getMcpConnectionInfo(
@@ -16,27 +15,31 @@ export async function getMcpConnectionInfo(
   return client.get<McpConnectionInfo>(`${MCP_API_PREFIX}/config`, { auth: "none" });
 }
 
-export async function revokeProjectMcpToken(
-  projectId: string,
-  tokenId: string,
+export async function revokeMcpAuthorization(
+  authorizationId: string,
   client: ApiClient = apiClient,
 ): Promise<void> {
-  await client.delete<{ ok: boolean }>(`/projects/${projectId}/mcp-tokens/${tokenId}`);
+  await client.delete<{ ok: boolean }>(`${MCP_API_PREFIX}/authorizations/${authorizationId}`);
 }
 
-export async function getMcpOAuthRequest(
-  requestId: string,
+export async function getMcpConsentContext(
+  txnId: string,
   client: ApiClient = apiClient,
-): Promise<McpOAuthRequestSummary> {
-  return client.get<McpOAuthRequestSummary>(`${MCP_API_PREFIX}/oauth/request/${requestId}`, { auth: "none" });
-}
-
-export async function completeMcpOAuthRequest(
-  requestId: string,
-  projectId: string,
-  client: ApiClient = apiClient,
-): Promise<{ redirectTo: string }> {
-  return client.post<{ redirectTo: string }>(`${MCP_API_PREFIX}/oauth/complete`, {
-    body: { requestId, projectId },
+): Promise<McpConsentContext> {
+  return client.get<McpConsentContext>(`${MCP_API_PREFIX}/consent/context`, {
+    query: { txn_id: txnId },
   });
+}
+
+export async function submitMcpConsentDecision(
+  txnId: string,
+  action: "approve" | "deny",
+  client: ApiClient = apiClient,
+): Promise<{ redirectTo: string; clientId: string; clientName?: string | null }> {
+  return client.post<{ redirectTo: string; clientId: string; clientName?: string | null }>(
+    `${MCP_API_PREFIX}/consent/decision`,
+    {
+      body: { txnId, action },
+    },
+  );
 }

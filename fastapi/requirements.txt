@@ -11,4 +11,4 @@ Pillow==12.1.1
 redis==4.6.0
 httpx==0.28.1
 groq
-mcp
+fastmcp==3.2.4

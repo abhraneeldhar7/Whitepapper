@@ -4,10 +4,10 @@ import ProjectWorkspaceSkeleton from "@/components/project/ProjectWorkspaceSkele
 import Layout from "@/layouts/Layout.astro";
 import { getProjectApiKey } from "@/lib/api/api_keys";
 import { createApiClient } from "@/lib/api/client";
-import { getMcpConnectionInfo, listProjectMcpTokens } from "@/lib/api/mcp";
+import { getMcpConnectionInfo, listMcpAuthorizations } from "@/lib/api/mcp";
 import { getProjectDashboardData } from "@/lib/api/projects";
 import { getCurrentUser } from "@/lib/api/users";
-import type { ApiKeySummary, McpConnectionInfo, McpTokenSummary, UserDoc } from "@/lib/types";
+import type { ApiKeySummary, McpAuthorizationListResponse, McpConnectionInfo, UserDoc } from "@/lib/types";
 import { isMobileUserAgent } from "@/lib/userAgent";
 
 const { userId, getToken } = Astro.locals.auth();
@@ -24,11 +24,13 @@ if (!token) {
 const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 
 const serverClient = createApiClient(token);
-const [initialUser, projectData, initialApiDoc, initialMcpTokens, mcpConnectionInfo] = await Promise.all([
+const [initialUser, projectData, initialApiDoc, initialMcpAuthorizations, mcpConnectionInfo] = await Promise.all([
   getCurrentUser(serverClient).catch(() => null as UserDoc | null),
   getProjectDashboardData(projectId, serverClient).catch(() => null),
   getProjectApiKey(projectId, serverClient).catch(() => null as ApiKeySummary | null),
-  listProjectMcpTokens(projectId, serverClient).catch(() => [] as McpTokenSummary[]),
+  listMcpAuthorizations(serverClient).catch(
+    () => ({ authorizations: [], usage: 0, limitPerMonth: 0 }) as McpAuthorizationListResponse,
+  ),
   getMcpConnectionInfo(serverClient).catch(() => null as McpConnectionInfo | null),
 ]);
 
@@ -47,7 +49,7 @@ const { project: initialProject, collections: initialCollections, papers: initia
     initialPages={initialPages}
     initialCollections={initialCollections}
     initialApiDoc={initialApiDoc}
-    initialMcpTokens={initialMcpTokens}
+    initialMcpAuthorizations={initialMcpAuthorizations}
     mcpConnectionInfo={mcpConnectionInfo}
     initialUser={initialUser}
     isMobileUA={isMobileUA}

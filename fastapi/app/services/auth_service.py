@@ -47,6 +47,13 @@ def _verify_request_and_get_user_id(request: Request) -> str:
     return user_id
 
 
+def maybe_get_verified_id(request: Request) -> str | None:
+    try:
+        return _verify_request_and_get_user_id(request)
+    except HTTPException:
+        return None
+
+
 async def get_verified_id(
     request: Request,
 ) -> str:
