@@ -713,7 +713,7 @@ Rules:
 
 @lru_cache(maxsize=1)
 def build_mcp_app():
-    return _build_mcp_server().http_app(path="/", transport="http")
+    return _build_mcp_server().http_app(path="/", transport="http", stateless_http=True)
 
 
 def _get_mcp_provider() -> WhitepapperClerkProvider:
