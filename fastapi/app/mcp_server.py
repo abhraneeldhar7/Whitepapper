@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import secrets
 from typing import Any
 from urllib.parse import urlencode, urlparse
 
@@ -743,8 +744,9 @@ def build_mcp_router() -> APIRouter:
     @router.post(f"{MCP_HTTP_PREFIX}/consent/decision")
     async def complete_mcp_consent(
         payload: dict[str, str],
+        request: Request,
         user_id: str = Depends(get_verified_id),
-    ) -> dict[str, Any]:
+    ) -> JSONResponse:
         txn_id = str(payload.get("txnId") or "").strip()
         action = str(payload.get("action") or "").strip().lower()
         if not txn_id:
@@ -765,12 +767,20 @@ def build_mcp_router() -> APIRouter:
             mcp_authorization_service.clear_token_revocation(
                 mcp_authorization_service.authorization_id(user_id, client_id),
             )
+            consent_token = secrets.token_urlsafe(32)
+            txn_model.consent_token = consent_token
+            await provider._transaction_store.put(key=txn_id, value=txn_model, ttl=15 * 60)
             redirect_to = provider._build_upstream_authorize_url(txn_id, txn)
-            return {
-                "redirectTo": redirect_to,
-                "clientId": client_id,
-                "clientName": client_name,
-            }
+            response = _json_no_cache(
+                {
+                    "redirectTo": redirect_to,
+                    "clientId": client_id,
+                    "clientName": client_name,
+                }
+            )
+            # Preserve FastMCP confused-deputy protection for custom consent UI.
+            provider._set_consent_binding_cookie(request, response, txn_id, consent_token)
+            return response
 
         callback_params = {
             "error": "access_denied",
@@ -778,11 +788,13 @@ def build_mcp_router() -> APIRouter:
         }
         redirect_uri = str(txn.get("client_redirect_uri") or "").strip()
         separator = "&" if "?" in redirect_uri else "?"
-        return {
-            "redirectTo": f"{redirect_uri}{separator}{urlencode(callback_params)}",
-            "clientId": client_id,
-            "clientName": client_name,
-        }
+        return _json_no_cache(
+            {
+                "redirectTo": f"{redirect_uri}{separator}{urlencode(callback_params)}",
+                "clientId": client_id,
+                "clientName": client_name,
+            }
+        )
 
     @router.get(f"{MCP_HTTP_PREFIX}/authorizations")
     async def list_mcp_authorizations(user_id: str = Depends(get_verified_id)) -> dict[str, Any]:

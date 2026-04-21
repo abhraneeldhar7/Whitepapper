@@ -169,6 +169,7 @@ function createRequestClient(resolveToken: TokenResolver): ApiClient {
       method,
       headers: requestHeaders,
       body: requestBody,
+      credentials: "include",
     });
 
     if (!response.ok) {
