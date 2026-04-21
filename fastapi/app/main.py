@@ -51,8 +51,18 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "authorization",
+        "content-type",
+        "mcp-protocol-version",
+        "mcp-session-id",
+        "last-event-id",
+    ],
+    expose_headers=[
+        "mcp-session-id",
+        "www-authenticate",
+    ],
 )
 app.add_middleware(McpAuthChallengeCompatibilityMiddleware)
 
