@@ -376,7 +376,6 @@ Rules:
 - Do not regenerate SEO unless explicitly requested.
 """.strip(),
         auth=provider,
-        stateless_http=True,
         middleware=[WhitepapperAuthorizationMiddleware(provider)],
     )
 
