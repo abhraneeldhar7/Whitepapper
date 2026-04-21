@@ -279,41 +279,17 @@ Whitepapper is a markdown-first CMS. All content is written in markdown.
 3. Read content_guidelines if present. It contains explicit writing rules for this project.
 4. Read every collection name and description. These define where content is routed.
 5. Read existing paper titles to avoid creating duplicates.
-
-## Routing rules — where to put content
-- Match content to a collection by reading the collection description.
-- Prefer existing collections first. Treat collection names case-insensitively and trim whitespace before deciding a collection is missing.
-- Use get_collection to resolve by id/slug/name before attempting create_collection.
-- If the content clearly fits an existing collection, use that collection_id.
-- If no collection fits, call create_collection first with a one-sentence description, then create the paper inside it.
 - Standalone papers (no collection_id) are for project-root content only: changelog, index page, overview, landing copy.
 - Never guess a collection_id. Always derive it from get_project_context output.
-
-## Writing rules — all content
-- All paper body content is markdown. Use proper markdown: headers, code blocks, lists, bold, links.
-- Never write placeholder content. If you do not have enough information to write a section, ask the user before creating.
+- Do not use em dashes (—). Prefer commas or a double hyphen (`--`) instead.
+- Do not append "Last updated" timestamps or similar freshness lines at the end of a page; the platform already records and displays update dates.
+- The page title is the H1. Do not add additional H1 headings in the content body; use H2/H3 for section headings.
 - Do not truncate. Write the full content in one create_paper or update_paper call.
 - Titles should be clear and descriptive, not clever.
-
-## SEO rules — always fill these
-- seo_title: maximum 60 characters. Must contain the primary keyword. Do not truncate the title with ellipsis.
 - seo_description: maximum 155 characters. One to two sentences. Describes the page for search engines. No clickbait.
 - slug: lowercase, hyphen-separated, no special characters, derived from the title. Example: "getting-started-with-payments-api".
-
-## Efficiency rules — do not waste tool calls
-- Call get_project_context exactly once per session.
-- Call get_paper only when you need the full markdown body of a specific paper. Do not call it to check existence.
-- When creating multiple papers in the same collection, create the collection once then batch the paper creates.
-- Never call create_collection more than once for the same normalized name in a session.
-- Do not call update_paper immediately after create_paper unless the user asks for a change.
 - Do not call regenerate_paper_seo unless the user explicitly asks for SEO regeneration.
 - Do not confirm each action with the user unless they ask for confirmation mode.
-
-## Error handling rules
-- If create_paper returns slug_taken, generate a new unique slug and retry once.
-- If create_paper returns collection_not_found, call get_project_context again to refresh, then retry.
-- If create_collection is called for an existing normalized name, treat the returned collection as success and continue without retrying create_collection.
-- If create_collection fails (for example already_exists or limit_reached), do not retry blindly. Refresh context once, select an existing matching collection if present, or report the blocker.
 - If get_paper returns not_found, do not retry. Tell the user the paper does not exist.
 - Never invent a project_id, paper_id, or collection_id. All IDs come from tool responses only.
 """,
