@@ -17,6 +17,7 @@ init_redis_client(settings)
 _public_api_url = str(settings.public_api_url or "").strip().rstrip("/")
 _mcp_resource_url = f"{_public_api_url}/mcp/"
 _mcp_authorization_uri = f"{_mcp_resource_url.rstrip('/')}/authorize"
+mcp_http_app = build_mcp_app()
 
 
 class McpAuthChallengeCompatibilityMiddleware(BaseHTTPMiddleware):
@@ -44,7 +45,7 @@ class McpAuthChallengeCompatibilityMiddleware(BaseHTTPMiddleware):
         return response
 
 
-app = FastAPI(title=settings.app_name)
+app = FastAPI(title=settings.app_name, lifespan=mcp_http_app.lifespan)
 cors_origins = parse_csv(settings.cors_origins)
 
 app.add_middleware(
@@ -69,4 +70,4 @@ async def no_cache_mcp(request, call_next):
 
 app.include_router(api_router)
 app.include_router(build_mcp_router())
-app.mount("/mcp", build_mcp_app())
+app.mount("/mcp", mcp_http_app)

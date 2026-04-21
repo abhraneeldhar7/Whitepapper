@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import logging
 import secrets
 from typing import Any
 from urllib.parse import urlencode, urlparse
@@ -26,6 +27,7 @@ from app.services.user_service import user_service
 
 MCP_HTTP_PREFIX = "/mcp"
 MCP_SCOPES = ["openid", "email", "profile"]
+logger = logging.getLogger(__name__)
 
 
 def _settings():
@@ -292,28 +294,51 @@ class WhitepapperAuthorizationMiddleware(Middleware):
             return await call_next(context)
 
         user_id = str(token.claims.get("sub") or "").strip()
-        client_id = str(token.client_id or token.claims.get("azp") or token.claims.get("client_id") or "").strip()
-        authorization_id = mcp_authorization_service.authorization_id(user_id, client_id)
+        raw_aud = token.claims.get("aud")
+        aud_value = raw_aud[0] if isinstance(raw_aud, list) and raw_aud else raw_aud
+        client_id = str(
+            token.client_id
+            or token.claims.get("azp")
+            or token.claims.get("client_id")
+            or aud_value
+            or ""
+        ).strip()
         token_hash = _token_hash_from_access_token()
-        if not user_id or not client_id:
+        if not user_id:
             raise AuthorizationError("Missing MCP authorization context.")
-        if mcp_authorization_service.is_token_revoked(authorization_id, token_hash):
-            raise AuthorizationError("This MCP connection has been revoked. Reconnect to continue.")
-        if not mcp_authorization_service.is_user_usage_within_limit(user_id):
-            raise AuthorizationError("Monthly MCP usage limit reached for this Whitepapper account.")
+        if not client_id:
+            raise AuthorizationError("Missing MCP authorization context.")
 
-        client_name = await _resolve_client_name(self.provider, client_id)
-        mcp_authorization_service.upsert_authorization(
-            user_id=user_id,
-            client_id=client_id,
-            agent_name=client_name,
-            scopes=list(token.scopes or []),
-            token_hash=token_hash,
-        )
+        authorization_id = mcp_authorization_service.authorization_id(user_id, client_id)
+        try:
+            if mcp_authorization_service.is_token_revoked(authorization_id, token_hash):
+                raise AuthorizationError("This MCP connection has been revoked. Reconnect to continue.")
+            if not mcp_authorization_service.is_user_usage_within_limit(user_id):
+                raise AuthorizationError("Monthly MCP usage limit reached for this Whitepapper account.")
+
+            client_name = await _resolve_client_name(self.provider, client_id)
+            mcp_authorization_service.upsert_authorization(
+                user_id=user_id,
+                client_id=client_id,
+                agent_name=client_name,
+                scopes=list(token.scopes or []),
+                token_hash=token_hash,
+            )
+        except AuthorizationError:
+            raise
+        except Exception:
+            logger.exception(
+                "MCP authorization state sync failed for user_id=%s client_id=%s",
+                user_id,
+                client_id,
+            )
 
         result = await call_next(context)
         if context.method not in {"initialize", "notifications/initialized", "ping"}:
-            mcp_authorization_service.increment_user_usage(user_id)
+            try:
+                mcp_authorization_service.increment_user_usage(user_id)
+            except Exception:
+                logger.exception("Failed to increment MCP usage for user_id=%s", user_id)
         return result
 
 
