@@ -109,7 +109,7 @@ function resolveFallbackMcpConnectionInfo(): McpConnectionInfo | null {
     return null;
   }
 
-  const endpointUrl = `${fallbackBaseUrl}/mcp`;
+  const endpointUrl = `${fallbackBaseUrl}/mcp/`;
   return {
     serverName: "whitepapper",
     transport: "http",
