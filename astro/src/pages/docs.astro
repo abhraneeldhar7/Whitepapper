@@ -82,7 +82,10 @@ Astro.response.headers.set(
 >
   <div class="pb-5 md:pb-10 px-5">
     <div class="flex gap-10 justify-between">
-      <DocsSidebar navSections={docsNavSections} currentPath="/docs" />
+
+      <div>
+        <DocsSidebar navSections={docsNavSections} currentPath="/docs" />
+      </div>
 
       <main class="w-full pt-30 md:pt-35" aria-label="Documentation home">
         <div

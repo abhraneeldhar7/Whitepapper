@@ -1,5 +1,5 @@
 import { LockIcon } from "lucide-react";
-import type { CollectionDoc, ProjectDoc } from "@/lib/types";
+import type { CollectionDoc, ProjectDoc } from "@/lib/entities";
 import FolderNotes from "@/components/folderComponent";
 
 type ProjectCardProps = {
@@ -31,3 +31,4 @@ export default function ProjectCard({
         </div>
     );
 }
+

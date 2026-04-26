@@ -7,7 +7,9 @@ import { createApiClient } from "@/lib/api/client";
 import { getMcpConnectionInfo, listMcpAuthorizations } from "@/lib/api/mcp";
 import { getProjectDashboardData } from "@/lib/api/projects";
 import { getCurrentUser } from "@/lib/api/users";
-import type { ApiKeySummary, McpAuthorizationListResponse, McpConnectionInfo, UserDoc } from "@/lib/types";
+import type { ApiKeySummary } from "@/lib/api/api_keys";
+import type { McpAuthorizationListResponse, McpConnectionInfo } from "@/lib/api/mcp";
+import type { UserDoc } from "@/lib/entities";
 import { isMobileUserAgent } from "@/lib/userAgent";
 
 const { userId, getToken } = Astro.locals.auth();
@@ -57,3 +59,4 @@ const { project: initialProject, collections: initialCollections, papers: initia
     <ProjectWorkspaceSkeleton slot="fallback" />
   </ProjectWorkspace>
 </Layout>
+

@@ -1,11 +1,10 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
 import type {
   DevtoDistribution,
-  DistributionPublishInput,
-  DistributionPublishResult,
   HashnodeDistribution,
   UserDoc,
-} from "@/lib/types";
+  PaperDoc,
+} from "@/lib/entities";
 
 export interface HashnodeDistributionUpsertInput {
   accessToken: string;
@@ -16,6 +15,18 @@ export interface DevtoDistributionUpsertInput {
   accessToken: string;
   storeInCloud: boolean;
 }
+
+export type DistributionPublishInput = {
+  paperId: string;
+  payload?: PaperDoc | null;
+  accessToken?: string | null;
+};
+
+export type DistributionPublishResult = {
+  platform: "hashnode" | "devto";
+  postId: string;
+  url?: string | null;
+};
 
 export async function getHashnodeDistribution(client: ApiClient = apiClient): Promise<HashnodeDistribution | null> {
   return client.get<HashnodeDistribution | null>("/distributions/hashnode");

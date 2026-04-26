@@ -3,7 +3,7 @@ import SettingsPage from "@/components/settings/SettingsPage";
 import Layout from "@/layouts/Layout.astro";
 import { createApiClient } from "@/lib/api/client";
 import { getCurrentUser } from "@/lib/api/users";
-import type { UserDoc } from "@/lib/types";
+import type { UserDoc } from "@/lib/entities";
 
 const { userId, getToken } = Astro.locals.auth();
 
@@ -26,3 +26,4 @@ if (!initialUser) {
 <Layout showSiteNav={false} noindex={true}>
   <SettingsPage client:load initialUser={initialUser} />
 </Layout>
+

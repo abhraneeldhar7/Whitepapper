@@ -1,7 +1,7 @@
 import PaperCardComponent from "@/components/paperCardComponent";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import type { CollectionDoc, PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
+import type { CollectionDoc, PaperDoc, ProjectDoc, UserDoc } from "@/lib/entities";
 import ProjectCollectionsViewer from "./ProjectCollectionsViewer";
 import MarkdownRender from "../ui/markdown-render/markdown-render";
 
@@ -120,3 +120,4 @@ export default function PublicProjectPage({
     </main>
   );
 }
+

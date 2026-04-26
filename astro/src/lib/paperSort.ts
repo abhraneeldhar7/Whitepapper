@@ -1,4 +1,4 @@
-import type { PaperDoc } from "@/lib/types";
+import type { PaperDoc } from "@/lib/entities";
 
 function toTimestamp(value?: string | null): number {
   if (!value) {
@@ -17,3 +17,4 @@ export function sortPapersLatestFirst(papers: PaperDoc[]): PaperDoc[] {
     return toTimestamp(b.createdAt) - toTimestamp(a.createdAt);
   });
 }
+

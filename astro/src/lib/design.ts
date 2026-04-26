@@ -1,1 +1,2 @@
 export const MAX_LANDING_PAGE_WIDTH = 1250;
+export const MAX_COTNENT_PAPER_WIDTH = 700;

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { uploadProfileImage } from "@/lib/api/uploads";
 import { updateCurrentUser } from "@/lib/api/users";
 import { MAX_PROFILE_IMAGE_HEIGHT, MAX_PROFILE_IMAGE_WIDTH } from "@/lib/constants";
-import type { UserDoc } from "@/lib/types";
+import type { UserDoc } from "@/lib/entities";
 import { compressImage, isImageFile } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -212,3 +212,4 @@ export default function SettingsPage({ initialUser }: SettingsPageProps) {
     </div>
   );
 }
+

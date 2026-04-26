@@ -1,6 +1,6 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
 import { sortPapersLatestFirst } from "@/lib/paperSort";
-import type { UserDoc, ProjectDoc, PaperDoc } from "@/lib/types";
+import type { UserDoc, ProjectDoc, PaperDoc } from "@/lib/entities";
 
 export async function getCurrentUser(client: ApiClient = apiClient): Promise<UserDoc> {
   return client.get<UserDoc>("/users/me");

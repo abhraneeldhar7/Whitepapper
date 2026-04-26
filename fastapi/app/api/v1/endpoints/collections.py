@@ -1,14 +1,34 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
 
 from app.services.auth_service import get_verified_id
-from app.schemas.entities import CollectionCreate, CollectionDoc, CollectionUpdate, CollectionVisibilityToggle, PaperDoc
+from app.schemas.entities import CollectionDoc, PaperDoc
 from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
 
 router = APIRouter(tags=["collections"])
+
+
+class CollectionCreateRequest(BaseModel):
+    projectId: str
+    name: str = Field(min_length=1, max_length=120)
+    slug: str | None = Field(default=None, min_length=2, max_length=80)
+    description: str | None = None
+    isPublic: bool | None = None
+
+
+class CollectionUpdateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    title: str | None = Field(default=None, min_length=1, max_length=120)
+    slug: str | None = Field(default=None, min_length=2, max_length=80)
+    description: str | None = None
+
+
+class CollectionVisibilityToggleRequest(BaseModel):
+    isPublic: bool
 
 
 def _to_timestamp(value: object) -> float:
@@ -76,7 +96,7 @@ def check_collection_slug_available(
 
 
 @router.post("/collections", response_model=CollectionDoc, status_code=201)
-def create_collection(payload: CollectionCreate, user_id: str = Depends(get_verified_id)) -> CollectionDoc:
+def create_collection(payload: CollectionCreateRequest, user_id: str = Depends(get_verified_id)) -> CollectionDoc:
     project = projects_service.get_by_id(payload.projectId)
     if project.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
@@ -86,7 +106,7 @@ def create_collection(payload: CollectionCreate, user_id: str = Depends(get_veri
 @router.patch("/collections/{collection_id}", response_model=CollectionDoc)
 def patch_collection(
     collection_id: str,
-    payload: CollectionUpdate,
+    payload: CollectionUpdateRequest,
     user_id: str = Depends(get_verified_id),
 ) -> CollectionDoc:
     collection = collections_service.get_by_id(collection_id)
@@ -98,7 +118,7 @@ def patch_collection(
 @router.patch("/collections/{collection_id}/visibility", response_model=CollectionDoc)
 def patch_collection_visibility(
     collection_id: str,
-    payload: CollectionVisibilityToggle,
+    payload: CollectionVisibilityToggleRequest,
     user_id: str = Depends(get_verified_id),
 ) -> CollectionDoc:
     collection = collections_service.get_by_id(collection_id)

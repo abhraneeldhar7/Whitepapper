@@ -2,7 +2,7 @@
 import { useState } from "react"
 import hashnode_logo from "../../assets/logos/hashnodeLogo.png"
 import { saveHashnodeDistribution, revokeHashnodeDistribution } from "@/lib/api/distributions"
-import type { UserDoc } from "@/lib/types"
+import type { UserDoc } from "@/lib/entities"
 import { toast } from "sonner"
 import { Button } from "../ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog"
@@ -184,3 +184,4 @@ export function HashnodeDialog({
         </DialogContent>
     </Dialog>)
 }
+

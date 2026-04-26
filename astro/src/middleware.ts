@@ -1,19 +1,26 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/astro/server";
 import type { APIContext, MiddlewareNext } from "astro";
 
-const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/write(.*)", "/settings(.*)"]);
+const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/write(.*)", "/settings(.*)", "/mcp/connect(.*)"]);
 const isLoginRoute = createRouteMatcher(["/login"]);
-const isMcpConnectRoute = createRouteMatcher(["/mcp/connect(.*)"]);
-const isNoIndexRoute = createRouteMatcher([
-  "/dashboard(.*)",
-  "/write(.*)",
-  "/settings(.*)",
-  "/login(.*)",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/sso-callback(.*)",
-  "/unauthorized(.*)",
-]);
+
+function resolveSafeRedirectTarget(requestUrl: string): string {
+  const currentUrl = new URL(requestUrl);
+  const raw = currentUrl.searchParams.get("redirect_url");
+  if (!raw) {
+    return "/dashboard";
+  }
+
+  try {
+    const parsed = new URL(raw, currentUrl.origin);
+    if (parsed.origin !== currentUrl.origin) {
+      return "/dashboard";
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return "/dashboard";
+  }
+}
 
 const clerkHandler = clerkMiddleware(async (auth, context, next) => {
   const { isAuthenticated } = auth();
@@ -26,7 +33,7 @@ const clerkHandler = clerkMiddleware(async (auth, context, next) => {
   }
 
   if (isAuthenticated && isLoginRoute(context.request)) {
-    const url = new URL("/dashboard", context.request.url);
+    const url = new URL(resolveSafeRedirectTarget(context.request.url), context.request.url);
     const redirectResponse = Response.redirect(url, 302);
     return redirectResponse;
   }
@@ -37,10 +44,5 @@ const clerkHandler = clerkMiddleware(async (auth, context, next) => {
 });
 
 export const onRequest = async (context: APIContext, next: MiddlewareNext) => {
-  // Avoid Clerk handshake loops in MCP OAuth browser popups/proxy contexts.
-  if (isMcpConnectRoute(context.request)) {
-    return next();
-  }
-
   return clerkHandler(context, next);
 };

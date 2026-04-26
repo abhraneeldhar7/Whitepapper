@@ -1,5 +1,5 @@
 import WriteEditor from "@/components/write/WriteEditor";
-import type { PaperDoc, UserDoc } from "@/lib/types";
+import type { PaperDoc, UserDoc } from "@/lib/entities";
 
 type WriteEditorRootProps = {
   initialPaper: PaperDoc;
@@ -18,3 +18,4 @@ export default function WriteEditorRoot({ initialPaper, initialUser, integration
     />
   );
 }
+

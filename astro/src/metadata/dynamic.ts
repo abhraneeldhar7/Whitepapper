@@ -1,4 +1,4 @@
-import type { PaperDoc, PaperMetadata, ProjectDoc } from "@/lib/types";
+import type { PaperDoc, PaperMetadata, ProjectDoc } from "@/lib/entities";
 import type { PageSeoConfig } from "@/metadata/pages";
 import {
   absoluteUrl,
@@ -406,10 +406,13 @@ export function buildPaperSeoConfig(metadata: PaperMetadata, options: {
     articleModifiedTime: metadata.ogModifiedTime,
     articleAuthor: metadata.ogAuthorUrl,
     articleTags: metadata.ogTags,
-    jsonLd: [
-      buildPaperJsonLd(metadata, options.schemaType),
-      buildPaperBreadcrumbJsonLd(options.breadcrumbItems),
-    ],
+    jsonLd: (function() {
+      const stored = (metadata as any)?.jsonld;
+      if (stored) {
+        return Array.isArray(stored) ? stored : [stored];
+      }
+      return [buildPaperJsonLd(metadata, options.schemaType), buildPaperBreadcrumbJsonLd(options.breadcrumbItems)];
+    })(),
   };
 }
 

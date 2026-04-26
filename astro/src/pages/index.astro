@@ -3,29 +3,8 @@ import Layout from "../layouts/Layout.astro";
 import { Image } from "astro:assets";
 
 import HeroDashboardLight from "@/assets/landingPage/hero_light.png";
-import MetatagsEditorLight from "@/assets/landingPage/metatags_editor_light.png";
 import BlueBgPattern from "@/assets/landingPage/blueBgPattern.jpg";
-import LandingArticleList from "@/components/landing/LandingArticleList.astro";
-
-import IntegrationsSection from "@/components/integrations-4";
 import FAQs from "@/components/faqs-2";
-
-import BlogsPageImg from "@/assets/landingPage/blogsPage.png";
-
-import logoHandImg from "@/assets/landingPage/logo_hand.png";
-
-const featuredArticles = [
-	{
-		title: "How to Write Content That AI Assistants Actually Quote",
-		readTime: "6 min read",
-		href: "/abhraneeldhar7/paper-20491f39-fcff-4683-9c01-d856dab87b9f",
-	},
-	{
-		title: "How to Make Your Brand Recognizable to AI Systems",
-		readTime: "1 min read",
-		href: "/abhraneeldhar7/paper-5846b146-e7a0-424f-8eff-2818b695fe1e",
-	},
-];
 
 const homeFaqs = [
 	{
@@ -42,48 +21,18 @@ const homeFaqs = [
 	},
 ];
 
-const homeExploreLinks = [
-	{
-		href: "/features",
-		title: "Features",
-		description:
-			"See the core product pages for the Content API, distribution flow, metadata workflow, and public pages.",
-	},
-	{
-		href: "/use-cases",
-		title: "Use Cases",
-		description:
-			"Explore how Whitepapper fits developer blogs, portfolio frontends, and docs-plus-updates workflows.",
-	},
-	{
-		href: "/pricing",
-		title: "Pricing",
-		description:
-			"Review the current free plan and the machine-readable pricing file published for AI agents.",
-	},
-	{
-		href: "/compare/whitepapper-vs-ghost",
-		title: "Compare",
-		description:
-			"Compare Whitepapper with Ghost, Hashnode, and a Dev.to-only workflow without leaving the site.",
-	},
-	{
-		href: "/glossary/llms-txt",
-		title: "Glossary",
-		description:
-			"Read plain-English definitions for llms.txt, canonical URLs, content APIs, and programmatic SEO.",
-	},
-];
-
 import { MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
 import {
 	ArrowRight,
-	BookMarked,
 	BookMarkedIcon,
 	BookmarkIcon,
 	BotIcon,
+	FolderIcon,
 	GithubIcon,
+	PaperclipIcon,
+	ScrollTextIcon,
 	SearchCheckIcon,
+	SendIcon,
 	SquareMIcon,
 	UnplugIcon,
 	WorkflowIcon,
@@ -142,58 +91,108 @@ const featuresDivs = [
 	},
 ];
 
+import HeroFloatingIcon from "@/components/landing/heroFloatingIcons";
+
 import worldmapDots from "@/assets/landingPage/worldmapDots.png";
 import npmLogo from "@/assets/logos/npm-logo.svg";
+import MorphingText from "@/components/ui/morphing-text";
 import { Button } from "@/components/ui/button";
+import Integrations4 from "@/components/integrations-4.astro";
+import { ApiShowcase } from "@/components/apiShowcase";
+
+import vscode_mcp from "@/assets/landingPage/vscode_mcp.png";
+import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 ---
 
 <Layout reserveNavSpace={false}>
-	<main class="relative mb-20" aria-label="Whitepapper home">
+	<main
+		class="relative font-[Satoshi] font-[420]"
+		aria-label="Whitepapper home"
+	>
 		<section
-			class="relative flex flex-col items-start justify-start pt-40 md:pt-50 h-full overflow-hidden px-5 md:px-15"
+			class="relative flex flex-col w-full h-full overflow-hidden px-5 md:px-15"
 			aria-labelledby="home-hero-title"
 		>
 			<div
-				class="pb-[50px] mx-auto w-full"
+				class="pt-45 pb-20 md:pb-30 relative mx-auto w-full"
 				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
 			>
-				<div class="mx-auto w-full"></div>
-				<div
-					class="absolute left-[-80%] top-[3%] z-[-1] h-[10px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-30%] md:top-[-2%]"
-					aria-hidden="true"
-				>
-				</div>
-				<div
-					class="absolute left-[-45%] top-[0%] z-[-1] h-[8px] w-[700px] md:w-[1200px] rotate-[40deg] rounded-[50%] bg-foreground blur-[40px] dark:blur-[45px] md:left-[-50%] md:top-[-3%]"
-					aria-hidden="true"
-				>
-				</div>
-				<h1
-					id="home-hero-title"
-					class="heroText text-[30px] md:text-[45px] flex md:flex-row flex-col md:gap-4 font-[500]"
-				>
-					Most powerful <br />Content managemenent system
-				</h1>
+				<!-- <AnimatedThemeToggler client:load /> -->
+				<HeroFloatingIcon
+					Icon={PaperclipIcon}
+					className="bg-[#21d2f7]/10 text-[#21d2f7] absolute top-[8%] md:top-[8%] left-[10%] md:left-[7%] rotate-[-12deg]"
+				/>
+				<HeroFloatingIcon
+					Icon={SendIcon}
+					className="bg-[#f72523]/15 text-[#f72523] absolute top-[30%] md:top-[24%] left-[-14%] md:left-[-4%] rotate-[15deg] scale-[0.8]"
+				/>
+				<HeroFloatingIcon
+					Icon={ScrollTextIcon}
+					className="bg-[#21f79c]/10 text-[#21f79c] absolute top-[54%] md:top-[36%] left-[12%] md:left-[14%] rotate-[-6deg]"
+				/>
+				<HeroFloatingIcon
+					Icon={WorkflowIcon}
+					className="bg-[#fc4fb0]/10 text-[#fc4fb0] absolute top-[12%] md:top-[6%] right-[4%] md:right-[15%] rotate-[16deg]"
+				/>
+				<HeroFloatingIcon
+					Icon={UnplugIcon}
+					className="bg-[#9223f7]/10 text-[#9223f7] absolute top-[25%] md:top-[18%] right-[-10%] md:right-[-1%] rotate-[8deg]"
+				/>
+				<HeroFloatingIcon
+					Icon={FolderIcon}
+					className="bg-[#f79123]/10 text-[#f79123] absolute top-[47%] md:top-[30%] right-[10%] md:right-[16%] rotate-[-5deg] scale-[0.8]"
+				/>
 
-				<div class="my-4 space-y-2 text-muted-foreground md:w-[700px]">
-					<p class="heroText" style="animation-delay: 0.25s;"></p>
+				<div class="flex flex-col w-full items-center">
+					<h1
+						class="text-center text-[50px] md:text-[85px] font-[600]"
+					>
+						Ship content.
+					</h1>
+
+					<div
+						class="mt-2 text-center text-muted-foreground leading-[1.6em] text-[20px] md:text-[22px] max-w-[500px]"
+					>
+						<span>
+							The CMS that handles publishing, SEO, and
+							distribution
+						</span>
+						<span>for your</span>
+						<span class="hidden"
+							>websites, projects, business, blogs, docs</span
+						>
+						<MorphingText
+							client:load
+							texts={[
+								"websites",
+								"projects",
+								"business",
+								"blogs",
+								"docs",
+							]}
+						/>
+					</div>
+
+					<Button className="my-6 md:my-10" size="lg"
+						>Start publishing</Button
+					>
 				</div>
 
 				<div
-					class="heroText mt-8 relative p-3 md:p-10 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
+					class="heroText mt-2 md:mt-4 relative p-4 md:p-14 overflow-hidden md:rounded-[30px] rounded-[20px] h-full"
 					style="animation-delay: 0.3s; animation-duration: 0.8s;"
 				>
 					<Image
 						src={BlueBgPattern}
 						alt="Green pattern background"
-						class="absolute left-0 top-0 z-[-1] h-full w-full"
+						class="absolute object-cover left-0 top-0 z-[-1] h-full w-full"
 						loading="eager"
 						quality={60}
 					/>
 					<Image
 						src={HeroDashboardLight}
 						alt="Whitepapper dashboard preview"
-						class="h-fit w-full rounded-[10px]"
+						class="h-full rounded-[10px] w-full"
 						loading="eager"
 						fetchpriority="high"
 					/>
@@ -212,92 +211,245 @@ import { Button } from "@/components/ui/button";
 			</div>
 		</section>
 
-		<div class="px-5 md:px-15">
-			<div
-				class="md:mt-12 md:mb-27 mt-4 mb-17 grid grid-cols-2 md:flex w-full mx-auto gap-3 md:justify-between"
-				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
-			>
-				{
-					featuresDivs.slice(0, 4).map((item) => (
-						<div class="flex flex-col flex-1 gap-2 p-3 transition-all duration-300 hover:bg-card">
-							<div class="flex items-center gap-3">
-								<item.icon size={19} />
-								<h2 class="text-[17px] font-[450]">
-									{item.title}
-								</h2>
-							</div>
-							<p class="text-sm text-foreground">
-								{item.description}
-							</p>
-						</div>
-					))
-				}
-			</div>
-		</div>
-
-		<!-- <TweetStack client:load/> -->
+		<!-- <div
+			class="w-full text-[15px] text-center bg-foreground text-background px-4 py-3 sticky top-[50px] z-[5]"
+		>
+			Whitepapper is <a
+				class="underline"
+				href="https://github.com/abhraneeldhar7/Whitepapper"
+				target="_blank">open-sourced</a
+			> for my schizo folks
+		</div> -->
 
 		<section
-			class="mx-auto flex w-full flex-col px-5 md:px-15"
-			aria-label="Product highlights"
+			class="px-5 md:px-15 mt-20 md:mt-30"
+			aria-label="Rich text editor"
 		>
 			<div
+				class="mx-auto w-full"
 				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
-				class="flex w-full mx-auto flex-col-reverse gap-6 md:flex-row md:items-start md:gap-20"
 			>
-				<div class="flex-1">
+				<div
+					class="flex md:flex-row flex-col gap-1 justify-between items-start"
+				>
+					<h2 class="md:flex-1 text-[34px] md:text-[40px] font-[500]">
+						Rich content editor
+					</h2>
 					<div
-						class="relative h-full w-full overflow-hidden rounded-[18px] md:rounded-[36px] p-3 md:p-8"
+						class="md:flex-1 md:text-[19px] md:mt-3 md:text-right flex flex-col items-end gap-2"
 					>
-						<Image
-							src={BlueBgPattern}
-							alt="Green pattern background"
-							class="absolute left-0 top-0 z-[-1] h-full w-full"
-							loading="lazy"
-							quality={70}
-							decoding="async"
-						/>
-						<Image
-							src={MetatagsEditorLight}
-							alt="Editor preview"
-							class="h-full w-full object-cover rounded-[8px] md:rounded-[12px]"
-							loading="lazy"
-							decoding="async"
-						/>
+						<p class="text-muted-foreground">
+							With a built-in wysiwyg editor, you can write and
+							format your content without <a class="underline"
+								>leaving</a
+							> the platform. Focus on your words, not on markdown syntax
+							or external tools.
+						</p>
+						<a class="flex items-center gap-2"
+							>link stuff <ArrowRight className="size-4" />
+						</a>
 					</div>
-
-					<LandingArticleList
-						items={featuredArticles}
-						className="md:hidden mt-10"
-					/>
 				</div>
 
-				<div class="md:flex-1">
-					<div>
-						<h2 class="text-[32px] font-[500]">
-							Automated SEO tags
-						</h2>
-
-						<p class="mt-2 text-muted-foreground">
-							Every paper you publish on Whitepapper gets their
-							metatags, JSON-LD and open graph image
-							automatically. No manual hassle, no copy-pasting.<br
-							/> Your content is SEO ready the moment you hit publish.
-						</p>
-					</div>
-					<LandingArticleList
-						items={featuredArticles}
-						className="mt-65 hidden md:block"
+				<div
+					class="heroText mt-8 md:mt-15 relative p-4 md:p-14 overflow-hidden md:rounded-[30px] rounded-[20px] h-full"
+					style="animation-delay: 0.3s; animation-duration: 0.8s;"
+				>
+					<Image
+						src={BlueBgPattern}
+						alt="Green pattern background"
+						class="absolute object-cover left-0 top-0 z-[-1] h-full w-full"
+						loading="eager"
+						quality={60}
+					/>
+					<Image
+						src={HeroDashboardLight}
+						alt="Whitepapper dashboard preview"
+						class="h-full rounded-[10px] w-full"
+						loading="eager"
+						fetchpriority="high"
 					/>
 				</div>
 			</div>
+		</section>
 
+		<section
+			class="px-5 md:px-15 mt-30 md:mt-60"
+			aria-label="Socials distribution pipeline"
+		>
+			<div
+				class="mx-auto w-full max-w-[600px] flex flex-col gap-20 md:gap-25 md:justify-between"
+			>
+				<div>
+					<h2 class="text-[34px] md:text-[40px] font-[500]">
+						Write once dstribute everywhere.
+					</h2>
+					<div class="md:text-[19px] mt-3">
+						<p class="text-muted-foreground">
+							With a built-in wysiwyg editor, you can write and
+							format your content without <a class="underline"
+								>leaving</a
+							> the platform. Focus on your words, not on markdown syntax
+							or external tools.
+						</p>
+					</div>
+				</div>
+
+				<Integrations4 hideText />
+
+				<div class="flex flex-col gap-5">
+					<div
+						class="flex md:flex-row flex-col-reverse gap-4 md:gap-10 border-b pb-5"
+					>
+						<p class="w-[200px] font-[500] text-[15px] md:pt-1">
+							4 min read
+						</p>
+						<div>
+							<h3 class="text-[20px]">
+								Lorem, ipsum dolor adipisicing elit. Aliquam,
+								ex.
+							</h3>
+							<p class="text-[15px] text-muted-foreground mt-2">
+								Lorem ipsum dolor sit, amet consectetur
+								adipisicing elit. Tempore omnis veritatis ipsum
+								maiores.
+							</p>
+						</div>
+					</div>
+					<div
+						class="flex md:flex-row flex-col-reverse gap-4 md:gap-10 border-b pb-5"
+					>
+						<p class="w-[200px] font-[500] text-[15px] md:pt-1">
+							4 min read
+						</p>
+						<div>
+							<h3 class="text-[20px]">
+								Lorem, ipsum dolor adipisicing elit. Aliquam,
+								ex.
+							</h3>
+							<p class="text-[15px] text-muted-foreground mt-2">
+								Lorem ipsum dolor sit, amet consectetur
+								adipisicing elit. Tempore omnis veritatis ipsum
+								maiores.
+							</p>
+						</div>
+					</div>
+					<div
+						class="flex md:flex-row flex-col-reverse gap-4 md:gap-10"
+					>
+						<p class="w-[200px] font-[500] text-[15px] md:pt-1">
+							4 min read
+						</p>
+						<div>
+							<h3 class="text-[20px]">
+								Lorem, ipsum dolor adipisicing elit. Aliquam,
+								ex.
+							</h3>
+							<p class="text-[15px] text-muted-foreground mt-2">
+								Lorem ipsum dolor sit, amet consectetur
+								adipisicing elit. Tempore omnis veritatis ipsum
+								maiores.
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="px-5 md:px-15 mt-30 md:mt-60">
+			<div
+				class="w-full mx-auto flex md:flex-row flex-col gap-7 md:gap-20"
+				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+			>
+				<div class="md:flex-1 shrink-0">
+					<h2 class="text-[34px] md:text-[40px] font-[500]">
+						Intaegrate your websites with Dev API
+					</h2>
+					<div class="md:text-[19px] mt-4">
+						<p class="text-muted-foreground">
+							With a built-in wysiwyg editor, you can write and
+							format your content without the platform. Focus on
+							your words, not on markdown syntax or external
+							tools.
+						</p>
+						<p class="leading-[2.1em] mt-5">
+							Whitepapper
+
+							<a
+								ata-astro-prefetch="viewport"
+								href="/docs"
+								class="px-2 py-1 text-[17px] shadow-sm rounded-[10px] w-fit
+							bg-gradient-to-t from-[#22eff7]/20 dark:from-[#22eff7]/35 from-0% to-transparent to-100% mx-1"
+							>
+								docs
+							</a>
+
+							<a
+								ata-astro-prefetch="viewport"
+								href="/components"
+								class="px-2 py-1 text-[17px] shadow-sm rounded-[10px] w-fit
+						bg-gradient-to-t from-[#f7228a]/20 dark:from-[#f7228a]/50 from-0% to-transparent to-100% mx-1"
+							>
+								components
+							</a>
+
+							<a
+								ata-astro-prefetch="viewport"
+								href="/blogs"
+								class="px-2 py-1 text-[17px] shadow-sm rounded-[10px] w-fit
+					bg-gradient-to-t from-foreground/10 dark:from-foreground/30 from-0% to-transparent to-100% mx-1"
+							>
+								blogs
+							</a>
+
+							pages are powered by the whitepapper <a
+								class="underline hover:text-muted-foreground inline-block"
+								href="/docs/dev-api/overview">dev api</a
+							>.
+							<br />
+							There's simply isn't any better alternative
+						</p>
+					</div>
+				</div>
+				<div class="md:w-[600px] md:pt-4">
+					<ApiShowcase client:idle />
+				</div>
+			</div>
+		</section>
+
+		<!-- <div class="px-5 md:px-15">
+		<div
+			class="md:mt-12 md:mb-27 mt-4 mb-17 grid grid-cols-2 md:flex w-full mx-auto gap-3 md:justify-between"
+			style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+		>
+			{
+				featuresDivs.slice(0, 4).map((item) => (
+					<div class="flex flex-col flex-1 gap-2 p-3 transition-all duration-300 hover:bg-card">
+						<div class="flex items-center gap-3">
+							<item.icon size={19} />
+							<h2 class="text-[17px] font-[450]">{item.title}</h2>
+						</div>
+						<p class="text-sm text-foreground">
+							{item.description}
+						</p>
+					</div>
+				))
+			}
+		</div>
+	</div> -->
+
+		<section
+			class="mt-10 mx-auto flex w-full flex-col px-5 md:px-15"
+			aria-label="Product highlights"
+		>
 			<div
 				class="w-full mx-auto mt-18 md:mt-40"
 				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
 			>
-				<h2 class="text-[32px] font-[500]">Fast worldwide</h2>
-				<p class="mt-1 text-muted-foreground">
+				<h2 class="text-[34px] md:text-[40px] font-[500]">
+					Fast worldwide
+				</h2>
+				<p class="mt-1 md:text-[19px] text-muted-foreground">
 					Whitepapper is cached at edge using <span
 						class="text-[#F48120] px-[2px]">cloudflare</span
 					> CDN to reach users at
@@ -337,136 +489,106 @@ import { Button } from "@/components/ui/button";
 					</div>
 				</div>
 			</div>
+		</section>
 
-			<div
-				class="w-full mx-auto mt-10 md:mt-0 flex md:flex-row flex-col md:justify-center gap-10"
-				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
-			>
-				<div class="flex-1">
-					<IntegrationsSection />
-				</div>
-				<div class="flex-1 flex items-center justify-center">
-					<div class="max-w-[400px] py-10">
-						<p class="text-center text-[19px] leading-[2.1em]">
-							Whitepapper
-
-							<a
-								ata-astro-prefetch="viewport"
-								href="/docs"
-								class="px-2 py-1 text-[17px] shadow-sm rounded-[10px] w-fit
-							bg-gradient-to-t from-[#22eff7]/20 dark:from-[#22eff7]/35 from-0% to-transparent to-100% mx-1"
-							>
-								docs
-							</a>
-
-							<a
-								ata-astro-prefetch="viewport"
-								href="/components"
-								class="px-2 py-1 text-[17px] shadow-sm rounded-[10px] w-fit
-						bg-gradient-to-t from-[#f7228a]/20 dark:from-[#f7228a]/50 from-0% to-transparent to-100% mx-1"
-							>
-								components
-							</a>
-
-							<a
-								ata-astro-prefetch="viewport"
-								href="/blogs"
-								class="px-2 py-1 text-[17px] shadow-sm rounded-[10px] w-fit
-						bg-gradient-to-t from-foreground/10 dark:from-foreground/30 from-0% to-transparent to-100% mx-1"
-							>
-								blogs
-							</a>
-
-							pages are powered by the whitepapper <a
-								class="underline hover:text-muted-foreground inline-block"
-								href="/docs/dev-api/overview">dev api</a
-							>.
-							<br />
-							There's simply isn't any better alternative
-						</p>
-					</div>
-				</div>
-			</div>
-
+		<section class="mt-15 md:mt-25 px-5 md:px-15" aria-label="MCP server">
 			<div
 				class="w-full mx-auto"
 				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
 			>
 				<div
-					class="mt-15 md:mt-40 gap-10 md:gap-15 w-full relative overflow-hidden flex flex-col items-center justify-between px-5"
+					class="gap-7 md:gap-15 w-full relative overflow-hidden grid md:grid-cols-2 grid-cols-1"
 				>
-					<div class="text-center">
-						<h2 class="text-[32px] font-[500]">Whitepapper MCP</h2>
-						<p class="mt-1 text-muted-foreground max-w-[400px]">
+					<div class="md:flex-1 flex flex-col h-full">
+						<h2 class="text-[34px] md:text-[40px] font-[500]">
+							Whitepapper MCP
+						</h2>
+						<p
+							class="mt-1 md:text-[19px] text-muted-foreground max-w-[400px]"
+						>
 							Connect whitepapper to agents and automate content
 							writing for your projects
 						</p>
+
+						<div
+							class="mt-10 relative overflow-hidden w-full h-[260px] md:h-full"
+						>
+							<div
+								class="bg-gradient-to-b h-[120px] w-full absolute top-[-1px] left-0 from-background from-0% to-transparent to-100% z-3"
+							>
+							</div>
+							<div
+								class="border-[3px] border-[#fafafa]/30 border-t-0 rounded-b-[50px] overflow-hidden px-[10px] pb-[30px] bg-[#050505] h-full"
+							>
+								<div
+									class="relative rounded-b-[45px] overflow-hidden h-full"
+								>
+									<img
+										src={chatgpt_mobile.src}
+										class="h-full absolute w-full bottom-0 left-0 right-0 object-bottom object-cover"
+									/>
+								</div>
+							</div>
+						</div>
 					</div>
 
-					<img
-						src={logoHandImg.src}
-						class="object-contain md:max-w-[500px] w-full"
-					/>
 					<div
-						class="bg-gradient-to-t h-[140px] w-full absolute bottom-[-3px] left-0 from-background from-20% to-transparent to-90% z-3"
+						class="md:flex-1 overflow-hidden relative rounded-[20px] md:rounded-[30px]"
 					>
-					</div>
-					<div
-						class="bg-[#0278f6] md:h-[250px] md:w-[40%] rounded-[50%] blur-[120px] absolute bottom-0 left-[50%] translate-x-[-50%] z-[-1]"
-					>
+						<img
+							src={BlueBgPattern.src}
+							class="absolute z-[-1] top-0 left-0 h-full w-full"
+						/>
+						<img
+							src={vscode_mcp.src}
+							class="translate-y-5 -translate-x-5 md:translate-y-15 md:-translate-x-15 rounded-[10px]"
+						/>
 					</div>
 				</div>
 
-				<!-- <div class="mt-6 text-center">
-					<h2 class="text-[32px] font-[500]">
-						Works with every IDE and agent
-					</h2>
-				</div> -->
-			</div>
-
-			<div class="mt-15 md:mt-40 mx-auto">
-				<div style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}>
+				<div class="flex flex-col gap-5 mt-8 md:mt-15">
 					<div
-						class="flex md:flex-row flex-col gap-3 justify-between items-start"
+						class="flex md:flex-row flex-col-reverse gap-4 md:gap-10 border-b pb-5"
 					>
-						<h2
-							class="md:flex-1 text-[32px] font-[500] md:leading-[1em]"
-						>
-							Make your sites searchable
-						</h2>
-						<p
-							class="md:flex-1 text-muted-foreground md:text-[20px]"
-						>
-							Every project gets a scoped API key. Use it to pull
-							your papers, collections, and project data directly
-							into your portfolio, personal site, or any frontend
-							you're building. Read-only, fast, and safe to expose
-							publicly.
+						<p class="w-[200px] font-[500] text-[15px] md:pt-1">
+							4 min read
 						</p>
+						<div>
+							<h3 class="text-[20px]">
+								Lorem, ipsum dolor adipisicing elit. Aliquam,
+								ex.
+							</h3>
+							<p class="text-[15px] text-muted-foreground mt-2">
+								Lorem ipsum dolor sit, amet consectetur
+								adipisicing elit. Tempore omnis veritatis ipsum
+								maiores.
+							</p>
+						</div>
 					</div>
 					<div
-						class="mt-8 md:mt-15 relative p-3 md:p-10 overflow-hidden md:rounded-[30px] rounded-[20px] h-full border shadow-md"
+						class="flex md:flex-row flex-col-reverse gap-4 md:gap-10"
 					>
-						<Image
-							src={BlueBgPattern}
-							alt="Green pattern background"
-							class="absolute left-0 top-0 z-[-1] h-full w-full"
-							loading="lazy"
-							quality={70}
-							decoding="async"
-						/>
-						<Image
-							src={BlogsPageImg}
-							alt="Blogs page preview"
-							class="h-fit w-full rounded-[10px]"
-							loading="lazy"
-							decoding="async"
-						/>
+						<p class="w-[200px] font-[500] text-[15px] md:pt-1">
+							4 min read
+						</p>
+						<div>
+							<h3 class="text-[20px]">
+								Lorem, ipsum dolor adipisicing elit. Aliquam,
+								ex.
+							</h3>
+							<p class="text-[15px] text-muted-foreground mt-2">
+								Lorem ipsum dolor sit, amet consectetur
+								adipisicing elit. Tempore omnis veritatis ipsum
+								maiores.
+							</p>
+						</div>
 					</div>
 				</div>
 			</div>
+		</section>
 
-			<div class="mt-20 md:mt-40">
+		<section class="mt-30 md:mt-60 px-5 md:px-15 ">
+			<div class="mx-auto w-full" style={{ maxWidth: `700px` }}>
 				<h2 class="text-[32px] font-[500] text-center">
 					Fully open-sourced
 				</h2>
@@ -479,14 +601,11 @@ import { Button } from "@/components/ui/button";
 						class="underline">repo</a
 					> and self host whitepapper for themselves
 				</p>
-				<div
-					class="mt-10 md:mt-15 mx-auto w-full flex md:flex-row flex-col gap-10"
-					style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
-				>
-					<div class="md:flex-1">
+				<div class="mt-10 md:mt-15 mx-auto w-full flex flex-col gap-20">
+					<div class="md:flex-1 flex md:gap-10">
 						<a
 							href="/docs/self-host/overview"
-							class="flex flex-col items-center h-fit gap-8 w-fit mx-auto"
+							class="flex flex-col items-center h-fit gap-8 w-full md:max-w-[300px]"
 						>
 							<div class="flex h-[200px] w-[160px]">
 								<div class="flex shrink-0">
@@ -526,20 +645,28 @@ import { Button } from "@/components/ui/button";
 								Read the docs <ArrowRight size={17} />
 							</p>
 						</a>
+						<div class="hidden md:flex flex-1">
+							<p>
+								Lorem ipsum dolor sit amet consectetur
+								adipisicing elit. Tempora odit officia soluta
+								necessitatibus excepturi debitis quis iste
+								voluptatem culpa temporibus.
+							</p>
+						</div>
 					</div>
 
-					<div class="md:flex-1">
+					<div class="md:flex-1 flex md:gap-10">
 						<a
 							href="https://www.npmjs.com/package/whitepapper"
 							target="_blank"
-							class="flex items-center justify-center flex-col w-fit mx-auto"
+							class="flex items-center justify-start flex-col w-full md:max-w-[300px] mx-auto"
 						>
 							<img
 								src={npmLogo.src}
-								class="my-14 h-[100px] w-[100px]"
+								class="mb-14 h-[100px] w-[100px]"
 							/>
 							<p
-								class="text-center w-[250px] text-center mx-auto"
+								class="text-center max-w-[250px] text-center mx-auto"
 							>
 								Ready to install components at <span
 									class="text-[#cc0000] font-[450] hover:text-[#cc0000]/80"
@@ -547,20 +674,39 @@ import { Button } from "@/components/ui/button";
 								>
 							</p>
 						</a>
+						<div
+							class="hidden md:flex flex-1 font-[500] flex-col gap-4"
+						>
+							<Button className="w-fit" variant="ghost"
+								>Markdown renderer</Button
+							>
+							<Button className="w-fit" variant="ghost"
+								>Markdown renderer</Button
+							>
+							<Button className="w-fit" variant="ghost"
+								>Markdown renderer</Button
+							>
+							<Button className="w-fit" variant="ghost"
+								>Markdown renderer</Button
+							>
+						</div>
 					</div>
 				</div>
 			</div>
+		</section>
 
-			<section class="space-y-4 mx-auto mt-20 md:mt-40">
-				<div style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}>
-					<FAQs
-						client:load
-						items={homeFaqs}
-						title="FAQ"
-						description="A quick overview of what Whitepapper is, who it serves, and why the public page layer matters."
-					/>
-				</div>
-			</section>
+		<section class="mx-auto mt-30 md:mt-60 px-5 md:px-15" aria-label="FAQs">
+			<div
+				class="w-full"
+				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+			>
+				<FAQs
+					client:load
+					items={homeFaqs}
+					title="FAQ"
+					description="A quick overview of what Whitepapper is, who it serves, and why the public page layer matters."
+				/>
+			</div>
 		</section>
 	</main>
 </Layout>

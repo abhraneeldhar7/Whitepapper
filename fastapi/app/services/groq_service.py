@@ -11,7 +11,6 @@ from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-GROQ_MODEL = "llama-3.3-70b-versatile"
 
 
 class GroqService:
@@ -49,8 +48,7 @@ class GroqService:
     def generate_paper_seo(
         self,
         *,
-        title: str,
-        body: str,
+        paper_doc: dict[str, Any],
         author_name: str,
         article_section: str,
     ) -> dict[str, Any] | None:
@@ -58,24 +56,27 @@ class GroqService:
         if client is None:
             return None
 
-        trimmed_title = (title or "").strip()
+        trimmed_title = str((paper_doc.get("title") or "").strip())
         trimmed_author = (author_name or "").strip() or "Author"
         trimmed_section = (article_section or "").strip() or "General"
-        trimmed_body = (body or "").strip()[:8000]
+        trimmed_body = str((paper_doc.get("body") or "").strip())[:8000]
 
         system_prompt = (
             "You are an expert SEO editor. Return strictly valid JSON only with keys: "
-            "metaDescription, ogDescription, twitterDescription, abstract, ogTags."
+            "metaDescription, ogDescription, twitterDescription, abstract, ogTags, keyTakeaways, faq, author_bio."
         )
         user_prompt = (
-            "Generate SEO-safe copy for a technical article.\n"
+            "Generate SEO-safe copy and extractable content for a technical article.\n"
             "Rules:\n"
             "- metaDescription: 140-160 chars.\n"
             "- ogDescription: 110-180 chars.\n"
             "- twitterDescription: 90-160 chars.\n"
             "- abstract: 160-320 chars.\n"
             "- ogTags: array of 4-8 short lowercase tags.\n"
-            "- Keep copy factual, no clickbait.\n"
+            "- keyTakeaways: array of 3 short (20-40 words) takeaways.\n"
+            "- faq: array of 2-5 {question, answer} pairs; keep answers 20-60 words.\n"
+            "- author_bio: one short sentence describing credentials.\n"
+            "- Keep copy factual, no clickbait, do not invent external URLs or sources.\n"
             "- Use American English.\n"
             f"Article title: {trimmed_title}\n"
             f"Author name: {trimmed_author}\n"
@@ -85,7 +86,7 @@ class GroqService:
 
         try:
             completion = client.chat.completions.create(
-                model=GROQ_MODEL,
+                model="llama-3.3-70b-versatile",
                 temperature=0.2,
                 response_format={"type": "json_object"},
                 messages=[

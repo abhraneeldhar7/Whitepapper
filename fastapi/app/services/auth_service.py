@@ -33,7 +33,9 @@ def _auth_options() -> AuthenticateRequestOptions:
     )
 
 
-def _verify_request_and_get_user_id(request: Request) -> str:
+async def get_verified_id(
+    request: Request,
+) -> str:
     request_state = _clerk_client().authenticate_request(request, _auth_options())
 
     if not request_state.is_signed_in:
@@ -45,16 +47,3 @@ def _verify_request_and_get_user_id(request: Request) -> str:
         raise HTTPException(status_code=401, detail="No user ID in token")
 
     return user_id
-
-
-def maybe_get_verified_id(request: Request) -> str | None:
-    try:
-        return _verify_request_and_get_user_id(request)
-    except HTTPException:
-        return None
-
-
-async def get_verified_id(
-    request: Request,
-) -> str:
-    return _verify_request_and_get_user_id(request)

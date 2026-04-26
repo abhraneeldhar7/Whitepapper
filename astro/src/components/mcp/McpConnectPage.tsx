@@ -5,13 +5,18 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getMcpConsentContext, submitMcpConsentDecision } from "@/lib/api/mcp";
-import type { McpConsentContext } from "@/lib/types";
+import type { McpConsentContext } from "@/lib/api/mcp";
 
-function getTxnIdFromLocation(): string {
+type McpConnectPageProps = {
+  initialContext?: McpConsentContext | null;
+  initialRequestId?: string;
+};
+
+function getRequestIdFromLocation(): string {
   if (typeof window === "undefined") {
     return "";
   }
-  return new URLSearchParams(window.location.search).get("txn_id") || "";
+  return new URLSearchParams(window.location.search).get("request_id") || "";
 }
 
 function formatDisplayName(context: McpConsentContext | null): string {
@@ -21,40 +26,38 @@ function formatDisplayName(context: McpConsentContext | null): string {
   return context.user.displayName || context.user.username || context.user.email || "Whitepapper user";
 }
 
-export default function McpConnectPage() {
-  const txnId = useMemo(getTxnIdFromLocation, []);
-  const [context, setContext] = useState<McpConsentContext | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [needsLogin, setNeedsLogin] = useState(false);
+export default function McpConnectPage({ initialContext = null, initialRequestId = "" }: McpConnectPageProps) {
+  const requestId = useMemo(() => initialRequestId || getRequestIdFromLocation(), [initialRequestId]);
+  const [context, setContext] = useState<McpConsentContext | null>(initialContext);
+  const [loading, setLoading] = useState(!initialContext);
   const [submittingAction, setSubmittingAction] = useState<"approve" | "deny" | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
-      if (!txnId) {
+      if (!requestId) {
         toast.error("Missing MCP authorization request.");
         setLoading(false);
         return;
       }
 
+      if (initialContext && initialContext.requestId === requestId) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const nextContext = await getMcpConsentContext(txnId);
+        const nextContext = await getMcpConsentContext(requestId);
         if (cancelled) {
           return;
         }
         setContext(nextContext);
-        setNeedsLogin(false);
       } catch (error) {
         if (cancelled) {
           return;
         }
-        const message = error instanceof Error ? error.message : "Failed to load MCP consent.";
-        if (message.includes("Authentication token is unavailable") || message.includes("Invalid token") || message.includes("Clerk")) {
-          setNeedsLogin(true);
-          return;
-        }
-        toast.error(message);
+        toast.error(error instanceof Error ? error.message : "Failed to load MCP consent.");
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -66,15 +69,15 @@ export default function McpConnectPage() {
     return () => {
       cancelled = true;
     };
-  }, [txnId]);
+  }, [initialContext, requestId]);
 
   async function handleDecision(action: "approve" | "deny") {
-    if (!txnId) {
+    if (!requestId) {
       return;
     }
     setSubmittingAction(action);
     try {
-      const result = await submitMcpConsentDecision(txnId, action);
+      const result = await submitMcpConsentDecision(requestId, action);
       window.location.href = result.redirectTo;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to complete MCP consent.");
@@ -89,27 +92,6 @@ export default function McpConnectPage() {
           <LoaderCircle className="animate-spin" size={16} />
           Preparing MCP consent...
         </div>
-      </div>
-    );
-  }
-
-  if (needsLogin) {
-    const redirectUrl = typeof window !== "undefined" ? window.location.href : "/mcp/connect";
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4 py-10">
-        <Card className="w-full max-w-xl">
-          <CardHeader>
-            <CardTitle>Sign in to Whitepapper</CardTitle>
-            <CardDescription>
-              Sign in first, then you will come right back here to approve this MCP connection.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <a href={`/login?redirect_url=${encodeURIComponent(redirectUrl)}`}>Sign in to continue</a>
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -161,11 +143,7 @@ export default function McpConnectPage() {
               <div className="grid gap-4">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">Agent</p>
-                  <p className="mt-1 text-sm font-medium">{context.clientName || context.clientId}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">Client ID</p>
-                  <p className="mt-1 break-all text-sm font-medium">{context.clientId}</p>
+                  <p className="mt-1 break-all text-sm font-medium">{context.clientName || context.clientId}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">Redirect URI</p>
@@ -203,3 +181,4 @@ export default function McpConnectPage() {
     </div>
   );
 }
+

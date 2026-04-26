@@ -1,7 +1,18 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
-import type { ApiKeySummary, ApiKeyCreateResponse } from "@/lib/types";
 
-export type { ApiKeySummary, ApiKeyCreateResponse };
+export type ApiKeySummary = {
+  keyId: string;
+  ownerId: string;
+  projectId: string;
+  usage: number;
+  limitPerMonth: number;
+  isActive: boolean;
+  createdAt: string;
+};
+
+export type ApiKeyCreateResponse = ApiKeySummary & {
+  rawKey: string;
+};
 
 export async function getProjectApiKey(
   projectId: string,

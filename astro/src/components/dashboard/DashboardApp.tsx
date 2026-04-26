@@ -21,7 +21,7 @@ import { createProject } from "@/lib/api/projects";
 import { MAX_PAPERS_PER_USER, MAX_PROJECTS_PER_USER } from "@/lib/limits";
 import { sortPapersLatestFirst } from "@/lib/paperSort";
 import { readTabFromQuery, writeTabToQuery } from "@/lib/queryTab";
-import type { PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
+import type { PaperDoc, ProjectDoc, UserDoc } from "@/lib/entities";
 import FolderNotes from "../folderComponent";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
@@ -324,3 +324,4 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
     </div>
   );
 }
+

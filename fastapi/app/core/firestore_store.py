@@ -1,16 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
 from firebase_admin import firestore
 
 from app.core.firebase_admin import get_firestore_client
-
-
-def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 class FirestoreStore:
@@ -50,10 +45,30 @@ class FirestoreStore:
             query = query.where(filter=firestore.FieldFilter(field, "==", value))
         return [snap.to_dict() for snap in query.stream()]
 
+    def find_by_fields_with_ids(self, collection: str, filters: dict[str, Any]) -> list[dict[str, Any]]:
+        query = self._collection(collection)
+        for field, value in filters.items():
+            query = query.where(filter=firestore.FieldFilter(field, "==", value))
+
+        items: list[dict[str, Any]] = []
+        for snap in query.stream():
+            data = snap.to_dict()
+            data["_id"] = snap.id
+            items.append(data)
+        return items
+
     def list_all(self, collection: str) -> list[dict[str, Any]]:
         items = []
         for snap in self._collection(collection).stream():
             items.append(snap.to_dict())
+        return items
+
+    def list_all_with_ids(self, collection: str) -> list[dict[str, Any]]:
+        items = []
+        for snap in self._collection(collection).stream():
+            data = snap.to_dict()
+            data["_id"] = snap.id
+            items.append(data)
         return items
 
 

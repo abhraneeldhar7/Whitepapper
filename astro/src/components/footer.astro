@@ -1,6 +1,7 @@
 ---
-import { AnimatedThemeToggler } from "./ui/animated-theme-toggler";
 import { Label } from "./ui/label";
+
+import logoHandImg from "@/assets/landingPage/logo_hand.png";
 
 const footerLinkGroups = [
   {
@@ -42,7 +43,7 @@ const footerLinkGroups = [
 ---
 
 <div
-  class="h-fit w-full flex flex-col justify-between text-[15px] mt-30 md:mt-50"
+  class="h-fit w-full flex flex-col justify-between text-[15px] mt-20 md:mt-30"
 >
   <div
     class="md:p-[30px] p-[15px] flex md:justify-between gap-[50px] md:flex-row flex-col"
@@ -59,7 +60,8 @@ const footerLinkGroups = [
         <p class="text-[16px] font-[400]">Whitepapper</p>
       </a>
       <p class="mt-[15px] max-w-[400px] opacity-[0.8] text-[12px]">
-        Whitepapper is a API first content platform for developers who want to publish once, distribute everywhere, and manage website content.
+        Whitepapper is a API first content platform for developers who want to
+        publish once, distribute everywhere, and manage website content.
       </p>
     </div>
 
@@ -68,20 +70,20 @@ const footerLinkGroups = [
         footerLinkGroups.map((group) => (
           <div class="flex flex-col gap-1">
             <Label className="mb-1">{group.title}</Label>
-            {
-              group.links.map((link) => (
-                <a href={link.href} data-astro-prefetch="viewport">{link.label}</a>
-              ))
-            }
+            {group.links.map((link) => (
+              <a href={link.href} data-astro-prefetch="viewport">
+                {link.label}
+              </a>
+            ))}
           </div>
         ))
       }
     </div>
   </div>
 
-  <div class="mt-[30px] relative overflow-hidden md:h-[200px] h-[200px]">
-    <div class="absolute bottom-0 translate-y-[32%] left-0 right-0">
-      <div class="relative flex justify-center items-baseline">
+  <div class="mt-[30px] relative overflow-hidden h-full">
+    <!-- <div class="absolute bottom-0 translate-y-[32%] left-0 right-0">
+      <div class="relative flex justify-center">
         <h2
           class="md:text-[150px] leading-[1.45em] text-[120px] flex items-baseline font-[Geist]"
         >
@@ -101,23 +103,38 @@ const footerLinkGroups = [
         >
         </div>
       </div>
+    </div> -->
+
+    <div class="overflow-hidden relative flex justify-center mt-10 px-10">
+      <img
+        src={logoHandImg.src}
+        class="object-contain md:max-w-[400px] h-full w-full"
+      />
+      <div
+        class="bg-gradient-to-t h-[140px] w-full absolute bottom-[-3px] left-0 from-background from-0% to-transparent to-100% z-3"
+      >
+      </div>
+      <!-- <div
+        class="bg-[#0278f6] md:h-[300px] md:w-[40%] rounded-[50%] blur-[120px] absolute bottom-[-40%] left-[50%] translate-x-[-50%] z-[-1]"
+      >
+      </div> -->
     </div>
   </div>
-</div>
 
-<style>
-  .linkDiv a {
-    font-size: 14px;
-    color: var(--muted-foreground);
-    transition: all 0.2s;
-  }
-  .linkDiv a:hover {
-    color: var(--foreground);
-  }
-
-  @media (max-width: 600px) {
-    .linkDiv a{
-      font-size: 15px;
+  <style>
+    .linkDiv a {
+      font-size: 14px;
+      color: var(--muted-foreground);
+      transition: all 0.2s;
     }
-  }
-</style>
+    .linkDiv a:hover {
+      color: var(--foreground);
+    }
+
+    @media (max-width: 600px) {
+      .linkDiv a {
+        font-size: 15px;
+      }
+    }
+  </style>
+</div>

@@ -1,5 +1,46 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
-import type { McpAuthorizationListResponse, McpConnectionInfo, McpConsentContext } from "@/lib/types";
+
+export type McpAuthorizationSummary = {
+  authorizationId: string;
+  agentName?: string | null;
+  createdAt: string;
+};
+
+export type McpAuthorizationListResponse = {
+  authorizations: McpAuthorizationSummary[];
+  usage: number;
+  limitPerMonth: number;
+};
+
+export type McpConsentContext = {
+  requestId: string;
+  clientId: string;
+  clientName?: string | null;
+  redirectUri: string;
+  scopes: string[];
+  user: {
+    displayName?: string | null;
+    username?: string | null;
+    email?: string | null;
+    avatarUrl?: string | null;
+  };
+};
+
+export type McpConnectionInfo = {
+  serverName: string;
+  transport: "http";
+  endpointUrl: string;
+  manualConfig: {
+    servers: Record<
+      string,
+      {
+        url: string;
+        type: "http";
+      }
+    >;
+    inputs: unknown[];
+  };
+};
 
 const MCP_API_PREFIX = "/mcp";
 
@@ -23,23 +64,23 @@ export async function revokeMcpAuthorization(
 }
 
 export async function getMcpConsentContext(
-  txnId: string,
+  requestId: string,
   client: ApiClient = apiClient,
 ): Promise<McpConsentContext> {
-  return client.get<McpConsentContext>(`${MCP_API_PREFIX}/consent/context`, {
-    query: { txn_id: txnId },
+  return client.get<McpConsentContext>(`/oauth/consent/context`, {
+    query: { request_id: requestId },
   });
 }
 
 export async function submitMcpConsentDecision(
-  txnId: string,
+  requestId: string,
   action: "approve" | "deny",
   client: ApiClient = apiClient,
-): Promise<{ redirectTo: string; clientId: string; clientName?: string | null }> {
-  return client.post<{ redirectTo: string; clientId: string; clientName?: string | null }>(
-    `${MCP_API_PREFIX}/consent/decision`,
+): Promise<{ redirectTo: string }> {
+  return client.post<{ redirectTo: string }>(
+    `/oauth/consent/complete`,
     {
-      body: { txnId, action },
+      body: { requestId, action },
     },
   );
 }

@@ -1,7 +1,11 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
 import { countImagesInContent, MAX_IMAGES_PER_PAPER, MAX_PAPER_BODY_LENGTH } from "@/lib/limits";
 import { sortPapersLatestFirst } from "@/lib/paperSort";
-import type { PaperCreateResponse, PaperDoc, PaperMetadata } from "@/lib/types";
+import type { PaperDoc, PaperMetadata } from "@/lib/entities";
+
+export type PaperCreateResponse = {
+  paperId: string;
+};
 
 type CreatePaperInput = {
   title?: string;

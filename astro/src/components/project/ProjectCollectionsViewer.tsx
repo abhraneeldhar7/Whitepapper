@@ -1,7 +1,7 @@
 import PaperCardComponent from "@/components/paperCardComponent";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Label } from "@/components/ui/label";
-import type { CollectionDoc, PaperDoc } from "@/lib/types";
+import type { CollectionDoc, PaperDoc } from "@/lib/entities";
 import { ChevronRight } from "lucide-react";
 
 type ProjectCollectionsViewerProps = {
@@ -66,3 +66,4 @@ export default function ProjectCollectionsViewer({
     </div>
   );
 }
+

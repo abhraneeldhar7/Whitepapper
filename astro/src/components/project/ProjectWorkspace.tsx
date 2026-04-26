@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckIcon, CopyIcon, Ellipsis, FolderPlus, LockIcon, NotebookPen, PencilIcon, PlusIcon, RssIcon, SaveIcon, SquareArrowOutUpRight, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { createCollection } from "@/lib/api/collections";
 import { createApiKey, resetApiKey, setApiKeyActive, type ApiKeySummary } from "@/lib/api/api_keys";
-import { revokeMcpAuthorization } from "@/lib/api/mcp";
+import { revokeMcpAuthorization, type McpAuthorizationListResponse, type McpAuthorizationSummary, type McpConnectionInfo } from "@/lib/api/mcp";
 import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import {
   checkProjectSlugAvailable,
@@ -42,7 +42,7 @@ import {
   MAX_PROJECT_LOGO_HEIGHT,
   MAX_PROJECT_LOGO_WIDTH,
 } from "@/lib/constants";
-import type { CollectionDoc, McpAuthorizationListResponse, McpAuthorizationSummary, McpConnectionInfo, PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
+import type { CollectionDoc, PaperDoc, ProjectDoc, UserDoc } from "@/lib/entities";
 import { compressImage, copyToClipboardWithToast, formatFirestoreDate, isImageFile } from "@/lib/utils";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
@@ -100,7 +100,10 @@ function writeTabToQuery(tab: ProjectTab): void {
 }
 
 function resolveFallbackMcpConnectionInfo(): McpConnectionInfo | null {
-  const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
+  const apiBaseUrl = String
+  
+  
+  (import.meta.env.PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
   const fallbackBaseUrl =
     apiBaseUrl ||
     (typeof window !== "undefined" ? String(window.location.origin || "").trim().replace(/\/+$/, "") : "");
@@ -109,7 +112,7 @@ function resolveFallbackMcpConnectionInfo(): McpConnectionInfo | null {
     return null;
   }
 
-  const endpointUrl = `${fallbackBaseUrl}/mcp/`;
+  const endpointUrl = `${fallbackBaseUrl}/mcp`;
   return {
     serverName: "whitepapper",
     transport: "http",
@@ -165,7 +168,6 @@ export default function ProjectWorkspace({
   const [creatingApiKey, setCreatingApiKey] = useState(false);
   const [togglingApiKey, setTogglingApiKey] = useState(false);
   const [resettingApiKey, setResettingApiKey] = useState(false);
-  const [mcpConfigCopied, setMcpConfigCopied] = useState(false);
   const [revokingMcpAuthorizationId, setRevokingMcpAuthorizationId] = useState<string | null>(null);
   const [revokingMcpAuthorization, setRevokingMcpAuthorization] = useState(false);
   const [revokeMcpDialogOpen, setRevokeMcpDialogOpen] = useState(false);
@@ -204,10 +206,6 @@ export default function ProjectWorkspace({
   useEffect(() => {
     setApiKeyCopied(false);
   }, [apiKeyDialogOpen, createdApiKey]);
-
-  useEffect(() => {
-    setMcpConfigCopied(false);
-  }, [activeTab]);
 
   function beginEditProject() {
     setDraftProject({ ...project });
@@ -536,22 +534,6 @@ export default function ProjectWorkspace({
     }
   }
 
-  async function handleCopyMcpConfig() {
-    const nextConnectionInfo = mcpConnectionInfo || resolveFallbackMcpConnectionInfo();
-    if (!nextConnectionInfo) {
-      toast.error("MCP connection info is unavailable.");
-      return;
-    }
-    const config = JSON.stringify(nextConnectionInfo.manualConfig, null, 2);
-    const ok = await copyToClipboardWithToast(config, "MCP config copied.", "Unable to copy MCP config.");
-    if (!ok) {
-      setMcpConfigCopied(false);
-      return;
-    }
-    setMcpConfigCopied(true);
-    window.setTimeout(() => setMcpConfigCopied(false), 1400);
-  }
-
   async function handleRevokeMcpAuthorization() {
     if (!revokingMcpAuthorizationId) {
       return;
@@ -592,7 +574,6 @@ export default function ProjectWorkspace({
   const logoPreview = tempUploadingProjectLogo || editableProject?.logoUrl || "";
   const projectPreviewKey = `${project.projectId}:${project.updatedAt}:${projectDescription.length}`;
   const resolvedMcpConnectionInfo = mcpConnectionInfo || resolveFallbackMcpConnectionInfo();
-  const mcpEndpointUrl = resolvedMcpConnectionInfo?.endpointUrl || "";
   const mcpManualConfig = resolvedMcpConnectionInfo ? JSON.stringify(resolvedMcpConnectionInfo.manualConfig, null, 2) : "";
   // SDK connect snippet removed as per user request
   const selectedMcpAuthorization =
@@ -1143,7 +1124,6 @@ export default function ProjectWorkspace({
                         <TableRow>
                           <TableHead>Agent</TableHead>
                           <TableHead>Created</TableHead>
-                          <TableHead>Last active</TableHead>
                           <TableHead className="text-right">Action</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1153,11 +1133,9 @@ export default function ProjectWorkspace({
                             <TableCell>
                               <div className="flex flex-col gap-1">
                                 <span className="font-medium">{authorization.agentName || "Whitepapper MCP client"}</span>
-                                <span className="text-xs text-muted-foreground">{authorization.clientId}</span>
                               </div>
                             </TableCell>
                             <TableCell>{formatFirestoreDate(authorization.createdAt)}</TableCell>
-                            <TableCell>{authorization.lastActive ? formatFirestoreDate(authorization.lastActive) : "Never"}</TableCell>
                             <TableCell className="text-right">
                               <Button
                                 size="sm"
@@ -1267,3 +1245,4 @@ export default function ProjectWorkspace({
     </div >
   );
 }
+

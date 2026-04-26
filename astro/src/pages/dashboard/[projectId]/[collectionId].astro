@@ -7,7 +7,7 @@ import { getCollection } from "@/lib/api/collections";
 import { getProjectById } from "@/lib/api/projects";
 import { listCollectionPapers } from "@/lib/api/papers";
 import { getCurrentUser } from "@/lib/api/users";
-import type { CollectionDoc, PaperDoc, UserDoc } from "@/lib/types";
+import type { CollectionDoc, PaperDoc, UserDoc } from "@/lib/entities";
 import { isMobileUserAgent } from "@/lib/userAgent";
 
 const { userId, getToken } = Astro.locals.auth();
@@ -75,3 +75,4 @@ const initialProjectName =
     />
   </div>
 </Layout>
+

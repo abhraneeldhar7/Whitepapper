@@ -17,7 +17,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetClose, SheetContent } from "@/components/ui/sheet";
-import type { PaperDoc } from "@/lib/types";
+import type { PaperDoc } from "@/lib/entities";
 import { copyToClipboardWithToast, downloadMarkdownFile } from "@/lib/utils";
 
 type PaperPreviewSheetProps = {
@@ -198,3 +198,4 @@ export default function PaperPreviewSheet({
     </Sheet>
   );
 }
+

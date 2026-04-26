@@ -6,7 +6,7 @@ import markdownCode from "@/components/ui/markdown-render/markdown-render.tsx?ra
 import linearCode from "@/components/ui/toc/linearTableOfContent.tsx?raw";
 import mobileCode from "@/components/ui/toc/mobileTableOfContent.tsx?raw";
 import linesCode from "@/components/ui/toc/linesTableOfContent.tsx?raw";
-import type { PaperDoc } from "@/lib/types";
+import type { PaperDoc } from "@/lib/entities";
 import { buildBlogPaperMetadata, buildPaperSeoConfig } from "@/metadata/dynamic";
 
 const componentOrder = [
@@ -167,3 +167,4 @@ const seo = buildPaperSeoConfig(metadata, {
     next={next}
   />
 </Layout>
+

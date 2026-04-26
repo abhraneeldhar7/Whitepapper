@@ -25,7 +25,7 @@ import {
   updateCollectionVisibility,
 } from "@/lib/api/collections";
 import { MAX_DESCRIPTION_LENGTH, MAX_PAPERS_PER_USER } from "@/lib/limits";
-import type { CollectionDoc, PaperDoc, UserDoc } from "@/lib/types";
+import type { CollectionDoc, PaperDoc, UserDoc } from "@/lib/entities";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
 import PaperPreviewSheet from "../paperPreviewSheet";
@@ -505,3 +505,4 @@ export default function CollectionWorkspace({
     </div>
   );
 }
+

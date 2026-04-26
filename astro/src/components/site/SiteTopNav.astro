@@ -8,15 +8,16 @@ interface Props {
 }
 import { MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
 import { AnimatedThemeToggler } from "../ui/animated-theme-toggler";
+import type { size } from "astro:schema";
 const { isSignedIn = false } = Astro.props as Props;
 
 const desktopNavButtonsList = [
   { title: "Docs", href: "/docs" },
-  { title: "Use Cases", href: "/use-cases" },
-  { title: "Blogs", href: "/blogs" },
-  { title: "Components", href: "/components" },
-  { title: "Integrations", href: "/integrations" },
-  { title: "Pricing", href: "/pricing" },
+  // { title: "Use Cases", href: "/use-cases" },
+  // { title: "Blogs", href: "/blogs" },
+  // { title: "Components", href: "/components" },
+  // { title: "Integrations", href: "/integrations" },
+  // { title: "Pricing", href: "/pricing" },
 ];
 const mobileNavButtonsList = [
   { title: "Docs", href: "/docs" },
@@ -31,9 +32,9 @@ const mobileNavButtonsList = [
 ---
 
 <header
-  class="fixed left-0 top-0 z-[10] flex w-full items-center justify-between gap-5 border-b border-border/50 bg-background/80 px-4 py-2 md:px-10 backdrop-blur-[20px]"
+  class="fixed left-0 top-0 z-[10] flex w-full items-center justify-center gap-5 bg-background/80 px-4 py-2 md:px-10 backdrop-blur-[20px]"
 >
-  <div class="hidden md:block"></div>
+  <!-- <div class="hidden md:block"></div> -->
   <nav
     style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
     class="w-full flex items-center justify-between gap-10"
@@ -64,6 +65,7 @@ const mobileNavButtonsList = [
     </div>
 
     <div class="flex gap-4">
+      <AnimatedThemeToggler client:load size={16} className="md:block hidden mr-2"/>
       {
         isSignedIn ? (
           <a href="/dashboard" data-astro-prefetch="viewport">
@@ -86,7 +88,7 @@ const mobileNavButtonsList = [
     </div>
   </nav>
 
-  <div class="hidden md:block relative z-[20] pointer-events-auto">
+  <!-- <div class="hidden md:block relative z-[20] pointer-events-auto">
     <AnimatedThemeToggler size={16} client:load />
-  </div>
+  </div> -->
 </header>

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import React, { useId } from 'react';
+import { useId } from 'react';
 
 export interface FolderNotesProps {
   /** Width of the component. Scales perfectly. */
@@ -17,13 +17,10 @@ export default function EmptyPaperNotes({
 }: FolderNotesProps) {
   // Generate unique IDs for SVG defs to prevent conflicts if multiple are rendered
   const idPrefix = useId().replace(/:/g, '');
-  const backGrad = `backGrad-${idPrefix}`;
   const glassFill = `glassFill-${idPrefix}`;
   const glassStroke = `glassStroke-${idPrefix}`;
   const paperShadow = `paperShadow-${idPrefix}`;
   const mainShadow = `mainShadow-${idPrefix}`;
-  const glassBlur = `glassBlur-${idPrefix}`;
-  const glassClip = `glassClip-${idPrefix}`;
   const paper1Class = `paper1-${idPrefix}`;
   const paper2Class = `paper2-${idPrefix}`;
   const paper3Class = `paper3-${idPrefix}`;

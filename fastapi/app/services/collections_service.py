@@ -5,9 +5,10 @@ from uuid import uuid4
 from fastapi import HTTPException
 
 from app.core.limits import MAX_COLLECTIONS_PER_PROJECT, MAX_DESCRIPTION_LENGTH
-from app.core.firestore_store import firestore_store, utc_now
+from app.core.firestore_store import firestore_store
 from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
+from app.utils.datetime import utc_now
 
 logger = logging.getLogger(__name__)
 

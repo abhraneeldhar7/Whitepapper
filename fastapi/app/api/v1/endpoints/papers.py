@@ -1,16 +1,47 @@
 import re
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from pydantic import BaseModel, Field
 
 from app.services.auth_service import get_verified_id
-from app.schemas.entities import PaperCreate, PaperCreateResponse, PaperDoc, PaperMetadata, PaperMetadataGenerate, PaperUpdate
+from app.schemas.entities import PaperDoc, PaperMetadata
 from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
 from app.utils.cache import add_cache_buster
 
 router = APIRouter(tags=["papers"])
+
+
+class PaperCreateRequest(BaseModel):
+    collectionId: str | None = None
+    projectId: str | None = None
+    thumbnailUrl: str | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    slug: str | None = Field(default=None, min_length=2, max_length=120)
+    body: str = ""
+    status: Literal["draft", "published", "archived"] = "draft"
+
+
+class PaperUpdateRequest(BaseModel):
+    collectionId: str | None = None
+    projectId: str | None = None
+    thumbnailUrl: str | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    slug: str | None = Field(default=None, min_length=2, max_length=120)
+    body: str | None = None
+    status: Literal["draft", "published", "archived"] | None = None
+    metadata: PaperMetadata | None = None
+
+
+class PaperCreateResponse(BaseModel):
+    paperId: str
+
+
+class PaperMetadataGenerateRequest(BaseModel):
+    payload: PaperDoc
 
 MARKDOWN_IMAGE_PATTERN = re.compile(r"!\[[^\]]*]\(([^)\s]+)", re.IGNORECASE)
 HTML_IMAGE_PATTERN = re.compile(r"<img[^>]+src=[\"']([^\"']+)[\"']", re.IGNORECASE)
@@ -99,7 +130,7 @@ async def upload_metadata_image(
 
 
 @router.post("/papers", response_model=PaperCreateResponse, status_code=201)
-def create_paper(payload: PaperCreate, user_id: str = Depends(get_verified_id)) -> PaperCreateResponse:
+def create_paper(payload: PaperCreateRequest, user_id: str = Depends(get_verified_id)) -> PaperCreateResponse:
     if payload.projectId:
         project = projects_service.get_by_id(payload.projectId)
         if project.get("ownerId") != user_id:
@@ -114,7 +145,7 @@ def create_paper(payload: PaperCreate, user_id: str = Depends(get_verified_id)) 
 @router.patch("/papers/{paper_id}", response_model=PaperDoc)
 def patch_paper(
     paper_id: str,
-    payload: PaperUpdate,
+    payload: PaperUpdateRequest,
     user_id: str = Depends(get_verified_id),
 ) -> PaperDoc:
     paper = papers_service.get_by_id(paper_id)
@@ -142,7 +173,7 @@ def patch_paper(
 @router.post("/papers/{paper_id}/metadata/generate", response_model=PaperMetadata)
 def generate_paper_metadata(
     paper_id: str,
-    payload: PaperMetadataGenerate,
+    payload: PaperMetadataGenerateRequest,
     user_id: str = Depends(get_verified_id),
 ) -> PaperMetadata:
     paper = papers_service.get_by_id(paper_id)

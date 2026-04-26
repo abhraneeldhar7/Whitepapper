@@ -10,13 +10,14 @@ from app.core.constants import (
     MAX_THUMBNAIL_WIDTH,
 )
 from app.core.limits import MAX_IMAGES_PER_PAPER, MAX_PAPER_BODY_LENGTH, MAX_PAPERS_PER_USER
-from app.core.firestore_store import firestore_store, utc_now
+from app.core.firestore_store import firestore_store
 from app.core.reserved_paths import is_reserved_paper_slug
 from app.services.paper_metadata_service import paper_metadata_service
 from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
 from app.services.storage_service import storage_service
 from app.utils.cache import add_cache_buster
+from app.utils.datetime import utc_now
 
 PAPERS_COLLECTION = "papers"
 PAPER_ID_KEY = "paperId"
@@ -188,6 +189,70 @@ class PapersService:
 
     def list_all_public(self) -> list[dict]:
         return firestore_store.find_by_fields(PAPERS_COLLECTION, {PAPER_STATUS_KEY: PAPER_STATUS_PUBLISHED})
+
+    def search_owned(
+        self,
+        owner_id: str,
+        query: str,
+        *,
+        project_id: str | None = None,
+        collection_id: str | None = None,
+        status: str | None = None,
+        limit: int = 25,
+    ) -> list[dict]:
+        search_query = str(query or "").strip().lower()
+        if not search_query:
+            raise HTTPException(status_code=400, detail="query is required.")
+
+        filters: dict[str, object] = {PAPER_OWNER_KEY: owner_id}
+        if project_id:
+            filters[PAPER_PROJECT_KEY] = project_id
+        if collection_id:
+            filters[PAPER_COLLECTION_KEY] = collection_id
+        if status:
+            normalized_status = str(status).strip().lower()
+            if normalized_status not in {"draft", "published", "archived"}:
+                raise HTTPException(status_code=400, detail="status must be draft, published, or archived.")
+            filters[PAPER_STATUS_KEY] = normalized_status
+
+        papers = firestore_store.find_by_fields(PAPERS_COLLECTION, filters)
+        ranked: dict[str, tuple[int, dict]] = {}
+
+        for paper in papers:
+            haystacks = [
+                str(paper.get("title") or ""),
+                str(paper.get("slug") or ""),
+                str(paper.get("body") or ""),
+                str((paper.get("metadata") or {}).get("title") or ""),
+                str((paper.get("metadata") or {}).get("metaDescription") or ""),
+            ]
+
+            score = 0
+            for text in haystacks:
+                lowered = text.lower()
+                if not lowered:
+                    continue
+                if search_query in lowered:
+                    score += 3
+                score += lowered.count(search_query)
+
+            if score <= 0:
+                continue
+
+            paper_id = str(paper.get(PAPER_ID_KEY) or "")
+            existing = ranked.get(paper_id)
+            if existing is None or score > existing[0]:
+                ranked[paper_id] = (score, paper)
+
+        ordered = sorted(
+            ranked.values(),
+            key=lambda item: (
+                item[0],
+                str(item[1].get("updatedAt") or item[1].get("createdAt") or ""),
+            ),
+            reverse=True,
+        )
+        return [item[1] for item in ordered[: max(1, int(limit or 25))]]
 
     def get_by_id(self, paper_id: str, public: bool = False) -> dict | None:
         paper = firestore_store.get(PAPERS_COLLECTION, paper_id)

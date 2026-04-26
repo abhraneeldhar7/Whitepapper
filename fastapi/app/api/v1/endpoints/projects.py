@@ -1,14 +1,42 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
 import re
+from pydantic import BaseModel, Field
 
 from app.services.auth_service import get_verified_id
-from app.schemas.entities import ProjectCreate, ProjectDoc as Project, ProjectUpdate, ProjectVisibilityToggle, ProjectDashboardPayload
+from app.schemas.entities import CollectionDoc, PaperDoc, ProjectDoc
 from app.services.projects_service import projects_service
 from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
 from app.utils.cache import add_cache_buster
 
 router = APIRouter(tags=["projects"])
+
+
+class ProjectCreateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    slug: str | None = Field(default=None, min_length=2, max_length=80)
+    description: str | None = None
+    contentGuidelines: str | None = None
+    logoUrl: str | None = None
+    isPublic: bool = True
+
+
+class ProjectUpdateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    slug: str | None = Field(default=None, min_length=2, max_length=80)
+    description: str | None = None
+    contentGuidelines: str | None = None
+    logoUrl: str | None = None
+
+
+class ProjectVisibilityToggleRequest(BaseModel):
+    isPublic: bool
+
+
+class ProjectDashboardResponse(BaseModel):
+    project: ProjectDoc
+    collections: list[CollectionDoc]
+    papers: list[PaperDoc]
 
 MARKDOWN_IMAGE_PATTERN = re.compile(r"!\[[^\]]*]\(([^)\s]+)", re.IGNORECASE)
 HTML_IMAGE_PATTERN = re.compile(r"<img[^>]+src=[\"']([^\"']+)[\"']", re.IGNORECASE)
@@ -23,16 +51,16 @@ def _extract_image_urls(content: str) -> set[str]:
     return urls
 
 
-@router.get("/projects", response_model=list[Project])
-def list_own_projects(user_id: str = Depends(get_verified_id)) -> list[Project]:
+@router.get("/projects", response_model=list[ProjectDoc])
+def list_own_projects(user_id: str = Depends(get_verified_id)) -> list[ProjectDoc]:
     return projects_service.list_owned(user_id)
 
 
-@router.post("/projects", response_model=Project, status_code=201)
+@router.post("/projects", response_model=ProjectDoc, status_code=201)
 def create_project(
-    payload: ProjectCreate,
+    payload: ProjectCreateRequest,
     user_id: str = Depends(get_verified_id),
-) -> Project:
+) -> ProjectDoc:
     return projects_service.create(user_id, payload.model_dump())
 
 
@@ -45,29 +73,29 @@ def check_project_slug_available(
     return {"available": projects_service.is_slug_available(user_id, slug, project_id)}
 
 
-@router.get("/projects/slug/{username}/{project_slug}", response_model=Project)
-def get_project_by_slug(username: str, project_slug: str, user_id: str = Depends(get_verified_id)) -> Project:
+@router.get("/projects/slug/{username}/{project_slug}", response_model=ProjectDoc)
+def get_project_by_slug(username: str, project_slug: str, user_id: str = Depends(get_verified_id)) -> ProjectDoc:
     project = projects_service.get_by_slug(username, project_slug)
     if project.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
     return project
 
 
-@router.get("/projects/{project_id}", response_model=Project)
-def get_project(project_id: str, user_id: str = Depends(get_verified_id)) -> Project:
+@router.get("/projects/{project_id}", response_model=ProjectDoc)
+def get_project(project_id: str, user_id: str = Depends(get_verified_id)) -> ProjectDoc:
     project = projects_service.get_by_id(project_id)
     if project.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
     return project
 
 
-@router.patch("/projects/{project_id}", response_model=Project)
+@router.patch("/projects/{project_id}", response_model=ProjectDoc)
 def patch_project(
     project_id: str,
-    payload: ProjectUpdate,
+    payload: ProjectUpdateRequest,
     background_tasks: BackgroundTasks,
     user_id: str = Depends(get_verified_id),
-) -> Project:
+) -> ProjectDoc:
     project = projects_service.get_by_id(project_id)
     if project.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
@@ -122,23 +150,23 @@ async def upload_project_embedded_image(
     return await projects_service.upload_embedded_image(project_id, file)
 
 
-@router.patch("/projects/{project_id}/visibility", response_model=Project)
+@router.patch("/projects/{project_id}/visibility", response_model=ProjectDoc)
 def patch_project_visibility(
     project_id: str,
-    payload: ProjectVisibilityToggle,
+    payload: ProjectVisibilityToggleRequest,
     user_id: str = Depends(get_verified_id),
-) -> Project:
+) -> ProjectDoc:
     project = projects_service.get_by_id(project_id)
     if project.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
     return projects_service.set_visibility(project_id, payload.isPublic)
 
 
-@router.get("/projects/{project_id}/dashboard", response_model=ProjectDashboardPayload)
+@router.get("/projects/{project_id}/dashboard", response_model=ProjectDashboardResponse)
 def get_project_dashboard(
     project_id: str,
     user_id: str = Depends(get_verified_id),
-) -> ProjectDashboardPayload:
+) -> ProjectDashboardResponse:
     """Get project dashboard data: project, collections, and papers sorted by updatedAt."""
     project = projects_service.get_by_id(project_id)
     if project.get("ownerId") != user_id:
@@ -155,7 +183,7 @@ def get_project_dashboard(
     collections.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
     project_papers.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
 
-    return ProjectDashboardPayload(
+    return ProjectDashboardResponse(
         project=project,
         collections=collections,
         papers=project_papers,

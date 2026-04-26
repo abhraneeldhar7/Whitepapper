@@ -1,4 +1,4 @@
-import type { CollectionDoc, PaperDoc, ProjectDoc } from "@/lib/types";
+import type { CollectionDoc, PaperDoc, ProjectDoc } from "@/lib/entities";
 
 type DevEntity<T> = Omit<T, "ownerId"> & {
   ownerId: null;

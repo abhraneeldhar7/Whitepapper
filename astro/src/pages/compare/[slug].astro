@@ -1,6 +1,6 @@
 ---
 import SiteContentPaperPage from "@/components/site/SiteContentPaperPage.astro";
-import type { PaperDoc } from "@/lib/types";
+import type { PaperDoc } from "@/lib/entities";
 import { buildBlogPaperMetadata, buildPaperSeoConfig } from "@/metadata/dynamic";
 
 type SitePaperResponse = {
@@ -87,3 +87,4 @@ const seo = buildPaperSeoConfig(metadata, {
   parentLabel="Compare"
   seo={seo}
 />
+

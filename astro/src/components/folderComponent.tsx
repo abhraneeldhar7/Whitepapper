@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import React, { useId } from 'react';
+import { useId } from 'react';
 
 export interface FolderNotesProps {
   logoUrl?: string|null;
@@ -12,7 +12,6 @@ export interface FolderNotesProps {
 }
 
 const FolderNotes: React.FC<FolderNotesProps> = ({
-  logoUrl,
   width,
   height,
   className = '',

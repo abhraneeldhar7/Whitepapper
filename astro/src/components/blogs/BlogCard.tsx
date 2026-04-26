@@ -1,4 +1,4 @@
-﻿import type { PaperDoc } from "@/lib/types";
+import type { PaperDoc } from "@/lib/entities";
 import { formatFirestoreDate } from "@/lib/utils";
 import abstractLightPic from "@/assets/abstract_light.jpg";
 import abstractDarkPic from "@/assets/abstract_dark.jpg";

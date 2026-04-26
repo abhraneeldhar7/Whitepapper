@@ -11,11 +11,12 @@ from app.core.constants import (
     MAX_PROJECT_LOGO_WIDTH,
 )
 from app.core.limits import MAX_DESCRIPTION_LENGTH, MAX_PROJECTS_PER_USER
-from app.core.firestore_store import firestore_store, utc_now
+from app.core.firestore_store import firestore_store
 from app.core.reserved_paths import is_reserved_project_slug
 from app.services.slug_utils import normalize_slug
 from app.services.storage_service import storage_service
 from app.utils.cache import add_cache_buster
+from app.utils.datetime import utc_now
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,6 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
 import { MAX_DESCRIPTION_LENGTH } from "@/lib/limits";
-import type { CollectionDoc } from "@/lib/types";
+import type { CollectionDoc } from "@/lib/entities";
 
 type CreateCollectionInput = {
   projectId: string;

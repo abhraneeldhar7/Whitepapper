@@ -25,7 +25,7 @@ import type {
   HashnodeDistribution,
   PaperDoc,
   UserDoc,
-} from "@/lib/types";
+} from "@/lib/entities";
 import { copyToClipboard } from "@/lib/utils";
 
 const HASHNODE_ACCESS_TOKEN_KEY = "hashnode_access_token";
@@ -408,3 +408,4 @@ export default function DistributionDialog({
     </Dialog>
   );
 }
+

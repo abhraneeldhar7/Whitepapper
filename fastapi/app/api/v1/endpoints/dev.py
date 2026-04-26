@@ -3,12 +3,9 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Path, Query, Response
+from pydantic import BaseModel
 
-from app.schemas.entities import (
-    ApiKeyCreateResponse,
-    ApiKeySummary,
-    ApiKeyToggle,
-)
+from app.schemas.entities import ApiKeyCreateResponse, ApiKeySummary
 from app.services.auth_service import get_verified_id
 from app.services._dev_api_service import _dev_api_service
 from app.services.collections_service import collections_service
@@ -22,6 +19,10 @@ CurrentUserIdDep = Annotated[str, Depends(get_verified_id)]
 XApiKey = Annotated[str | None, Header(alias="x-api-key")]
 
 DEV_CACHE_CONTROL = "public, max-age=300, s-maxage=300, stale-while-revalidate=300"
+
+
+class ApiKeyToggleRequest(BaseModel):
+    isActive: bool
 
 
 def _extract_api_key(api_key_header: str | None) -> str:
@@ -201,7 +202,7 @@ def create_api_key(
 
 
 @api_keys_router.patch("/api-keys/{key_id}", response_model=ApiKeySummary)
-def toggle_api_key(key_id: str, payload: ApiKeyToggle, user_id: CurrentUserIdDep) -> ApiKeySummary:
+def toggle_api_key(key_id: str, payload: ApiKeyToggleRequest, user_id: CurrentUserIdDep) -> ApiKeySummary:
     key_doc = _dev_api_service.get_by_id(key_id)
     if key_doc.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")

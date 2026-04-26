@@ -8,8 +8,9 @@ from redis import Redis
 
 from app.core.cache_policies import API_KEY_CACHE_POLICY
 from app.core.limits import DEV_API_LIMIT_PER_MONTH
-from app.core.firestore_store import firestore_store, utc_now
+from app.core.firestore_store import firestore_store
 from app.core.redis_client import get_cache_prefix, get_redis_client
+from app.utils.datetime import utc_now
 
 logger = logging.getLogger(__name__)
 

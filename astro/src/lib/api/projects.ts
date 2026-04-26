@@ -1,7 +1,7 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
 import { MAX_DESCRIPTION_LENGTH } from "@/lib/limits";
 import { sortPapersLatestFirst } from "@/lib/paperSort";
-import type { ProjectDoc, PaperDoc, CollectionDoc } from "@/lib/types";
+import type { ProjectDoc, PaperDoc, CollectionDoc } from "@/lib/entities";
 
 type CreateProjectInput = {
   name?: string;

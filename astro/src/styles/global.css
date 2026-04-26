@@ -19,7 +19,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
+  --background: #fafafa;
   --foreground: oklch(0.148 0.004 228.8);
   --card: #f4f8f9;
   --card-foreground: oklch(0.148 0.004 228.8);
@@ -29,7 +29,7 @@
   --primary-foreground: oklch(29.716% 0.00003 271.152);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(96.263% 0.00217 199.903);
+  --muted: oklch(94.611% 0.00011 271.152);
   --muted-foreground: oklch(40.098% 0.01972 211.256);
   --accent: #0be68f;
   --accent-foreground: oklch(0.979 0.021 166.113);
@@ -206,7 +206,7 @@ html[data-collection-workspace-ready="true"] .collection-shell-app {
 }
 
 h1{
-  line-height: 1.2em;
+  line-height: 1.4em;
 }
 
 body::selection {

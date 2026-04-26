@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, PlayIcon } from "lucide-react";
+import { PlayIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn, copyToClipboardWithToast } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { getDevCollection, getDevPaper, getDevProject } from "@/lib/api/dev";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import MarkdownRender from "./ui/markdown-render/markdown-render";
 
 const DEV_API_BASE_URL = `${String(import.meta.env.PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "")}/dev`;
@@ -237,7 +236,7 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
     const [variables, setVariables] = useState<Record<string, string>>(() => getInitialVariables(ENDPOINTS[0]));
     const [response, setResponse] = useState<{ type: "success" | "error"; data: any } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [copied, setCopied] = useState(false);
+    
     const visibleVariables = getEndpointVariables(selectedEndpoint, identifierType);
 
     const handleEndpointChange = (endpoint: EndpointConfig) => {
@@ -264,22 +263,7 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
         setVariables((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleCopyCode = async () => {
-        let code = selectedEndpoint.code[language];
-        code = replaceCodePlaceholders(
-            code,
-            variables,
-            selectedEndpoint.hasIdentifierOptions ? identifierType : null,
-            variables.identifier || "",
-            selectedEndpoint.id
-        );
-        const ok = await copyToClipboardWithToast(code, "Code copied.", "Unable to copy code.");
-        if (ok) {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        }
-    };
-
+ 
     const getCurrentCode = () => {
         let code = selectedEndpoint.code[language];
         code = replaceCodePlaceholders(
@@ -356,13 +340,13 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
 
             <p className="mt-3 max-w-[720px] text-sm leading-6 text-muted-foreground">{selectedEndpoint.description}</p>
 
-            <div className={`overflow-hidden relative ${language == "typescript" ? "h-[260px]" : "h-[240px]"} transition-all duration-300`}>
+            <div className={`mt-4 overflow-hidden relative`}>
                 <div
                     className={cn(
-                        "flex gap-1 transition-all duration-300 ease-in-out absolute top-[30px] left-2 z-2",
+                        "flex gap-1 transition-all duration-300 ease-in-out absolute top-[47px] left-[10px] z-2",
                         selectedEndpoint.hasIdentifierOptions
                             ? "translate-y-[0px]"
-                            : "translate-y-[-70px]")}>
+                            : "translate-y-[-100px]")}>
                     <Button
 
                         variant={identifierType === "id" ? "default" : "secondary"}
@@ -384,20 +368,20 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
             </div>
 
             <div className="mt-2 flex gap-2">
-                <Button variant={language == "typescript" ? "secondary" : "ghost"} onClick={() => { setLanguage("typescript") }}>Typescript</Button>
-                <Button variant={language == "python" ? "secondary" : "ghost"} onClick={() => { setLanguage("python") }}>Python</Button>
+                <Button variant={language == "typescript" ? "outline" : "ghost"} onClick={() => { setLanguage("typescript") }}>Typescript</Button>
+                <Button variant={language == "python" ? "outline" : "ghost"} onClick={() => { setLanguage("python") }}>Python</Button>
             </div>
 
             {!hideRunSection && (
                 <div className="space-y-4 mt-5">
                     <h3 className="text-sm font-semibold text-foreground">Variables</h3>
-                    <div className="space-y-3">
+                    <div className="space-y-5">
                         {visibleVariables.map((variable) => (
                             <div
                                 key={variable.name}
                                 className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center"
                             >
-                                <Label htmlFor={variable.name} className="text-sm font-medium text-muted-foreground">
+                                <Label htmlFor={variable.name}>
                                     {variable.label}
                                     {variable.required && <span className="text-destructive ml-1">*</span>}
                                 </Label>
@@ -408,15 +392,14 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
                                         placeholder={variable.placeholder}
                                         value={variables[variable.name] || ""}
                                         onChange={(e) => handleVariableChange(variable.name, e.target.value)}
-                                        className="font-mono text-sm"
                                     />
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="mt-10 flex justify-end">
-                        <Button loading={isLoading} onClick={handleRunRequest} disabled={isLoading} className="w-full md:w-auto">
+                    <div className="mt-5 md:mt-10 flex justify-end">
+                        <Button size="lg" loading={isLoading} onClick={handleRunRequest} disabled={isLoading} className="w-full md:w-auto">
                             <PlayIcon /> Run
                         </Button>
                     </div>

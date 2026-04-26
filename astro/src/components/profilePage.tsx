@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { PlusIcon } from "lucide-react";
 import { toast } from "sonner";
-import type { PaperDoc, ProjectDoc, UserDoc } from "@/lib/types";
+import type { PaperDoc, ProjectDoc, UserDoc } from "@/lib/entities";
 import { createPaper } from "@/lib/api/papers";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import EmptyPaperNotes from "./emptyPagesComp";
 import PaperCardComponent from "./paperCardComponent";
-import WorkspaceCard from "./dashboard/WorkspaceCard";
 import ProjectCard from "./project/ProjectCard";
 
 type ProfilePageProps = {

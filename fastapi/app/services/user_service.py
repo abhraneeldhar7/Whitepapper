@@ -1,18 +1,16 @@
 import logging
-import pickle
 import secrets
 from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 
-from app.core.cache_policies import USER_CACHE_POLICY
-from app.core.firestore_store import firestore_store, utc_now
-from app.core.redis_client import get_cache_prefix, get_redis_client
+from app.core.firestore_store import firestore_store
 from app.core.reserved_paths import is_reserved_username
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
 from app.services.storage_service import storage_service
+from app.utils.datetime import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -24,54 +22,22 @@ USERNAME_UPDATE_COOLDOWN = timedelta(days=7)
 
 class UserService:
     def _user_by_username_cache_key(self, username: str) -> str:
-        return f"{get_cache_prefix()}:users:username:{username}"
+        return f"users:username:{username}"
 
     def _load_cached_user(self, key: str) -> dict | None:
-        client = get_redis_client()
-        if not client:
-            return None
-        try:
-            payload = client.get(key)
-            if payload is None:
-                return None
-            value = pickle.loads(payload)
-            return value if isinstance(value, dict) else None
-        except Exception:
-            logger.exception("User cache read failed for key=%s", key)
-            return None
+        # Redis cache removed for users; always miss.
+        return None
 
     def _set_cached_user(self, user_doc: dict) -> None:
-        client = get_redis_client()
-        if not client:
-            return
-
-        username = user_doc.get(USERNAME_KEY)
-        if not username:
-            return
-
-        try:
-            client.setex(
-                self._user_by_username_cache_key(username),
-                USER_CACHE_POLICY.ttl_seconds,
-                pickle.dumps(user_doc),
-            )
-        except Exception:
-            logger.exception("User cache write failed for username=%s", username)
+        # No-op: user caching removed.
+        return None
 
     def getcached_user__by_username(self, username: str) -> dict | None:
-        return self._load_cached_user(self._user_by_username_cache_key(username))
+        return None
 
     def invalidate_user(self, username: str | None) -> None:
-        client = get_redis_client()
-        if not client:
-            return
-        if not username:
-            return
-
-        try:
-            client.delete(self._user_by_username_cache_key(username))
-        except Exception:
-            logger.exception("User cache invalidation failed for username=%s", username)
+        # No-op for compatibility; Redis user cache has been removed.
+        return None
 
     def _generate_username(self, email: str | None, user_id: str, fallback_username: str | None) -> str:
         base = ""
@@ -242,20 +208,12 @@ class UserService:
             raise HTTPException(status_code=404, detail="User not found.")
         if not value:
             raise HTTPException(status_code=404, detail="User not found.")
-
-        cached = self.getcached_user__by_username(value)
-        if cached:
-            hydrated = self._ensure_updated_at(cached)
-            self._set_cached_user(hydrated)
-            return hydrated
-
         matches = firestore_store.find_by_fields(USERS_COLLECTION, {USERNAME_KEY: value})
         if not matches:
             raise HTTPException(status_code=404, detail="User not found.")
 
         user_doc = matches[0]
         user_doc = self._ensure_updated_at(user_doc)
-        self._set_cached_user(user_doc)
         return user_doc
 
     def get_by_id(self, user_id: str) -> dict:

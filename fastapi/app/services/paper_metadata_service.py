@@ -146,6 +146,48 @@ def _sanitize_tags(value: object, fallback_source: str) -> list[str]:
     return _extract_tags_from_text(fallback_source, "whitepaper", limit=6) or ["whitepaper"]
 
 
+def build_article_jsonld(
+    *,
+    title: str,
+    description: str,
+    author_name: str,
+    url: str | None = None,
+    date_published: str | None = None,
+    date_modified: str | None = None,
+    publisher_name: str | None = None,
+    publisher_url: str | None = None,
+    image: str | None = None,
+    section: str | None = None,
+    keywords: list[str] | None = None,
+) -> dict:
+    jsonld: dict = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": title,
+        "description": description,
+        "author": {"@type": "Person", "name": author_name},
+    }
+    if publisher_name:
+        pub: dict = {"@type": "Organization", "name": publisher_name}
+        if publisher_url:
+            pub["url"] = publisher_url
+        jsonld["publisher"] = pub
+    if url:
+        jsonld["mainEntityOfPage"] = {"@type": "WebPage", "@id": url}
+        jsonld["url"] = url
+    if date_published:
+        jsonld["datePublished"] = date_published
+    if date_modified:
+        jsonld["dateModified"] = date_modified
+    if image:
+        jsonld["image"] = {"@type": "ImageObject", "url": image}
+    if section:
+        jsonld["articleSection"] = section
+    if keywords:
+        jsonld["keywords"] = ", ".join(keywords)
+    return jsonld
+
+
 class PaperMetadataService:
     def build_metadata(self, *, paper_doc: dict, author_doc: dict | None, project_doc: dict | None = None) -> dict:
         site_url = _normalize_site_url()
@@ -194,18 +236,20 @@ class PaperMetadataService:
         )
 
         ai_payload = groqService.generate_paper_seo(
-            title=title,
-            body=body,
+            paper_doc=paper_doc,
             author_name=display_name,
             article_section=article_section,
-        )
+        ) or {}
 
-        ai_meta_description = str((ai_payload or {}).get("metaDescription") or "")
-        ai_og_description = str((ai_payload or {}).get("ogDescription") or "")
-        ai_twitter_description = str((ai_payload or {}).get("twitterDescription") or "")
-        ai_abstract = str((ai_payload or {}).get("abstract") or "")
+        ai_meta_description = str(ai_payload.get("metaDescription") or "")
+        ai_og_description = str(ai_payload.get("ogDescription") or "")
+        ai_twitter_description = str(ai_payload.get("twitterDescription") or "")
+        ai_abstract = str(ai_payload.get("abstract") or "")
+        ai_key_takeaways = ai_payload.get("keyTakeaways") if isinstance(ai_payload.get("keyTakeaways"), list) else []
+        ai_faq = ai_payload.get("faq") if isinstance(ai_payload.get("faq"), list) else []
+        ai_author_bio = str(ai_payload.get("author_bio") or "")
 
-        og_tags = _sanitize_tags((ai_payload or {}).get("ogTags"), f"{title} {article_section}")
+        og_tags = _sanitize_tags(ai_payload.get("ogTags"), f"{title} {article_section}")
         word_count = len(re.findall(r"\b\w+\b", plain_text_body))
         reading_time_minutes = max(1, (max(word_count, 1) + READING_SPEED_WPM - 1) // READING_SPEED_WPM)
 
@@ -254,6 +298,24 @@ class PaperMetadataService:
             "publisherUrl": site_url,
             "isAccessibleForFree": True,
             "license": DEFAULT_LICENSE,
+            # AI-provided items (non-deterministic)
+            "keyTakeaways": ai_key_takeaways,
+            "faq": ai_faq,
+            "author_bio": ai_author_bio,
+            # JSON-LD built server-side and stored for rendering
+            "jsonld": build_article_jsonld(
+                title=title,
+                description=meta_description,
+                author_name=display_name,
+                url=canonical,
+                date_published=created_at,
+                date_modified=updated_at,
+                publisher_name="Whitepapper",
+                publisher_url=site_url,
+                image=image_url,
+                section=article_section,
+                keywords=og_tags,
+            ),
         }
 
 

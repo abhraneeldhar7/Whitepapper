@@ -5,7 +5,7 @@ import { LaptopIcon, LogOutIcon, SettingsIcon, UserIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { SignOutButton } from "@clerk/astro/react";
-import type { UserDoc } from "@/lib/types";
+import type { UserDoc } from "@/lib/entities";
 
 function getDisplayName(name: string | null | undefined, username: string | null | undefined): string {
   return name || username || "User";
@@ -88,3 +88,4 @@ export default function UserPopover({ user }: UserPopoverProps) {
     </Popover >
   );
 }
+

@@ -1,8 +1,25 @@
 ---
 import McpConnectPage from "@/components/mcp/McpConnectPage";
 import Layout from "@/layouts/Layout.astro";
+import { createApiClient } from "@/lib/api/client";
+import { getMcpConsentContext, type McpConsentContext } from "@/lib/api/mcp";
+
+const requestId = Astro.url.searchParams.get("request_id") || "";
+const { userId, getToken } = Astro.locals.auth();
+
+if (!userId) {
+  const loginUrl = new URL("/login", Astro.url);
+  loginUrl.searchParams.set("redirect_url", Astro.url.toString());
+  return Astro.redirect(loginUrl.toString(), 302);
+}
+
+const token = await getToken();
+const serverClient = createApiClient(token);
+const initialContext = requestId
+  ? await getMcpConsentContext(requestId, serverClient).catch(() => null as McpConsentContext | null)
+  : null;
 ---
 
 <Layout showSiteNav={false}>
-  <McpConnectPage client:load />
+  <McpConnectPage client:load initialContext={initialContext} initialRequestId={requestId} />
 </Layout>

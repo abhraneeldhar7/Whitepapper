@@ -6,7 +6,7 @@ import { createApiClient } from "@/lib/api/client";
 import { resolveIntegrationBaseUrl } from "@/lib/integrationBaseUrl";
 import { getPaper } from "@/lib/api/papers";
 import { getCurrentUser } from "@/lib/api/users";
-import type { PaperDoc, UserDoc } from "@/lib/types";
+import type { PaperDoc, UserDoc } from "@/lib/entities";
 import { isMobileUserAgent } from "@/lib/userAgent";
 
 const { userId, getToken } = Astro.locals.auth();
@@ -46,3 +46,4 @@ const integrationBaseUrl = resolveIntegrationBaseUrl();
     <WriteEditorSkeleton slot="fallback" />
   </WriteEditorRoot>
 </Layout>
+

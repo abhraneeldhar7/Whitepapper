@@ -1,20 +1,34 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
 
 from app.api.v1.endpoints.distributions.common import (
+    DistributionPublishInput,
     build_public_article_url,
     extract_description,
     extract_tags,
     resolve_distribution_access_token,
     resolve_distribution_context,
 )
-from app.schemas.entities import DistributionPublishInput, DistributionPublishResult, HashnodeDistribution, HashnodeDistributionUpsert
-from app.schemas.users import UserProfile
+from app.schemas.entities import HashnodeDistribution, UserDoc
 from app.services.auth_service import get_verified_id
 from app.services.distributions import distributions_store_service, hashnode_distribution_service
 from app.services.slug_utils import normalize_slug
 from app.services.user_service import user_service
 
 router = APIRouter()
+
+
+class HashnodeDistributionUpsertRequest(BaseModel):
+    accessToken: str = Field(min_length=1)
+    storeInCloud: bool = False
+
+
+class DistributionPublishResult(BaseModel):
+    platform: Literal["hashnode", "devto"]
+    postId: str
+    url: str | None = None
 
 
 @router.get("/hashnode", response_model=HashnodeDistribution | None)
@@ -24,11 +38,11 @@ def get_hashnode_distribution(user_id: str = Depends(get_verified_id)) -> Hashno
     return hashnode if isinstance(hashnode, dict) else None
 
 
-@router.put("/hashnode", response_model=UserProfile)
+@router.put("/hashnode", response_model=UserDoc)
 def put_hashnode_distribution(
-    payload: HashnodeDistributionUpsert,
+    payload: HashnodeDistributionUpsertRequest,
     user_id: str = Depends(get_verified_id),
-) -> UserProfile:
+) -> UserDoc:
     if payload.storeInCloud:
         distributions_store_service.upsert_hashnode_access_token(user_id, payload.accessToken)
     else:
@@ -45,8 +59,8 @@ def put_hashnode_distribution(
     )
 
 
-@router.delete("/hashnode", response_model=UserProfile)
-def revoke_hashnode_distribution(user_id: str = Depends(get_verified_id)) -> UserProfile:
+@router.delete("/hashnode", response_model=UserDoc)
+def revoke_hashnode_distribution(user_id: str = Depends(get_verified_id)) -> UserDoc:
     distributions_store_service.remove_hashnode_distribution(user_id)
     return user_service.update_user(
         user_id,

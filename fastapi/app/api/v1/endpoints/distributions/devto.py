@@ -1,20 +1,34 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
 
 from app.api.v1.endpoints.distributions.common import (
+    DistributionPublishInput,
     build_public_article_url,
     extract_description,
     extract_tags,
     resolve_distribution_access_token,
     resolve_distribution_context,
 )
-from app.schemas.entities import DevtoDistribution, DevtoDistributionUpsert, DistributionPublishInput, DistributionPublishResult
-from app.schemas.users import UserProfile
+from app.schemas.entities import DevtoDistribution, UserDoc
 from app.services.auth_service import get_verified_id
 from app.services.distributions import devto_distribution_service, distributions_store_service
 from app.services.slug_utils import normalize_slug
 from app.services.user_service import user_service
 
 router = APIRouter()
+
+
+class DevtoDistributionUpsertRequest(BaseModel):
+    accessToken: str = Field(min_length=1)
+    storeInCloud: bool = False
+
+
+class DistributionPublishResult(BaseModel):
+    platform: Literal["hashnode", "devto"]
+    postId: str
+    url: str | None = None
 
 
 @router.get("/devto", response_model=DevtoDistribution | None)
@@ -24,11 +38,11 @@ def get_devto_distribution(user_id: str = Depends(get_verified_id)) -> DevtoDist
     return devto if isinstance(devto, dict) else None
 
 
-@router.put("/devto", response_model=UserProfile)
+@router.put("/devto", response_model=UserDoc)
 def put_devto_distribution(
-    payload: DevtoDistributionUpsert,
+    payload: DevtoDistributionUpsertRequest,
     user_id: str = Depends(get_verified_id),
-) -> UserProfile:
+) -> UserDoc:
     if payload.storeInCloud:
         distributions_store_service.upsert_devto_access_token(user_id, payload.accessToken)
     else:
@@ -45,8 +59,8 @@ def put_devto_distribution(
     )
 
 
-@router.delete("/devto", response_model=UserProfile)
-def revoke_devto_distribution(user_id: str = Depends(get_verified_id)) -> UserProfile:
+@router.delete("/devto", response_model=UserDoc)
+def revoke_devto_distribution(user_id: str = Depends(get_verified_id)) -> UserDoc:
     distributions_store_service.remove_devto_access_token(user_id)
     return user_service.update_user(
         user_id,

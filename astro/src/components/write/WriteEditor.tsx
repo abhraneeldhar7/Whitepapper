@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRightFromSquare,
+  CodeXmlIcon,
   CopyIcon,
   DownloadIcon,
   ForwardIcon,
@@ -8,6 +9,7 @@ import {
   KeyboardIcon,
   KeyboardOffIcon,
   LockIcon,
+  PencilIcon,
   RssIcon,
   SaveIcon,
   SettingsIcon,
@@ -49,7 +51,7 @@ import {
   MAX_THUMBNAIL_HEIGHT,
   MAX_THUMBNAIL_WIDTH,
 } from "@/lib/constants";
-import type { PaperDoc, PaperMetadata, UserDoc } from "@/lib/types";
+import type { PaperDoc, PaperMetadata, UserDoc } from "@/lib/entities";
 import { compressImage, copyToClipboard, deepEqual, downloadMarkdownFile, isImageFile } from "@/lib/utils";
 import { resolveIntegrationBaseUrl } from "@/lib/integrationBaseUrl";
 import click1Sound from "@/assets/sounds/click1.mp3";
@@ -928,7 +930,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                       <div className="flex items-center gap-2">
                         {metadata ? (
                           <Button type="button" className="w-full" onClick={handleOpenMetadataDialog}>
-                            Details
+                            <CodeXmlIcon /> View
                           </Button>
                         ) : (
                           <Button
@@ -1210,7 +1212,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
           }
         }}
       >
-        <DialogContent className="md:max-w-[700px] h-[70vh] md:h-[90vh] flex flex-col overflow-hidden">
+        <DialogContent className="md:max-w-[500px] h-[70vh] md:h-[80vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>Paper metadata</DialogTitle>
           </DialogHeader>
@@ -1341,61 +1343,62 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                 </div>
               </ScrollArea>
               <DialogFooter >
-                <div className="flex justify-between w-full">
+                <Button type="button" variant="outline" onClick={() => setMetadataEditMode((prev) => !prev)}>
+                  {metadataEditMode ? <XIcon /> : <PencilIcon className="size-3"/>}
+                  {metadataEditMode ? "Cancel" : "Edit"}
+                </Button>
+                {metadataEditMode &&
+                  <Button
+                    type="button"
+                    onClick={handleSaveMetadataDraftLocally}
+                    disabled={!metadataEditMode}
+                  >
+                    <SaveIcon />
+                    Save 
+                  </Button>
+                }
 
-                  {!metadataEditMode && <Dialog open={metadataGenerateConfirmOpen} onOpenChange={setMetadataGenerateConfirmOpen}>
-                    <DialogTrigger asChild>
-                      <Button type="button" disabled={metadataGenerating}>
-                        Generate
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Regenerate metadata?</DialogTitle>
-                        <DialogDescription>This will reset the current metadata.</DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <DialogClose asChild>
-                          <Button type="button" variant="secondary" disabled={metadataGenerating}>
-                            Cancel
-                          </Button>
-                        </DialogClose>
-                        <Button
-                          type="button"
-                          loading={metadataGenerating}
-                          onClick={async () => {
-                            await handleGenerateMetadataFromDialog();
-                            setMetadataGenerateConfirmOpen(false);
-                          }}
-                        >
-                          Confirm
+
+
+                {!metadataEditMode && <Dialog open={metadataGenerateConfirmOpen} onOpenChange={setMetadataGenerateConfirmOpen}>
+                  <DialogTrigger asChild>
+                    <Button disabled={metadataGenerating}>
+                      <CodeXmlIcon /> Generate
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Regenerate metadata?</DialogTitle>
+                      <DialogDescription>This will reset the current metadata.</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button type="button" variant="secondary" disabled={metadataGenerating}>
+                          Cancel
                         </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>}
+                      </DialogClose>
+                      <Button
+                        type="button"
+                        loading={metadataGenerating}
+                        onClick={async () => {
+                          await handleGenerateMetadataFromDialog();
+                          setMetadataGenerateConfirmOpen(false);
+                        }}
+                      >
+                        Confirm
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>}
 
-                  <div></div>
-
-                  <div className="flex gap-2">
-                    <Button type="button" variant="secondary" onClick={() => setMetadataEditMode((prev) => !prev)}>
-                      {metadataEditMode ? "Cancel" : "Edit"}
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={handleSaveMetadataDraftLocally}
-                      disabled={!metadataEditMode}
-                    >
-                      Save
-                    </Button>
-                  </div>
-                </div>
               </DialogFooter>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">No metadata available.</p>
-          )}
-        </DialogContent>
-      </Dialog>
+          )
+          }
+        </DialogContent >
+      </Dialog >
 
       <DistributionDialog
         open={distributionDialogOpen}
@@ -1406,6 +1409,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
         integrationBaseUrl={integrationBaseUrl}
       />
 
-    </div>
+    </div >
   );
 }
+

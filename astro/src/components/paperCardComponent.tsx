@@ -1,4 +1,4 @@
-import type { PaperDoc } from "@/lib/types";
+import type { PaperDoc } from "@/lib/entities";
 import { formatFirestoreDate } from "@/lib/utils";
 import { Archive, NotebookPen, RssIcon } from "lucide-react";
 import abstractLightPic from "@/assets/abstract_light.jpg";
@@ -103,3 +103,4 @@ export default function PaperCardComponent({
         </div>
     </div>)
 }
+

@@ -3,9 +3,12 @@ import type {
   CollectionDoc,
   PaperDoc,
   ProjectDoc,
-  PublicPaperPagePayload,
   UserDoc,
-} from "@/lib/types";
+} from "@/lib/entities";
+
+export type PublicPaperPagePayload = {
+  paper: PaperDoc;
+};
 
 export type PublicProfileResponse = {
   user: UserDoc;

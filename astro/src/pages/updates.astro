@@ -1,7 +1,7 @@
-﻿---
+---
 import SiteContentListingPage from "@/components/site/SiteContentListingPage.astro";
 import Layout from "@/layouts/Layout.astro";
-import type { PaperDoc } from "@/lib/types";
+import type { PaperDoc } from "@/lib/entities";
 
 type SiteBlogCollectionResponse = {
   papers: PaperDoc[];
@@ -62,3 +62,4 @@ Astro.response.headers.set(
     />
   </main>
 </Layout>
+

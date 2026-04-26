@@ -4,13 +4,6 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.core.limits import DEV_API_LIMIT_PER_MONTH
-from app.core.limits import MCP_TOKEN_LIMIT_PER_MONTH
-
-
-class AuthUser(BaseModel):
-    userId: str
-    sessionId: str | None = None
-    email: str | None = None
 
 
 class UserPreferences(BaseModel):
@@ -39,25 +32,10 @@ class HashnodeDistribution(BaseModel):
     accessToken: str | None = None
     publicationId: str | None = None
 
-class HashnodeDistributionUpsert(BaseModel):
-    accessToken: str = Field(min_length=1)
-    storeInCloud: bool = False
-
 
 class DevtoDistribution(BaseModel):
     accessToken: str | None = None
 
-
-class DevtoDistributionUpsert(BaseModel):
-    accessToken: str = Field(min_length=1)
-    storeInCloud: bool = False
-
-
-
-class DistributionDoc(BaseModel):
-    userId: str
-    hashnode: HashnodeDistribution | None = None
-    devto: DevtoDistribution | None = None
 
 class ProjectDoc(BaseModel):
     projectId: str
@@ -73,26 +51,6 @@ class ProjectDoc(BaseModel):
     updatedAt: datetime
 
 
-class ProjectCreate(BaseModel):
-    name: str | None = Field(default=None, min_length=1, max_length=120)
-    description: str | None = None
-    contentGuidelines: str | None = None
-    logoUrl: str | None = None
-    isPublic: bool = True
-
-
-class ProjectUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=1, max_length=120)
-    slug: str | None = Field(default=None, min_length=2, max_length=80)
-    description: str | None = None
-    contentGuidelines: str | None = None
-    logoUrl: str | None = None
-
-
-class ProjectVisibilityToggle(BaseModel):
-    isPublic: bool
-
-
 class CollectionDoc(BaseModel):
     collectionId: str
     projectId: str
@@ -104,25 +62,6 @@ class CollectionDoc(BaseModel):
     pagesNumber: int = 0
     createdAt: datetime
     updatedAt: datetime
-
-
-class CollectionCreate(BaseModel):
-    projectId: str
-    name: str = Field(min_length=1, max_length=120)
-    slug: str | None = Field(default=None, min_length=2, max_length=80)
-    description: str | None = None
-    isPublic: bool | None = None
-
-
-class CollectionUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=1, max_length=120)
-    title: str | None = Field(default=None, min_length=1, max_length=120)
-    slug: str | None = Field(default=None, min_length=2, max_length=80)
-    description: str | None = None
-
-
-class CollectionVisibilityToggle(BaseModel):
-    isPublic: bool
 
 
 class PaperMetadata(BaseModel):
@@ -164,6 +103,11 @@ class PaperMetadata(BaseModel):
     publisherUrl: str = ""
     isAccessibleForFree: bool
     license: str
+    # New AI/SEO fields
+    keyTakeaways: list[str] | None = None
+    faq: list[dict] | None = None
+    author_bio: str | None = None
+    jsonld: dict | list[dict] | None = None
 
 
 class PaperDoc(BaseModel):
@@ -181,94 +125,6 @@ class PaperDoc(BaseModel):
     updatedAt: datetime
 
 
-class PublicAuthorSummary(BaseModel):
-    username: str
-    displayName: str | None = None
-    avatarUrl: str | None = None
-
-
-class PublicPaperPagePayload(BaseModel):
-    paper: PaperDoc
-
-
-class PaperCreate(BaseModel):
-    collectionId: str | None = None
-    projectId: str | None = None
-    thumbnailUrl: str | None = None
-    title: str | None = Field(default=None, min_length=1, max_length=200)
-    slug: str | None = Field(default=None, min_length=2, max_length=120)
-    body: str = ""
-    status: Literal["draft", "published", "archived"] = "draft"
-
-
-class PaperUpdate(BaseModel):
-    collectionId: str | None = None
-    projectId: str | None = None
-    thumbnailUrl: str | None = None
-    title: str | None = Field(default=None, min_length=1, max_length=200)
-    slug: str | None = Field(default=None, min_length=2, max_length=120)
-    body: str | None = None
-    status: Literal["draft", "published", "archived"] | None = None
-    metadata: PaperMetadata | None = None
-
-
-class PaperMetadataGenerate(BaseModel):
-    payload: PaperDoc
-
-
-class DistributionPublishInput(BaseModel):
-    paperId: str
-    payload: PaperDoc | None = None
-    accessToken: str | None = None
-
-
-class DistributionPublishResult(BaseModel):
-    platform: Literal["hashnode", "devto"]
-    postId: str
-    url: str | None = None
-
-
-class PaperCreateResponse(BaseModel):
-    paperId: str
-
-
-class DevProjectPayload(BaseModel):
-    project: ProjectDoc
-    collections: list[CollectionDoc]
-
-
-class DevCollectionPayload(BaseModel):
-    collection: CollectionDoc
-    papers: list[PaperDoc]
-
-
-class DevPaperPayload(BaseModel):
-    paper: PaperDoc
-
-
-class DashboardPayload(BaseModel):
-    user: UserDoc
-    projects: list[ProjectDoc]
-    papers: list[PaperDoc]
-
-
-class ProjectDashboardPayload(BaseModel):
-    project: ProjectDoc
-    collections: list[CollectionDoc]
-    papers: list[PaperDoc]
-
-
-class ApiKeyDoc(BaseModel):
-    keyId: str
-    ownerId: str
-    projectId: str
-    keyHash: str
-    usage: int = 0
-    limitPerMonth: int = DEV_API_LIMIT_PER_MONTH
-    isActive: bool = True
-    createdAt: datetime
-
-
 class ApiKeySummary(BaseModel):
     keyId: str
     ownerId: str
@@ -281,17 +137,3 @@ class ApiKeySummary(BaseModel):
 
 class ApiKeyCreateResponse(ApiKeySummary):
     rawKey: str
-
-
-class ApiKeyToggle(BaseModel):
-    isActive: bool
-
-
-class McpTokenSummary(BaseModel):
-    tokenId: str
-    projectId: str
-    workspaceId: str
-    label: str | None = None
-    usage: int = 0
-    limitPerMonth: int = MCP_TOKEN_LIMIT_PER_MONTH
-    createdAt: datetime

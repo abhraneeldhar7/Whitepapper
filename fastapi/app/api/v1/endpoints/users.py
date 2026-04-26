@@ -3,14 +3,14 @@ import time
 from urllib.parse import urlsplit, urlunsplit
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
+from pydantic import BaseModel, Field
 
 from app.services.auth_service import get_verified_id
-from app.schemas.users import UserProfile, UserUpdate
-from app.schemas.entities import DashboardPayload
 from app.core.constants import (
     MAX_PROFILE_IMAGE_HEIGHT,
     MAX_PROFILE_IMAGE_WIDTH,
 )
+from app.schemas.entities import PaperDoc, ProjectDoc, UserDoc
 from app.services.storage_service import storage_service
 from app.services.user_service import user_service
 from app.services.projects_service import projects_service
@@ -18,6 +18,20 @@ from app.services.papers_service import papers_service
 
 router = APIRouter(prefix="/users", tags=["users"])
 logger = logging.getLogger(__name__)
+
+
+class UserUpdate(BaseModel):
+    displayName: str | None = None
+    avatarUrl: str | None = None
+    username: str | None = Field(default=None, min_length=2, max_length=80)
+    description: str | None = None
+    preferences: dict | None = None
+
+
+class DashboardResponse(BaseModel):
+    user: UserDoc
+    projects: list[ProjectDoc]
+    papers: list[PaperDoc]
 
 
 def _with_cache_buster(url: str) -> str:
@@ -28,8 +42,8 @@ def _with_cache_buster(url: str) -> str:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, f"time={stamp}", ""))
 
 
-@router.get("/me", response_model=UserProfile)
-def get_me(user_id: str = Depends(get_verified_id)) -> UserProfile:
+@router.get("/me", response_model=UserDoc)
+def get_me(user_id: str = Depends(get_verified_id)) -> UserDoc:
 
     try:
         return user_service.get_by_id(user_id)
@@ -42,11 +56,11 @@ def get_me(user_id: str = Depends(get_verified_id)) -> UserProfile:
         )
 
 
-@router.patch("/me", response_model=UserProfile)
+@router.patch("/me", response_model=UserDoc)
 def patch_me(
     payload: UserUpdate,
     user_id: str = Depends(get_verified_id),
-) -> UserProfile:
+) -> UserDoc:
     return user_service.update_user(
         user_id,
         payload.model_dump(exclude_none=True),
@@ -93,8 +107,8 @@ def check_username_available(
     return {"available": user_service.is_username_available(username, user_id)}
 
 
-@router.get("/dashboard", response_model=DashboardPayload)
-def get_dashboard_data(user_id: str = Depends(get_verified_id)) -> DashboardPayload:
+@router.get("/dashboard", response_model=DashboardResponse)
+def get_dashboard_data(user_id: str = Depends(get_verified_id)) -> DashboardResponse:
     """Get all dashboard data: user profile, projects, and standalone papers (public/draft), sorted by updatedAt."""
     user = user_service.get_by_id(user_id)
     projects = projects_service.list_owned(user_id)
@@ -104,16 +118,16 @@ def get_dashboard_data(user_id: str = Depends(get_verified_id)) -> DashboardPayl
     projects.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
     standalone_papers.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
 
-    return DashboardPayload(
+    return DashboardResponse(
         user=user,
         projects=projects,
         papers=standalone_papers,
     )
 
 
-@router.get("/{username}", response_model=UserProfile)
+@router.get("/{username}", response_model=UserDoc)
 def get_user_by_username(
     username: str,
     _user_id: str = Depends(get_verified_id),
-) -> UserProfile:
+) -> UserDoc:
     return user_service.get_by_username(username)

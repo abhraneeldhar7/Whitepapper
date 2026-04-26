@@ -1,12 +1,19 @@
 from typing import Any
 
 from fastapi import HTTPException
+from pydantic import BaseModel
 
 from app.core.config import get_settings
-from app.schemas.entities import DistributionPublishInput, PaperDoc
+from app.schemas.entities import PaperDoc
 from app.services.papers_service import papers_service
 from app.services.slug_utils import normalize_slug
 from app.services.user_service import user_service
+
+
+class DistributionPublishInput(BaseModel):
+    paperId: str
+    payload: PaperDoc | None = None
+    accessToken: str | None = None
 
 
 def build_public_article_url(username: str, slug: str) -> str:

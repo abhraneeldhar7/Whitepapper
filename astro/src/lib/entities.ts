@@ -27,12 +27,6 @@ export type DevtoDistribution = {
   accessToken?: string | null;
 };
 
-export type DistributionDoc = {
-  userId: string;
-  hashnode?: HashnodeDistribution | null;
-  devto?: DevtoDistribution | null;
-};
-
 export type ProjectDoc = {
   projectId: string;
   ownerId: string;
@@ -114,91 +108,9 @@ export type PaperMetadata = {
   publisherUrl: string;
   isAccessibleForFree: boolean;
   license: string;
-};
-
-export type DistributionPublishInput = {
-  paperId: string;
-  payload?: PaperDoc | null;
-  accessToken?: string | null;
-};
-
-export type DistributionPublishResult = {
-  platform: "hashnode" | "devto";
-  postId: string;
-  url?: string | null;
-};
-
-export type PublicAuthorSummary = {
-  username: string;
-  displayName?: string | null;
-  avatarUrl?: string | null;
-};
-
-export type PublicPaperPagePayload = {
-  paper: PaperDoc;
-};
-
-export type PaperCreateResponse = {
-  paperId: string;
-};
-
-export type ApiKeySummary = {
-  keyId: string;
-  ownerId: string;
-  projectId: string;
-  usage: number;
-  limitPerMonth: number;
-  isActive: boolean;
-  createdAt: string;
-};
-
-export type ApiKeyDoc = ApiKeySummary;
-
-export type ApiKeyCreateResponse = ApiKeySummary & {
-  rawKey: string;
-};
-
-export type McpAuthorizationSummary = {
-  authorizationId: string;
-  clientId: string;
-  agentName?: string | null;
-  scopes: string[];
-  createdAt: string;
-  lastActive?: string | null;
-};
-
-export type McpAuthorizationListResponse = {
-  authorizations: McpAuthorizationSummary[];
-  usage: number;
-  limitPerMonth: number;
-};
-
-export type McpConsentContext = {
-  txnId: string;
-  clientId: string;
-  clientName?: string | null;
-  redirectUri: string;
-  scopes: string[];
-  user: {
-    displayName?: string | null;
-    username?: string | null;
-    email?: string | null;
-    avatarUrl?: string | null;
-  };
-};
-
-export type McpConnectionInfo = {
-  serverName: string;
-  transport: "http";
-  endpointUrl: string;
-  manualConfig: {
-    servers: Record<
-      string,
-      {
-        url: string;
-        type: "http";
-      }
-    >;
-    inputs: unknown[];
-  };
+  // New AI/SEO fields
+  keyTakeaways?: string[] | null;
+  faq?: Array<{ question: string; answer: string }> | null;
+  author_bio?: string | null;
+  jsonld?: Record<string, any> | Array<Record<string, any>> | null;
 };

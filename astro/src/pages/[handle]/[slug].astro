@@ -5,7 +5,7 @@ import { formatFirestoreDate } from "@/lib/utils";
 import PostRender from "@/components/ui/markdown-render/markdown-render";
 import { LinesTableOfContent } from "@/components/ui/toc/linesTableOfContent";
 import MobileTableOfContent from "@/components/ui/toc/mobileTableOfContent";
-import type { PaperDoc } from "@/lib/types";
+import type { PaperDoc } from "@/lib/entities";
 import { DotIcon } from "lucide-react";
 import { isReservedUsername } from "@/lib/reservedPaths";
 import { buildPaperSeoConfig, buildPublicPaperMetadata } from "@/metadata/dynamic";
@@ -150,3 +150,4 @@ const seo = buildPaperSeoConfig(metadata, {
     </article>
   </main>
 </Layout>
+

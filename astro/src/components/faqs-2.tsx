@@ -42,41 +42,38 @@ export default function FAQs({
     description = "Your questions answered",
 }: FAQsProps) {
     return (
-        <section className="">
-            <div className="mx-auto">
-                <div className="md:flex-row md:items-start md:gap-15 flex flex-col gap-4">
-                    <div className="md:sticky md:top-24 self-start h-fit md:w-[400px]">
-                        <h2 className="text-[32px] font-[500]">{title}</h2>
-                        <p className="text-muted-foreground mt-1 text-[15px]">{description}</p>
-                    </div>
-                    <div className="flex-1">
-                        <Accordion
-                            type='multiple'
-                            defaultValue={["item-1"]}
-                        >
-                            {items.map((item, index) => (
-                                <AccordionItem
-                                    key={`${item.question}-${index}`}
-                                    value={`item-${index + 1}`}
-                                    className="border-dashed">
-                                    <AccordionTrigger className="cursor-pointer py-4 text-sm font-medium hover:no-underline">{item.question}</AccordionTrigger>
-                                    <AccordionContent>
-                                        <p className="text-muted-foreground pb-2 text-sm">{item.answer}</p>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                        <p className="text-muted-foreground @xl:hidden mt-6 text-sm">
-                            Need more help?{' '}
-                            <a
-                                href="/contact"
-                                className="font-[450] hover:underline">
-                                Contact us
-                            </a>
-                        </p>
-                    </div>
-                </div>
+        <div className="md:flex-row md:items-start md:gap-15 flex flex-col gap-4">
+            <div className="md:sticky md:top-24 self-start h-fit md:w-[400px]">
+                <h2 className="text-[32px] font-[500]">{title}</h2>
+                <p className="text-muted-foreground mt-1 text-[15px]">{description}</p>
             </div>
-        </section>
+            <div className="flex-1">
+                <Accordion
+                    type='multiple'
+                    defaultValue={["item-1"]}
+                >
+                    {items.map((item, index) => (
+                        <AccordionItem
+                            key={`${item.question}-${index}`}
+                            value={`item-${index + 1}`}
+                            className="border-dashed">
+                            <AccordionTrigger className="cursor-pointer py-4 text-sm font-medium hover:no-underline">{item.question}</AccordionTrigger>
+                            <AccordionContent>
+                                <p className="text-muted-foreground pb-2 text-sm">{item.answer}</p>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
+                <p className="text-muted-foreground @xl:hidden mt-6 text-sm">
+                    Need more help?{' '}
+                    <a
+                        href="/contact"
+                        className="font-[450] hover:underline">
+                        Contact us
+                    </a>
+                </p>
+            </div>
+        </div>
+
     )
 }
