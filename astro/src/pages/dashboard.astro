@@ -12,11 +12,7 @@ const token = await getToken();
 const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 
 const serverClient = createApiClient(token);
-const dashboardData = await getDashboardData(serverClient).catch(() => null);
-
-if (!dashboardData) {
-  return Astro.redirect("/login");
-}
+const dashboardData = await getDashboardData(serverClient);
 
 const { user: initialUser, projects: initialProjects, papers: initialPages } = dashboardData;
 ---
