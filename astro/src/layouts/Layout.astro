@@ -34,15 +34,13 @@ const {
     pathname.startsWith("/write") ||
     pathname === "/login" ||
     pathname === "/sign-in" ||
-    pathname === "/sign-up" ||
-    pathname === "/welcome",
+    pathname === "/sign-up",
   enableToaster = pathname.startsWith("/dashboard") ||
     pathname.startsWith("/settings") ||
     pathname.startsWith("/write") ||
     pathname === "/login" ||
     pathname === "/sign-in" ||
-    pathname === "/sign-up" ||
-    pathname === "/welcome",
+    pathname === "/sign-up",
 } = Astro.props as Props;
 const themeCookie = Astro.cookies.get("theme")?.value ?? null;
 const isDarkTheme = themeCookie === "dark";

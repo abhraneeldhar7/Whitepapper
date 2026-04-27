@@ -398,7 +398,7 @@ export default function LoginPage() {
         if (!clerk?.loaded || !clerk?.client) {
             return null;
         }
-
+        
         return clerk;
     };
 
