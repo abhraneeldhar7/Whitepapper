@@ -8,27 +8,16 @@ import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import googleLogo from "@/assets/logos/googleLogo.png";
+import { getDefaultRedirectPath, resolveSafeRedirectTarget } from "@/lib/authRedirect";
 import styles from "./login.module.css"
 
-const DEFAULT_REDIRECT_PATH = "/dashboard";
-
-async function waitForSessionToken(clerk: any, timeoutMs = 2000): Promise<void> {
-    const startedAt = Date.now();
-
-    while (Date.now() - startedAt < timeoutMs) {
-        const token = await clerk?.session?.getToken?.().catch(() => null);
-        if (token) {
-            return;
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-}
-
 async function finalizeAuthAndRedirect(clerk: any, sessionId: string, redirectUrl: string): Promise<void> {
-    await clerk.setActive({ session: sessionId });
-    await waitForSessionToken(clerk);
-    window.location.replace(redirectUrl);
+    await clerk.setActive({
+        session: sessionId,
+        navigate: async () => {
+            window.location.replace(redirectUrl);
+        },
+    });
 }
 
 type NewAccountFormProps = {
@@ -403,19 +392,9 @@ export default function LoginPage() {
     };
 
     const redirectUrl = useMemo(() => {
-        if (typeof window === "undefined") return DEFAULT_REDIRECT_PATH;
+        if (typeof window === "undefined") return getDefaultRedirectPath();
         const raw = new URLSearchParams(window.location.search).get("redirect_url");
-        if (!raw) return DEFAULT_REDIRECT_PATH;
-
-        try {
-            const parsed = new URL(raw, window.location.origin);
-            if (parsed.origin !== window.location.origin) {
-                return DEFAULT_REDIRECT_PATH;
-            }
-            return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-        } catch {
-            return DEFAULT_REDIRECT_PATH;
-        }
+        return resolveSafeRedirectTarget(raw, window.location.origin);
     }, []);
 
     const handleGoogleAuthClick = async () => {
@@ -429,10 +408,13 @@ export default function LoginPage() {
 
         setOauthLoading(true);
         try {
+            const callbackUrl = new URL("/welcome", window.location.origin);
+            callbackUrl.searchParams.set("redirect_url", redirectUrl);
+
             await signIn.authenticateWithRedirect({
                 strategy: "oauth_google",
-                redirectUrl: "/welcome",
-                redirectUrlComplete: redirectUrl,
+                redirectUrl: callbackUrl.toString(),
+                redirectUrlComplete: new URL(redirectUrl, window.location.origin).toString(),
             });
         } catch (err: any) {
             toast.error(err.errors?.[0]?.message || "Failed to start Google login");
