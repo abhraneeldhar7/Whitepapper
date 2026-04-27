@@ -11,18 +11,11 @@ import googleLogo from "@/assets/logos/googleLogo.png";
 import { getDefaultRedirectPath, resolveSafeRedirectTarget } from "@/lib/authRedirect";
 import styles from "./login.module.css"
 
-function buildWelcomeRedirectUrl(redirectUrl: string): string {
-    const url = new URL("/welcome", window.location.origin);
-    url.searchParams.set("post_auth", "1");
-    url.searchParams.set("redirect_url", redirectUrl);
-    return `${url.pathname}${url.search}`;
-}
-
 async function finalizeAuthAndRedirect(clerk: any, sessionId: string, redirectUrl: string): Promise<void> {
     await clerk.setActive({
         session: sessionId,
         navigate: async () => {
-            window.location.replace(buildWelcomeRedirectUrl(redirectUrl));
+            window.location.replace(redirectUrl);
         },
     });
 }
@@ -415,12 +408,13 @@ export default function LoginPage() {
 
         setOauthLoading(true);
         try {
-            const waitingUrl = buildWelcomeRedirectUrl(redirectUrl);
+            const callbackUrl = new URL("/welcome", window.location.origin);
+            callbackUrl.searchParams.set("redirect_url", redirectUrl);
 
             await signIn.authenticateWithRedirect({
                 strategy: "oauth_google",
-                redirectUrl: "/welcome",
-                redirectUrlComplete: waitingUrl,
+                redirectUrl: callbackUrl.toString(),
+                redirectUrlComplete: new URL(redirectUrl, window.location.origin).toString(),
             });
         } catch (err: any) {
             toast.error(err.errors?.[0]?.message || "Failed to start Google login");

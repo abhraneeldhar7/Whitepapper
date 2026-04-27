@@ -9,17 +9,10 @@ import { getCurrentUser } from "@/lib/api/users";
 import type { PaperDoc, UserDoc } from "@/lib/entities";
 import { isMobileUserAgent } from "@/lib/userAgent";
 
-const { userId, getToken } = Astro.locals.auth();
+const { getToken } = Astro.locals.auth();
 const id = Astro.params.id as string;
 
-if (!userId) {
-  return Astro.redirect("/login");
-}
-
 const token = await getToken();
-if (!token) {
-  return Astro.redirect("/login");
-}
 const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 
 const serverClient = createApiClient(token);

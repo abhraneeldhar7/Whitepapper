@@ -5,17 +5,8 @@ import { createApiClient } from "@/lib/api/client";
 import { getCurrentUser } from "@/lib/api/users";
 import type { UserDoc } from "@/lib/entities";
 
-const { userId, getToken } = Astro.locals.auth();
-
-if (!userId) {
-  return Astro.redirect("/login");
-}
-
+const { getToken } = Astro.locals.auth();
 const token = await getToken();
-if (!token) {
-  return Astro.redirect("/login");
-}
-
 const serverClient = createApiClient(token);
 const initialUser = await getCurrentUser(serverClient).catch(() => null as UserDoc | null);
 if (!initialUser) {

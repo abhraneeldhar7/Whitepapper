@@ -12,17 +12,10 @@ import type { McpAuthorizationListResponse, McpConnectionInfo } from "@/lib/api/
 import type { UserDoc } from "@/lib/entities";
 import { isMobileUserAgent } from "@/lib/userAgent";
 
-const { userId, getToken } = Astro.locals.auth();
+const { getToken } = Astro.locals.auth();
 const projectId = Astro.params.projectId as string;
 
-if (!userId) {
-  return Astro.redirect("/login");
-}
-
 const token = await getToken();
-if (!token) {
-  return Astro.redirect("/login");
-}
 const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 
 const serverClient = createApiClient(token);

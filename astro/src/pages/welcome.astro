@@ -4,26 +4,24 @@ import bgGradient from "@/assets/landingPage/blueBgPattern.jpg";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoaderCircle, TriangleAlert, UserRoundIcon } from "lucide-react";
 import { AuthenticateWithRedirectCallback } from "@clerk/astro/components";
-import WelcomeRedirectGate from "@/components/auth/WelcomeRedirectGate";
 import { getDefaultRedirectPath, resolveSafeRedirectTarget } from "@/lib/authRedirect";
 
 const redirectTarget = resolveSafeRedirectTarget(
 	Astro.url.searchParams.get("redirect_url"),
 	Astro.url.origin,
 ) || getDefaultRedirectPath();
-const isPostAuth = Astro.url.searchParams.get("post_auth") === "1";
 ---
 
 <Layout noindex={true} hideFooter={true} showSiteNav={false}>
 	<div class="px-4 py-10 max-w-[600px] w-full flex flex-col mx-auto h-screen">
-		{!isPostAuth ? (
-			<AuthenticateWithRedirectCallback
-				signInUrl="/login"
-				signUpUrl="/login"
-			/>
-		) : (
-			<WelcomeRedirectGate client:load redirectUrl={redirectTarget} />
-		)}
+		<AuthenticateWithRedirectCallback
+			signInUrl="/login"
+			signUpUrl="/login"
+			signInFallbackRedirectUrl={redirectTarget}
+			signUpFallbackRedirectUrl={redirectTarget}
+			signInForceRedirectUrl={redirectTarget}
+			signUpForceRedirectUrl={redirectTarget}
+		/>
 		<div class="relative w-full aspect-2/1 px-5 py-20">
 			<h1 class="text-[white] font-[450] text-[30px]">
 				<span class="text-[32px]">Welcome to </span>
