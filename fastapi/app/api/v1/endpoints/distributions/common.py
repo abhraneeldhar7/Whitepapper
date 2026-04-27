@@ -3,9 +3,9 @@ from typing import Any
 from fastapi import HTTPException
 from pydantic import BaseModel
 
+from app.api.deps.ownership import require_owned_paper
 from app.core.config import get_settings
 from app.schemas.entities import PaperDoc
-from app.services.papers_service import papers_service
 from app.services.slug_utils import normalize_slug
 from app.services.user_service import user_service
 
@@ -47,15 +47,39 @@ def extract_description(metadata: Any) -> str:
     return ""
 
 
-def require_owned_paper(user_id: str, paper_id: str) -> dict[str, Any]:
-    paper_doc = papers_service.get_by_id(paper_id)
-    if not paper_doc:
-        raise HTTPException(status_code=404, detail="Paper not found.")
-    if paper_doc.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="You do not have access to distribute this paper.")
-    return paper_doc
+def extract_cover_image(metadata: Any, paper_doc: dict[str, Any]) -> str:
+    if metadata:
+        for key in ("ogImage", "coverImageUrl", "twitterImage"):
+            value = metadata.get(key) if isinstance(metadata, dict) else getattr(metadata, key, None)
+            resolved = str(value or "").strip()
+            if resolved:
+                return resolved
+
+    thumbnail = str(paper_doc.get("thumbnailUrl") or "").strip()
+    if thumbnail:
+        return thumbnail
+
+    settings = get_settings()
+    base_url = str(settings.public_site_url or "").strip().rstrip("/")
+    if base_url:
+        return f"{base_url}/assets/ogImages/root.png"
+    return "/assets/ogImages/root.png"
 
 
+def extract_canonical_url(metadata: Any, fallback: str) -> str:
+    if metadata:
+        canonical = metadata.get("canonical") if isinstance(metadata, dict) else getattr(metadata, "canonical", None)
+        resolved = str(canonical or "").strip()
+        if resolved:
+            return resolved
+    return fallback
+
+
+def extract_article_section(metadata: Any) -> str:
+    if not metadata:
+        return ""
+    section = metadata.get("articleSection") if isinstance(metadata, dict) else getattr(metadata, "articleSection", None)
+    return str(section or "").strip()
 def resolve_distribution_access_token(platform: str, user_id: str, provided_access_token: str | None) -> str:
     from app.services.distributions import distributions_store_service
 
@@ -87,7 +111,12 @@ def resolve_publish_paper(user_id: str, input_payload: DistributionPublishInput)
             raise HTTPException(status_code=400, detail="paperId does not match the payload paper.")
         return payload_paper
 
-    return require_owned_paper(user_id, input_payload.paperId)
+    try:
+        return require_owned_paper(user_id, input_payload.paperId)
+    except HTTPException as exc:
+        if exc.status_code == 403:
+            raise HTTPException(status_code=403, detail="You do not have access to distribute this paper.") from exc
+        raise
 
 
 def resolve_publish_content(paper_doc: dict[str, Any]) -> tuple[str, str, str, dict[str, Any]]:

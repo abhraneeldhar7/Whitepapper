@@ -6,6 +6,9 @@ from pydantic import BaseModel, Field
 from app.api.v1.endpoints.distributions.common import (
     DistributionPublishInput,
     build_public_article_url,
+    extract_article_section,
+    extract_canonical_url,
+    extract_cover_image,
     extract_description,
     extract_tags,
     resolve_distribution_access_token,
@@ -80,10 +83,12 @@ async def publish_devto_distribution(
 ) -> DistributionPublishResult:
     paper_doc, title, body, slug, metadata, username = resolve_distribution_context(user_id, payload)
     access_token = resolve_distribution_access_token("devto", user_id, payload.accessToken)
-    thumbnail_url = paper_doc.get("thumbnailUrl")
-    description = extract_description(metadata) or title
+    description = (extract_description(metadata) or title)[:200]
     article_url = build_public_article_url(username, slug)
+    canonical_url = extract_canonical_url(metadata, article_url)
+    cover_image_url = extract_cover_image(metadata, paper_doc)
     devto_tags = [normalize_slug(tag) for tag in extract_tags(metadata) if normalize_slug(tag)][:4]
+    series = extract_article_section(metadata)
 
     article = await devto_distribution_service.publish_article(
         access_token,
@@ -94,8 +99,9 @@ async def publish_devto_distribution(
                 "published": True,
                 "description": description,
                 **({"tags": devto_tags} if devto_tags else {}),
-                **({"main_image": thumbnail_url} if thumbnail_url else {}),
-                **({"canonical_url": article_url} if article_url else {}),
+                **({"series": series} if series and series.lower() != "general" else {}),
+                **({"main_image": cover_image_url} if cover_image_url else {}),
+                **({"canonical_url": canonical_url} if canonical_url else {}),
             }
         },
     )

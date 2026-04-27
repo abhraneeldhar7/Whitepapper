@@ -1,9 +1,9 @@
 {
   "path": "/login",
   "title": "Login | Whitepapper",
-  "description": "Sign in to Whitepapper to access your content workspace, publishing integrations, and API-managed projects.",
+  "description": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Sign in to your Whitepapper workspace and continue publishing.",
   "canonical": "/login",
-  "image": "src/assets/ogImages/root.png",
+  "image": "/assets/ogImages/root.png",
   "keywords": "whitepapper login, account access, content dashboard sign in",
   "robots": "noindex, nofollow",
   "author": "Abhraneel Dhar",
@@ -11,14 +11,14 @@
   "locale": "en_US",
   "ogType": "website",
   "ogTitle": "Login | Whitepapper",
-  "ogDescription": "Access your Whitepapper workspace and continue managing your content operations.",
+  "ogDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Sign in to your Whitepapper workspace and continue publishing.",
   "ogUrl": "/login",
-  "ogImage": "src/assets/ogImages/root.png",
+  "ogImage": "/assets/ogImages/root.png",
   "ogImageAlt": "Whitepapper login cover image",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Login | Whitepapper",
-  "twitterDescription": "Sign in to continue writing, organizing, and distributing from Whitepapper.",
-  "twitterImage": "src/assets/ogImages/root.png",
+  "twitterDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Sign in to your Whitepapper workspace and continue publishing.",
+  "twitterImage": "/assets/ogImages/root.png",
   "twitterImageAlt": "Whitepapper login cover image",
   "jsonLd": {
     "@context": "https://schema.org",
@@ -27,4 +27,3 @@
     "url": "https://whitepapper.antk.in/login"
   }
 }
-

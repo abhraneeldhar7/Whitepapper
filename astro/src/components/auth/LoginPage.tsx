@@ -259,7 +259,6 @@ function NewAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
                     !newAccount.password.length ||
                     newAccount.confirmPassword !== newAccount.password
                 }
-                size="lg"
                 style={{ animationDelay: "0.4s" }}
                 className={styles.heroText}
                 loading={loading}
@@ -370,7 +369,7 @@ function OldAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
                 </div>
             </div>
 
-            <Button size="lg" style={{ animationDelay: "0.2s" }} type="submit" className={styles.heroText} loading={loading} disabled={isDisabled}>
+            <Button style={{ animationDelay: "0.2s" }} type="submit" className={styles.heroText} loading={loading} disabled={isDisabled}>
                 Login
             </Button>
         </form>
@@ -442,14 +441,14 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="mx-auto flex min-h-[100svh] w-full max-w-[400px] flex-col items-center justify-start gap-[30px] px-[15px] md:pt-[30px] pt-[50px]">
+        <div className="mx-auto flex min-h-[100svh] w-full max-w-[400px] flex-col items-center justify-start gap-[30px] px-[15px] pt-25">
             <ScrollToTop />
-            <img src="/appLogo.png" height={80} width={80} alt="Whitepapper" />
+            <img src="/appLogo.png" height={70} width={70} alt="Whitepapper" />
 
             {authMode === "login" ? (
-                <h1 className="text-[36px]">Welcome back</h1>
+                <h1 className="text-[20px]">Welcome back</h1>
             ) : (
-                <h1 className="text-[36px]">Join Whitepapper</h1>
+                <h1 className="text-[20px]">Join Whitepapper</h1>
             )}
 
             <div className="flex w-full flex-col gap-[12px]">
@@ -475,10 +474,10 @@ export default function LoginPage() {
                     onClick={handleGoogleAuthClick}
                     loading={oauthLoading}
                     disabled={isAnyLoading}
-                    size="lg"
+
                     className={`${styles.heroText} w-full bg-[white] text-[black] hover:bg-[white]/70`}
                 >
-                    <img src={googleLogo.src} alt="Google" height={20} width={20} className="mr-[10px]" /> Continue with Google
+                    <img src={googleLogo.src} alt="Google" height={17} width={17} className="mr-[10px]" /> Continue with Google
                 </Button>
 
                 <div className="flex justify-center text-[14px] opacity-[0.9] underline select-none mt-2">

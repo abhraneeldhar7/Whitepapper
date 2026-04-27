@@ -22,7 +22,7 @@ export const pricingPage: PricingPageContent = {
   eyebrow: "Pricing",
   title: "Whitepapper Pricing",
   description:
-    "Whitepapper is currently free while the core markdown, public pages, API, and distribution workflows continue to mature.",
+    "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Whitepapper is currently free while the core workflows continue to mature.",
   body: `
 Whitepapper is currently free to use.
 

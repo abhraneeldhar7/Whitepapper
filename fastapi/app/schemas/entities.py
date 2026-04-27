@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from app.core.limits import DEV_API_LIMIT_PER_MONTH
 
@@ -65,6 +65,8 @@ class CollectionDoc(BaseModel):
 
 
 class PaperMetadata(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     title: str
     metaDescription: str
     canonical: str
@@ -106,8 +108,8 @@ class PaperMetadata(BaseModel):
     # New AI/SEO fields
     keyTakeaways: list[str] | None = None
     faq: list[dict] | None = None
-    author_bio: str | None = None
-    jsonld: dict | list[dict] | None = None
+    authorBio: str | None = Field(default=None, validation_alias=AliasChoices("authorBio", "author_bio"))
+    jsonLd: dict | list[dict] | None = Field(default=None, validation_alias=AliasChoices("jsonLd", "jsonld"))
 
 
 class PaperDoc(BaseModel):

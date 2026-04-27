@@ -2,17 +2,20 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+
 @font-face {
-  font-family: "Geist";
-  src: url("../assets/fonts/Geist-VariableFont_wght.ttf") format("truetype");
+  font-family: "Inter";
+  src: url("../assets/fonts/Inter-variable.ttf") format("truetype-variations");
   font-style: normal;
+  font-weight: 100 900;
   font-display: swap;
 }
 
 @font-face {
   font-family: "Satoshi";
-  src: url("../assets/fonts/Satoshi-Variable.ttf") format("truetype");
+  src: url("../assets/fonts/Satoshi-Variable.ttf") format("truetype-variations");
   font-style: normal;
+  font-weight: 300 900;
   font-display: swap;
 }
 
@@ -88,7 +91,7 @@
 }
 
 @theme inline {
-  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-satoshi: "Satoshi", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);

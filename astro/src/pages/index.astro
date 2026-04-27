@@ -91,7 +91,7 @@ const featuresDivs = [
 	},
 ];
 
-import HeroFloatingIcon from "@/components/landing/heroFloatingIcons";
+import HeroFloatingIcon from "@/components/landing/heroFloatingIcons.astro";
 
 import worldmapDots from "@/assets/landingPage/worldmapDots.png";
 import npmLogo from "@/assets/logos/npm-logo.svg";
@@ -117,41 +117,47 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 				class="pt-45 pb-20 md:pb-30 relative mx-auto w-full"
 				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
 			>
-				<!-- <AnimatedThemeToggler client:load /> -->
 				<HeroFloatingIcon
 					Icon={PaperclipIcon}
-					className="bg-[#21d2f7]/10 text-[#21d2f7] absolute top-[8%] md:top-[8%] left-[10%] md:left-[7%] rotate-[-12deg]"
+					style={{ animationDelay: "0.2s" }}
+					className="bg-[#21d2f7]/10 text-[#21d2f7] absolute top-[6%] md:top-[5%] left-[10%] md:left-[7%] rotate-[-12deg]"
 				/>
 				<HeroFloatingIcon
 					Icon={SendIcon}
-					className="bg-[#f72523]/15 text-[#f72523] absolute top-[30%] md:top-[24%] left-[-14%] md:left-[-4%] rotate-[15deg] scale-[0.8]"
+					style={{ animationDelay: "0.5s" }}
+					className="bg-[#f72523]/15 text-[#f72523] absolute top-[30%] md:top-[20%] left-[-12%] md:left-[-4%] rotate-[15deg]"
 				/>
 				<HeroFloatingIcon
 					Icon={ScrollTextIcon}
-					className="bg-[#21f79c]/10 text-[#21f79c] absolute top-[54%] md:top-[36%] left-[12%] md:left-[14%] rotate-[-6deg]"
+					style={{ animationDelay: "0.9s" }}
+					className="bg-[#21f79c]/10 text-[#21f79c] absolute top-[50%] md:top-[32%] left-[3%] md:left-[14%] rotate-[-6deg]"
 				/>
 				<HeroFloatingIcon
 					Icon={WorkflowIcon}
-					className="bg-[#fc4fb0]/10 text-[#fc4fb0] absolute top-[12%] md:top-[6%] right-[4%] md:right-[15%] rotate-[16deg]"
+					style={{ animationDelay: "0.4s" }}
+					className="bg-[#fc4fb0]/10 text-[#fc4fb0] absolute top-[10%] md:top-[6%] right-[4%] md:right-[15%] rotate-[16deg]"
 				/>
 				<HeroFloatingIcon
 					Icon={UnplugIcon}
-					className="bg-[#9223f7]/10 text-[#9223f7] absolute top-[25%] md:top-[18%] right-[-10%] md:right-[-1%] rotate-[8deg]"
+					style={{ animationDelay: "0.8s" }}
+					className="bg-[#9223f7]/10 text-[#9223f7] absolute top-[25%] md:top-[18%] right-[-12%] md:right-[-1%] rotate-[8deg]"
 				/>
 				<HeroFloatingIcon
 					Icon={FolderIcon}
-					className="bg-[#f79123]/10 text-[#f79123] absolute top-[47%] md:top-[30%] right-[10%] md:right-[16%] rotate-[-5deg] scale-[0.8]"
+					style={{ animationDelay: "0.12s" }}
+					className="bg-[#f79123]/10 text-[#f79123] absolute top-[46%] md:top-[30%] right-[7%] md:right-[16%] rotate-[-5deg]"
 				/>
 
 				<div class="flex flex-col w-full items-center">
 					<h1
-						class="text-center text-[50px] md:text-[85px] font-[600]"
+						class="heroText text-center text-[50px] md:text-[85px] font-[600]"
 					>
 						Ship content.
 					</h1>
 
 					<div
-						class="mt-2 text-center text-muted-foreground leading-[1.6em] text-[20px] md:text-[22px] max-w-[500px]"
+						class="heroText mt-2 text-center text-muted-foreground leading-[1.6em] text-[20px] md:text-[22px] max-w-[500px]"
+						style="animation-delay: 0.2s;"
 					>
 						<span>
 							The CMS that handles publishing, SEO, and
@@ -173,14 +179,14 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 						/>
 					</div>
 
-					<Button className="my-6 md:my-10" size="lg"
-						>Start publishing</Button
-					>
+					<div class="heroText my-10" style="animation-delay: 0.5s;">
+						<Button size="lg">Start publishing</Button>
+					</div>
 				</div>
 
 				<div
 					class="heroText mt-2 md:mt-4 relative p-4 md:p-14 overflow-hidden md:rounded-[30px] rounded-[20px] h-full"
-					style="animation-delay: 0.3s; animation-duration: 0.8s;"
+					style="animation-delay: 0.4s;"
 				>
 					<Image
 						src={BlueBgPattern}
@@ -363,16 +369,10 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 			>
 				<div class="md:flex-1 shrink-0">
 					<h2 class="text-[34px] md:text-[40px] font-[500]">
-						Intaegrate your websites with Dev API
+						Integrate your websites with Dev API
 					</h2>
 					<div class="md:text-[19px] mt-4">
-						<p class="text-muted-foreground">
-							With a built-in wysiwyg editor, you can write and
-							format your content without the platform. Focus on
-							your words, not on markdown syntax or external
-							tools.
-						</p>
-						<p class="leading-[2.1em] mt-5">
+						<p class="leading-[2.1em] mt-4">
 							Whitepapper
 
 							<a
@@ -587,7 +587,7 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 			</div>
 		</section>
 
-		<section class="mt-30 md:mt-60 px-5 md:px-15 ">
+		<section class="mt-30 md:mt-60 px-5 md:px-15">
 			<div class="mx-auto w-full" style={{ maxWidth: `700px` }}>
 				<h2 class="text-[32px] font-[500] text-center">
 					Fully open-sourced
@@ -713,7 +713,7 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 
 <style>
 	.heroText {
-		animation: fadeInUp 0.5s ease-out forwards;
+		animation: fadeInUp 0.7s ease-out forwards;
 		animation-fill-mode: both;
 	}
 

@@ -89,11 +89,10 @@ export default function DocsNavMenu({
                             className="block"
                           >
                             <Button
-                              variant="ghost"
+                              variant={isChildActive ? "default" : "ghost"}
                               size="sm"
                               className={cn(
-                                "ml-5 w-[calc(100%-1.25rem)] justify-start",
-                                isChildActive ? "bg-muted text-foreground" : "",
+                                "ml-5 w-[calc(100%-1.25rem)] justify-start"
                               )}
                               aria-current={isChildActive ? "page" : undefined}
                               data-doc-nav-active={isChildActive ? "true" : undefined}

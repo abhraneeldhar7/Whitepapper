@@ -1,13 +1,14 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
-import re
 from pydantic import BaseModel, Field
 
+from app.api.deps.ownership import require_owned_project
 from app.services.auth_service import get_verified_id
 from app.schemas.entities import CollectionDoc, PaperDoc, ProjectDoc
 from app.services.projects_service import projects_service
 from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
 from app.utils.cache import add_cache_buster
+from app.utils.content import extract_image_urls
 
 router = APIRouter(tags=["projects"])
 
@@ -37,18 +38,6 @@ class ProjectDashboardResponse(BaseModel):
     project: ProjectDoc
     collections: list[CollectionDoc]
     papers: list[PaperDoc]
-
-MARKDOWN_IMAGE_PATTERN = re.compile(r"!\[[^\]]*]\(([^)\s]+)", re.IGNORECASE)
-HTML_IMAGE_PATTERN = re.compile(r"<img[^>]+src=[\"']([^\"']+)[\"']", re.IGNORECASE)
-
-
-def _extract_image_urls(content: str) -> set[str]:
-    urls = set()
-    for match in MARKDOWN_IMAGE_PATTERN.findall(content):
-        urls.add(match)
-    for match in HTML_IMAGE_PATTERN.findall(content):
-        urls.add(match)
-    return urls
 
 
 @router.get("/projects", response_model=list[ProjectDoc])
@@ -83,10 +72,7 @@ def get_project_by_slug(username: str, project_slug: str, user_id: str = Depends
 
 @router.get("/projects/{project_id}", response_model=ProjectDoc)
 def get_project(project_id: str, user_id: str = Depends(get_verified_id)) -> ProjectDoc:
-    project = projects_service.get_by_id(project_id)
-    if project.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
-    return project
+    return require_owned_project(user_id, project_id)
 
 
 @router.patch("/projects/{project_id}", response_model=ProjectDoc)
@@ -96,9 +82,7 @@ def patch_project(
     background_tasks: BackgroundTasks,
     user_id: str = Depends(get_verified_id),
 ) -> ProjectDoc:
-    project = projects_service.get_by_id(project_id)
-    if project.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_project(user_id, project_id)
 
     update_payload = payload.model_dump(exclude_unset=True)
     clear_logo = "logoUrl" in update_payload and not update_payload["logoUrl"]
@@ -114,7 +98,7 @@ def patch_project(
         updated = projects_service.get_by_id(project_id)
 
     if payload.description is not None:
-        used_urls = _extract_image_urls(updated.get("description") or "")
+        used_urls = extract_image_urls(updated.get("description") or "")
         background_tasks.add_task(
             projects_service.delete_unused_project_embedded_images,
             user_id,
@@ -131,9 +115,7 @@ async def upload_project_logo(
     file: UploadFile = File(...),
     user_id: str = Depends(get_verified_id),
 ) -> dict[str, str]:
-    project = projects_service.get_by_id(project_id)
-    if project.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_project(user_id, project_id)
     result = await projects_service.upload_logo(project_id, file)
     return {"url": result["url"]}
 
@@ -144,9 +126,7 @@ async def upload_project_embedded_image(
     file: UploadFile = File(...),
     user_id: str = Depends(get_verified_id),
 ) -> dict[str, str]:
-    project = projects_service.get_by_id(project_id)
-    if project.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_project(user_id, project_id)
     return await projects_service.upload_embedded_image(project_id, file)
 
 
@@ -156,9 +136,7 @@ def patch_project_visibility(
     payload: ProjectVisibilityToggleRequest,
     user_id: str = Depends(get_verified_id),
 ) -> ProjectDoc:
-    project = projects_service.get_by_id(project_id)
-    if project.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_project(user_id, project_id)
     return projects_service.set_visibility(project_id, payload.isPublic)
 
 
@@ -168,9 +146,7 @@ def get_project_dashboard(
     user_id: str = Depends(get_verified_id),
 ) -> ProjectDashboardResponse:
     """Get project dashboard data: project, collections, and papers sorted by updatedAt."""
-    project = projects_service.get_by_id(project_id)
-    if project.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    project = require_owned_project(user_id, project_id)
 
     collections = collections_service.list_project_collections(project_id)
     project_papers = papers_service.list_owned_filtered(
@@ -191,7 +167,5 @@ def get_project_dashboard(
 
 @router.delete("/projects/{project_id}")
 def delete_project(project_id: str, user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
-    project = projects_service.get_by_id(project_id)
-    if project.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_project(user_id, project_id)
     return projects_service.delete(project_id)

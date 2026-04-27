@@ -82,9 +82,8 @@ Astro.response.headers.set(
 >
   <div class="pb-5 md:pb-10 px-5">
     <div class="flex gap-10 justify-between">
-
-      <div>
-        <DocsSidebar navSections={docsNavSections} currentPath="/docs" />
+      <div class="hidden md:block h-full">
+        <DocsSidebar navSections={docsNavSections} currentPath="/docs"/>
       </div>
 
       <main class="w-full pt-30 md:pt-35" aria-label="Documentation home">
@@ -103,11 +102,13 @@ Astro.response.headers.set(
                 currentPath="/docs"
               />
             </div>
-           <div class="w-full h-[20px] md:h-[32px] relative ">
-                <h1 class="absolute left-0 top-1/2 -translate-y-1/2 right-0 text-[20px] md:text-[32px] truncate font-[500] leading-[1.5em] md:px-[10px]">
-                  Documentation
-                </h1>
-              </div>
+            <div class="w-full h-[20px] md:h-[32px] relative">
+              <h1
+                class="absolute left-0 top-1/2 -translate-y-1/2 right-0 text-[20px] md:text-[32px] truncate font-[500] leading-[1.5em] md:px-[10px]"
+              >
+                Documentation
+              </h1>
+            </div>
           </div>
 
           <div class="md:w-[250px] md:block hidden shrink-0"></div>
@@ -119,22 +120,33 @@ Astro.response.headers.set(
         </p>
 
         <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <a href="/features/content-api" class={cardClass} data-astro-prefetch="viewport">
+          <a
+            href="/features/content-api"
+            class={cardClass}
+            data-astro-prefetch="viewport"
+          >
             <h2 class="text-[16px] font-[520]">Content API</h2>
             <p class="mt-2 text-[14px] text-muted-foreground">
-              See how projects, collections, and papers map to a frontend-ready content API.
+              See how projects, collections, and papers map to a frontend-ready
+              content API.
             </p>
           </a>
-          <a href="/features/distribution" class={cardClass} data-astro-prefetch="viewport">
+          <a
+            href="/features/distribution"
+            class={cardClass}
+            data-astro-prefetch="viewport"
+          >
             <h2 class="text-[16px] font-[520]">Distribution</h2>
             <p class="mt-2 text-[14px] text-muted-foreground">
-              Connect the editor workflow to Dev.to, Hashnode, and Medium import paths.
+              Connect the editor workflow to Dev.to, Hashnode, and Medium import
+              paths.
             </p>
           </a>
           <a href="/pricing" class={cardClass} data-astro-prefetch="viewport">
             <h2 class="text-[16px] font-[520]">Pricing</h2>
             <p class="mt-2 text-[14px] text-muted-foreground">
-              Review the current free plan and the machine-readable pricing references linked for AI agents.
+              Review the current free plan and the machine-readable pricing
+              references linked for AI agents.
             </p>
           </a>
         </div>
@@ -145,7 +157,11 @@ Astro.response.headers.set(
               sectionCards.map((card) => {
                 const Icon = card.icon;
                 return (
-                  <a href={card.route} class={cardClass} data-astro-prefetch="viewport">
+                  <a
+                    href={card.route}
+                    class={cardClass}
+                    data-astro-prefetch="viewport"
+                  >
                     <div class="flex items-start justify-between gap-3">
                       <span class="flex h-8 w-8 items-center justify-center rounded-md border border-border/80 bg-muted/40 text-muted-foreground group-hover:text-foreground">
                         <Icon size={16} />
@@ -172,7 +188,11 @@ Astro.response.headers.set(
               importantDocs.map((card) => {
                 const Icon = card.icon;
                 return (
-                  <a href={card.route} class={cardClass} data-astro-prefetch="viewport">
+                  <a
+                    href={card.route}
+                    class={cardClass}
+                    data-astro-prefetch="viewport"
+                  >
                     <div class="flex items-start justify-between gap-3">
                       <span class="flex h-8 w-8 items-center justify-center rounded-md border border-border/80 bg-muted/40 text-muted-foreground group-hover:text-foreground">
                         <Icon size={16} />

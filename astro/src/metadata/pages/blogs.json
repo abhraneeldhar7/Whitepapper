@@ -1,9 +1,9 @@
 {
   "path": "/blogs",
-  "title": "Whitepapper Blog | SEO, API, and Publishing Guides",
-  "description": "Explore practical posts on developer publishing, SEO workflows, content APIs, and distribution playbooks from Whitepapper.",
+  "title": "Blogs",
+  "description": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Read practical posts on publishing workflows, SEO, and distribution automation.",
   "canonical": "/blogs",
-  "image": "src/assets/ogImages/root.png",
+  "image": "/assets/ogImages/root.png",
   "keywords": "developer SEO blog, content API guides, markdown publishing tutorials, developer content workflow",
   "robots": "index, follow",
   "author": "Abhraneel Dhar",
@@ -11,14 +11,14 @@
   "locale": "en_US",
   "ogType": "website",
   "ogTitle": "Whitepapper Blog | SEO, API, and Publishing Guides",
-  "ogDescription": "Developer-focused guides on content operations, SEO, and API-first publishing workflows.",
+  "ogDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Read practical posts on publishing workflows, SEO, and distribution automation.",
   "ogUrl": "/blogs",
-  "ogImage": "src/assets/ogImages/root.png",
+  "ogImage": "/assets/ogImages/root.png",
   "ogImageAlt": "Whitepapper blog campaign cover image",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Whitepapper Blog | SEO, API, and Publishing Guides",
-  "twitterDescription": "Real workflows for writing once, publishing everywhere, and serving content through API.",
-  "twitterImage": "src/assets/ogImages/root.png",
+  "twitterDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Read practical posts on publishing workflows, SEO, and distribution automation.",
+  "twitterImage": "/assets/ogImages/root.png",
   "twitterImageAlt": "Whitepapper blog campaign cover image",
   "jsonLd": {
     "@context": "https://schema.org",
@@ -28,4 +28,3 @@
     "description": "Guides and updates for developer content operations."
   }
 }
-

@@ -13,7 +13,7 @@ const { navSections, currentPath, previousPage, nextPage } = Astro.props as Prop
 ---
 
 <aside class="hidden md:block ml-5 shrink-0">
-  <div class="sticky top-[70px] z-[5] h-[calc(100vh-90px)] w-[250px]">
+  <div class="sticky top-[70px] z-[5] h-[calc(100vh)] w-[250px]">
     <DocsNavMenu client:load navSections={navSections} currentPath={currentPath} />
   </div>
 </aside>

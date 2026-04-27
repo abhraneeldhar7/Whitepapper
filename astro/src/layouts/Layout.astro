@@ -2,7 +2,6 @@
 import Footer from "@/components/footer.astro";
 import SiteTopNav from "@/components/site/SiteTopNav.astro";
 import { getPageSeoConfig, mergePageSeoConfig, type PageSeoConfig } from "@/metadata/pages";
-import rootOgImageAsset from "@/assets/ogImages/root.png";
 import { Toaster } from "@/components/ui/sonner";
 import { ClientRouter } from "astro:transitions";
 import "../styles/global.css";
@@ -52,6 +51,7 @@ const token = authHelpers ? await authHelpers.getToken().catch(() => null) : nul
 const isSignedIn = Boolean(token);
 const routeSeoConfig = getPageSeoConfig(pathname);
 const pageSeoConfig = mergePageSeoConfig(routeSeoConfig, seo);
+const ROOT_OG_IMAGE_URL = "/assets/ogImages/root.png";
 
 const pathToTitle = (path: string) => {
   if (path === "/") return "Whitepapper";
@@ -75,10 +75,10 @@ const resolveAbsoluteUrl = (value?: string | null) => {
   if (
     normalizedRaw === "src/assets/orgImage.png" ||
     normalizedRaw === "src/assets/ogImage.png" ||
-    normalizedRaw === "src/assets/ogImages/root.png"
+    normalizedRaw === "assets/ogImages/root.png"
   ) {
     const origin = Astro.url.origin.replace(/\/+$/, "");
-    return `${origin}${rootOgImageAsset.src.startsWith("/") ? "" : "/"}${rootOgImageAsset.src}`;
+    return `${origin}${ROOT_OG_IMAGE_URL}`;
   }
 
   if (raw.startsWith("http://") || raw.startsWith("https://")) {
@@ -106,11 +106,11 @@ const siteTitle = pageSeoConfig?.title ?? title ?? pathToTitle(pathname);
 const siteDescription =
   pageSeoConfig?.description ??
   description ??
-  "Whitepapper is an SEO-first content engine to create, manage, and distribute content with API support and publishing workflows.";
+  "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS.";
 const siteImage =
   resolveAbsoluteUrl(pageSeoConfig?.image) ||
   image ||
-  `${Astro.url.origin}${rootOgImageAsset.src}`;
+  `${Astro.url.origin}${ROOT_OG_IMAGE_URL}`;
 const canonical =
   resolveAbsoluteUrl(pageSeoConfig?.canonical) || `${Astro.url.origin}${pathname}`;
 const robotsMeta = noindex

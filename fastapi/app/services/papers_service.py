@@ -18,6 +18,7 @@ from app.services.slug_utils import normalize_slug
 from app.services.storage_service import storage_service
 from app.utils.cache import add_cache_buster
 from app.utils.datetime import utc_now
+from app.utils.pagination import apply_order_by, paginate_items
 
 PAPERS_COLLECTION = "papers"
 PAPER_ID_KEY = "paperId"
@@ -31,9 +32,8 @@ SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
 METADATA_IMAGE_FIELDS = ("ogImage", "twitterImage", "coverImageUrl")
 MARKDOWN_IMAGE_PATTERN = re.compile(r"!\[[^\]]*]\(([^)\s]+)", re.IGNORECASE)
 HTML_IMAGE_PATTERN = re.compile(r"<img[^>]+src=[\"']([^\"']+)[\"']", re.IGNORECASE)
-
-
 class PapersService:
+
     @staticmethod
     def _count_images_in_body(content: str | None) -> int:
         body = content or ""
@@ -145,13 +145,44 @@ class PapersService:
                 raise
 
     def list_owned(self, owner_id: str, public: bool = False) -> list[dict]:
-        filters: dict[str, object] = {PAPER_OWNER_KEY: owner_id}
+        items = firestore_store.find_by_fields(PAPERS_COLLECTION, {PAPER_OWNER_KEY: owner_id})
         if public:
-            filters[PAPER_STATUS_KEY] = PAPER_STATUS_PUBLISHED
-        return firestore_store.find_by_fields(PAPERS_COLLECTION, filters)
+            return [item for item in items if item.get(PAPER_STATUS_KEY) == PAPER_STATUS_PUBLISHED]
+        return items
+
+    def list_owned_paginated(
+        self,
+        owner_id: str,
+        *,
+        public: bool = False,
+        limit: int = 25,
+        cursor: str | None = None,
+        order_by: list[tuple[str, str]] | None = None,
+    ) -> dict:
+        items = self.list_owned(owner_id, public=public)
+        items = apply_order_by(items, order_by=order_by)
+        return paginate_items(items, limit=limit, cursor=cursor)
 
     def list_standalone(self, owner_id: str, public: bool = False) -> list[dict]:
         return self.list_owned_filtered(owner_id=owner_id, standalone=True, public=public)
+
+    def list_standalone_paginated(
+        self,
+        owner_id: str,
+        *,
+        public: bool = False,
+        limit: int = 25,
+        cursor: str | None = None,
+        order_by: list[tuple[str, str]] | None = None,
+    ) -> dict:
+        return self.list_owned_filtered_paginated(
+            owner_id=owner_id,
+            standalone=True,
+            public=public,
+            limit=limit,
+            cursor=cursor,
+            order_by=order_by,
+        )
 
     def list_owned_filtered(
         self,
@@ -159,36 +190,111 @@ class PapersService:
         project_id: str | None = None,
         standalone: bool = False,
         public: bool = False,
+        status: str | None = None,
     ) -> list[dict]:
-        filters: dict[str, object] = {PAPER_OWNER_KEY: owner_id}
-        if project_id:
-            filters[PAPER_PROJECT_KEY] = project_id
-            if standalone:
-                filters[PAPER_COLLECTION_KEY] = None
-        elif standalone:
-            filters[PAPER_PROJECT_KEY] = None
+        items = self.list_owned(owner_id, public=public)
+        normalized_status = str(status).strip().lower() if status else None
 
-        if public:
-            filters[PAPER_STATUS_KEY] = PAPER_STATUS_PUBLISHED
+        def _matches(item: dict) -> bool:
+            item_project_id = item.get(PAPER_PROJECT_KEY)
+            item_collection_id = item.get(PAPER_COLLECTION_KEY)
+            item_status = str(item.get(PAPER_STATUS_KEY) or "").strip().lower()
 
-        return firestore_store.find_by_fields(PAPERS_COLLECTION, filters)
+            if project_id:
+                if item_project_id != project_id:
+                    return False
+                if standalone and item_collection_id is not None:
+                    return False
+            elif standalone and item_project_id is not None:
+                return False
+
+            if not public and normalized_status and item_status != normalized_status:
+                return False
+            return True
+
+        return [item for item in items if _matches(item)]
+
+    def list_owned_filtered_paginated(
+        self,
+        owner_id: str,
+        *,
+        project_id: str | None = None,
+        standalone: bool = False,
+        public: bool = False,
+        status: str | None = None,
+        limit: int = 25,
+        cursor: str | None = None,
+        order_by: list[tuple[str, str]] | None = None,
+    ) -> dict:
+        items = self.list_owned_filtered(
+            owner_id=owner_id,
+            project_id=project_id,
+            standalone=standalone,
+            public=public,
+            status=status,
+        )
+        items = apply_order_by(items, order_by=order_by)
+        return paginate_items(items, limit=limit, cursor=cursor)
 
     def list_by_project_id(self, project_id: str, public: bool = False, standalone: bool = False) -> list[dict]:
-        filters: dict[str, object] = {PAPER_PROJECT_KEY: project_id}
-        if standalone:
-            filters[PAPER_COLLECTION_KEY] = None
-        if public:
-            filters[PAPER_STATUS_KEY] = PAPER_STATUS_PUBLISHED
-        return firestore_store.find_by_fields(PAPERS_COLLECTION, filters)
+        items = firestore_store.find_by_fields(PAPERS_COLLECTION, {PAPER_PROJECT_KEY: project_id})
 
-    def list_by_collection_id(self, collection_id: str, public: bool = False) -> list[dict]:
-        filters: dict[str, object] = {PAPER_COLLECTION_KEY: collection_id}
-        if public:
-            filters[PAPER_STATUS_KEY] = PAPER_STATUS_PUBLISHED
-        return firestore_store.find_by_fields(PAPERS_COLLECTION, filters)
+        def _matches(item: dict) -> bool:
+            if standalone and item.get(PAPER_COLLECTION_KEY) is not None:
+                return False
+            if public and item.get(PAPER_STATUS_KEY) != PAPER_STATUS_PUBLISHED:
+                return False
+            return True
+
+        return [item for item in items if _matches(item)]
+
+    def list_by_project_id_paginated(
+        self,
+        project_id: str,
+        *,
+        public: bool = False,
+        standalone: bool = False,
+        limit: int = 25,
+        cursor: str | None = None,
+        order_by: list[tuple[str, str]] | None = None,
+    ) -> dict:
+        items = self.list_by_project_id(project_id, public=public, standalone=standalone)
+        items = apply_order_by(items, order_by=order_by)
+        return paginate_items(items, limit=limit, cursor=cursor)
+
+    def list_by_collection_id(self, collection_id: str, public: bool = False, status: str | None = None) -> list[dict]:
+        items = firestore_store.find_by_fields(PAPERS_COLLECTION, {PAPER_COLLECTION_KEY: collection_id})
+        normalized_status = str(status).strip().lower() if status else None
+
+        def _matches(item: dict) -> bool:
+            item_status = str(item.get(PAPER_STATUS_KEY) or "").strip().lower()
+            if public:
+                return item_status == PAPER_STATUS_PUBLISHED
+            if normalized_status:
+                return item_status == normalized_status
+            return True
+
+        return [item for item in items if _matches(item)]
+
+    def list_by_collection_id_paginated(
+        self,
+        collection_id: str,
+        *,
+        public: bool = False,
+        status: str | None = None,
+        limit: int = 25,
+        cursor: str | None = None,
+        order_by: list[tuple[str, str]] | None = None,
+    ) -> dict:
+        items = self.list_by_collection_id(collection_id, public=public, status=status)
+        items = apply_order_by(items, order_by=order_by)
+        return paginate_items(items, limit=limit, cursor=cursor)
 
     def list_all_public(self) -> list[dict]:
         return firestore_store.find_by_fields(PAPERS_COLLECTION, {PAPER_STATUS_KEY: PAPER_STATUS_PUBLISHED})
+
+    def get_many_by_ids(self, paper_ids: list[str]) -> list[dict]:
+        return firestore_store.get_many(PAPERS_COLLECTION, paper_ids)
 
     def search_owned(
         self,
@@ -204,18 +310,18 @@ class PapersService:
         if not search_query:
             raise HTTPException(status_code=400, detail="query is required.")
 
-        filters: dict[str, object] = {PAPER_OWNER_KEY: owner_id}
-        if project_id:
-            filters[PAPER_PROJECT_KEY] = project_id
-        if collection_id:
-            filters[PAPER_COLLECTION_KEY] = collection_id
+        papers = self.list_owned(owner_id)
         if status:
             normalized_status = str(status).strip().lower()
             if normalized_status not in {"draft", "published", "archived"}:
                 raise HTTPException(status_code=400, detail="status must be draft, published, or archived.")
-            filters[PAPER_STATUS_KEY] = normalized_status
-
-        papers = firestore_store.find_by_fields(PAPERS_COLLECTION, filters)
+            papers = [
+                item for item in papers if str(item.get(PAPER_STATUS_KEY) or "").strip().lower() == normalized_status
+            ]
+        if project_id:
+            papers = [item for item in papers if item.get(PAPER_PROJECT_KEY) == project_id]
+        if collection_id:
+            papers = [item for item in papers if item.get(PAPER_COLLECTION_KEY) == collection_id]
         ranked: dict[str, tuple[int, dict]] = {}
 
         for paper in papers:
@@ -273,10 +379,12 @@ class PapersService:
         if not owner_id or not slug:
             return None
 
-        filters: dict[str, object] = {PAPER_OWNER_KEY: owner_id, PAPER_SLUG_KEY: slug}
-        if public:
-            filters[PAPER_STATUS_KEY] = PAPER_STATUS_PUBLISHED
-        return self._first_or_none(firestore_store.find_by_fields(PAPERS_COLLECTION, filters))
+        matches = [
+            item
+            for item in self.list_owned(owner_id, public=public)
+            if str(item.get(PAPER_SLUG_KEY) or "").strip() == slug
+        ]
+        return self._first_or_none(matches)
 
     def get_by_slug(self, owner_username: str, paper_slug: str, public: bool = False) -> dict | None:
         resolved_owner_username = self._normalize_owner_username(owner_username)
@@ -310,10 +418,12 @@ class PapersService:
         if not resolved_project_id or not slug:
             return None
 
-        filters: dict[str, object] = {PAPER_PROJECT_KEY: resolved_project_id, PAPER_SLUG_KEY: slug}
-        if public:
-            filters[PAPER_STATUS_KEY] = PAPER_STATUS_PUBLISHED
-        return self._first_or_none(firestore_store.find_by_fields(PAPERS_COLLECTION, filters))
+        matches = [
+            item
+            for item in self.list_by_project_id(resolved_project_id, public=public)
+            if str(item.get(PAPER_SLUG_KEY) or "").strip() == slug
+        ]
+        return self._first_or_none(matches)
 
     def find_by_slug(
         self,
@@ -368,10 +478,11 @@ class PapersService:
             payload["slug"] = normalize_slug(payload["slug"])
             if is_reserved_paper_slug(payload["slug"]):
                 raise HTTPException(status_code=409, detail="Slug is reserved.")
-            existing = firestore_store.find_by_fields(
-                PAPERS_COLLECTION,
-                {PAPER_OWNER_KEY: owner_id, PAPER_SLUG_KEY: payload["slug"]},
-            )
+            existing = [
+                item
+                for item in self.list_owned(owner_id)
+                if str(item.get(PAPER_SLUG_KEY) or "").strip() == str(payload["slug"]).strip()
+            ]
             if existing:
                 raise HTTPException(status_code=409, detail="Paper slug already exists.")
         else:
@@ -405,10 +516,11 @@ class PapersService:
             new_slug = normalize_slug(payload["slug"])
             if is_reserved_paper_slug(new_slug):
                 raise HTTPException(status_code=409, detail="Slug is reserved.")
-            existing = firestore_store.find_by_fields(
-                PAPERS_COLLECTION,
-                {PAPER_OWNER_KEY: current.get(PAPER_OWNER_KEY), PAPER_SLUG_KEY: new_slug},
-            )
+            existing = [
+                item
+                for item in self.list_owned(str(current.get(PAPER_OWNER_KEY) or ""))
+                if str(item.get(PAPER_SLUG_KEY) or "").strip() == new_slug
+            ]
             if any(item.get(PAPER_ID_KEY) != paper_id for item in existing):
                 raise HTTPException(status_code=409, detail="Paper slug already exists.")
             payload["slug"] = new_slug
@@ -601,10 +713,11 @@ class PapersService:
         normalized = normalize_slug(slug)
         if not normalized or is_reserved_paper_slug(normalized):
             return False
-        matches = firestore_store.find_by_fields(
-            PAPERS_COLLECTION,
-            {PAPER_OWNER_KEY: owner_id, PAPER_SLUG_KEY: normalized},
-        )
+        matches = [
+            item
+            for item in self.list_owned(owner_id)
+            if str(item.get(PAPER_SLUG_KEY) or "").strip() == normalized
+        ]
         return all(item.get(PAPER_ID_KEY) == paper_id for item in matches)
 
 

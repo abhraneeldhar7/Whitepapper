@@ -1,16 +1,17 @@
 import asyncio
-from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Path, Query, Response
 from pydantic import BaseModel
 
+from app.api.deps.ownership import require_owned_project
 from app.schemas.entities import ApiKeyCreateResponse, ApiKeySummary
 from app.services.auth_service import get_verified_id
 from app.services._dev_api_service import _dev_api_service
 from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
+from app.utils.sorting import sort_items_latest_first
 
 router = APIRouter(prefix="/dev", tags=["dev"])
 api_keys_router = APIRouter(tags=["api-keys"])
@@ -72,27 +73,6 @@ def _set_dev_cache_headers(response: Response) -> None:
     response.headers["Vary"] = "x-api-key"
 
 
-def _to_timestamp(value: object) -> float:
-    if not value:
-        return 0.0
-    try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
-    except Exception:
-        return 0.0
-
-
-def _sort_papers_latest_first(papers: list[dict]) -> list[dict]:
-    return sorted(
-        papers,
-        key=lambda paper: (
-            _to_timestamp(paper.get("updatedAt")),
-            _to_timestamp(paper.get("createdAt")),
-        ),
-        reverse=True,
-    )
-
-
-
 @router.get("/project")
 async def get_project_bundle(
     background_tasks: BackgroundTasks,
@@ -148,7 +128,7 @@ async def get_collection_bundle(
         papers = await asyncio.to_thread(papers_service.list_by_collection_id, collection.get("collectionId"), True)
 
     _add_usage_increment(background_tasks, key_doc)
-    papers = _sort_papers_latest_first(papers)
+    papers = sort_items_latest_first(papers)
     _set_dev_cache_headers(response)
 
 
@@ -184,9 +164,7 @@ def get_project_api_doc(
     project_id: Annotated[str, Path()],
     user_id: CurrentUserIdDep,
 ) -> ApiKeySummary | None:
-    project = projects_service.get_by_id(project_id)
-    if project.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_project(user_id, project_id)
     return _dev_api_service.get_project_api_key(project_id, user_id)
 
 
@@ -195,9 +173,7 @@ def create_api_key(
     project_id: Annotated[str, Path()],
     user_id: CurrentUserIdDep,
 ) -> ApiKeyCreateResponse:
-    project = projects_service.get_by_id(project_id)
-    if project.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_project(user_id, project_id)
     return _dev_api_service.create(user_id, project_id)
 
 

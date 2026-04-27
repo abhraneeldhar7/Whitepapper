@@ -9,6 +9,7 @@ import {
   resolvePreferredPaperPath,
   stripMarkdown,
 } from "@/lib/seo";
+import { resolvePaperSocialImage } from "@/lib/paperMedia";
 
 type PublicPaperMetadataOptions = {
   paper: PaperDoc;
@@ -68,9 +69,22 @@ function resolveMeaningfulText(...values: Array<string | undefined | null>): str
   return "";
 }
 
+function isAppLogoImage(value: string | undefined | null): boolean {
+  const normalized = String(value || "").trim().toLowerCase();
+  return normalized.endsWith("/applogo.png") || normalized.endsWith("applogo.png");
+}
+
+function resolveSocialImage(primary: string | undefined | null, fallback: string): string {
+  const normalizedPrimary = String(primary || "").trim();
+  if (normalizedPrimary && !isAppLogoImage(normalizedPrimary)) {
+    return normalizedPrimary;
+  }
+  return fallback;
+}
+
 function toPaperMetadataBase(paper: PaperDoc, siteUrl: string) {
   const metadataInput = paper.metadata;
-  const fallbackImage = paper.thumbnailUrl || defaultOgImage(siteUrl);
+  const fallbackImage = resolvePaperSocialImage(paper, defaultOgImage(siteUrl));
   const inferredExcerpt = excerptFromMarkdown(paper.body || paper.title, 160) || paper.title;
   const inferredAbstract = excerptFromMarkdown(paper.body || paper.title, 320) || paper.title;
   const inferredWordCount = countWords(paper.body || paper.title);
@@ -128,6 +142,8 @@ export function buildPublicPaperMetadata(options: PublicPaperMetadataOptions): P
     headlineBase;
   const metaDescription =
     resolveMeaningfulText(metadataInput?.metaDescription, inferredExcerpt) || inferredExcerpt;
+  const ogImage = resolveSocialImage(metadataInput?.ogImage, fallbackImage);
+  const twitterImage = resolveSocialImage(metadataInput?.twitterImage, ogImage);
 
   return {
     title:
@@ -142,7 +158,7 @@ export function buildPublicPaperMetadata(options: PublicPaperMetadataOptions): P
     ogDescription:
       resolveMeaningfulText(metadataInput?.ogDescription, metadataInput?.metaDescription, inferredExcerpt) ||
       inferredExcerpt,
-    ogImage: metadataInput?.ogImage || fallbackImage,
+    ogImage,
     ogImageWidth: metadataInput?.ogImageWidth || 1200,
     ogImageHeight: metadataInput?.ogImageHeight || 630,
     ogImageAlt:
@@ -161,8 +177,7 @@ export function buildPublicPaperMetadata(options: PublicPaperMetadataOptions): P
     twitterDescription:
       resolveMeaningfulText(metadataInput?.twitterDescription, metadataInput?.metaDescription, inferredExcerpt) ||
       inferredExcerpt,
-    twitterImage:
-      metadataInput?.twitterImage || metadataInput?.ogImage || fallbackImage,
+    twitterImage,
     twitterImageAlt:
       resolveMeaningfulText(metadataInput?.twitterImageAlt, `Cover image for ${headlineBase}`) ||
       `Cover image for ${headlineBase}`,
@@ -186,8 +201,7 @@ export function buildPublicPaperMetadata(options: PublicPaperMetadataOptions): P
     authorHandle,
     authorUrl: metadataInput?.authorUrl || fallbackAuthorUrl,
     authorId: metadataInput?.authorId || "",
-    coverImageUrl:
-      metadataInput?.coverImageUrl || metadataInput?.ogImage || fallbackImage,
+    coverImageUrl: ogImage,
     publisherName: metadataInput?.publisherName || "Whitepapper",
     publisherUrl: metadataInput?.publisherUrl || siteUrl,
     isAccessibleForFree,
@@ -225,6 +239,8 @@ export function buildBlogPaperMetadata(options: BlogPaperMetadataOptions): Paper
     headlineBase;
   const metaDescription =
     resolveMeaningfulText(metadataInput?.metaDescription, inferredExcerpt) || inferredExcerpt;
+  const ogImage = resolveSocialImage(metadataInput?.ogImage, fallbackImage);
+  const twitterImage = resolveSocialImage(metadataInput?.twitterImage, ogImage);
 
   return {
     title:
@@ -239,7 +255,7 @@ export function buildBlogPaperMetadata(options: BlogPaperMetadataOptions): Paper
     ogDescription:
       resolveMeaningfulText(metadataInput?.ogDescription, metadataInput?.metaDescription, inferredExcerpt) ||
       inferredExcerpt,
-    ogImage: metadataInput?.ogImage || fallbackImage,
+    ogImage,
     ogImageWidth: metadataInput?.ogImageWidth || 1200,
     ogImageHeight: metadataInput?.ogImageHeight || 630,
     ogImageAlt:
@@ -263,8 +279,7 @@ export function buildBlogPaperMetadata(options: BlogPaperMetadataOptions): Paper
     twitterDescription:
       resolveMeaningfulText(metadataInput?.twitterDescription, metadataInput?.metaDescription, inferredExcerpt) ||
       inferredExcerpt,
-    twitterImage:
-      metadataInput?.twitterImage || metadataInput?.ogImage || fallbackImage,
+    twitterImage,
     twitterImageAlt:
       resolveMeaningfulText(metadataInput?.twitterImageAlt, `Cover image for ${headlineBase}`) ||
       `Cover image for ${headlineBase}`,
@@ -290,8 +305,7 @@ export function buildBlogPaperMetadata(options: BlogPaperMetadataOptions): Paper
     authorHandle,
     authorUrl: metadataInput?.authorUrl || fallbackAuthorUrl,
     authorId: metadataInput?.authorId || "",
-    coverImageUrl:
-      metadataInput?.coverImageUrl || metadataInput?.ogImage || fallbackImage,
+    coverImageUrl: ogImage,
     publisherName: metadataInput?.publisherName || "Whitepapper",
     publisherUrl: metadataInput?.publisherUrl || siteUrl,
     isAccessibleForFree,
@@ -407,7 +421,7 @@ export function buildPaperSeoConfig(metadata: PaperMetadata, options: {
     articleAuthor: metadata.ogAuthorUrl,
     articleTags: metadata.ogTags,
     jsonLd: (function() {
-      const stored = (metadata as any)?.jsonld;
+      const stored = (metadata as any)?.jsonLd ?? (metadata as any)?.jsonld;
       if (stored) {
         return Array.isArray(stored) ? stored : [stored];
       }

@@ -1,24 +1,81 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import bgGradient from "@/assets/landingPage/blueBgPattern.jpg";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TriangleAlert, UserRoundIcon } from "lucide-react";
+import { AuthenticateWithRedirectCallback } from "@clerk/astro/react";
 ---
 
 <Layout noindex={true} hideFooter={true} showSiteNav={false}>
-	<!-- <div
-		class="h-screen w-screen flex flex-col items-center justify-center gap-10 overflow-hidden"
-	>
-		<div class="flex items-center gap-4">
-			<LoaderCircle size={18} className="animate-spin" />
-			<h2 class="text-[22px]">Setting up your workspace</h2>
+	<div class="px-4 py-10 max-w-[600px] w-full flex flex-col mx-auto h-screen">
+		<AuthenticateWithRedirectCallback />
+		<div class="relative w-full aspect-2/1 px-5 py-20">
+			<h1 class="text-[white] font-[450] text-[30px]">
+				<span class="text-[32px]">Welcome to </span>
+				<br />
+				<span class="text-[42px]">Whitepapper</span>
+			</h1>
+			<img
+				class="rounded-[8px] w-full h-full object-cover absolute top-0 left-0 z-[-1]"
+				src={bgGradient.src}
+			/>
+			<img
+				src="/appLogo.png"
+				height="30"
+				width="30"
+				class="absolute z-[2] top-3 right-3"
+			/>
 		</div>
-		<SSOCardStack client:load />
-		<p class="mt-5 text-[15px] font-[400] text-center">
-			Do not exit this screen
-		</p>
-	</div> -->
-	<!-- <AuthenticateWithRedirectCallback /> -->
 
-	<div class="px-4 py-10 max-w-[600px] w-full flex flex-col mx-auto">
-	
-		
+		<div
+			class="mt-5 md:mt-4 flex flex-col h-full space-y-4 md:space-y-3 text-[18px]"
+		>
+			<div class="flex gap-2 items-center">
+				<Skeleton className="flex-3" />
+				<Skeleton className="flex-2" />
+			</div>
+			<div class="flex gap-2 items-center">
+				<p class="animate-pulse">Please wait</p>
+				<Skeleton className="flex-1" />
+				<Skeleton className="flex-2" />
+			</div>
+			<div class="flex gap-2 items-center">
+				<Skeleton className="flex-5" />
+				<p class="animate-pulse delay-[0.2s]">while</p>
+				<Skeleton className="flex-1" />
+				<p class="animate-pulse delay-[0.4s]">we</p>
+				<Skeleton className="flex-4" />
+			</div>
+			<div class="flex gap-2 items-center">
+				<Skeleton className="flex-2" />
+				<p class="animate-pulse delay-[0.6s]">set up</p>
+				<Skeleton className="flex-1" />
+				<Skeleton className="flex-4" />
+			</div>
+			<div class="flex gap-2 items-center">
+				<Skeleton className="flex-1" />
+				<p class="animate-pulse delay-[0.8s]">your</p>
+				<Skeleton className="flex-2" />
+				<Skeleton className="flex-4" />
+				<div
+					class="overflow-hidden flex items-center justify-center p-2 bg-card border shadow-md rounded-[50%]"
+				>
+					<UserRoundIcon size={16} />
+				</div>
+				<p class="animate-pulse delay-[1s]">account</p>
+				<Skeleton className="flex-2" />
+			</div>
+			<div class="flex gap-2 items-center">
+				<Skeleton className="flex-1" />
+				<Skeleton className="flex-3" />
+				<Skeleton className="flex-2" />
+			</div>
+		</div>
+		<div
+			class="h-full w-full text-center flex gap-2 items-center justify-center"
+		>
+			<TriangleAlert size={15} />
+			<p class="text-[16px]">Do not close this screen</p>
+		</div>
 	</div>
 </Layout>

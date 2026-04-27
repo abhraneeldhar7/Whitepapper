@@ -1,9 +1,9 @@
 {
   "path": "/write",
-  "title": "Write in Whitepapper | Markdown Editor",
-  "description": "Draft papers in markdown, manage metadata, and prepare content for multi-platform distribution from one editor.",
+  "title": "Write",
+  "description": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Draft in markdown, manage metadata, and prepare multi-platform distribution.",
   "canonical": "/write",
-  "image": "src/assets/ogImages/root.png",
+  "image": "/assets/ogImages/root.png",
   "keywords": "whitepapper editor, markdown writing tool, SEO metadata editor, content drafting workspace",
   "robots": "noindex, nofollow",
   "author": "Abhraneel Dhar",
@@ -11,14 +11,14 @@
   "locale": "en_US",
   "ogType": "website",
   "ogTitle": "Write in Whitepapper | Markdown Editor",
-  "ogDescription": "Write, edit, and prepare distribution-ready content in the Whitepapper markdown editor.",
+  "ogDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Draft in markdown, manage metadata, and prepare multi-platform distribution.",
   "ogUrl": "/write",
-  "ogImage": "src/assets/ogImages/root.png",
+  "ogImage": "/assets/ogImages/root.png",
   "ogImageAlt": "Whitepapper editor cover image",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Write in Whitepapper | Markdown Editor",
-  "twitterDescription": "Use Whitepapper to draft markdown content and prep distribution in one place.",
-  "twitterImage": "src/assets/ogImages/root.png",
+  "twitterDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Draft in markdown, manage metadata, and prepare multi-platform distribution.",
+  "twitterImage": "/assets/ogImages/root.png",
   "twitterImageAlt": "Whitepapper editor cover image",
   "jsonLd": {
     "@context": "https://schema.org",
@@ -27,4 +27,3 @@
     "url": "https://whitepapper.antk.in/write"
   }
 }
-

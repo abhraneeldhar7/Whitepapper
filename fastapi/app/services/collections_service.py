@@ -9,6 +9,7 @@ from app.core.firestore_store import firestore_store
 from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
 from app.utils.datetime import utc_now
+from app.utils.pagination import apply_order_by, paginate_items
 
 logger = logging.getLogger(__name__)
 
@@ -18,21 +19,22 @@ COLLECTION_OWNER_KEY = "ownerId"
 COLLECTION_PROJECT_KEY = "projectId"
 COLLECTION_SLUG_KEY = "slug"
 COLLECTION_PUBLIC_KEY = "isPublic"
-
-
 class CollectionsService:
+
     def invalidate_collection(self, collection_id: str, project_id: str | None = None, slug: str | None = None) -> None:
         return None
 
     def _unique_slug(self, project_id: str, source: str, exclude_collection_id: str | None = None) -> str:
         base = normalize_slug(source) or "collection"
+        project_collections = self.list_project_collections(project_id)
         candidate = base
         while True:
-            matches = firestore_store.find_by_fields(
-                COLLECTIONS_COLLECTION,
-                {COLLECTION_PROJECT_KEY: project_id, COLLECTION_SLUG_KEY: candidate},
+            is_taken = any(
+                str(item.get(COLLECTION_SLUG_KEY) or "").strip() == candidate
+                and item.get(COLLECTION_ID_KEY) != exclude_collection_id
+                for item in project_collections
             )
-            if all(item.get(COLLECTION_ID_KEY) == exclude_collection_id for item in matches):
+            if not is_taken:
                 return candidate
             candidate = f"{base}-{uuid4().hex[:4]}"
 
@@ -82,10 +84,26 @@ class CollectionsService:
         return bool(collection) and bool(collection.get(COLLECTION_PUBLIC_KEY))
 
     def list_project_collections(self, project_id: str, public: bool = False) -> list[dict]:
-        filters: dict[str, object] = {COLLECTION_PROJECT_KEY: project_id}
+        items = firestore_store.find_by_fields(COLLECTIONS_COLLECTION, {COLLECTION_PROJECT_KEY: project_id})
         if public:
-            filters[COLLECTION_PUBLIC_KEY] = True
-        return firestore_store.find_by_fields(COLLECTIONS_COLLECTION, filters)
+            return [item for item in items if bool(item.get(COLLECTION_PUBLIC_KEY))]
+        return items
+
+    def list_project_collections_paginated(
+        self,
+        project_id: str,
+        *,
+        public: bool = False,
+        limit: int = 25,
+        cursor: str | None = None,
+        order_by: list[tuple[str, str]] | None = None,
+    ) -> dict:
+        items = self.list_project_collections(project_id, public=public)
+        items = apply_order_by(items, order_by=order_by)
+        return paginate_items(items, limit=limit, cursor=cursor)
+
+    def get_many_by_ids(self, collection_ids: list[str]) -> list[dict]:
+        return firestore_store.get_many(COLLECTIONS_COLLECTION, collection_ids)
 
     def create(self, owner_id: str, payload: dict) -> dict:
         collection_id = str(uuid4())
@@ -161,10 +179,11 @@ class CollectionsService:
             new_slug = normalize_slug(payload.get("slug") or "")
             if not new_slug:
                 raise HTTPException(status_code=400, detail="Invalid slug.")
-            matches = firestore_store.find_by_fields(
-                COLLECTIONS_COLLECTION,
-                {COLLECTION_PROJECT_KEY: str(current.get(COLLECTION_PROJECT_KEY)), COLLECTION_SLUG_KEY: new_slug},
-            )
+            matches = [
+                item
+                for item in self.list_project_collections(str(current.get(COLLECTION_PROJECT_KEY) or ""))
+                if str(item.get(COLLECTION_SLUG_KEY) or "").strip() == new_slug
+            ]
             if any(item.get(COLLECTION_ID_KEY) != collection_id for item in matches):
                 raise HTTPException(status_code=409, detail="Collection slug already exists in this project.")
             payload["slug"] = new_slug
@@ -225,13 +244,11 @@ class CollectionsService:
         return collection
 
     def get_by_slug(self, project_id: str, collection_slug: str, public: bool = False) -> dict:
-        filters: dict[str, object] = {
-            COLLECTION_PROJECT_KEY: project_id,
-            COLLECTION_SLUG_KEY: collection_slug,
-        }
-        if public:
-            filters[COLLECTION_PUBLIC_KEY] = True
-        matches = firestore_store.find_by_fields(COLLECTIONS_COLLECTION, filters)
+        matches = [
+            item
+            for item in self.list_project_collections(project_id, public=public)
+            if str(item.get(COLLECTION_SLUG_KEY) or "").strip() == collection_slug
+        ]
         if not matches:
             raise HTTPException(status_code=404, detail="Collection not found.")
         return matches[0]
@@ -240,10 +257,11 @@ class CollectionsService:
         candidate = normalize_slug(slug or "")
         if not candidate:
             return False
-        matches = firestore_store.find_by_fields(
-            COLLECTIONS_COLLECTION,
-            {COLLECTION_PROJECT_KEY: project_id, COLLECTION_SLUG_KEY: candidate},
-        )
+        matches = [
+            item
+            for item in self.list_project_collections(project_id)
+            if str(item.get(COLLECTION_SLUG_KEY) or "").strip() == candidate
+        ]
         return all(item.get(COLLECTION_ID_KEY) == collection_id for item in matches)
 
 

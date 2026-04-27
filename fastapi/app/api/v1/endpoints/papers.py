@@ -1,16 +1,15 @@
-import re
-from datetime import datetime
 from typing import Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 
+from app.api.deps.ownership import require_owned_collection, require_owned_paper, require_owned_project
 from app.services.auth_service import get_verified_id
 from app.schemas.entities import PaperDoc, PaperMetadata
-from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
-from app.services.projects_service import projects_service
 from app.utils.cache import add_cache_buster
+from app.utils.content import extract_image_urls
+from app.utils.sorting import sort_items_latest_first
 
 router = APIRouter(tags=["papers"])
 
@@ -43,28 +42,6 @@ class PaperCreateResponse(BaseModel):
 class PaperMetadataGenerateRequest(BaseModel):
     payload: PaperDoc
 
-MARKDOWN_IMAGE_PATTERN = re.compile(r"!\[[^\]]*]\(([^)\s]+)", re.IGNORECASE)
-HTML_IMAGE_PATTERN = re.compile(r"<img[^>]+src=[\"']([^\"']+)[\"']", re.IGNORECASE)
-
-
-def _extract_image_urls(content: str) -> set[str]:
-    urls = set()
-    for match in MARKDOWN_IMAGE_PATTERN.findall(content):
-        urls.add(match)
-    for match in HTML_IMAGE_PATTERN.findall(content):
-        urls.add(match)
-    return urls
-
-
-def _to_timestamp(value: object) -> float:
-    if not value:
-        return 0.0
-    try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
-    except Exception:
-        return 0.0
-
-
 @router.get("/papers", response_model=list[PaperDoc])
 def list_own_papers(
     user_id: str = Depends(get_verified_id),
@@ -76,14 +53,7 @@ def list_own_papers(
         project_id=project_id,
         standalone=standalone,
     )
-    papers.sort(
-        key=lambda paper: (
-            _to_timestamp(paper.get("updatedAt")),
-            _to_timestamp(paper.get("createdAt")),
-        ),
-        reverse=True,
-    )
-    return papers
+    return sort_items_latest_first(papers)
 
 
 @router.post("/papers/{paper_id}/thumbnail")
@@ -92,11 +62,7 @@ async def upload_thumbnail(
     file: UploadFile = File(...),
     user_id: str = Depends(get_verified_id),
 ) -> dict[str, str]:
-    paper = papers_service.get_by_id(paper_id)
-    if not paper:
-        raise HTTPException(status_code=404, detail="Paper not found.")
-    if paper.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_paper(user_id, paper_id)
     return await papers_service.upload_thumbnail(paper_id, file)
 
 
@@ -106,11 +72,7 @@ async def upload_embedded_image(
     file: UploadFile = File(...),
     user_id: str = Depends(get_verified_id),
 ) -> dict[str, str]:
-    paper = papers_service.get_by_id(paper_id)
-    if not paper:
-        raise HTTPException(status_code=404, detail="Paper not found.")
-    if paper.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_paper(user_id, paper_id)
     return await papers_service.upload_embedded_image(paper_id, file)
 
 
@@ -121,24 +83,16 @@ async def upload_metadata_image(
     file: UploadFile = File(...),
     user_id: str = Depends(get_verified_id),
 ) -> dict[str, str]:
-    paper = papers_service.get_by_id(paper_id)
-    if not paper:
-        raise HTTPException(status_code=404, detail="Paper not found.")
-    if paper.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_paper(user_id, paper_id)
     return await papers_service.upload_metadata_image(paper_id, field, file)
 
 
 @router.post("/papers", response_model=PaperCreateResponse, status_code=201)
 def create_paper(payload: PaperCreateRequest, user_id: str = Depends(get_verified_id)) -> PaperCreateResponse:
     if payload.projectId:
-        project = projects_service.get_by_id(payload.projectId)
-        if project.get("ownerId") != user_id:
-            raise HTTPException(status_code=403, detail="Not allowed.")
+        require_owned_project(user_id, payload.projectId)
     if payload.collectionId:
-        collection = collections_service.get_by_id(payload.collectionId)
-        if collection.get("ownerId") != user_id:
-            raise HTTPException(status_code=403, detail="Not allowed.")
+        require_owned_collection(user_id, payload.collectionId)
     return papers_service.create(user_id, payload.model_dump())
 
 
@@ -148,11 +102,7 @@ def patch_paper(
     payload: PaperUpdateRequest,
     user_id: str = Depends(get_verified_id),
 ) -> PaperDoc:
-    paper = papers_service.get_by_id(paper_id)
-    if not paper:
-        raise HTTPException(status_code=404, detail="Paper not found.")
-    if paper.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_paper(user_id, paper_id)
 
     update_payload = payload.model_dump(exclude_unset=True)
 
@@ -163,7 +113,7 @@ def patch_paper(
     if "thumbnailUrl" in update_payload and not update_payload["thumbnailUrl"]:
         papers_service.delete_thumbnail(user_id, paper_id)
     if payload.body is not None:
-        used_urls = _extract_image_urls(updated.get("body") or "")
+        used_urls = extract_image_urls(updated.get("body") or "")
         papers_service.delete_unused_embedded_images(user_id, paper_id, used_urls)
     metadata_urls = papers_service.extract_metadata_image_urls(updated.get("metadata"))
     papers_service.delete_unused_metadata_images(user_id, paper_id, metadata_urls)
@@ -176,11 +126,7 @@ def generate_paper_metadata(
     payload: PaperMetadataGenerateRequest,
     user_id: str = Depends(get_verified_id),
 ) -> PaperMetadata:
-    paper = papers_service.get_by_id(paper_id)
-    if not paper:
-        raise HTTPException(status_code=404, detail="Paper not found.")
-    if paper.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_paper(user_id, paper_id)
     generated_payload = payload.payload.model_dump(mode="json")
     if generated_payload.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
@@ -203,19 +149,10 @@ def get_own_paper(
     paper_id: str,
     user_id: str = Depends(get_verified_id),
 ) -> PaperDoc:
-    paper = papers_service.get_by_id(paper_id)
-    if not paper:
-        raise HTTPException(status_code=404, detail="Paper not found.")
-    if paper.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
-    return paper
+    return require_owned_paper(user_id, paper_id)
 
 
 @router.delete("/papers/{paper_id}")
 def delete_paper(paper_id: str, user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
-    paper = papers_service.get_by_id(paper_id)
-    if not paper:
-        raise HTTPException(status_code=404, detail="Paper not found.")
-    if paper.get("ownerId") != user_id:
-        raise HTTPException(status_code=403, detail="Not allowed.")
+    require_owned_paper(user_id, paper_id)
     return papers_service.delete(paper_id)

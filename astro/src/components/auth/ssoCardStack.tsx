@@ -9,45 +9,45 @@ interface Card {
 }
 
 
-import EventElonImg from "@/assets/landingPage/hero_light.png"
-import RisavFootball from "@/assets/landingPage/carImg.jpg"
-import MarketplaceImg from "@/assets/landingPage/metatags_editor_light.png"
-import OrgImg from "@/assets/landingPage/editor_light.png"
-import ProjectsImg from "@/assets/landingPage/blogsPage.png"
-import ContentImg from "@/assets/landingPage/blueBgPattern.jpg"
+// import EventElonImg from "@/assets/landingPage/hero_light.png"
+// import RisavFootball from "@/assets/landingPage/carImg.jpg"
+// import MarketplaceImg from "@/assets/landingPage/metatags_editor_light.png"
+// import OrgImg from "@/assets/landingPage/editor_light.png"
+// import ProjectsImg from "@/assets/landingPage/blogsPage.png"
+// import ContentImg from "@/assets/landingPage/blueBgPattern.jpg"
 
-const initialCards: Card[] = [
-    {
-        id: 1,
-        image: EventElonImg,
-        heading: "Events engine",
-    },
-    {
-        id: 2,
-        image: RisavFootball,
-        heading: "Campus activity",
-    },
-    {
-        id: 3,
-        image: OrgImg,
-        heading: "Clubs Identity",
-    },
-    {
-        id: 4,
-        image: MarketplaceImg,
-        heading: "Marketplace",
-    },
-    {
-        id: 5,
-        image: ProjectsImg,
-        heading: "Projects Showcase",
-    },
-    {
-        id: 6,
-        image: ContentImg,
-        heading: "Content Engine",
-    },
-];
+// const initialCards: Card[] = [
+//     {
+//         id: 1,
+//         image: EventElonImg,
+//         heading: "Events engine",
+//     },
+//     {
+//         id: 2,
+//         image: RisavFootball,
+//         heading: "Campus activity",
+//     },
+//     {
+//         id: 3,
+//         image: OrgImg,
+//         heading: "Clubs Identity",
+//     },
+//     {
+//         id: 4,
+//         image: MarketplaceImg,
+//         heading: "Marketplace",
+//     },
+//     {
+//         id: 5,
+//         image: ProjectsImg,
+//         heading: "Projects Showcase",
+//     },
+//     {
+//         id: 6,
+//         image: ContentImg,
+//         heading: "Content Engine",
+//     },
+// ];
 
 const ANIMATION_MS = 450;
 const AUTO_ADVANCE_MS = 2000;
@@ -60,7 +60,8 @@ const slotStyles = [
 ] as const;
 
 const SSOCardStack: React.FC = () => {
-    const cards = initialCards;
+    // const cards = initialCards;
+    const cards = [];
     const [activeIndex, setActiveIndex] = useState<number>(0);
     const [isCycling, setIsCycling] = useState<boolean>(false);
     const [isLeaveActive, setIsLeaveActive] = useState<boolean>(false);

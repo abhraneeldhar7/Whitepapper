@@ -1,9 +1,9 @@
 {
   "path": "/dashboard",
   "title": "Whitepapper Dashboard | Content Ops Workspace",
-  "description": "Manage projects, collections, papers, API keys, and distribution from your Whitepapper workspace.",
+  "description": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Manage projects, papers, API keys, and distribution from one workspace.",
   "canonical": "/dashboard",
-  "image": "src/assets/ogImages/root.png",
+  "image": "/assets/ogImages/root.png",
   "keywords": "whitepapper dashboard, content workspace, project management, publishing dashboard",
   "robots": "noindex, nofollow",
   "author": "Abhraneel Dhar",
@@ -11,14 +11,14 @@
   "locale": "en_US",
   "ogType": "website",
   "ogTitle": "Whitepapper Dashboard | Content Ops Workspace",
-  "ogDescription": "Your private workspace for writing, organizing, and shipping content from one platform.",
+  "ogDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Manage projects, papers, API keys, and distribution from one workspace.",
   "ogUrl": "/dashboard",
-  "ogImage": "src/assets/ogImages/root.png",
+  "ogImage": "/assets/ogImages/root.png",
   "ogImageAlt": "Whitepapper dashboard cover image",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Whitepapper Dashboard | Content Ops Workspace",
-  "twitterDescription": "Operate projects, papers, and distribution from a single dashboard.",
-  "twitterImage": "src/assets/ogImages/root.png",
+  "twitterDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Manage projects, papers, API keys, and distribution from one workspace.",
+  "twitterImage": "/assets/ogImages/root.png",
   "twitterImageAlt": "Whitepapper dashboard cover image",
   "jsonLd": {
     "@context": "https://schema.org",
@@ -27,4 +27,3 @@
     "url": "https://whitepapper.antk.in/dashboard"
   }
 }
-

@@ -111,6 +111,6 @@ export type PaperMetadata = {
   // New AI/SEO fields
   keyTakeaways?: string[] | null;
   faq?: Array<{ question: string; answer: string }> | null;
-  author_bio?: string | null;
-  jsonld?: Record<string, any> | Array<Record<string, any>> | null;
+  authorBio?: string | null;
+  jsonLd?: Record<string, any> | Array<Record<string, any>> | null;
 };

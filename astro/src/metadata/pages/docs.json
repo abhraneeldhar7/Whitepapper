@@ -1,9 +1,9 @@
 {
   "path": "/docs",
   "title": "Whitepapper Docs | Setup, API, and Distribution",
-  "description": "Read Whitepapper docs for setup, editor workflows, metadata defaults, API usage, and cross-platform distribution.",
+  "description": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Set up quickly with documentation for API usage, metadata, and distribution workflows.",
   "canonical": "/docs",
-  "image": "src/assets/ogImages/root.png",
+  "image": "/assets/ogImages/root.png",
   "keywords": "whitepapper docs, developer CMS docs, content API documentation, publishing workflow",
   "robots": "index, follow",
   "author": "Abhraneel Dhar",
@@ -11,14 +11,14 @@
   "locale": "en_US",
   "ogType": "website",
   "ogTitle": "Whitepapper Docs | Setup, API, and Distribution",
-  "ogDescription": "Practical documentation for Whitepapper setup, API access, and distribution workflows.",
+  "ogDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Set up quickly with documentation for API usage, metadata, and distribution workflows.",
   "ogUrl": "/docs",
-  "ogImage": "src/assets/ogImages/root.png",
+  "ogImage": "/assets/ogImages/root.png",
   "ogImageAlt": "Whitepapper docs campaign cover image",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Whitepapper Docs | Setup, API, and Distribution",
-  "twitterDescription": "Get setup guides, API docs, and publishing workflows for Whitepapper.",
-  "twitterImage": "src/assets/ogImages/root.png",
+  "twitterDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Set up quickly with documentation for API usage, metadata, and distribution workflows.",
+  "twitterImage": "/assets/ogImages/root.png",
   "twitterImageAlt": "Whitepapper docs campaign cover image",
   "jsonLd": {
     "@context": "https://schema.org",
@@ -27,4 +27,3 @@
     "url": "https://whitepapper.antk.in/docs"
   }
 }
-

@@ -1,9 +1,9 @@
 {
   "path": "/404",
   "title": "404 | Page Not Found | Whitepapper",
-  "description": "The page you requested could not be found. Explore Whitepapper docs, resources, or return to the homepage.",
+  "description": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. The page you requested is not available.",
   "canonical": "/404",
-  "image": "src/assets/ogImages/root.png",
+  "image": "/assets/ogImages/root.png",
   "keywords": "404 whitepapper, page not found, whitepapper error page",
   "robots": "noindex, nofollow",
   "author": "Abhraneel Dhar",
@@ -11,14 +11,14 @@
   "locale": "en_US",
   "ogType": "website",
   "ogTitle": "404 | Page Not Found | Whitepapper",
-  "ogDescription": "This URL does not exist. Browse Whitepapper docs, updates, or go back to the home page.",
+  "ogDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. The page you requested is not available.",
   "ogUrl": "/404",
-  "ogImage": "src/assets/ogImages/root.png",
+  "ogImage": "/assets/ogImages/root.png",
   "ogImageAlt": "Whitepapper 404 cover image",
   "twitterCard": "summary_large_image",
   "twitterTitle": "404 | Page Not Found | Whitepapper",
-  "twitterDescription": "This Whitepapper page could not be found.",
-  "twitterImage": "src/assets/ogImages/root.png",
+  "twitterDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. The page you requested is not available.",
+  "twitterImage": "/assets/ogImages/root.png",
   "twitterImageAlt": "Whitepapper 404 cover image",
   "jsonLd": {
     "@context": "https://schema.org",
@@ -27,4 +27,3 @@
     "url": "https://whitepapper.antk.in/404"
   }
 }
-

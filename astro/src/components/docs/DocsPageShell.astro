@@ -140,11 +140,11 @@ const resolvedSeo = seo ?? docsPageSeo;
       }
 
       <main
-        class="max-w-[700px] w-full pt-4 md:pt-15"
+        class="max-w-[700px] w-full pt-30"
         aria-label={`${pageTitle} documentation content`}
       >
         <div
-          class="fixed top-[50px] md:top-[55px] left-0 w-full z-[4] flex justify-between items-center gap-10"
+          class="fixed top-[50px] md:top-[53px] left-0 w-full z-[4] flex justify-between items-center gap-10"
         >
           <div class="md:w-[300px] md:block hidden shrink-0"></div>
 
@@ -228,10 +228,10 @@ const resolvedSeo = seo ?? docsPageSeo;
         </nav>
       </main>
 
-      <aside class="hidden md:block w-[320px] z-[10]">
+      <aside class="hidden md:block relative w-[320px]">
         {
           !shouldRenderMobileToc && (
-            <div class="fixed top-[80px] w-[320px] right-10">
+            <div class="sticky top-[80px] w-[320px] right-10">
               <LinearTableOfContent
                 client:load
                 offset={125}

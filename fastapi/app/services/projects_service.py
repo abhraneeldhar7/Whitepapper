@@ -17,6 +17,7 @@ from app.services.slug_utils import normalize_slug
 from app.services.storage_service import storage_service
 from app.utils.cache import add_cache_buster
 from app.utils.datetime import utc_now
+from app.utils.pagination import apply_order_by, paginate_items
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +27,8 @@ PROJECT_SLUG_KEY = "slug"
 PROJECT_OWNER_KEY = "ownerId"
 PROJECT_PUBLIC_KEY = "isPublic"
 SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
-
-
 class ProjectsService:
+
     def invalidate_project(self, project_id: str, owner_username: str | None = None, slug: str | None = None) -> None:
         return None
 
@@ -49,13 +49,16 @@ class ProjectsService:
         if is_reserved_project_slug(base):
             base = f"{base}-project"
 
+        owned_projects = self.list_owned(owner_id)
+
         candidate = base
         while True:
-            matches = firestore_store.find_by_fields(
-                PROJECTS_COLLECTION,
-                {PROJECT_OWNER_KEY: owner_id, PROJECT_SLUG_KEY: candidate},
+            is_taken = any(
+                str(item.get(PROJECT_SLUG_KEY) or "").strip() == candidate
+                and item.get(PROJECT_ID_KEY) != exclude_project_id
+                for item in owned_projects
             )
-            if all(item.get(PROJECT_ID_KEY) == exclude_project_id for item in matches):
+            if not is_taken:
                 return candidate
             candidate = f"{base}-{uuid4().hex[:4]}"
 
@@ -100,13 +103,29 @@ class ProjectsService:
         return current
 
     def list_owned(self, owner_id: str, public: bool = False) -> list[dict]:
-        filters: dict[str, object] = {PROJECT_OWNER_KEY: owner_id}
+        items = firestore_store.find_by_fields(PROJECTS_COLLECTION, {PROJECT_OWNER_KEY: owner_id})
         if public:
-            filters[PROJECT_PUBLIC_KEY] = True
-        return firestore_store.find_by_fields(PROJECTS_COLLECTION, filters)
+            return [item for item in items if bool(item.get(PROJECT_PUBLIC_KEY))]
+        return items
+
+    def list_owned_paginated(
+        self,
+        owner_id: str,
+        *,
+        public: bool = False,
+        limit: int = 25,
+        cursor: str | None = None,
+        order_by: list[tuple[str, str]] | None = None,
+    ) -> dict:
+        items = self.list_owned(owner_id, public=public)
+        items = apply_order_by(items, order_by=order_by)
+        return paginate_items(items, limit=limit, cursor=cursor)
 
     def list_all_public(self) -> list[dict]:
         return firestore_store.find_by_fields(PROJECTS_COLLECTION, {PROJECT_PUBLIC_KEY: True})
+
+    def get_many_by_ids(self, project_ids: list[str]) -> list[dict]:
+        return firestore_store.get_many(PROJECTS_COLLECTION, project_ids)
 
     def get_by_id(self, project_id: str, public: bool = False) -> dict:
         project = firestore_store.get(PROJECTS_COLLECTION, project_id)
@@ -130,10 +149,11 @@ class ProjectsService:
         if not owner_id:
             raise HTTPException(status_code=404, detail="Project not found.")
 
-        filters: dict[str, object] = {PROJECT_OWNER_KEY: owner_id, PROJECT_SLUG_KEY: project_slug}
-        if public:
-            filters[PROJECT_PUBLIC_KEY] = True
-        matches = firestore_store.find_by_fields(PROJECTS_COLLECTION, filters)
+        matches = [
+            item
+            for item in self.list_owned(owner_id, public=public)
+            if str(item.get(PROJECT_SLUG_KEY) or "").strip() == project_slug
+        ]
         if not matches:
             raise HTTPException(status_code=404, detail="Project not found.")
         return matches[0]
@@ -225,10 +245,11 @@ class ProjectsService:
             new_slug = normalize_slug(payload.get("slug") or "")
             if not new_slug:
                 raise HTTPException(status_code=400, detail="Invalid slug.")
-            matches = firestore_store.find_by_fields(
-                PROJECTS_COLLECTION,
-                {PROJECT_OWNER_KEY: current.get(PROJECT_OWNER_KEY), PROJECT_SLUG_KEY: new_slug},
-            )
+            matches = [
+                item
+                for item in self.list_owned(str(current.get(PROJECT_OWNER_KEY) or ""))
+                if str(item.get(PROJECT_SLUG_KEY) or "").strip() == new_slug
+            ]
             if any(item.get(PROJECT_ID_KEY) != project_id for item in matches):
                 raise HTTPException(status_code=409, detail="Slug is not available.")
             payload["slug"] = new_slug
@@ -344,10 +365,11 @@ class ProjectsService:
         candidate = normalize_slug(slug or "")
         if not candidate or is_reserved_project_slug(candidate):
             return False
-        matches = firestore_store.find_by_fields(
-            PROJECTS_COLLECTION,
-            {PROJECT_OWNER_KEY: owner_id, PROJECT_SLUG_KEY: candidate},
-        )
+        matches = [
+            item
+            for item in self.list_owned(owner_id)
+            if str(item.get(PROJECT_SLUG_KEY) or "").strip() == candidate
+        ]
         return all(item.get(PROJECT_ID_KEY) == project_id for item in matches)
 
 

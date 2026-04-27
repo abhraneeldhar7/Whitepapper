@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 from app.api.v1.endpoints.distributions.common import (
     DistributionPublishInput,
     build_public_article_url,
+    extract_canonical_url,
+    extract_cover_image,
     extract_description,
     extract_tags,
     resolve_distribution_access_token,
@@ -80,13 +82,14 @@ def publish_hashnode_distribution(
 ) -> DistributionPublishResult:
     paper_doc, title, body, slug, metadata, username = resolve_distribution_context(user_id, payload)
     access_token = resolve_distribution_access_token("hashnode", user_id, payload.accessToken)
-    thumbnail_url = paper_doc.get("thumbnailUrl")
     publication_id = distributions_store_service.get_hashnode_publication_id(user_id)
     if not publication_id:
         publication_id = hashnode_distribution_service.fetch_publication_id(access_token)
         distributions_store_service.set_hashnode_publication_id(user_id, publication_id)
 
     article_url = build_public_article_url(username, slug)
+    canonical_url = extract_canonical_url(metadata, article_url)
+    cover_image_url = extract_cover_image(metadata, paper_doc)
     hashnode_tags = [
         {
             "slug": normalize_slug(tag),
@@ -107,10 +110,10 @@ def publish_hashnode_distribution(
             "settings": {
                 "enableTableOfContent": False,
             },
-            "originalArticleURL": article_url,
+            "originalArticleURL": canonical_url,
             **({"subtitle": description} if description else {}),
             **({"tags": hashnode_tags} if hashnode_tags else {}),
-            **({"coverImageOptions": {"coverImageURL": thumbnail_url}} if thumbnail_url else {}),
+            **({"coverImageOptions": {"coverImageURL": cover_image_url}} if cover_image_url else {}),
         },
     )
     return DistributionPublishResult(

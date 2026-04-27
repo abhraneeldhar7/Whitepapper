@@ -1,9 +1,9 @@
 {
   "path": "/terms-of-service",
   "title": "Whitepapper Terms of Service",
-  "description": "Review the Whitepapper Terms of Service, including usage rules, responsibilities, and legal conditions.",
+  "description": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Review platform terms, responsibilities, and legal conditions.",
   "canonical": "/terms-of-service",
-  "image": "src/assets/ogImages/root.png",
+  "image": "/assets/ogImages/root.png",
   "keywords": "whitepapper terms of service, platform terms, legal usage policy",
   "robots": "index, follow",
   "author": "Abhraneel Dhar",
@@ -11,14 +11,14 @@
   "locale": "en_US",
   "ogType": "article",
   "ogTitle": "Whitepapper Terms of Service",
-  "ogDescription": "Read platform terms, account responsibilities, and legal usage conditions for Whitepapper.",
+  "ogDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Review platform terms, responsibilities, and legal conditions.",
   "ogUrl": "/terms-of-service",
-  "ogImage": "src/assets/ogImages/root.png",
+  "ogImage": "/assets/ogImages/root.png",
   "ogImageAlt": "Whitepapper terms cover image",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Whitepapper Terms of Service",
-  "twitterDescription": "Review Whitepapper account terms and platform usage rules.",
-  "twitterImage": "src/assets/ogImages/root.png",
+  "twitterDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Review platform terms, responsibilities, and legal conditions.",
+  "twitterImage": "/assets/ogImages/root.png",
   "twitterImageAlt": "Whitepapper terms cover image",
   "jsonLd": {
     "@context": "https://schema.org",
@@ -27,4 +27,3 @@
     "url": "https://whitepapper.antk.in/terms-of-service"
   }
 }
-

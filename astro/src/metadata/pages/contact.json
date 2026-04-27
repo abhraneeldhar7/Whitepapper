@@ -1,9 +1,9 @@
 {
   "path": "/contact",
   "title": "Contact Whitepapper | Support and Collaboration",
-  "description": "Contact Whitepapper for support, product feedback, or collaboration. Replies are direct and builder-focused.",
+  "description": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Get support, share feedback, or discuss collaboration.",
   "canonical": "/contact",
-  "image": "src/assets/ogImages/root.png",
+  "image": "/assets/ogImages/root.png",
   "keywords": "contact whitepapper, whitepapper support, developer platform help, collaboration request",
   "robots": "index, follow",
   "author": "Abhraneel Dhar",
@@ -11,14 +11,14 @@
   "locale": "en_US",
   "ogType": "website",
   "ogTitle": "Contact Whitepapper | Support and Collaboration",
-  "ogDescription": "Get support, share feedback, or discuss collaboration with the Whitepapper team.",
+  "ogDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Get support, share feedback, or discuss collaboration.",
   "ogUrl": "/contact",
-  "ogImage": "src/assets/ogImages/root.png",
+  "ogImage": "/assets/ogImages/root.png",
   "ogImageAlt": "Whitepapper contact campaign cover image",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Contact Whitepapper | Support and Collaboration",
-  "twitterDescription": "Need help or want to collaborate? Reach out directly to Whitepapper.",
-  "twitterImage": "src/assets/ogImages/root.png",
+  "twitterDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Get support, share feedback, or discuss collaboration.",
+  "twitterImage": "/assets/ogImages/root.png",
   "twitterImageAlt": "Whitepapper contact campaign cover image",
   "jsonLd": {
     "@context": "https://schema.org",
@@ -27,4 +27,3 @@
     "url": "https://whitepapper.antk.in/contact"
   }
 }
-

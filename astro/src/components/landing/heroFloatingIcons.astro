@@ -1,0 +1,52 @@
+---
+import { cn } from "@/lib/utils";
+
+interface Props {
+  className?: string;
+  Icon: any;
+  style?: string | Record<string, string | number>;
+}
+
+const { className, Icon, style } = Astro.props as Props;
+
+const styleValue =
+  typeof style === "string"
+    ? style
+    : style && typeof style === "object"
+      ? Object.entries(style)
+          .map(([key, value]) => `${key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)}:${String(value)}`)
+          .join(";")
+      : undefined;
+---
+
+<div
+  style={styleValue}
+  class={cn(
+    "heroText aspect-square rounded-[12px] shadow-sm flex items-center justify-center w-fit p-3 md:p-4 z-[-1]",
+    className,
+  )}
+>
+  <Icon className="size-6 md:size-8" />
+  <slot />
+</div>
+
+<style>
+  .heroText {
+    opacity: 0;
+    translate: 0 30px;
+    animation: fadeInUp 0.6s ease-out forwards;
+    animation-fill-mode: both;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      translate: 0 30px;
+    }
+
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+</style>

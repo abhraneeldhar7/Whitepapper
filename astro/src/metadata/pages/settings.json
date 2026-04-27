@@ -1,9 +1,9 @@
 {
   "path": "/settings",
   "title": "Settings | Whitepapper",
-  "description": "Update account, profile, and workspace settings for your Whitepapper content operations.",
+  "description": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Configure account and workspace preferences.",
   "canonical": "/settings",
-  "image": "src/assets/ogImages/root.png",
+  "image": "/assets/ogImages/root.png",
   "keywords": "whitepapper settings, account configuration, workspace settings, profile management",
   "robots": "noindex, nofollow",
   "author": "Abhraneel Dhar",
@@ -11,14 +11,14 @@
   "locale": "en_US",
   "ogType": "website",
   "ogTitle": "Settings | Whitepapper",
-  "ogDescription": "Manage your Whitepapper account and workspace configuration.",
+  "ogDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Configure account and workspace preferences.",
   "ogUrl": "/settings",
-  "ogImage": "src/assets/ogImages/root.png",
+  "ogImage": "/assets/ogImages/root.png",
   "ogImageAlt": "Whitepapper settings cover image",
   "twitterCard": "summary_large_image",
   "twitterTitle": "Settings | Whitepapper",
-  "twitterDescription": "Configure your account and workspace preferences in Whitepapper.",
-  "twitterImage": "src/assets/ogImages/root.png",
+  "twitterDescription": "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS. Configure account and workspace preferences.",
+  "twitterImage": "/assets/ogImages/root.png",
   "twitterImageAlt": "Whitepapper settings cover image",
   "jsonLd": {
     "@context": "https://schema.org",
@@ -27,4 +27,3 @@
     "url": "https://whitepapper.antk.in/settings"
   }
 }
-
