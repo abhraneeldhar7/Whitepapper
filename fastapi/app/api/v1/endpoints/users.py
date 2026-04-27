@@ -44,16 +44,7 @@ def _with_cache_buster(url: str) -> str:
 
 @router.get("/me", response_model=UserDoc)
 def get_me(user_id: str = Depends(get_verified_id)) -> UserDoc:
-
-    try:
-        return user_service.get_by_id(user_id)
-    except HTTPException as exc:
-        if exc.status_code != 404:
-            raise
-        # Auto-provision the profile if webhook delivery was delayed/missed.
-        return user_service.create_user(
-            user_id=user_id,
-        )
+    return user_service.get_by_id(user_id)
 
 
 @router.patch("/me", response_model=UserDoc)

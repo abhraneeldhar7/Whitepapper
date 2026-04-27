@@ -2,13 +2,19 @@
 import Layout from "@/layouts/Layout.astro";
 import bgGradient from "@/assets/landingPage/blueBgPattern.jpg";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TriangleAlert, UserRoundIcon } from "lucide-react";
+import { LoaderCircle, TriangleAlert, UserRoundIcon } from "lucide-react";
 import { AuthenticateWithRedirectCallback } from "@clerk/astro/react";
 ---
 
 <Layout noindex={true} hideFooter={true} showSiteNav={false}>
 	<div class="px-4 py-10 max-w-[600px] w-full flex flex-col mx-auto h-screen">
-		<AuthenticateWithRedirectCallback client:load />
+		<AuthenticateWithRedirectCallback
+			client:load
+			signInUrl="/login"
+			signUpUrl="/login"
+			signInFallbackRedirectUrl="/dashboard"
+			signUpFallbackRedirectUrl="/dashboard"
+		/>
 		<div class="relative w-full aspect-2/1 px-5 py-20">
 			<h1 class="text-[white] font-[450] text-[30px]">
 				<span class="text-[32px]">Welcome to </span>
@@ -25,6 +31,7 @@ import { AuthenticateWithRedirectCallback } from "@clerk/astro/react";
 				width="30"
 				class="absolute z-[2] top-3 right-3"
 			/>
+			<LoaderCircle size={24} className="absolute z-[2] bottom-3 right-3 text-[white] animate-spin"/>
 		</div>
 
 		<div
@@ -78,4 +85,5 @@ import { AuthenticateWithRedirectCallback } from "@clerk/astro/react";
 			<p class="text-[16px]">Do not close this screen</p>
 		</div>
 	</div>
+
 </Layout>

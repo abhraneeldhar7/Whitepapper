@@ -23,13 +23,10 @@ function resolveSafeRedirectTarget(requestUrl: string): string {
 }
 
 const clerkHandler = clerkMiddleware(async (auth, context, next) => {
-  const { isAuthenticated } = auth();
+  const { isAuthenticated, redirectToSignIn } = auth();
 
   if (!isAuthenticated && isProtectedRoute(context.request)) {
-    const loginUrl = new URL("/login", context.request.url);
-    loginUrl.searchParams.set("redirect_url", context.request.url);
-    const redirectResponse = Response.redirect(loginUrl, 302);
-    return redirectResponse;
+    return redirectToSignIn({ returnBackUrl: context.request.url });
   }
 
   if (isAuthenticated && isLoginRoute(context.request)) {
