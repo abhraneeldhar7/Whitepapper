@@ -408,13 +408,10 @@ export default function LoginPage() {
 
         setOauthLoading(true);
         try {
-            const callbackUrl = new URL("/welcome", window.location.origin);
-            callbackUrl.searchParams.set("redirect_url", redirectUrl);
-
             await signIn.authenticateWithRedirect({
                 strategy: "oauth_google",
-                redirectUrl: callbackUrl.toString(),
-                redirectUrlComplete: new URL(redirectUrl, window.location.origin).toString(),
+                redirectUrl: "/welcome",
+                redirectUrlComplete: redirectUrl,
             });
         } catch (err: any) {
             toast.error(err.errors?.[0]?.message || "Failed to start Google login");

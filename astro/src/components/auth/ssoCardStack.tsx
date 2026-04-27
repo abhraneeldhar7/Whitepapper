@@ -61,7 +61,14 @@ const slotStyles = [
 
 const SSOCardStack: React.FC = () => {
     // const cards = initialCards;
-    const cards = [];
+    const cards = [
+        {
+            id: 1,
+            image: "",
+            heading: "Events engine",
+        },
+
+    ];
     const [activeIndex, setActiveIndex] = useState<number>(0);
     const [isCycling, setIsCycling] = useState<boolean>(false);
     const [isLeaveActive, setIsLeaveActive] = useState<boolean>(false);
