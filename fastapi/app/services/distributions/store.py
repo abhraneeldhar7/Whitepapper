@@ -93,5 +93,11 @@ class DistributionsStoreService:
         publication_id = str(hashnode.get("publicationId") or "").strip()
         return publication_id or None
 
+    def delete_user_distribution(self, user_id: str) -> int:
+        if firestore_store.get(DISTRIBUTIONS_COLLECTION, user_id) is None:
+            return 0
+        firestore_store.delete(DISTRIBUTIONS_COLLECTION, user_id)
+        return 1
+
 
 distributions_store_service = DistributionsStoreService()

@@ -104,5 +104,24 @@ class McpAuthorizationService:
             removed += 1
         return removed
 
+    def delete_user_data(self, user_id: str) -> dict[str, int]:
+        deleted_tokens = 0
+        for token in self.list_tokens_for_user(user_id):
+            token_id = str(token.get("tokenId") or "").strip()
+            if not token_id:
+                continue
+            firestore_store.delete(MCP_TOKENS_COLLECTION, token_id)
+            deleted_tokens += 1
+
+        deleted_usage_docs = 0
+        if firestore_store.get(MCP_USAGE_COLLECTION, user_id) is not None:
+            firestore_store.delete(MCP_USAGE_COLLECTION, user_id)
+            deleted_usage_docs = 1
+
+        return {
+            "mcpTokens": deleted_tokens,
+            "mcpUsageDocs": deleted_usage_docs,
+        }
+
 
 mcp_authorization_service = McpAuthorizationService()

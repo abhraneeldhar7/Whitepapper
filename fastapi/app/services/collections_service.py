@@ -218,14 +218,21 @@ class CollectionsService:
 
         return updated
 
-    def delete(self, collection_id: str) -> dict[str, bool]:
+    def delete_cascade(self, collection_id: str) -> dict[str, int]:
         current = self.get_by_id(collection_id)
 
         from app.services.papers_service import papers_service
 
+        deleted_counts = {
+            "collections": 0,
+            "papers": 0,
+            "storageObjects": 0,
+        }
         papers = papers_service.list_by_collection_id(collection_id)
         for paper in papers:
-            papers_service.delete(paper["paperId"])
+            result = papers_service.delete_cascade(paper["paperId"])
+            deleted_counts["papers"] += result.get("papers", 0)
+            deleted_counts["storageObjects"] += result.get("storageObjects", 0)
 
         firestore_store.delete(COLLECTIONS_COLLECTION, collection_id)
         self.invalidate_collection(
@@ -233,6 +240,11 @@ class CollectionsService:
             project_id=current.get(COLLECTION_PROJECT_KEY),
             slug=current.get(COLLECTION_SLUG_KEY),
         )
+        deleted_counts["collections"] = 1
+        return deleted_counts
+
+    def delete(self, collection_id: str) -> dict[str, bool]:
+        self.delete_cascade(collection_id)
         return {"ok": True}
 
     def get_by_id(self, collection_id: str, public: bool = False) -> dict:

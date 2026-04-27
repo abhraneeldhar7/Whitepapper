@@ -6,6 +6,9 @@ from fastapi import HTTPException
 
 from app.core.firestore_store import firestore_store
 from app.core.reserved_paths import is_reserved_username
+from app.services.collections_service import collections_service
+from app.services.distributions import distributions_store_service
+from app.services.mcp_auth import mcp_authorization_service
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
@@ -239,39 +242,47 @@ class UserService:
 
         deleted_counts = {
             "projects": 0,
+            "collections": 0,
             "papers": 0,
             "apiKeys": 0,
+            "mcpTokens": 0,
+            "mcpUsageDocs": 0,
+            "distributions": 0,
             "storageObjects": 0,
             "users": 0,
         }
 
         projects = firestore_store.find_by_fields("projects", {"ownerId": user_id})
         for project in projects:
-            try:
-                projects_service.delete(project["projectId"])
-                deleted_counts["projects"] += 1
-            except Exception:
-                logger.exception("Failed to delete project for user_id=%s", user_id)
+            result = projects_service.delete_cascade(project["projectId"])
+            deleted_counts["projects"] += result.get("projects", 0)
+            deleted_counts["collections"] += result.get("collections", 0)
+            deleted_counts["papers"] += result.get("papers", 0)
+            deleted_counts["apiKeys"] += result.get("apiKeys", 0)
+            deleted_counts["storageObjects"] += result.get("storageObjects", 0)
 
-        standalone_papers = papers_service.list_standalone(user_id)
-        for paper in standalone_papers:
-            try:
-                papers_service.delete(paper["paperId"])
-                deleted_counts["papers"] += 1
-            except Exception:
-                logger.exception("Failed to delete standalone paper for user_id=%s", user_id)
+        remaining_collections = firestore_store.find_by_fields("collections", {"ownerId": user_id})
+        for collection in remaining_collections:
+            result = collections_service.delete_cascade(collection["collectionId"])
+            deleted_counts["collections"] += result.get("collections", 0)
+            deleted_counts["papers"] += result.get("papers", 0)
+            deleted_counts["storageObjects"] += result.get("storageObjects", 0)
 
-        api_keys = firestore_store.find_by_fields("apiKeys", {"ownerId": user_id})
+        remaining_papers = papers_service.list_owned(user_id)
+        for paper in remaining_papers:
+            result = papers_service.delete_cascade(paper["paperId"])
+            deleted_counts["papers"] += result.get("papers", 0)
+            deleted_counts["storageObjects"] += result.get("storageObjects", 0)
+
         from app.services._dev_api_service import _dev_api_service
 
-        for api_key in api_keys:
-            try:
-                _dev_api_service.delete(api_key["keyId"])
-                deleted_counts["apiKeys"] += 1
-            except Exception:
-                logger.exception("Failed to delete API key for user_id=%s", user_id)
+        deleted_counts["apiKeys"] += _dev_api_service.delete_by_owner(user_id)
 
-        deleted_counts["storageObjects"] = self.delete_user_assets(user_id)
+        mcp_deleted = mcp_authorization_service.delete_user_data(user_id)
+        deleted_counts["mcpTokens"] += mcp_deleted.get("mcpTokens", 0)
+        deleted_counts["mcpUsageDocs"] += mcp_deleted.get("mcpUsageDocs", 0)
+        deleted_counts["distributions"] += distributions_store_service.delete_user_distribution(user_id)
+        deleted_counts["storageObjects"] += self.delete_user_assets(user_id)
 
         firestore_store.delete(USERS_COLLECTION, user_id)
         self.invalidate_user(user_doc.get(USERNAME_KEY))

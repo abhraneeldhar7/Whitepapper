@@ -134,6 +134,26 @@ class DevApiService:
                 logger.exception("API key cache delete failed for key_hash=%s", key_hash)
         return {"ok": True}
 
+    def delete_by_project(self, project_id: str) -> int:
+        deleted = 0
+        for key_doc in firestore_store.find_by_fields(API_KEYS_COLLECTION, {"projectId": project_id}):
+            key_id = str(key_doc.get(API_KEY_ID_KEY) or "").strip()
+            if not key_id:
+                continue
+            self.delete(key_id)
+            deleted += 1
+        return deleted
+
+    def delete_by_owner(self, owner_id: str) -> int:
+        deleted = 0
+        for key_doc in firestore_store.find_by_fields(API_KEYS_COLLECTION, {"ownerId": owner_id}):
+            key_id = str(key_doc.get(API_KEY_ID_KEY) or "").strip()
+            if not key_id:
+                continue
+            self.delete(key_id)
+            deleted += 1
+        return deleted
+
     def reset(self, key_id: str) -> dict:
         current = self.get_by_id(key_id)
         old_hash = current.get(API_KEY_HASH_KEY)

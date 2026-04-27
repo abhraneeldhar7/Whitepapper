@@ -334,31 +334,51 @@ class ProjectsService:
 
         return updated
 
-    def delete(self, project_id: str) -> dict[str, bool]:
+    def delete_cascade(self, project_id: str) -> dict[str, int]:
         current = self.get_by_id(project_id)
 
         from app.services.collections_service import collections_service
         from app.services.papers_service import papers_service
+        from app.services._dev_api_service import _dev_api_service
 
+        deleted_counts = {
+            "projects": 0,
+            "collections": 0,
+            "papers": 0,
+            "apiKeys": 0,
+            "storageObjects": 0,
+        }
         collections = firestore_store.find_by_fields("collections", {"projectId": project_id})
         for collection in collections:
-            collections_service.delete(collection["collectionId"])
+            result = collections_service.delete_cascade(collection["collectionId"])
+            deleted_counts["collections"] += result.get("collections", 0)
+            deleted_counts["papers"] += result.get("papers", 0)
+            deleted_counts["storageObjects"] += result.get("storageObjects", 0)
 
         papers = papers_service.list_by_project_id(project_id)
         for paper in papers:
             if paper.get("collectionId"):
                 continue
-            papers_service.delete(paper["paperId"])
+            result = papers_service.delete_cascade(paper["paperId"])
+            deleted_counts["papers"] += result.get("papers", 0)
+            deleted_counts["storageObjects"] += result.get("storageObjects", 0)
+
+        deleted_counts["apiKeys"] += _dev_api_service.delete_by_project(project_id)
 
         owner_id = current.get(PROJECT_OWNER_KEY)
         if owner_id:
-            self.delete_project_assets(owner_id, project_id)
+            deleted_counts["storageObjects"] += self.delete_project_assets(owner_id, project_id)
         firestore_store.delete(PROJECTS_COLLECTION, project_id)
         self.invalidate_project(
             project_id=project_id,
             owner_username=self._get_owner_username(current.get(PROJECT_OWNER_KEY)),
             slug=current.get(PROJECT_SLUG_KEY),
         )
+        deleted_counts["projects"] = 1
+        return deleted_counts
+
+    def delete(self, project_id: str) -> dict[str, bool]:
+        self.delete_cascade(project_id)
         return {"ok": True}
 
     def is_slug_available(self, owner_id: str, slug: str, project_id: str | None = None) -> bool:

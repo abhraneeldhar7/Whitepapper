@@ -677,7 +677,7 @@ class PapersService:
     def delete_paper_assets(self, owner_id: str, paper_id: str) -> int:
         return storage_service.delete_by_prefix(f"users/{owner_id}/papers/{paper_id}/")
 
-    def delete(self, paper_id: str) -> dict[str, bool]:
+    def delete_cascade(self, paper_id: str) -> dict[str, int]:
         current = firestore_store.get(PAPERS_COLLECTION, paper_id)
         if not current:
             raise HTTPException(status_code=404, detail="Paper not found.")
@@ -685,8 +685,9 @@ class PapersService:
         collection_id = current.get("collectionId")
         project_id = current.get("projectId")
         owner_id = current.get(PAPER_OWNER_KEY)
+        deleted_storage_objects = 0
         if owner_id:
-            self.delete_paper_assets(owner_id, paper_id)
+            deleted_storage_objects = self.delete_paper_assets(owner_id, paper_id)
         firestore_store.delete(PAPERS_COLLECTION, paper_id)
         owner_username = None
         if owner_id:
@@ -707,6 +708,13 @@ class PapersService:
             self._refresh_collection_pages_number(collection_id)
         if project_id:
             self._refresh_project_pages_number(project_id)
+        return {
+            "papers": 1,
+            "storageObjects": deleted_storage_objects,
+        }
+
+    def delete(self, paper_id: str) -> dict[str, bool]:
+        self.delete_cascade(paper_id)
         return {"ok": True}
 
     def is_slug_available(self, owner_id: str, slug: str, paper_id: str | None = None) -> bool:

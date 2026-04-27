@@ -1,32 +1,32 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/astro/server";
-import type { APIContext, MiddlewareNext } from "astro";
-import { resolveSafeRedirectTarget } from "@/lib/authRedirect";
 
-const isProtectedRoute = createRouteMatcher(["/dashboard(.*)", "/write(.*)", "/settings(.*)", "/mcp/connect(.*)"]);
-const isAuthRoute = createRouteMatcher(["/login(.*)", "/sign-in(.*)", "/sign-up(.*)"]);
+const isProtectedRoute = createRouteMatcher([
+  "/dashboard(.*)",
+  "/write(.*)",
+  "/settings(.*)",
+  "/mcp/connect(.*)"
+]);
 
-const clerkHandler = clerkMiddleware(async (auth, context, next) => {
-  const { isAuthenticated, redirectToSignIn } = auth();
+const isPublicAuthRoute = createRouteMatcher([
+  "/login(.*)",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/welcome(.*)"
+]);
 
-  if (!isAuthenticated && isProtectedRoute(context.request)) {
-    return redirectToSignIn({ returnBackUrl: context.request.url });
+export const onRequest = clerkMiddleware(async (auth, context, next) => {
+  const { userId, redirectToSignIn } = auth();
+  const url = new URL(context.request.url);
+
+  if (!userId && isProtectedRoute(context.request)) {
+    return redirectToSignIn({ returnBackUrl: url.href });
   }
 
-  if (isAuthenticated && isAuthRoute(context.request)) {
-    const currentUrl = new URL(context.request.url);
-    const url = new URL(
-      resolveSafeRedirectTarget(currentUrl.searchParams.get("redirect_url"), currentUrl.origin),
-      currentUrl.origin,
-    );
-    const redirectResponse = Response.redirect(url, 302);
-    return redirectResponse;
+  if (userId && isPublicAuthRoute(context.request)) {
+    const searchParams = url.searchParams;
+    const redirectTarget = searchParams.get("redirect_url") || "/dashboard";
+    return context.redirect(redirectTarget);
   }
 
-  const response = await next();
-
-  return response;
+  return next();
 });
-
-export const onRequest = async (context: APIContext, next: MiddlewareNext) => {
-  return clerkHandler(context, next);
-};
