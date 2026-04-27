@@ -8,7 +8,7 @@ import { AuthenticateWithRedirectCallback } from "@clerk/astro/react";
 
 <Layout noindex={true} hideFooter={true} showSiteNav={false}>
 	<div class="px-4 py-10 max-w-[600px] w-full flex flex-col mx-auto h-screen">
-		<AuthenticateWithRedirectCallback />
+		<AuthenticateWithRedirectCallback client:load />
 		<div class="relative w-full aspect-2/1 px-5 py-20">
 			<h1 class="text-[white] font-[450] text-[30px]">
 				<span class="text-[32px]">Welcome to </span>
