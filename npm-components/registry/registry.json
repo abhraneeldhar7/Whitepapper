@@ -30,36 +30,8 @@
       "devDependencies": []
     },
     {
-      "name": "toc",
-      "description": "Three table-of-content variants: linear desktop rail, interactive line rail, and mobile bottom-sheet TOC.",
-      "files": [
-        {
-          "name": "toc/linearTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/linearTableOfContent.tsx"
-        },
-        {
-          "name": "toc/linesTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/linesTableOfContent.tsx"
-        },
-        {
-          "name": "toc/mobileTableOfContent.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/mobileTableOfContent.tsx"
-        },
-        {
-          "name": "toc/animated-theme-toggler.tsx",
-          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/animated-theme-toggler.tsx"
-        }
-      ],
-      "dependencies": [
-        "react",
-        "lucide-react",
-        "react-dom"
-      ],
-      "devDependencies": []
-    },
-    {
       "name": "linear-table-of-content",
-      "description": "Linear desktop table of contents component.",
+      "description": "Linear desktop table of contents component with active heading tracking and smooth indicator.",
       "files": [
         {
           "name": "toc/linearTableOfContent.tsx",
@@ -73,7 +45,7 @@
     },
     {
       "name": "lines-table-of-content",
-      "description": "Interactive lines desktop table of contents component.",
+      "description": "Interactive lines desktop table of contents component with hover expansion.",
       "files": [
         {
           "name": "toc/linesTableOfContent.tsx",
@@ -87,7 +59,7 @@
     },
     {
       "name": "mobile-table-of-content",
-      "description": "Mobile bottom-sheet table of contents component.",
+      "description": "Mobile bottom-sheet table of contents component with reading progress indicator.",
       "files": [
         {
           "name": "toc/mobileTableOfContent.tsx",
