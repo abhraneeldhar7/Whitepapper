@@ -12,7 +12,7 @@ router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
 
 def _extract_clerk_email(data: dict) -> str | None:
-    emailAddresses = data.get("emailAddresses") or []
+    emailAddresses = data.get("email_addresses") or []
     if isinstance(emailAddresses, list) and emailAddresses:
         first = emailAddresses[0]
         if isinstance(first, dict):
@@ -20,24 +20,24 @@ def _extract_clerk_email(data: dict) -> str | None:
     return data.get("email")
 
 def _extract_clerk_avatar(data: dict) -> str | None:
-    imageUrl = data.get("imageUrl")
+    imageUrl = data.get("image_url")
     if isinstance(imageUrl, str) and imageUrl:
         return imageUrl
-    profileImageUrl = data.get("profileImageUrl")
+    profileImageUrl = data.get("profile_image_url")
     if isinstance(profileImageUrl, str) and profileImageUrl:
         return profileImageUrl
-    avatarUrl = data.get("avatarUrl")
+    avatarUrl = data.get("avatar_url")
     if isinstance(avatarUrl, str) and avatarUrl:
         return avatarUrl
     return None
 
 def _extract_clerk_description(data: dict) -> str:
-    unsafeMetadata = data.get("unsafeMetadata")
+    unsafeMetadata = data.get("unsafe_metadata")
     if isinstance(unsafeMetadata, dict):
         description = unsafeMetadata.get("description")
         if isinstance(description, str):
             return description
-    publicMetadata = data.get("publicMetadata")
+    publicMetadata = data.get("public_metadata")
     if isinstance(publicMetadata, dict):
         description = publicMetadata.get("description")
         if isinstance(description, str):
@@ -78,7 +78,7 @@ async def clerk_webhook(request: Request) -> JSONResponse:
             user_service.create_user(
                 userId=userId,
                 username=data.get("username"),
-                displayName=data.get("firstName") or data.get("fullName"),
+                displayName=data.get("first_name") or data.get("full_name"),
                 description=_extract_clerk_description(data),
                 email=email,
                 avatarUrl=_extract_clerk_avatar(data),

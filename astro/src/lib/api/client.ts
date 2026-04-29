@@ -2,7 +2,7 @@ type RequestMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 type QueryPrimitive = string | number | boolean | null | undefined;
 type AuthMode = "required" | "optional" | "none";
 
-const REQUEST_TIMEOUT_MS = 15000;
+const REQUEST_TIMEOUT_MS = 30000;
 
 export class ApiError extends Error {
   status: number;
