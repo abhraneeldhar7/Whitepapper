@@ -445,7 +445,7 @@ def register_read_tools(server: FastMCP) -> None:
     @tool_guard
     def get_project_content_tree(
         projectId: str,
-        collectionLimit: int = 50,
+        collectionLimit: int = 25,
         collectionCursor: str | None = None,
         standalonePaperLimit: int = 25,
         standalonePaperCursor: str | None = None,

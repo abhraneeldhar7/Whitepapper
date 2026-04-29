@@ -141,6 +141,7 @@ def register_write_tools(server: FastMCP) -> None:
         contentGuidelines: str | None = None,
         logoUrl: str | None = None,
         isPublic: bool | None = None,
+        pagesNumber: int | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
         user_id = current_mcp_user_id()
@@ -155,6 +156,8 @@ def register_write_tools(server: FastMCP) -> None:
             payload["logoUrl"] = logoUrl
         if isPublic is not None:
             payload["isPublic"] = isPublic
+        if pagesNumber is not None:
+            payload["pagesNumber"] = pagesNumber
         created = projects_service.create(user_id, payload)
         return mutation_response("project", created, verbose=verbose)
 
@@ -215,6 +218,7 @@ def register_write_tools(server: FastMCP) -> None:
         description: str | None = None,
         slug: str | None = None,
         isPublic: bool | None = None,
+        pagesNumber: int | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
         user_id = current_mcp_user_id()
@@ -226,6 +230,8 @@ def register_write_tools(server: FastMCP) -> None:
             payload["slug"] = slug
         if isPublic is not None:
             payload["isPublic"] = isPublic
+        if pagesNumber is not None:
+            payload["pagesNumber"] = pagesNumber
         created = collections_service.create(user_id, payload)
         return mutation_response("collection", created, verbose=verbose)
 
@@ -239,6 +245,7 @@ def register_write_tools(server: FastMCP) -> None:
         slug: str | None = None,
         description: str | None = None,
         isPublic: bool | None = None,
+        pagesNumber: int | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
         user_id = current_mcp_user_id()
@@ -252,6 +259,8 @@ def register_write_tools(server: FastMCP) -> None:
             payload["description"] = description
         if isPublic is not None:
             payload["isPublic"] = isPublic
+        if pagesNumber is not None:
+            payload["pagesNumber"] = pagesNumber
         updated = collections_service.update(collectionId, payload)
         return mutation_response("collection", updated, verbose=verbose)
 
@@ -282,6 +291,7 @@ def register_write_tools(server: FastMCP) -> None:
         collectionId: str | None = None,
         thumbnailUrl: str | None = None,
         status: str | None = None,
+        metadata: dict[str, Any] | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
         user_id = current_mcp_user_id()
@@ -301,6 +311,8 @@ def register_write_tools(server: FastMCP) -> None:
             payload["thumbnailUrl"] = thumbnailUrl
         if status is not None:
             payload["status"] = normalize_status(status)
+        if metadata is not None:
+            payload["metadata"] = metadata
         created = papers_service.create(user_id, payload)
         paper = papers_service.get_by_id(str(created.get("paperId") or ""))
         if not paper:

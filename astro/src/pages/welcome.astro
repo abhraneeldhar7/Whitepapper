@@ -89,3 +89,22 @@ import { AuthenticateWithRedirectCallback } from "@clerk/astro/components";
 		</div>
 	</div>
 </Layout>
+
+<script is:inline>
+	(() => {
+		const TIMEOUT_MS = 15000;
+
+		setTimeout(() => {
+			try {
+				const clerk = (window).Clerk;
+				if (clerk?.session) {
+					window.location.href = "/dashboard";
+				} else {
+					window.location.href = "/login";
+				}
+			} catch {
+				window.location.href = "/login";
+			}
+		}, TIMEOUT_MS);
+	})();
+</script>

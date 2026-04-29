@@ -2,6 +2,8 @@ type RequestMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 type QueryPrimitive = string | number | boolean | null | undefined;
 type AuthMode = "required" | "optional" | "none";
 
+const REQUEST_TIMEOUT_MS = 15000;
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -181,12 +183,27 @@ function createRequestClient(resolveToken: TokenResolver): ApiClient {
       requestHeaders.delete("authorization");
     }
 
-    const response = await fetch(toRequestUrl(path, query), {
-      method,
-      headers: requestHeaders,
-      body: requestBody,
-      credentials: "include",
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(toRequestUrl(path, query), {
+        method,
+        headers: requestHeaders,
+        body: requestBody,
+        credentials: "include",
+        signal: controller.signal,
+      });
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new NetworkError(`Request timed out after ${REQUEST_TIMEOUT_MS}ms`);
+      }
+      throw err;
+    }
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const message = await response.text();
