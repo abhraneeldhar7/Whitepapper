@@ -44,93 +44,93 @@ class PaperMetadataGenerateRequest(BaseModel):
 
 @router.get("/papers", response_model=list[PaperDoc])
 def list_own_papers(
-    user_id: str = Depends(get_verified_id),
-    project_id: str | None = Query(default=None, alias="projectId"),
+    userId: str = Depends(get_verified_id),
+    projectId: str | None = Query(default=None, alias="projectId"),
     standalone: bool = False,
 ) -> list[PaperDoc]:
     papers = papers_service.list_owned_filtered(
-        owner_id=user_id,
-        project_id=project_id,
+        ownerId=userId,
+        projectId=projectId,
         standalone=standalone,
     )
     return sort_items_latest_first(papers)
 
 
-@router.post("/papers/{paper_id}/thumbnail")
+@router.post("/papers/{paperId}/thumbnail")
 async def upload_thumbnail(
-    paper_id: str,
+    paperId: str,
     file: UploadFile = File(...),
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> dict[str, str]:
-    require_owned_paper(user_id, paper_id)
-    return await papers_service.upload_thumbnail(paper_id, file)
+    require_owned_paper(userId, paperId)
+    return await papers_service.upload_thumbnail(paperId, file)
 
 
-@router.post("/papers/{paper_id}/embedded-image")
+@router.post("/papers/{paperId}/embedded-image")
 async def upload_embedded_image(
-    paper_id: str,
+    paperId: str,
     file: UploadFile = File(...),
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> dict[str, str]:
-    require_owned_paper(user_id, paper_id)
-    return await papers_service.upload_embedded_image(paper_id, file)
+    require_owned_paper(userId, paperId)
+    return await papers_service.upload_embedded_image(paperId, file)
 
 
-@router.post("/papers/{paper_id}/metadata-image/{field}")
+@router.post("/papers/{paperId}/metadata-image/{field}")
 async def upload_metadata_image(
-    paper_id: str,
+    paperId: str,
     field: str,
     file: UploadFile = File(...),
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> dict[str, str]:
-    require_owned_paper(user_id, paper_id)
-    return await papers_service.upload_metadata_image(paper_id, field, file)
+    require_owned_paper(userId, paperId)
+    return await papers_service.upload_metadata_image(paperId, field, file)
 
 
 @router.post("/papers", response_model=PaperCreateResponse, status_code=201)
-def create_paper(payload: PaperCreateRequest, user_id: str = Depends(get_verified_id)) -> PaperCreateResponse:
+def create_paper(payload: PaperCreateRequest, userId: str = Depends(get_verified_id)) -> PaperCreateResponse:
     if payload.projectId:
-        require_owned_project(user_id, payload.projectId)
+        require_owned_project(userId, payload.projectId)
     if payload.collectionId:
-        require_owned_collection(user_id, payload.collectionId)
-    return papers_service.create(user_id, payload.model_dump())
+        require_owned_collection(userId, payload.collectionId)
+    return papers_service.create(userId, payload.model_dump())
 
 
-@router.patch("/papers/{paper_id}", response_model=PaperDoc)
+@router.patch("/papers/{paperId}", response_model=PaperDoc)
 def patch_paper(
-    paper_id: str,
+    paperId: str,
     payload: PaperUpdateRequest,
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> PaperDoc:
-    require_owned_paper(user_id, paper_id)
+    require_owned_paper(userId, paperId)
 
     update_payload = payload.model_dump(exclude_unset=True)
 
     if "thumbnailUrl" in update_payload:
         if update_payload["thumbnailUrl"]:
             update_payload["thumbnailUrl"] = add_cache_buster(update_payload["thumbnailUrl"])
-    updated = papers_service.update(paper_id, update_payload)
+    updated = papers_service.update(paperId, update_payload)
     if "thumbnailUrl" in update_payload and not update_payload["thumbnailUrl"]:
-        papers_service.delete_thumbnail(user_id, paper_id)
+        papers_service.delete_thumbnail(userId, paperId)
     if payload.body is not None:
         used_urls = extract_image_urls(updated.get("body") or "")
-        papers_service.delete_unused_embedded_images(user_id, paper_id, used_urls)
+        papers_service.delete_unused_embedded_images(userId, paperId, used_urls)
     metadata_urls = papers_service.extract_metadata_image_urls(updated.get("metadata"))
-    papers_service.delete_unused_metadata_images(user_id, paper_id, metadata_urls)
+    papers_service.delete_unused_metadata_images(userId, paperId, metadata_urls)
     return updated
 
 
-@router.post("/papers/{paper_id}/metadata/preview", response_model=PaperMetadata)
+@router.post("/papers/{paperId}/metadata/preview", response_model=PaperMetadata)
 def preview_paper_metadata(
-    paper_id: str,
+    paperId: str,
     payload: PaperMetadataGenerateRequest,
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> PaperMetadata:
-    require_owned_paper(user_id, paper_id)
+    require_owned_paper(userId, paperId)
     generated_payload = payload.payload.model_dump(mode="json")
-    if generated_payload.get("ownerId") != user_id:
+    if generated_payload.get("ownerId") != userId:
         raise HTTPException(status_code=403, detail="Not allowed.")
-    if str(generated_payload.get("paperId") or "").strip() != paper_id:
+    if str(generated_payload.get("paperId") or "").strip() != paperId:
         raise HTTPException(status_code=400, detail="paperId does not match the payload paper.")
     return papers_service.preview_metadata(generated_payload)
 
@@ -138,21 +138,21 @@ def preview_paper_metadata(
 @router.get("/papers/slug/available")
 def check_slug_available(
     slug: str = Query(...),
-    paper_id: str | None = Query(default=None, alias="paperId"),
-    user_id: str = Depends(get_verified_id),
+    paperId: str | None = Query(default=None, alias="paperId"),
+    userId: str = Depends(get_verified_id),
 ) -> dict[str, bool]:
-    return {"available": papers_service.is_slug_available(user_id, slug, paper_id)}
+    return {"available": papers_service.is_slug_available(userId, slug, paperId)}
 
 
-@router.get("/papers/{paper_id}", response_model=PaperDoc)
+@router.get("/papers/{paperId}", response_model=PaperDoc)
 def get_own_paper(
-    paper_id: str,
-    user_id: str = Depends(get_verified_id),
+    paperId: str,
+    userId: str = Depends(get_verified_id),
 ) -> PaperDoc:
-    return require_owned_paper(user_id, paper_id)
+    return require_owned_paper(userId, paperId)
 
 
-@router.delete("/papers/{paper_id}")
-def delete_paper(paper_id: str, user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
-    require_owned_paper(user_id, paper_id)
-    return papers_service.delete(paper_id)
+@router.delete("/papers/{paperId}")
+def delete_paper(paperId: str, userId: str = Depends(get_verified_id)) -> dict[str, bool]:
+    require_owned_paper(userId, paperId)
+    return papers_service.delete(paperId)

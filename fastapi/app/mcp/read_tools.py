@@ -9,7 +9,7 @@ from app.mcp.common import (
     compact_collection,
     compact_paper,
     compact_project,
-    current_mcp_user_id,
+    current_mcp_userId,
     find_owned_collection_by_slug,
     find_owned_project_by_slug,
     normalize_limit,
@@ -50,10 +50,10 @@ def register_read_tools(server: FastMCP) -> None:
         paperFields: list[str] | None = None,
         paperExcludeFields: list[str] | None = None,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        projects_page = projects_service.list_owned_paginated(user_id, limit=normalize_limit(projectLimit), cursor=projectCursor)
+        userId = current_mcp_userId()
+        projects_page = projects_service.list_owned_paginated(userId, limit=normalize_limit(projectLimit), cursor=projectCursor)
         papers_page = papers_service.list_standalone_paginated(
-            user_id,
+            userId,
             limit=normalize_limit(standalonePaperLimit),
             cursor=standalonePaperCursor,
         )
@@ -84,8 +84,8 @@ def register_read_tools(server: FastMCP) -> None:
         fields: list[str] | None = None,
         excludeFields: list[str] | None = None,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        page = projects_service.list_owned_paginated(user_id, limit=normalize_limit(limit), cursor=cursor)
+        userId = current_mcp_userId()
+        page = projects_service.list_owned_paginated(userId, limit=normalize_limit(limit), cursor=cursor)
         return paged(
             [project_project(project, fields=fields, excludeFields=excludeFields) for project in page["items"]],
             page["nextCursor"],
@@ -106,8 +106,8 @@ def register_read_tools(server: FastMCP) -> None:
         fields: list[str] | None = None,
         excludeFields: list[str] | None = None,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        owned_project(user_id, projectId)
+        userId = current_mcp_userId()
+        owned_project(userId, projectId)
         page = collections_service.list_project_collections_paginated(projectId, limit=normalize_limit(limit), cursor=cursor)
         return paged(
             [project_collection(collection, fields=fields, excludeFields=excludeFields) for collection in page["items"]],
@@ -134,23 +134,23 @@ def register_read_tools(server: FastMCP) -> None:
         fields: list[str] | None = None,
         excludeFields: list[str] | None = None,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
+        userId = current_mcp_userId()
         normalized_status = normalize_status(status)
 
         if collectionId:
-            collection = owned_collection(user_id, collectionId)
+            collection = owned_collection(userId, collectionId)
             assert_collection_project(collection, projectId)
-            page = papers_service.list_by_collection_id_paginated(
+            page = papers_service.list_by_collectionId_paginated(
                 collectionId,
                 status=normalized_status,
                 limit=normalize_limit(limit),
                 cursor=cursor,
             )
         elif projectId:
-            owned_project(user_id, projectId)
+            owned_project(userId, projectId)
             page = papers_service.list_owned_filtered_paginated(
-                owner_id=user_id,
-                project_id=projectId,
+                ownerId=userId,
+                projectId=projectId,
                 standalone=standalone,
                 status=normalized_status,
                 limit=normalize_limit(limit),
@@ -158,7 +158,7 @@ def register_read_tools(server: FastMCP) -> None:
             )
         else:
             page = papers_service.list_owned_filtered_paginated(
-                owner_id=user_id,
+                ownerId=userId,
                 standalone=standalone,
                 status=normalized_status,
                 limit=normalize_limit(limit),
@@ -202,14 +202,14 @@ def register_read_tools(server: FastMCP) -> None:
         collectionFields: list[str] | None = None,
         collectionExcludeFields: list[str] | None = None,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        project = owned_project(user_id, projectId)
+        userId = current_mcp_userId()
+        project = owned_project(userId, projectId)
         result: dict[str, Any] = {"project": project_project(project, fields=projectFields, excludeFields=projectExcludeFields)}
 
         if includeStandalonePapers:
             papers_page = papers_service.list_owned_filtered_paginated(
-                owner_id=user_id,
-                project_id=projectId,
+                ownerId=userId,
+                projectId=projectId,
                 standalone=True,
                 limit=normalize_limit(standalonePaperLimit),
                 cursor=standalonePaperCursor,
@@ -257,7 +257,7 @@ def register_read_tools(server: FastMCP) -> None:
         collectionFields: list[str] | None = None,
         collectionExcludeFields: list[str] | None = None,
     ) -> dict[str, Any]:
-        project = find_owned_project_by_slug(current_mcp_user_id(), slug)
+        project = find_owned_project_by_slug(current_mcp_userId(), slug)
         return get_project_by_id(
             projectId=str(project.get("projectId") or ""),
             includeStandalonePapers=includeStandalonePapers,
@@ -294,11 +294,11 @@ def register_read_tools(server: FastMCP) -> None:
         paperFields: list[str] | None = None,
         paperExcludeFields: list[str] | None = None,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        collection = owned_collection(user_id, collectionId)
+        userId = current_mcp_userId()
+        collection = owned_collection(userId, collectionId)
         result: dict[str, Any] = {"collection": project_collection(collection, fields=collectionFields, excludeFields=collectionExcludeFields)}
         if includePapers:
-            page = papers_service.list_by_collection_id_paginated(collectionId, limit=normalize_limit(paperLimit), cursor=paperCursor)
+            page = papers_service.list_by_collectionId_paginated(collectionId, limit=normalize_limit(paperLimit), cursor=paperCursor)
             result["papers"] = [
                 project_paper(
                     paper,
@@ -333,7 +333,7 @@ def register_read_tools(server: FastMCP) -> None:
         paperFields: list[str] | None = None,
         paperExcludeFields: list[str] | None = None,
     ) -> dict[str, Any]:
-        collection = find_owned_collection_by_slug(current_mcp_user_id(), slug, projectId=projectId)
+        collection = find_owned_collection_by_slug(current_mcp_userId(), slug, projectId=projectId)
         return get_collection_by_id(
             collectionId=str(collection.get("collectionId") or ""),
             includePapers=includePapers,
@@ -365,7 +365,7 @@ def register_read_tools(server: FastMCP) -> None:
         fields: list[str] | None = None,
         excludeFields: list[str] | None = None,
     ) -> dict[str, Any]:
-        paper = owned_paper(current_mcp_user_id(), paperId)
+        paper = owned_paper(current_mcp_userId(), paperId)
         return project_paper(paper, includeBody=includeBody, includeMetadata=includeMetadata, fields=fields, excludeFields=excludeFields)
 
     @server.tool(
@@ -386,11 +386,11 @@ def register_read_tools(server: FastMCP) -> None:
         fields: list[str] | None = None,
         excludeFields: list[str] | None = None,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
+        userId = current_mcp_userId()
         normalized = str(slug or "").strip()
         if not normalized:
             raise mcp_http_error(400, "VALIDATION_ERROR", "slug is required.")
-        paper = papers_service.find_by_slug(normalized, owner_id=user_id, project_id=projectId)
+        paper = papers_service.find_by_slug(normalized, ownerId=userId, projectId=projectId)
         if not paper:
             raise mcp_http_error(404, "NOT_FOUND", "Paper not found.")
         return project_paper(paper, includeBody=includeBody, includeMetadata=includeMetadata, fields=fields, excludeFields=excludeFields)
@@ -411,11 +411,11 @@ def register_read_tools(server: FastMCP) -> None:
         fields: list[str] | None = None,
         excludeFields: list[str] | None = None,
     ) -> list[dict[str, Any]]:
-        user_id = current_mcp_user_id()
+        userId = current_mcp_userId()
         return [
             project_paper(paper, includeBody=includeBody, includeMetadata=includeMetadata, fields=fields, excludeFields=excludeFields)
             for paper in papers_service.get_many_by_ids(paperIds)
-            if str(paper.get("ownerId") or "") == user_id
+            if str(paper.get("ownerId") or "") == userId
         ]
 
     @server.tool(
@@ -428,11 +428,11 @@ def register_read_tools(server: FastMCP) -> None:
         fields: list[str] | None = None,
         excludeFields: list[str] | None = None,
     ) -> list[dict[str, Any]]:
-        user_id = current_mcp_user_id()
+        userId = current_mcp_userId()
         return [
             project_collection(collection, fields=fields, excludeFields=excludeFields)
             for collection in collections_service.get_many_by_ids(collectionIds)
-            if str(collection.get("ownerId") or "") == user_id
+            if str(collection.get("ownerId") or "") == userId
         ]
 
     @server.tool(
@@ -458,16 +458,16 @@ def register_read_tools(server: FastMCP) -> None:
         paperFields: list[str] | None = None,
         paperExcludeFields: list[str] | None = None,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        project = owned_project(user_id, projectId)
+        userId = current_mcp_userId()
+        project = owned_project(userId, projectId)
         collections_page = collections_service.list_project_collections_paginated(
             projectId,
             limit=normalize_limit(collectionLimit),
             cursor=collectionCursor,
         )
         standalone_page = papers_service.list_owned_filtered_paginated(
-            owner_id=user_id,
-            project_id=projectId,
+            ownerId=userId,
+            projectId=projectId,
             standalone=True,
             limit=normalize_limit(standalonePaperLimit),
             cursor=standalonePaperCursor,
@@ -491,7 +491,7 @@ def register_read_tools(server: FastMCP) -> None:
                     "collectionId": collection.get("collectionId"),
                     "papers": [
                         project_paper(paper, fields=paperFields, excludeFields=paperExcludeFields)
-                        for paper in papers_service.list_by_collection_id_paginated(
+                        for paper in papers_service.list_by_collectionId_paginated(
                             str(collection.get("collectionId") or ""),
                             limit=normalize_limit(paperLimitPerCollection),
                         )["items"]
@@ -520,17 +520,17 @@ def register_read_tools(server: FastMCP) -> None:
         fields: list[str] | None = None,
         excludeFields: list[str] | None = None,
     ) -> list[dict[str, Any]]:
-        user_id = current_mcp_user_id()
+        userId = current_mcp_userId()
         if projectId:
-            owned_project(user_id, projectId)
+            owned_project(userId, projectId)
         if collectionId:
-            collection = owned_collection(user_id, collectionId)
+            collection = owned_collection(userId, collectionId)
             assert_collection_project(collection, projectId)
         papers = papers_service.search_owned(
-            user_id,
+            userId,
             query,
-            project_id=projectId,
-            collection_id=collectionId,
+            projectId=projectId,
+            collectionId=collectionId,
             status=normalize_status(status),
             limit=normalize_limit(limit),
         )
@@ -553,28 +553,28 @@ def register_read_tools(server: FastMCP) -> None:
         paperSlug: str | None = None,
         projectId: str | None = None,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        resolved_project = owned_project(user_id, projectId) if projectId else None
+        userId = current_mcp_userId()
+        resolved_project = owned_project(userId, projectId) if projectId else None
         if projectSlug:
-            resolved_project = find_owned_project_by_slug(user_id, projectSlug)
+            resolved_project = find_owned_project_by_slug(userId, projectSlug)
             projectId = str(resolved_project.get("projectId") or "")
 
         resolved_collection = None
         if collectionSlug:
-            resolved_collection = find_owned_collection_by_slug(user_id, collectionSlug, projectId=projectId)
+            resolved_collection = find_owned_collection_by_slug(userId, collectionSlug, projectId=projectId)
             if not resolved_project and resolved_collection.get("projectId"):
-                resolved_project = owned_project(user_id, str(resolved_collection.get("projectId")))
+                resolved_project = owned_project(userId, str(resolved_collection.get("projectId")))
                 projectId = str(resolved_project.get("projectId") or "")
 
         resolved_paper = None
         if paperSlug:
-            resolved_paper = papers_service.find_by_slug(paperSlug, owner_id=user_id, project_id=projectId)
+            resolved_paper = papers_service.find_by_slug(paperSlug, ownerId=userId, projectId=projectId)
             if not resolved_paper:
                 raise mcp_http_error(404, "NOT_FOUND", "Paper not found.")
             if not resolved_project and resolved_paper.get("projectId"):
-                resolved_project = owned_project(user_id, str(resolved_paper.get("projectId")))
+                resolved_project = owned_project(userId, str(resolved_paper.get("projectId")))
             if not resolved_collection and resolved_paper.get("collectionId"):
-                resolved_collection = owned_collection(user_id, str(resolved_paper.get("collectionId")))
+                resolved_collection = owned_collection(userId, str(resolved_paper.get("collectionId")))
 
         return {
             "project": compact_project(resolved_project) if resolved_project else None,

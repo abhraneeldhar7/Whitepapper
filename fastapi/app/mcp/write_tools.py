@@ -6,7 +6,7 @@ from fastmcp import FastMCP
 
 from app.mcp.common import (
     assert_collection_project,
-    current_mcp_user_id,
+    current_mcp_userId,
     mcp_http_error,
     mutation_response,
     normalize_status,
@@ -34,12 +34,12 @@ def register_write_tools(server: FastMCP) -> None:
         collectionId: str | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        owned_paper(user_id, paperId)
+        userId = current_mcp_userId()
+        owned_paper(userId, paperId)
         payload: dict[str, Any] = {}
         if collectionId is not None:
             if collectionId:
-                collection = owned_collection(user_id, collectionId)
+                collection = owned_collection(userId, collectionId)
                 assert_collection_project(collection, projectId)
                 payload["collectionId"] = collectionId
                 payload["projectId"] = collection.get("projectId")
@@ -47,7 +47,7 @@ def register_write_tools(server: FastMCP) -> None:
                 payload["collectionId"] = None
         if projectId is not None:
             if projectId:
-                owned_project(user_id, projectId)
+                owned_project(userId, projectId)
                 payload["projectId"] = projectId
             else:
                 payload["projectId"] = None
@@ -59,8 +59,8 @@ def register_write_tools(server: FastMCP) -> None:
     )
     @tool_guard
     def publish_paper(paperId: str, verbose: bool = False) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        owned_paper(user_id, paperId)
+        userId = current_mcp_userId()
+        owned_paper(userId, paperId)
         updated = papers_service.update(paperId, {"status": "published"})
         return mutation_response("paper", updated, verbose=verbose)
 
@@ -82,12 +82,12 @@ def register_write_tools(server: FastMCP) -> None:
         metadata: dict[str, Any] | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        normalized_slug = str(slug or "").strip()
-        if not normalized_slug:
+        userId = current_mcp_userId()
+        normalizedSlug = str(slug or "").strip()
+        if not normalizedSlug:
             raise mcp_http_error(400, "VALIDATION_ERROR", "slug is required.")
 
-        payload: dict[str, Any] = {"slug": normalized_slug}
+        payload: dict[str, Any] = {"slug": normalizedSlug}
         if title is not None:
             payload["title"] = title
         if body is not None:
@@ -101,7 +101,7 @@ def register_write_tools(server: FastMCP) -> None:
 
         if collectionId is not None:
             if collectionId:
-                collection = owned_collection(user_id, collectionId)
+                collection = owned_collection(userId, collectionId)
                 assert_collection_project(collection, projectId)
                 payload["collectionId"] = collectionId
                 payload["projectId"] = collection.get("projectId")
@@ -109,19 +109,19 @@ def register_write_tools(server: FastMCP) -> None:
                 payload["collectionId"] = None
         elif projectId is not None:
             if projectId:
-                owned_project(user_id, projectId)
+                owned_project(userId, projectId)
                 payload["projectId"] = projectId
             else:
                 payload["projectId"] = None
 
-        existing = papers_service.find_by_slug(normalized_slug, owner_id=user_id, project_id=projectId)
+        existing = papers_service.find_by_slug(normalizedSlug, ownerId=userId, projectId=projectId)
         if existing:
             updated = papers_service.update(str(existing.get("paperId") or ""), payload)
             return mutation_response("paper", updated, verbose=verbose)
 
         if "title" not in payload:
             payload["title"] = "Untitled Paper"
-        created = papers_service.create(user_id, payload)
+        created = papers_service.create(userId, payload)
         paper = papers_service.get_by_id(str(created.get("paperId") or ""))
         if not paper:
             raise mcp_http_error(500, "MCP_ERROR", "Paper was created but could not be loaded.")
@@ -144,7 +144,7 @@ def register_write_tools(server: FastMCP) -> None:
         pagesNumber: int | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
+        userId = current_mcp_userId()
         payload: dict[str, Any] = {"name": name}
         if slug is not None:
             payload["slug"] = slug
@@ -158,7 +158,7 @@ def register_write_tools(server: FastMCP) -> None:
             payload["isPublic"] = isPublic
         if pagesNumber is not None:
             payload["pagesNumber"] = pagesNumber
-        created = projects_service.create(user_id, payload)
+        created = projects_service.create(userId, payload)
         return mutation_response("project", created, verbose=verbose)
 
     @server.tool(
@@ -176,8 +176,8 @@ def register_write_tools(server: FastMCP) -> None:
         pagesNumber: int | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        owned_project(user_id, projectId)
+        userId = current_mcp_userId()
+        owned_project(userId, projectId)
         payload: dict[str, Any] = {}
         if name is not None:
             payload["name"] = name
@@ -201,8 +201,8 @@ def register_write_tools(server: FastMCP) -> None:
     )
     @tool_guard
     def delete_project(projectId: str, confirm: bool = False) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        project = owned_project(user_id, projectId)
+        userId = current_mcp_userId()
+        project = owned_project(userId, projectId)
         if not confirm:
             return {"ok": False, "code": "CONFIRM_REQUIRED", "message": "Set confirm=true to delete this project."}
         projects_service.delete(projectId)
@@ -221,8 +221,8 @@ def register_write_tools(server: FastMCP) -> None:
         pagesNumber: int | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        owned_project(user_id, projectId)
+        userId = current_mcp_userId()
+        owned_project(userId, projectId)
         payload: dict[str, Any] = {"projectId": projectId, "name": name}
         if description is not None:
             payload["description"] = description
@@ -232,7 +232,7 @@ def register_write_tools(server: FastMCP) -> None:
             payload["isPublic"] = isPublic
         if pagesNumber is not None:
             payload["pagesNumber"] = pagesNumber
-        created = collections_service.create(user_id, payload)
+        created = collections_service.create(userId, payload)
         return mutation_response("collection", created, verbose=verbose)
 
     @server.tool(
@@ -248,8 +248,8 @@ def register_write_tools(server: FastMCP) -> None:
         pagesNumber: int | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        owned_collection(user_id, collectionId)
+        userId = current_mcp_userId()
+        owned_collection(userId, collectionId)
         payload: dict[str, Any] = {}
         if name is not None:
             payload["name"] = name
@@ -269,8 +269,8 @@ def register_write_tools(server: FastMCP) -> None:
     )
     @tool_guard
     def delete_collection(collectionId: str, confirm: bool = False) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        collection = owned_collection(user_id, collectionId)
+        userId = current_mcp_userId()
+        collection = owned_collection(userId, collectionId)
         if not confirm:
             return {"ok": False, "code": "CONFIRM_REQUIRED", "message": "Set confirm=true to delete this collection."}
         collections_service.delete(collectionId)
@@ -294,17 +294,17 @@ def register_write_tools(server: FastMCP) -> None:
         metadata: dict[str, Any] | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
+        userId = current_mcp_userId()
         payload: dict[str, Any] = {"title": title}
         if slug is not None:
             payload["slug"] = slug
         if body is not None:
             payload["body"] = body
         if projectId is not None:
-            owned_project(user_id, projectId)
+            owned_project(userId, projectId)
             payload["projectId"] = projectId
         if collectionId is not None:
-            collection = owned_collection(user_id, collectionId)
+            collection = owned_collection(userId, collectionId)
             assert_collection_project(collection, projectId)
             payload["collectionId"] = collectionId
         if thumbnailUrl is not None:
@@ -313,7 +313,7 @@ def register_write_tools(server: FastMCP) -> None:
             payload["status"] = normalize_status(status)
         if metadata is not None:
             payload["metadata"] = metadata
-        created = papers_service.create(user_id, payload)
+        created = papers_service.create(userId, payload)
         paper = papers_service.get_by_id(str(created.get("paperId") or ""))
         if not paper:
             raise mcp_http_error(500, "MCP_ERROR", "Paper was created but could not be loaded.")
@@ -335,8 +335,8 @@ def register_write_tools(server: FastMCP) -> None:
         metadata: dict[str, Any] | None = None,
         verbose: bool = False,
     ) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        owned_paper(user_id, paperId)
+        userId = current_mcp_userId()
+        owned_paper(userId, paperId)
         payload: dict[str, Any] = {}
         if title is not None:
             payload["title"] = title
@@ -346,7 +346,7 @@ def register_write_tools(server: FastMCP) -> None:
             payload["body"] = body
         if collectionId is not None:
             if collectionId:
-                collection = owned_collection(user_id, collectionId)
+                collection = owned_collection(userId, collectionId)
                 assert_collection_project(collection, projectId)
                 payload["collectionId"] = collectionId
                 payload["projectId"] = collection.get("projectId")
@@ -354,7 +354,7 @@ def register_write_tools(server: FastMCP) -> None:
                 payload["collectionId"] = None
         if projectId is not None:
             if projectId:
-                owned_project(user_id, projectId)
+                owned_project(userId, projectId)
                 payload["projectId"] = projectId
             else:
                 payload["projectId"] = None
@@ -370,8 +370,8 @@ def register_write_tools(server: FastMCP) -> None:
     @server.tool(description="Cost: cheap. Use when: permanently deleting a paper. Set confirm=true to execute.")
     @tool_guard
     def delete_paper(paperId: str, confirm: bool = False) -> dict[str, Any]:
-        user_id = current_mcp_user_id()
-        paper = owned_paper(user_id, paperId)
+        userId = current_mcp_userId()
+        paper = owned_paper(userId, paperId)
         if not confirm:
             return {"ok": False, "code": "CONFIRM_REQUIRED", "message": "Set confirm=true to delete this paper."}
         papers_service.delete(paperId)

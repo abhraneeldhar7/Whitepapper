@@ -44,42 +44,42 @@ def _with_cache_buster(url: str) -> str:
 
 
 @router.get("/me", response_model=UserDoc)
-def get_me(user_id: str = Depends(get_verified_id)) -> UserDoc:
-    return user_service.get_by_id(user_id)
+def get_me(userId: str = Depends(get_verified_id)) -> UserDoc:
+    return user_service.get_by_id(userId)
 
 
 @router.patch("/me", response_model=UserDoc)
 def patch_me(
     payload: UserUpdate,
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> UserDoc:
     return user_service.update_user(
-        user_id,
+        userId,
         payload.model_dump(exclude_none=True),
     )
 
 
-def _delete_user_in_background(user_id: str) -> None:
+def _delete_user_in_background(userId: str) -> None:
     try:
-        user_service.delete_user(user_id)
+        user_service.delete_user(userId)
     except Exception:
-        logger.exception("Background user delete failed for user_id=%s", user_id)
+        logger.exception("Background user delete failed for userId=%s", userId)
 
 
 @router.delete("/me", status_code=202)
-def delete_me(background_tasks: BackgroundTasks, user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
-    user_service.get_by_id(user_id)
-    background_tasks.add_task(_delete_user_in_background, user_id)
+def delete_me(background_tasks: BackgroundTasks, userId: str = Depends(get_verified_id)) -> dict[str, bool]:
+    user_service.get_by_id(userId)
+    background_tasks.add_task(_delete_user_in_background, userId)
     return {"ok": True}
 
 
 @router.post("/me/profile-image")
 async def upload_profile_image(
     file: UploadFile = File(...),
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> dict[str, str]:
     url = await storage_service.upload_image(
-        f"users/{user_id}/profile/avatar",
+        f"users/{userId}/profile/avatar",
         file,
         max_width=MAX_PROFILE_IMAGE_WIDTH,
         max_height=MAX_PROFILE_IMAGE_HEIGHT,
@@ -87,38 +87,38 @@ async def upload_profile_image(
         overwrite_name="avatar",
     )
     url = _with_cache_buster(url)
-    user_service.update_user(user_id, {"avatarUrl": url})
+    user_service.update_user(userId, {"avatarUrl": url})
     return {"url": url}
 
 
 @router.get("/username/available")
 def check_username_available(
     username: str = Query(...),
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> dict[str, bool]:
-    return {"available": user_service.is_username_available(username, user_id)}
+    return {"available": user_service.is_username_available(username, userId)}
 
 
 @router.get("/dashboard", response_model=DashboardResponse)
-def get_dashboard_data(user_id: str = Depends(get_verified_id)) -> DashboardResponse:
+def get_dashboard_data(userId: str = Depends(get_verified_id)) -> DashboardResponse:
     """Get all dashboard data: user profile, projects, and standalone papers (public/draft), sorted by updatedAt."""
-    user = user_service.get_by_id(user_id)
-    projects = projects_service.list_owned(user_id)
-    standalone_papers = papers_service.list_standalone(owner_id=user_id)
+    user = user_service.get_by_id(userId)
+    projects = projects_service.list_owned(userId)
+    standalonePapers = papers_service.list_standalone(ownerId=userId)
 
     projects = sort_items_latest_first(projects)
-    standalone_papers = sort_items_latest_first(standalone_papers)
+    standalonePapers = sort_items_latest_first(standalonePapers)
 
     return DashboardResponse(
         user=user,
         projects=projects,
-        papers=standalone_papers,
+        papers=standalonePapers,
     )
 
 
 @router.get("/{username}", response_model=UserDoc)
 def get_user_by_username(
     username: str,
-    _user_id: str = Depends(get_verified_id),
+    _userId: str = Depends(get_verified_id),
 ) -> UserDoc:
     return user_service.get_by_username(username)

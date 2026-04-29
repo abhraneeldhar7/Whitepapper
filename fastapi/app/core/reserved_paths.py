@@ -45,11 +45,11 @@ def is_reserved_username(value: str | None) -> bool:
     return bool(normalized) and normalized in RESERVED_USERNAMES
 
 
-def is_reserved_paper_slug(value: str | None) -> bool:
+def is_reserved_paperSlug(value: str | None) -> bool:
     normalized = normalize_slug(value or "")
     return bool(normalized) and normalized in RESERVED_PAPER_SLUGS
 
 
-def is_reserved_project_slug(value: str | None) -> bool:
+def is_reserved_projectSlug(value: str | None) -> bool:
     normalized = normalize_slug(value or "")
     return bool(normalized) and normalized in RESERVED_PROJECT_SLUGS

@@ -26,23 +26,23 @@ PAPERS_COLLECTION = "papers"
 
 
 class UserService:
-    def _generate_username(self, email: str | None, user_id: str, fallback_username: str | None) -> str:
+    def _generate_username(self, email: str | None, userId: str, fallbackUsername: str | None) -> str:
         base = ""
         if email and "@" in email:
             base = email.split("@", 1)[0]
-        elif fallback_username:
-            base = fallback_username
+        elif fallbackUsername:
+            base = fallbackUsername
         else:
-            base = f"user-{user_id[-6:].lower()}"
+            base = f"user-{userId[-6:].lower()}"
 
         base = normalize_slug(base)
         if not base:
-            base = f"user-{user_id[-4:].lower()}"
+            base = f"user-{userId[-4:].lower()}"
         if is_reserved_username(base):
             base = f"{base}-user"
 
         matches = firestore_store.find_by_fields(USERS_COLLECTION, {USERNAME_KEY: base})
-        if all(item.get(USER_ID_KEY) == user_id for item in matches):
+        if all(item.get(USER_ID_KEY) == userId for item in matches):
             return base
 
         while True:
@@ -50,11 +50,11 @@ class UserService:
             if is_reserved_username(candidate):
                 continue
             matches = firestore_store.find_by_fields(USERS_COLLECTION, {USERNAME_KEY: candidate})
-            if all(item.get(USER_ID_KEY) == user_id for item in matches):
+            if all(item.get(USER_ID_KEY) == userId for item in matches):
                 return candidate
 
     @staticmethod
-    def _ensure_updated_at(user_doc: dict) -> dict:
+    def _ensure_updatedAt(user_doc: dict) -> dict:
         if "updatedAt" in user_doc and isinstance(user_doc.get("updatedAt"), datetime):
             return user_doc
 
@@ -63,33 +63,33 @@ class UserService:
             fallback = utc_now()
         user_doc["updatedAt"] = fallback
 
-        user_id = user_doc.get(USER_ID_KEY)
-        if user_id:
-            firestore_store.update(USERS_COLLECTION, user_id, {"updatedAt": fallback})
+        userId = user_doc.get(USER_ID_KEY)
+        if userId:
+            firestore_store.update(USERS_COLLECTION, userId, {"updatedAt": fallback})
         return user_doc
 
     def create_user(
         self,
-        user_id: str,
+        userId: str,
         username: str | None = None,
-        display_name: str | None = None,
+        displayName: str | None = None,
         description: str | None = None,
         email: str | None = None,
-        avatar_url: str | None = None,
+        avatarUrl: str | None = None,
     ) -> dict:
-        existing = firestore_store.get(USERS_COLLECTION, user_id)
+        existing = firestore_store.get(USERS_COLLECTION, userId)
         if existing:
-            return self._ensure_updated_at(existing)
+            return self._ensure_updatedAt(existing)
 
-        username_value = self._generate_username(email, user_id, username)
+        usernameValue = self._generate_username(email, userId, username)
         now = utc_now()
         created = {
-            USER_ID_KEY: user_id,
-            "displayName": display_name,
+            USER_ID_KEY: userId,
+            "displayName": displayName,
             "description": description if isinstance(description, str) else "",
             "email": email,
-            "avatarUrl": avatar_url,
-            USERNAME_KEY: username_value,
+            "avatarUrl": avatarUrl,
+            USERNAME_KEY: usernameValue,
             "plan": "free",
             "preferences": {
                 "showKeyboardEffect": True,
@@ -102,27 +102,27 @@ class UserService:
             "createdAt": now,
             "updatedAt": now,
         }
-        firestore_store.create(USERS_COLLECTION, created, doc_id=user_id)
+        firestore_store.create(USERS_COLLECTION, created, doc_id=userId)
         return created
 
     @staticmethod
     def _can_change_username(user_doc: dict) -> bool:
-        updated_at = user_doc.get("updatedAt") or user_doc.get("createdAt")
-        if not isinstance(updated_at, datetime):
+        updatedAt = user_doc.get("updatedAt") or user_doc.get("createdAt")
+        if not isinstance(updatedAt, datetime):
             return True
-        return utc_now() - updated_at >= USERNAME_UPDATE_COOLDOWN
+        return utc_now() - updatedAt >= USERNAME_UPDATE_COOLDOWN
 
     @staticmethod
-    def _refresh_user_papers_after_username_change(user_id: str, new_username: str) -> None:
-        papers = papers_service.list_owned(user_id)
+    def _refresh_user_papers_after_username_change(userId: str, new_username: str) -> None:
+        papers = papers_service.list_owned(userId)
         now = utc_now()
 
-        seven_days_ago = utc_now() - timedelta(days=7)
-        recent_papers = [p for p in papers if (p.get("updatedAt") or p.get("createdAt") or utc_now()) >= seven_days_ago]
+        sevenDaysAgo = utc_now() - timedelta(days=7)
+        recentPapers = [p for p in papers if (p.get("updatedAt") or p.get("createdAt") or utc_now()) >= sevenDaysAgo]
 
-        for paper in recent_papers:
-            paper_id = paper.get("paperId")
-            if not paper_id:
+        for paper in recentPapers:
+            paperId = paper.get("paperId")
+            if not paperId:
                 continue
             try:
                 metadata = paper.get("metadata")
@@ -133,15 +133,15 @@ class UserService:
                     metadata["authorUrl"] = author_url
                     metadata["canonical"] = canonical
                     metadata["updatedAt"] = now
-                    firestore_store.update(PAPERS_COLLECTION, paper_id, {"metadata": metadata, "updatedAt": now})
+                    firestore_store.update(PAPERS_COLLECTION, paperId, {"metadata": metadata, "updatedAt": now})
             except Exception:
-                logger.exception("Failed to update lightweight metadata for paper_id=%s", paper_id)
+                logger.exception("Failed to update lightweight metadata for paperId=%s", paperId)
 
-    def update_user(self, user_id: str, user_doc: dict) -> dict:
-        current = firestore_store.get(USERS_COLLECTION, user_id)
+    def update_user(self, userId: str, user_doc: dict) -> dict:
+        current = firestore_store.get(USERS_COLLECTION, userId)
         if not current:
             raise HTTPException(status_code=404, detail="User not found.")
-        current = self._ensure_updated_at(current)
+        current = self._ensure_updatedAt(current)
 
         allowed_fields = {
             "displayName",
@@ -151,25 +151,25 @@ class UserService:
             "preferences",
         }
         payload = {key: user_doc[key] for key in allowed_fields if key in user_doc}
-        previous_username = current.get(USERNAME_KEY)
-        username_changed = False
+        previousUsername = current.get(USERNAME_KEY)
+        usernameChanged = False
 
         if USERNAME_KEY in payload:
-            next_username = normalize_slug(str(payload[USERNAME_KEY] or ""))
-            if not next_username:
+            nextUsername = normalize_slug(str(payload[USERNAME_KEY] or ""))
+            if not nextUsername:
                 raise HTTPException(status_code=400, detail="Username is required.")
-            if is_reserved_username(next_username):
+            if is_reserved_username(nextUsername):
                 raise HTTPException(status_code=409, detail="Username is reserved.")
-            matches = firestore_store.find_by_fields(USERS_COLLECTION, {USERNAME_KEY: next_username})
-            if any(item.get(USER_ID_KEY) != user_id for item in matches):
+            matches = firestore_store.find_by_fields(USERS_COLLECTION, {USERNAME_KEY: nextUsername})
+            if any(item.get(USER_ID_KEY) != userId for item in matches):
                 raise HTTPException(status_code=409, detail="Username already taken.")
-            username_changed = next_username != previous_username
-            if username_changed and not self._can_change_username(current):
+            usernameChanged = nextUsername != previousUsername
+            if usernameChanged and not self._can_change_username(current):
                 raise HTTPException(
                     status_code=429,
                     detail="Username can only be changed once every 7 days.",
                 )
-            payload[USERNAME_KEY] = next_username
+            payload[USERNAME_KEY] = nextUsername
 
         if "description" in payload and not isinstance(payload["description"], str):
             raise HTTPException(status_code=400, detail="description must be a string.")
@@ -188,13 +188,13 @@ class UserService:
         if not payload:
             return current
 
-        if username_changed:
+        if usernameChanged:
             payload["updatedAt"] = utc_now()
 
-        firestore_store.update(USERS_COLLECTION, user_id, payload)
+        firestore_store.update(USERS_COLLECTION, userId, payload)
         current.update(payload)
-        if username_changed:
-            self._refresh_user_papers_after_username_change(user_id, next_username)
+        if usernameChanged:
+            self._refresh_user_papers_after_username_change(userId, nextUsername)
         return current
 
     def get_by_username(self, username: str) -> dict:
@@ -208,27 +208,27 @@ class UserService:
             raise HTTPException(status_code=404, detail="User not found.")
 
         user_doc = matches[0]
-        user_doc = self._ensure_updated_at(user_doc)
+        user_doc = self._ensure_updatedAt(user_doc)
         return user_doc
 
-    def get_by_id(self, user_id: str) -> dict:
-        user_doc = firestore_store.get(USERS_COLLECTION, user_id)
+    def get_by_id(self, userId: str) -> dict:
+        user_doc = firestore_store.get(USERS_COLLECTION, userId)
         if not user_doc:
             raise HTTPException(status_code=404, detail="User not found.")
-        return self._ensure_updated_at(user_doc)
+        return self._ensure_updatedAt(user_doc)
 
-    def is_username_available(self, username: str, user_id: str | None = None) -> bool:
+    def is_username_available(self, username: str, userId: str | None = None) -> bool:
         candidate = normalize_slug(username or "")
         if not candidate or is_reserved_username(candidate):
             return False
         matches = firestore_store.find_by_fields(USERS_COLLECTION, {USERNAME_KEY: candidate})
-        return all(item.get(USER_ID_KEY) == user_id for item in matches)
+        return all(item.get(USER_ID_KEY) == userId for item in matches)
 
-    def delete_user_assets(self, user_id: str) -> int:
-        return storage_service.delete_by_prefix(f"users/{user_id}/")
+    def delete_user_assets(self, userId: str) -> int:
+        return storage_service.delete_by_prefix(f"users/{userId}/")
 
-    def delete_user(self, user_id: str) -> dict[str, int]:
-        user_doc = firestore_store.get(USERS_COLLECTION, user_id)
+    def delete_user(self, userId: str) -> dict[str, int]:
+        user_doc = firestore_store.get(USERS_COLLECTION, userId)
         if not user_doc:
             raise HTTPException(status_code=404, detail="User not found.")
 
@@ -244,7 +244,7 @@ class UserService:
             "users": 0,
         }
 
-        projects = firestore_store.find_by_fields("projects", {"ownerId": user_id})
+        projects = firestore_store.find_by_fields("projects", {"ownerId": userId})
         for project in projects:
             result = projects_service.delete_cascade(project["projectId"])
             deleted_counts["projects"] += result.get("projects", 0)
@@ -253,14 +253,14 @@ class UserService:
             deleted_counts["apiKeys"] += result.get("apiKeys", 0)
             deleted_counts["storageObjects"] += result.get("storageObjects", 0)
 
-        remaining_collections = firestore_store.find_by_fields("collections", {"ownerId": user_id})
+        remaining_collections = firestore_store.find_by_fields("collections", {"ownerId": userId})
         for collection in remaining_collections:
             result = collections_service.delete_cascade(collection["collectionId"])
             deleted_counts["collections"] += result.get("collections", 0)
             deleted_counts["papers"] += result.get("papers", 0)
             deleted_counts["storageObjects"] += result.get("storageObjects", 0)
 
-        remaining_papers = papers_service.list_owned(user_id)
+        remaining_papers = papers_service.list_owned(userId)
         for paper in remaining_papers:
             result = papers_service.delete_cascade(paper["paperId"])
             deleted_counts["papers"] += result.get("papers", 0)
@@ -268,15 +268,15 @@ class UserService:
 
         from app.services.dev_api_service import dev_api_service
 
-        deleted_counts["apiKeys"] += dev_api_service.delete_by_owner(user_id)
+        deleted_counts["apiKeys"] += dev_api_service.delete_by_owner(userId)
 
-        mcp_deleted = mcp_authorization_service.delete_user_data(user_id)
+        mcp_deleted = mcp_authorization_service.delete_user_data(userId)
         deleted_counts["mcpTokens"] += mcp_deleted.get("mcpTokens", 0)
         deleted_counts["mcpUsageDocs"] += mcp_deleted.get("mcpUsageDocs", 0)
-        deleted_counts["distributions"] += distributions_store_service.delete_user_distribution(user_id)
-        deleted_counts["storageObjects"] += self.delete_user_assets(user_id)
+        deleted_counts["distributions"] += distributions_store_service.delete_user_distribution(userId)
+        deleted_counts["storageObjects"] += self.delete_user_assets(userId)
 
-        firestore_store.delete(USERS_COLLECTION, user_id)
+        firestore_store.delete(USERS_COLLECTION, userId)
         deleted_counts["users"] = 1
         return deleted_counts
 

@@ -23,212 +23,212 @@ class DevApiService:
     def _redis(self) -> Redis | None:
         return get_redis_client()
 
-    def _doc_cache_key(self, key_hash: str) -> str:
-        return f"{get_cache_prefix()}:api_keys:{key_hash}"
+    def _doc_cache_key(self, keyHash: str) -> str:
+        return f"{get_cache_prefix()}:api_keys:{keyHash}"
 
-    def _read_cached_doc(self, key_hash: str, client: Redis | None = None) -> dict | None:
+    def _read_cachedDoc(self, keyHash: str, client: Redis | None = None) -> dict | None:
         client = client or self._redis()
         if not client:
             return None
         try:
-            payload = client.get(self._doc_cache_key(key_hash))
+            payload = client.get(self._doc_cache_key(keyHash))
             if payload is None:
                 return None
             value = json.loads(payload)
             return value if isinstance(value, dict) else None
         except Exception:
-            logger.exception("API key cache read failed for key_hash=%s", key_hash)
+            logger.exception("API key cache read failed for keyHash=%s", keyHash)
             return None
 
-    def _write_cached_doc(self, doc: dict, client: Redis | None = None) -> None:
+    def _write_cachedDoc(self, doc: dict, client: Redis | None = None) -> None:
         client = client or self._redis()
         if not client:
             return
-        key_hash = doc.get(API_KEY_HASH_KEY)
-        if not key_hash:
+        keyHash = doc.get(API_KEY_HASH_KEY)
+        if not keyHash:
             return
         try:
             client.setex(
-                self._doc_cache_key(key_hash),
+                self._doc_cache_key(keyHash),
                 API_KEY_CACHE_POLICY.ttl_seconds,
                 json.dumps(doc).encode("utf-8"),
             )
         except Exception:
-            logger.exception("API key cache write failed for key_hash=%s", key_hash)
+            logger.exception("API key cache write failed for keyHash=%s", keyHash)
 
-    def _read_doc_by_hash(self, key_hash: str, client: Redis | None = None) -> dict | None:
-        cached = self._read_cached_doc(key_hash, client=client)
+    def _read_doc_by_hash(self, keyHash: str, client: Redis | None = None) -> dict | None:
+        cached = self._read_cachedDoc(keyHash, client=client)
         if cached:
             return cached
 
-        matches = firestore_store.find_by_fields(API_KEYS_COLLECTION, {API_KEY_HASH_KEY: key_hash})
+        matches = firestore_store.find_by_fields(API_KEYS_COLLECTION, {API_KEY_HASH_KEY: keyHash})
         doc = matches[0] if matches else None
         if doc:
-            self._write_cached_doc(doc, client=client)
+            self._write_cachedDoc(doc, client=client)
         return doc
 
     @staticmethod
-    def _public_doc(doc: dict) -> dict:
+    def _publicDoc(doc: dict) -> dict:
         return {key: value for key, value in doc.items() if key != API_KEY_HASH_KEY}
 
     @staticmethod
-    def hash_raw_key(raw_key: str) -> str:
-        return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
+    def hash_rawKey(rawKey: str) -> str:
+        return hashlib.sha256(rawKey.encode("utf-8")).hexdigest()
 
-    def get_by_id(self, key_id: str) -> dict:
-        key_doc = firestore_store.get(API_KEYS_COLLECTION, key_id)
-        if not key_doc:
+    def get_by_id(self, keyId: str) -> dict:
+        keyDoc = firestore_store.get(API_KEYS_COLLECTION, keyId)
+        if not keyDoc:
             raise HTTPException(status_code=404, detail="API key not found.")
-        return key_doc
+        return keyDoc
 
-    def create(self, owner_id: str, project_id: str) -> dict:
+    def create(self, ownerId: str, projectId: str) -> dict:
         existing = firestore_store.find_by_fields(API_KEYS_COLLECTION, {"projectId": project_id})
         if existing:
             raise HTTPException(status_code=409, detail="A key already exists for this project.")
 
-        raw_key = f"wp_{uuid4().hex}"
-        key_id = str(uuid4())
-        key_hash = self.hash_raw_key(raw_key)
+        rawKey = f"wp_{uuid4().hex}"
+        keyId = str(uuid4())
+        keyHash = self.hash_rawKey(rawKey)
         created = {
-            API_KEY_ID_KEY: key_id,
+            API_KEY_ID_KEY: keyId,
             "ownerId": owner_id,
             "projectId": project_id,
-            API_KEY_HASH_KEY: key_hash,
+            API_KEY_HASH_KEY: keyHash,
             "usage": 0,
             "limitPerMonth": DEV_API_LIMIT_PER_MONTH,
             "isActive": True,
             "createdAt": utc_now(),
         }
-        firestore_store.create(API_KEYS_COLLECTION, created, doc_id=key_id)
-        self._write_cached_doc(created)
+        firestore_store.create(API_KEYS_COLLECTION, created, doc_id=keyId)
+        self._write_cachedDoc(created)
 
-        public_doc = self._public_doc(created)
-        public_doc["rawKey"] = raw_key
-        return public_doc
+        publicDoc = self._publicDoc(created)
+        publicDoc["rawKey"] = rawKey
+        return publicDoc
 
-    def toggle_active(self, key_id: str, is_active: bool) -> dict:
-        current = self.get_by_id(key_id)
+    def toggle_active(self, keyId: str, isActive: bool) -> dict:
+        current = self.get_by_id(keyId)
         target = bool(is_active)
         current["isActive"] = target
-        firestore_store.update(API_KEYS_COLLECTION, key_id, current)
+        firestore_store.update(API_KEYS_COLLECTION, keyId, current)
 
-        key_hash = current.get(API_KEY_HASH_KEY)
+        keyHash = current.get(API_KEY_HASH_KEY)
         client = self._redis()
-        if client and key_hash:
+        if client and keyHash:
             try:
-                client.delete(self._doc_cache_key(key_hash))
+                client.delete(self._doc_cache_key(keyHash))
             except Exception:
-                logger.exception("API key cache delete failed for key_hash=%s", key_hash)
+                logger.exception("API key cache delete failed for keyHash=%s", keyHash)
 
-        return self._public_doc(current)
+        return self._publicDoc(current)
 
-    def delete(self, key_id: str) -> dict[str, bool]:
-        current = self.get_by_id(key_id)
-        key_hash = current.get(API_KEY_HASH_KEY)
+    def delete(self, keyId: str) -> dict[str, bool]:
+        current = self.get_by_id(keyId)
+        keyHash = current.get(API_KEY_HASH_KEY)
         client = self._redis()
-        firestore_store.delete(API_KEYS_COLLECTION, key_id)
-        if client and key_hash:
+        firestore_store.delete(API_KEYS_COLLECTION, keyId)
+        if client and keyHash:
             try:
-                client.delete(self._doc_cache_key(key_hash))
+                client.delete(self._doc_cache_key(keyHash))
             except Exception:
-                logger.exception("API key cache delete failed for key_hash=%s", key_hash)
+                logger.exception("API key cache delete failed for keyHash=%s", keyHash)
         return {"ok": True}
 
-    def delete_by_project(self, project_id: str) -> int:
+    def delete_by_project(self, projectId: str) -> int:
         deleted = 0
-        for key_doc in firestore_store.find_by_fields(API_KEYS_COLLECTION, {"projectId": project_id}):
-            key_id = str(key_doc.get(API_KEY_ID_KEY) or "").strip()
-            if not key_id:
+        for keyDoc in firestore_store.find_by_fields(API_KEYS_COLLECTION, {"projectId": project_id}):
+            keyId = str(keyDoc.get(API_KEY_ID_KEY) or "").strip()
+            if not keyId:
                 continue
-            self.delete(key_id)
+            self.delete(keyId)
             deleted += 1
         return deleted
 
-    def delete_by_owner(self, owner_id: str) -> int:
+    def delete_by_owner(self, ownerId: str) -> int:
         deleted = 0
-        for key_doc in firestore_store.find_by_fields(API_KEYS_COLLECTION, {"ownerId": owner_id}):
-            key_id = str(key_doc.get(API_KEY_ID_KEY) or "").strip()
-            if not key_id:
+        for keyDoc in firestore_store.find_by_fields(API_KEYS_COLLECTION, {"ownerId": owner_id}):
+            keyId = str(keyDoc.get(API_KEY_ID_KEY) or "").strip()
+            if not keyId:
                 continue
-            self.delete(key_id)
+            self.delete(keyId)
             deleted += 1
         return deleted
 
-    def reset(self, key_id: str) -> dict:
-        current = self.get_by_id(key_id)
-        old_hash = current.get(API_KEY_HASH_KEY)
+    def reset(self, keyId: str) -> dict:
+        current = self.get_by_id(keyId)
+        oldHash = current.get(API_KEY_HASH_KEY)
         client = self._redis()
 
-        cached_doc = self._read_cached_doc(old_hash, client=client) if old_hash else None
-        next_doc = dict(cached_doc or current)
+        cachedDoc = self._read_cachedDoc(oldHash, client=client) if oldHash else None
+        nextDoc = dict(cachedDoc or current)
 
-        raw_key = f"wp_{uuid4().hex}"
-        next_doc[API_KEY_HASH_KEY] = self.hash_raw_key(raw_key)
+        rawKey = f"wp_{uuid4().hex}"
+        nextDoc[API_KEY_HASH_KEY] = self.hash_rawKey(rawKey)
 
-        firestore_store.update(API_KEYS_COLLECTION, key_id, next_doc)
+        firestore_store.update(API_KEYS_COLLECTION, keyId, nextDoc)
 
-        if client and old_hash:
+        if client and oldHash:
             try:
-                client.delete(self._doc_cache_key(old_hash))
+                client.delete(self._doc_cache_key(oldHash))
             except Exception:
-                logger.exception("API key cache delete failed for key_hash=%s", old_hash)
+                logger.exception("API key cache delete failed for keyHash=%s", oldHash)
 
-        self._write_cached_doc(next_doc, client=client)
+        self._write_cachedDoc(nextDoc, client=client)
 
-        public_doc = self._public_doc(next_doc)
-        public_doc["rawKey"] = raw_key
-        return public_doc
+        publicDoc = self._publicDoc(nextDoc)
+        publicDoc["rawKey"] = rawKey
+        return publicDoc
 
-    def validate_key(self, raw_key: str) -> dict:
-        key_hash = self.hash_raw_key(raw_key)
+    def validate_key(self, rawKey: str) -> dict:
+        keyHash = self.hash_rawKey(rawKey)
         client = self._redis()
-        key_doc = self._read_doc_by_hash(key_hash, client=client)
-        if not key_doc:
+        keyDoc = self._read_doc_by_hash(keyHash, client=client)
+        if not keyDoc:
             raise HTTPException(status_code=401, detail="Invalid API key.")
 
-        if not key_doc.get("isActive", True):
+        if not keyDoc.get("isActive", True):
             raise HTTPException(status_code=403, detail="API key is inactive.")
 
-        usage = int(key_doc.get("usage", 0))
-        limit = int(key_doc.get("limitPerMonth", DEV_API_LIMIT_PER_MONTH))
+        usage = int(keyDoc.get("usage", 0))
+        limit = int(keyDoc.get("limitPerMonth", DEV_API_LIMIT_PER_MONTH))
         if usage >= limit:
             raise HTTPException(status_code=429, detail="Monthly API limit exceeded.")
 
-        return key_doc
+        return keyDoc
 
-    def increment_usage(self, key_hash: str | None) -> None:
-        if not key_hash:
+    def increment_usage(self, keyHash: str | None) -> None:
+        if not keyHash:
             return
         client = self._redis()
         if not client:
             return
 
-        key_doc = self._read_cached_doc(key_hash, client=client)
-        if not key_doc:
+        keyDoc = self._read_cachedDoc(keyHash, client=client)
+        if not keyDoc:
             return
 
-        key_doc["usage"] = int(key_doc.get("usage", 0)) + 1
-        self._write_cached_doc(key_doc, client=client)
+        keyDoc["usage"] = int(keyDoc.get("usage", 0)) + 1
+        self._write_cachedDoc(keyDoc, client=client)
 
-    def get_project_api_key(self, project_id: str, owner_id: str) -> dict | None:
+    def get_project_api_key(self, projectId: str, ownerId: str) -> dict | None:
         matches = firestore_store.find_by_fields(
             API_KEYS_COLLECTION,
             {"projectId": project_id, "ownerId": owner_id},
         )
-        key_doc = matches[0] if matches else None
-        if not key_doc:
+        keyDoc = matches[0] if matches else None
+        if not keyDoc:
             return None
 
-        key_hash = key_doc.get(API_KEY_HASH_KEY)
+        keyHash = keyDoc.get(API_KEY_HASH_KEY)
         client = self._redis()
-        if key_hash:
-            cached_doc = self._read_cached_doc(key_hash, client=client)
-            if cached_doc:
-                key_doc = cached_doc
+        if keyHash:
+            cachedDoc = self._read_cachedDoc(keyHash, client=client)
+            if cachedDoc:
+                keyDoc = cachedDoc
             else:
-                self._write_cached_doc(key_doc, client=client)
+                self._write_cachedDoc(keyDoc, client=client)
 
-        return self._public_doc(key_doc)
+        return self._publicDoc(keyDoc)
 
     def sync_cache_with_firestore(self) -> int:
         client = self._redis()
@@ -242,36 +242,36 @@ class DevApiService:
                 payload = client.get(key)
                 if payload is None:
                     continue
-                cached_doc = json.loads(payload)
-                if not isinstance(cached_doc, dict):
+                cachedDoc = json.loads(payload)
+                if not isinstance(cachedDoc, dict):
                     continue
             except Exception:
                 logger.exception("API key cache read failed for key=%s", key)
                 continue
 
-            key_id = cached_doc.get(API_KEY_ID_KEY)
-            if not key_id:
+            keyId = cachedDoc.get(API_KEY_ID_KEY)
+            if not keyId:
                 continue
             try:
                 firestore_store.update(
                     API_KEYS_COLLECTION,
-                    key_id,
-                    {"usage": int(cached_doc.get("usage", 0))},
+                    keyId,
+                    {"usage": int(cachedDoc.get("usage", 0))},
                 )
             except Exception:
-                logger.exception("API key firestore sync failed for key_id=%s", key_id)
+                logger.exception("API key firestore sync failed for keyId=%s", keyId)
                 continue
             synced += 1
         return synced
 
     def reset_all_usage(self) -> int:
         all_keys = firestore_store.list_all(API_KEYS_COLLECTION)
-        key_ids: list[str] = []
+        keyIds: list[str] = []
         for key in all_keys:
-            key_id = key.get(API_KEY_ID_KEY)
-            if key_id:
-                firestore_store.update(API_KEYS_COLLECTION, key_id, {"usage": 0})
-                key_ids.append(key_id)
+            keyId = key.get(API_KEY_ID_KEY)
+            if keyId:
+                firestore_store.update(API_KEYS_COLLECTION, keyId, {"usage": 0})
+                keyIds.append(keyId)
 
         client = self._redis()
         if client:
@@ -283,7 +283,7 @@ class DevApiService:
             except Exception:
                 logger.exception("API key cache reset failed.")
 
-        return len(key_ids)
+        return len(keyIds)
 
 
 dev_api_service = DevApiService()

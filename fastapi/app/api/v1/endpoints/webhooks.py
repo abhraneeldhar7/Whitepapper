@@ -12,34 +12,34 @@ router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
 
 def _extract_clerk_email(data: dict) -> str | None:
-    email_addresses = data.get("email_addresses") or []
-    if isinstance(email_addresses, list) and email_addresses:
-        first = email_addresses[0]
+    emailAddresses = data.get("emailAddresses") or []
+    if isinstance(emailAddresses, list) and emailAddresses:
+        first = emailAddresses[0]
         if isinstance(first, dict):
             return first.get("email_address")
     return data.get("email")
 
 def _extract_clerk_avatar(data: dict) -> str | None:
-    image_url = data.get("image_url")
-    if isinstance(image_url, str) and image_url:
-        return image_url
-    profile_image_url = data.get("profile_image_url")
-    if isinstance(profile_image_url, str) and profile_image_url:
-        return profile_image_url
-    avatar_url = data.get("avatar_url")
-    if isinstance(avatar_url, str) and avatar_url:
-        return avatar_url
+    imageUrl = data.get("imageUrl")
+    if isinstance(imageUrl, str) and imageUrl:
+        return imageUrl
+    profileImageUrl = data.get("profileImageUrl")
+    if isinstance(profileImageUrl, str) and profileImageUrl:
+        return profileImageUrl
+    avatarUrl = data.get("avatarUrl")
+    if isinstance(avatarUrl, str) and avatarUrl:
+        return avatarUrl
     return None
 
 def _extract_clerk_description(data: dict) -> str:
-    unsafe_metadata = data.get("unsafe_metadata")
-    if isinstance(unsafe_metadata, dict):
-        description = unsafe_metadata.get("description")
+    unsafeMetadata = data.get("unsafeMetadata")
+    if isinstance(unsafeMetadata, dict):
+        description = unsafeMetadata.get("description")
         if isinstance(description, str):
             return description
-    public_metadata = data.get("public_metadata")
-    if isinstance(public_metadata, dict):
-        description = public_metadata.get("description")
+    publicMetadata = data.get("publicMetadata")
+    if isinstance(publicMetadata, dict):
+        description = publicMetadata.get("description")
         if isinstance(description, str):
             return description
     return ""
@@ -49,17 +49,17 @@ def _extract_clerk_description(data: dict) -> str:
 async def clerk_webhook(request: Request) -> JSONResponse:
     settings = get_settings()
 
-    svix_id = request.headers.get("svix-id")
-    svix_timestamp = request.headers.get("svix-timestamp")
-    svix_signature = request.headers.get("svix-signature")
-    if not svix_id or not svix_timestamp or not svix_signature:
+    svixId = request.headers.get("svix-id")
+    svixTimestamp = request.headers.get("svix-timestamp")
+    svixSignature = request.headers.get("svix-signature")
+    if not svixId or not svixTimestamp or not svixSignature:
         raise HTTPException(status_code=400, detail="Missing Svix headers.")
 
     payload = (await request.body()).decode("utf-8")
     headers = {
-        "svix-id": svix_id,
-        "svix-timestamp": svix_timestamp,
-        "svix-signature": svix_signature,
+        "svix-id": svixId,
+        "svix-timestamp": svixTimestamp,
+        "svix-signature": svixSignature,
     }
 
     try:
@@ -68,35 +68,35 @@ async def clerk_webhook(request: Request) -> JSONResponse:
         logger.warning("Clerk webhook signature verification failed: %s", exc)
         raise HTTPException(status_code=400, detail="Invalid webhook signature.") from exc
 
-    event_type = event.get("type")
+    eventType = event.get("type")
     data = event.get("data", {})
-    user_id = data.get("id")
+    userId = data.get("id")
 
-    if event_type == "user.created" and user_id:
+    if eventType == "user.created" and userId:
         try:
             email = _extract_clerk_email(data)
             user_service.create_user(
-                user_id=user_id,
+                userId=userId,
                 username=data.get("username"),
-                display_name=data.get("first_name") or data.get("full_name"),
+                displayName=data.get("firstName") or data.get("fullName"),
                 description=_extract_clerk_description(data),
                 email=email,
-                avatar_url=_extract_clerk_avatar(data),
+                avatarUrl=_extract_clerk_avatar(data),
             )
         except HTTPException as exc:
             if exc.status_code in {404, 409}:
                 logger.warning(
                     "Skipping Clerk user.created provisioning for %s: %s",
-                    user_id,
+                    userId,
                     exc.detail,
                 )
             else:
                 raise
-    elif event_type == "user.updated" and user_id:
-        logger.info("Ignoring Clerk webhook type=%s id=%s", event_type, user_id)
-    elif event_type == "user.deleted" and user_id:
-        deleted = user_service.delete_user(user_id)
-        logger.info("Deleted user %s dependencies: %s", user_id, deleted)
+    elif eventType == "user.updated" and userId:
+        logger.info("Ignoring Clerk webhook type=%s id=%s", eventType, userId)
+    elif eventType == "user.deleted" and userId:
+        deleted = user_service.delete_user(userId)
+        logger.info("Deleted user %s dependencies: %s", userId, deleted)
 
-    logger.info("Processed Clerk webhook type=%s id=%s", event_type, user_id)
+    logger.info("Processed Clerk webhook type=%s id=%s", eventType, userId)
     return JSONResponse({"ok": True})

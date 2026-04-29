@@ -21,43 +21,43 @@ COLLECTION_SLUG_KEY = "slug"
 COLLECTION_PUBLIC_KEY = "isPublic"
 class CollectionsService:
 
-    def _unique_slug(self, project_id: str, source: str, exclude_collection_id: str | None = None) -> str:
+    def _unique_slug(self, projectId: str, source: str, excludeCollectionId: str | None = None) -> str:
         base = normalize_slug(source) or "collection"
-        project_collections = self.list_project_collections(project_id)
+        project_collections = self.list_project_collections(projectId)
         candidate = base
         while True:
             is_taken = any(
                 str(item.get(COLLECTION_SLUG_KEY) or "").strip() == candidate
-                and item.get(COLLECTION_ID_KEY) != exclude_collection_id
+                and item.get(COLLECTION_ID_KEY) != excludeCollectionId
                 for item in project_collections
             )
             if not is_taken:
                 return candidate
             candidate = f"{base}-{uuid4().hex[:4]}"
 
-    def _propagate_collection_visibility(self, collection_id: str, is_public: bool) -> None:
+    def _propagate_collection_visibility(self, collectionId: str, is_public: bool) -> None:
         from app.services.papers_service import papers_service
 
         target_status = "published" if is_public else "draft"
-        papers = papers_service.list_by_collection_id(collection_id)
+        papers = papers_service.list_by_collectionId(collectionId)
         for paper in papers:
             current_status = paper.get("status") or "draft"
             if current_status == "archived" or current_status == target_status:
                 continue
             papers_service.update(paper["paperId"], {"status": target_status})
 
-    def _run_collection_visibility_propagation(self, collection_id: str, is_public: bool) -> None:
+    def _run_collection_visibility_propagation(self, collectionId: str, is_public: bool) -> None:
         try:
-            self._propagate_collection_visibility(collection_id, is_public)
+            self._propagate_collection_visibility(collectionId, is_public)
         except Exception:
             logger.exception(
-                "Collection visibility propagation failed for collection_id=%s is_public=%s",
-                collection_id,
+                "Collection visibility propagation failed for collectionId=%s is_public=%s",
+                collectionId,
                 is_public,
             )
 
-    def _set_visibility_only(self, collection_id: str, is_public: bool) -> dict:
-        current = self.get_by_id(collection_id)
+    def _set_visibility_only(self, collectionId: str, is_public: bool) -> dict:
+        current = self.get_by_id(collectionId)
         target_visibility = bool(is_public)
         if bool(current.get("isPublic", False)) == target_visibility:
             return current
@@ -66,7 +66,7 @@ class CollectionsService:
             "isPublic": target_visibility,
             "updatedAt": utc_now(),
         }
-        firestore_store.update(COLLECTIONS_COLLECTION, collection_id, visibility_patch)
+        firestore_store.update(COLLECTIONS_COLLECTION, collectionId, visibility_patch)
         current.update(visibility_patch)
         return current
 
@@ -74,37 +74,37 @@ class CollectionsService:
     def _is_public_collection(collection: dict | None) -> bool:
         return bool(collection) and bool(collection.get(COLLECTION_PUBLIC_KEY))
 
-    def list_project_collections(self, project_id: str, public: bool = False) -> list[dict]:
-        items = firestore_store.find_by_fields(COLLECTIONS_COLLECTION, {COLLECTION_PROJECT_KEY: project_id})
+    def list_project_collections(self, projectId: str, public: bool = False) -> list[dict]:
+        items = firestore_store.find_by_fields(COLLECTIONS_COLLECTION, {COLLECTION_PROJECT_KEY: projectId})
         if public:
             return [item for item in items if bool(item.get(COLLECTION_PUBLIC_KEY))]
         return items
 
     def list_project_collections_paginated(
         self,
-        project_id: str,
+        projectId: str,
         *,
         public: bool = False,
         limit: int = 25,
         cursor: str | None = None,
         order_by: list[tuple[str, str]] | None = None,
     ) -> dict:
-        items = self.list_project_collections(project_id, public=public)
+        items = self.list_project_collections(projectId, public=public)
         items = apply_order_by(items, order_by=order_by)
         return paginate_items(items, limit=limit, cursor=cursor)
 
-    def get_many_by_ids(self, collection_ids: list[str]) -> list[dict]:
-        return firestore_store.get_many(COLLECTIONS_COLLECTION, collection_ids)
+    def get_many_by_ids(self, collectionIds: list[str]) -> list[dict]:
+        return firestore_store.get_many(COLLECTIONS_COLLECTION, collectionIds)
 
-    def create(self, owner_id: str, payload: dict) -> dict:
-        collection_id = str(uuid4())
+    def create(self, ownerId: str, payload: dict) -> dict:
+        collectionId = str(uuid4())
         now = utc_now()
-        project_id = payload.get(COLLECTION_PROJECT_KEY)
-        if not project_id:
+        projectId = payload.get(COLLECTION_PROJECT_KEY)
+        if not projectId:
             raise HTTPException(status_code=400, detail="projectId is required.")
 
-        projects_service.get_by_id(project_id)
-        existing_collections = self.list_project_collections(project_id)
+        projects_service.get_by_id(projectId)
+        existing_collections = self.list_project_collections(projectId)
         if len(existing_collections) >= MAX_COLLECTIONS_PER_PROJECT:
             raise HTTPException(
                 status_code=400,
@@ -123,14 +123,14 @@ class CollectionsService:
 
         provided_slug = payload.get(COLLECTION_SLUG_KEY)
         if provided_slug:
-            slug_value = self._unique_slug(project_id, provided_slug)
+            slug_value = self._unique_slug(projectId, provided_slug)
         else:
-            slug_value = self._unique_slug(project_id, payload.get("name") or "collection")
+            slug_value = self._unique_slug(projectId, payload.get("name") or "collection")
 
         created = {
-            COLLECTION_ID_KEY: collection_id,
-            COLLECTION_PROJECT_KEY: project_id,
-            COLLECTION_OWNER_KEY: owner_id,
+            COLLECTION_ID_KEY: collectionId,
+            COLLECTION_PROJECT_KEY: projectId,
+            COLLECTION_OWNER_KEY: ownerId,
             "name": (payload.get("name") or "Untitled Collection").strip() or "Untitled Collection",
             "description": description,
             COLLECTION_SLUG_KEY: slug_value,
@@ -139,11 +139,11 @@ class CollectionsService:
             "createdAt": now,
             "updatedAt": now,
         }
-        firestore_store.create(COLLECTIONS_COLLECTION, created, doc_id=collection_id)
+        firestore_store.create(COLLECTIONS_COLLECTION, created, doc_id=collectionId)
         return created
 
-    def update(self, collection_id: str, payload: dict) -> dict:
-        current = self.get_by_id(collection_id)
+    def update(self, collectionId: str, payload: dict) -> dict:
+        current = self.get_by_id(collectionId)
 
         allowed_update_fields = {"name", "title", "slug", "description", "isPublic"}
         payload = {key: value for key, value in payload.items() if key in allowed_update_fields}
@@ -175,7 +175,7 @@ class CollectionsService:
                 for item in self.list_project_collections(str(current.get(COLLECTION_PROJECT_KEY) or ""))
                 if str(item.get(COLLECTION_SLUG_KEY) or "").strip() == new_slug
             ]
-            if any(item.get(COLLECTION_ID_KEY) != collection_id for item in matches):
+            if any(item.get(COLLECTION_ID_KEY) != collectionId for item in matches):
                 raise HTTPException(status_code=409, detail="Collection slug already exists in this project.")
             payload["slug"] = new_slug
 
@@ -183,28 +183,28 @@ class CollectionsService:
             return current
 
         payload["updatedAt"] = utc_now()
-        firestore_store.update(COLLECTIONS_COLLECTION, collection_id, payload)
+        firestore_store.update(COLLECTIONS_COLLECTION, collectionId, payload)
         current.update(payload)
         return current
 
-    def set_visibility(self, collection_id: str, is_public: bool, *, background: bool = True) -> dict:
-        updated = self._set_visibility_only(collection_id, is_public)
+    def set_visibility(self, collectionId: str, is_public: bool, *, background: bool = True) -> dict:
+        updated = self._set_visibility_only(collectionId, is_public)
         target_visibility = bool(updated.get("isPublic", False))
 
         if background:
             worker = threading.Thread(
                 target=self._run_collection_visibility_propagation,
-                args=(collection_id, target_visibility),
+                args=(collectionId, target_visibility),
                 daemon=True,
             )
             worker.start()
         else:
-            self._run_collection_visibility_propagation(collection_id, target_visibility)
+            self._run_collection_visibility_propagation(collectionId, target_visibility)
 
         return updated
 
-    def delete_cascade(self, collection_id: str) -> dict[str, int]:
-        current = self.get_by_id(collection_id)
+    def delete_cascade(self, collectionId: str) -> dict[str, int]:
+        current = self.get_by_id(collectionId)
 
         from app.services.papers_service import papers_service
 
@@ -213,47 +213,47 @@ class CollectionsService:
             "papers": 0,
             "storageObjects": 0,
         }
-        papers = papers_service.list_by_collection_id(collection_id)
+        papers = papers_service.list_by_collectionId(collectionId)
         for paper in papers:
             result = papers_service.delete_cascade(paper["paperId"])
             deleted_counts["papers"] += result.get("papers", 0)
             deleted_counts["storageObjects"] += result.get("storageObjects", 0)
 
-        firestore_store.delete(COLLECTIONS_COLLECTION, collection_id)
+        firestore_store.delete(COLLECTIONS_COLLECTION, collectionId)
         deleted_counts["collections"] = 1
         return deleted_counts
 
-    def delete(self, collection_id: str) -> dict[str, bool]:
-        self.delete_cascade(collection_id)
+    def delete(self, collectionId: str) -> dict[str, bool]:
+        self.delete_cascade(collectionId)
         return {"ok": True}
 
-    def get_by_id(self, collection_id: str, public: bool = False) -> dict:
-        collection = firestore_store.get(COLLECTIONS_COLLECTION, collection_id)
+    def get_by_id(self, collectionId: str, public: bool = False) -> dict:
+        collection = firestore_store.get(COLLECTIONS_COLLECTION, collectionId)
         if not collection:
             raise HTTPException(status_code=404, detail="Collection not found.")
         if public and not self._is_public_collection(collection):
             raise HTTPException(status_code=404, detail="Collection not found.")
         return collection
 
-    def get_by_slug(self, project_id: str, collection_slug: str, public: bool = False) -> dict:
+    def get_by_slug(self, projectId: str, collectionSlug: str, public: bool = False) -> dict:
         matches = [
             item
-            for item in self.list_project_collections(project_id, public=public)
-            if str(item.get(COLLECTION_SLUG_KEY) or "").strip() == collection_slug
+            for item in self.list_project_collections(projectId, public=public)
+            if str(item.get(COLLECTION_SLUG_KEY) or "").strip() == collectionSlug
         ]
         if not matches:
             raise HTTPException(status_code=404, detail="Collection not found.")
         return matches[0]
 
-    def is_slug_available(self, project_id: str, slug: str, collection_id: str | None = None) -> bool:
+    def is_slug_available(self, projectId: str, slug: str, collectionId: str | None = None) -> bool:
         candidate = normalize_slug(slug or "")
         if not candidate:
             return False
         matches = [
             item
-            for item in self.list_project_collections(project_id)
+            for item in self.list_project_collections(projectId)
             if str(item.get(COLLECTION_SLUG_KEY) or "").strip() == candidate
         ]
-        return all(item.get(COLLECTION_ID_KEY) == collection_id for item in matches)
+        return all(item.get(COLLECTION_ID_KEY) == collectionId for item in matches)
 
 collections_service = CollectionsService()

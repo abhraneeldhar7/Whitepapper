@@ -42,48 +42,48 @@ class ProjectDashboardResponse(BaseModel):
 
 
 @router.get("/projects", response_model=list[ProjectDoc])
-def list_own_projects(user_id: str = Depends(get_verified_id)) -> list[ProjectDoc]:
-    return projects_service.list_owned(user_id)
+def list_own_projects(userId: str = Depends(get_verified_id)) -> list[ProjectDoc]:
+    return projects_service.list_owned(userId)
 
 
 @router.post("/projects", response_model=ProjectDoc, status_code=201)
 def create_project(
     payload: ProjectCreateRequest,
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> ProjectDoc:
-    return projects_service.create(user_id, payload.model_dump())
+    return projects_service.create(userId, payload.model_dump())
 
 
 @router.get("/projects/slug/available")
-def check_project_slug_available(
+def check_projectSlug_available(
     slug: str = Query(...),
-    project_id: str | None = Query(default=None, alias="projectId"),
-    user_id: str = Depends(get_verified_id),
+    projectId: str | None = Query(default=None, alias="projectId"),
+    userId: str = Depends(get_verified_id),
 ) -> dict[str, bool]:
-    return {"available": projects_service.is_slug_available(user_id, slug, project_id)}
+    return {"available": projects_service.is_slug_available(userId, slug, projectId)}
 
 
-@router.get("/projects/slug/{username}/{project_slug}", response_model=ProjectDoc)
-def get_project_by_slug(username: str, project_slug: str, user_id: str = Depends(get_verified_id)) -> ProjectDoc:
-    project = projects_service.get_by_slug(username, project_slug)
-    if project.get("ownerId") != user_id:
+@router.get("/projects/slug/{username}/{projectSlug}", response_model=ProjectDoc)
+def get_project_by_slug(username: str, projectSlug: str, userId: str = Depends(get_verified_id)) -> ProjectDoc:
+    project = projects_service.get_by_slug(username, projectSlug)
+    if project.get("ownerId") != userId:
         raise HTTPException(status_code=403, detail="Not allowed.")
     return project
 
 
-@router.get("/projects/{project_id}", response_model=ProjectDoc)
-def get_project(project_id: str, user_id: str = Depends(get_verified_id)) -> ProjectDoc:
-    return require_owned_project(user_id, project_id)
+@router.get("/projects/{projectId}", response_model=ProjectDoc)
+def get_project(projectId: str, userId: str = Depends(get_verified_id)) -> ProjectDoc:
+    return require_owned_project(userId, projectId)
 
 
-@router.patch("/projects/{project_id}", response_model=ProjectDoc)
+@router.patch("/projects/{projectId}", response_model=ProjectDoc)
 def patch_project(
-    project_id: str,
+    projectId: str,
     payload: ProjectUpdateRequest,
     background_tasks: BackgroundTasks,
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> ProjectDoc:
-    require_owned_project(user_id, project_id)
+    require_owned_project(userId, projectId)
 
     update_payload = payload.model_dump(exclude_unset=True)
     clear_logo = "logoUrl" in update_payload and not update_payload["logoUrl"]
@@ -93,66 +93,66 @@ def patch_project(
     if clear_logo:
         update_payload.pop("logoUrl", None)
 
-    updated = projects_service.update(project_id, update_payload)
+    updated = projects_service.update(projectId, update_payload)
     if clear_logo:
-        projects_service.delete_project_logo(project_id)
-        updated = projects_service.get_by_id(project_id)
+        projects_service.delete_project_logo(projectId)
+        updated = projects_service.get_by_id(projectId)
 
     if payload.description is not None:
         used_urls = extract_image_urls(updated.get("description") or "")
         background_tasks.add_task(
             projects_service.delete_unused_project_embedded_images,
-            user_id,
-            project_id,
+            userId,
+            projectId,
             used_urls,
         )
 
     return updated
 
 
-@router.post("/projects/{project_id}/logo")
+@router.post("/projects/{projectId}/logo")
 async def upload_project_logo(
-    project_id: str,
+    projectId: str,
     file: UploadFile = File(...),
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> dict[str, str]:
-    require_owned_project(user_id, project_id)
-    result = await projects_service.upload_logo(project_id, file)
+    require_owned_project(userId, projectId)
+    result = await projects_service.upload_logo(projectId, file)
     return {"url": result["url"]}
 
 
-@router.post("/projects/{project_id}/embedded-image")
+@router.post("/projects/{projectId}/embedded-image")
 async def upload_project_embedded_image(
-    project_id: str,
+    projectId: str,
     file: UploadFile = File(...),
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> dict[str, str]:
-    require_owned_project(user_id, project_id)
-    return await projects_service.upload_embedded_image(project_id, file)
+    require_owned_project(userId, projectId)
+    return await projects_service.upload_embedded_image(projectId, file)
 
 
-@router.patch("/projects/{project_id}/visibility", response_model=ProjectDoc)
+@router.patch("/projects/{projectId}/visibility", response_model=ProjectDoc)
 def patch_project_visibility(
-    project_id: str,
+    projectId: str,
     payload: ProjectVisibilityToggleRequest,
-    user_id: str = Depends(get_verified_id),
+    userId: str = Depends(get_verified_id),
 ) -> ProjectDoc:
-    require_owned_project(user_id, project_id)
-    return projects_service.set_visibility(project_id, payload.isPublic)
+    require_owned_project(userId, projectId)
+    return projects_service.set_visibility(projectId, payload.isPublic)
 
 
-@router.get("/projects/{project_id}/dashboard", response_model=ProjectDashboardResponse)
+@router.get("/projects/{projectId}/dashboard", response_model=ProjectDashboardResponse)
 def get_project_dashboard(
-    project_id: str,
-    user_id: str = Depends(get_verified_id),
+    projectId: str,
+    userId: str = Depends(get_verified_id),
 ) -> ProjectDashboardResponse:
     """Get project dashboard data: project, collections, and papers sorted by updatedAt."""
-    project = require_owned_project(user_id, project_id)
+    project = require_owned_project(userId, projectId)
 
-    collections = collections_service.list_project_collections(project_id)
+    collections = collections_service.list_project_collections(projectId)
     project_papers = papers_service.list_owned_filtered(
-        owner_id=user_id,
-        project_id=project_id,
+        ownerId=userId,
+        projectId=projectId,
         standalone=True,
     )
 
@@ -165,7 +165,7 @@ def get_project_dashboard(
         papers=project_papers,
     )
 
-@router.delete("/projects/{project_id}")
-def delete_project(project_id: str, user_id: str = Depends(get_verified_id)) -> dict[str, bool]:
-    require_owned_project(user_id, project_id)
-    return projects_service.delete(project_id)
+@router.delete("/projects/{projectId}")
+def delete_project(projectId: str, userId: str = Depends(get_verified_id)) -> dict[str, bool]:
+    require_owned_project(userId, projectId)
+    return projects_service.delete(projectId)

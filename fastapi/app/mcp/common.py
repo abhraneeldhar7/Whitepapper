@@ -18,21 +18,21 @@ from app.utils.pagination import normalize_limit as _pagination_normalize_limit
 READ_ONLY = ToolAnnotations(readOnlyHint=True)
 
 
-def current_mcp_user_id() -> str:
+def current_mcp_userId() -> str:
     token = get_access_token()
-    user_id = str((token.claims if token else {}).get("sub") or "").strip()
-    if not user_id:
+    userId = str((token.claims if token else {}).get("sub") or "").strip()
+    if not userId:
         raise AuthorizationError("Missing authenticated Whitepapper user.")
-    return user_id
+    return userId
 
 
 class McpUsageMiddleware(Middleware):
     async def on_call_tool(self, context: MiddlewareContext, call_next):
-        user_id = current_mcp_user_id()
-        if not mcp_authorization_service.is_user_usage_within_limit(user_id):
+        userId = current_mcp_userId()
+        if not mcp_authorization_service.is_user_usage_within_limit(userId):
             raise AuthorizationError("Monthly MCP usage limit reached for this Whitepapper account.")
         result = await call_next(context)
-        mcp_authorization_service.increment_user_usage(user_id)
+        mcp_authorization_service.increment_user_usage(userId)
         return result
 
 
@@ -185,33 +185,33 @@ def mutation_response(entity: str, doc: dict[str, Any], *, verbose: bool) -> dic
     return compact_paper(doc)
 
 
-def owned_project(user_id: str, projectId: str) -> dict[str, Any]:
+def owned_project(userId: str, projectId: str) -> dict[str, Any]:
     project = projects_service.get_by_id(projectId)
-    if str(project.get("ownerId") or "") != user_id:
+    if str(project.get("ownerId") or "") != userId:
         raise mcp_http_error(404, "NOT_FOUND", "Project not found.")
     return project
 
 
-def owned_collection(user_id: str, collectionId: str) -> dict[str, Any]:
+def owned_collection(userId: str, collectionId: str) -> dict[str, Any]:
     collection = collections_service.get_by_id(collectionId)
-    if str(collection.get("ownerId") or "") != user_id:
+    if str(collection.get("ownerId") or "") != userId:
         raise mcp_http_error(404, "NOT_FOUND", "Collection not found.")
     return collection
 
 
-def owned_paper(user_id: str, paperId: str) -> dict[str, Any]:
+def owned_paper(userId: str, paperId: str) -> dict[str, Any]:
     paper = papers_service.get_by_id(paperId)
-    if not paper or str(paper.get("ownerId") or "") != user_id:
+    if not paper or str(paper.get("ownerId") or "") != userId:
         raise mcp_http_error(404, "NOT_FOUND", "Paper not found.")
     return paper
 
 
-def find_owned_project_by_slug(user_id: str, slug: str) -> dict[str, Any]:
+def find_owned_project_by_slug(userId: str, slug: str) -> dict[str, Any]:
     normalized = str(slug or "").strip().lower()
     if not normalized:
         raise mcp_http_error(400, "VALIDATION_ERROR", "projectSlug is required.")
     project = next(
-        (item for item in projects_service.list_owned(user_id) if str(item.get("slug") or "").strip().lower() == normalized),
+        (item for item in projects_service.list_owned(userId) if str(item.get("slug") or "").strip().lower() == normalized),
         None,
     )
     if project is None:
@@ -219,25 +219,25 @@ def find_owned_project_by_slug(user_id: str, slug: str) -> dict[str, Any]:
     return project
 
 
-def find_owned_collection_by_slug(user_id: str, collectionSlug: str, projectId: str | None = None) -> dict[str, Any]:
+def find_owned_collection_by_slug(userId: str, collectionSlug: str, projectId: str | None = None) -> dict[str, Any]:
     normalized = str(collectionSlug or "").strip().lower()
     if not normalized:
         raise mcp_http_error(400, "VALIDATION_ERROR", "collectionSlug is required.")
     if projectId:
         candidate = collections_service.get_by_slug(projectId, normalized)
-        if str(candidate.get("ownerId") or "") != user_id:
+        if str(candidate.get("ownerId") or "") != userId:
             raise mcp_http_error(404, "NOT_FOUND", "Collection not found.")
         return candidate
 
     matches: list[dict[str, Any]] = []
-    for project in projects_service.list_owned(user_id):
+    for project in projects_service.list_owned(userId):
         try:
             candidate = collections_service.get_by_slug(str(project.get("projectId") or ""), normalized)
         except HTTPException as exc:
             if exc.status_code == 404:
                 continue
             raise
-        if str(candidate.get("ownerId") or "") == user_id:
+        if str(candidate.get("ownerId") or "") == userId:
             matches.append(candidate)
 
     if not matches:
