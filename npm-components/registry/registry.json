@@ -11,6 +11,10 @@
         {
           "name": "markdown-render/markdown-render.css",
           "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/markdown-render/markdown-render.css"
+        },
+        {
+          "name": "markdown-render/MarkdownCopyButtonClient.tsx",
+          "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/markdown-render/MarkdownCopyButtonClient.tsx"
         }
       ],
       "dependencies": [
@@ -19,6 +23,7 @@
         "react-markdown",
         "remark-gfm",
         "rehype-raw",
+        "rehype-sanitize",
         "@shikijs/rehype",
         "shiki"
       ],
@@ -41,7 +46,7 @@
           "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/mobileTableOfContent.tsx"
         },
         {
-          "name": "animated-theme-toggler.tsx",
+          "name": "toc/animated-theme-toggler.tsx",
           "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/animated-theme-toggler.tsx"
         }
       ],
@@ -89,7 +94,7 @@
           "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/mobileTableOfContent.tsx"
         },
         {
-          "name": "animated-theme-toggler.tsx",
+          "name": "toc/animated-theme-toggler.tsx",
           "url": "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/toc/animated-theme-toggler.tsx"
         }
       ],

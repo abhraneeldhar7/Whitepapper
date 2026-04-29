@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from app.api.v1.endpoints.distributions.common import (
     DistributionPublishInput,
+    DistributionPublishResult,
     build_public_article_url,
     extract_canonical_url,
     extract_cover_image,
@@ -25,12 +26,6 @@ router = APIRouter()
 class HashnodeDistributionUpsertRequest(BaseModel):
     accessToken: str = Field(min_length=1)
     storeInCloud: bool = False
-
-
-class DistributionPublishResult(BaseModel):
-    platform: Literal["hashnode", "devto"]
-    postId: str
-    url: str | None = None
 
 
 @router.get("/hashnode", response_model=HashnodeDistribution | None)
@@ -76,7 +71,7 @@ def revoke_hashnode_distribution(user_id: str = Depends(get_verified_id)) -> Use
 
 
 @router.post("/hashnode/publish", response_model=DistributionPublishResult)
-def publish_hashnode_distribution(
+async def publish_hashnode_distribution(
     payload: DistributionPublishInput,
     user_id: str = Depends(get_verified_id),
 ) -> DistributionPublishResult:
@@ -84,7 +79,7 @@ def publish_hashnode_distribution(
     access_token = resolve_distribution_access_token("hashnode", user_id, payload.accessToken)
     publication_id = distributions_store_service.get_hashnode_publication_id(user_id)
     if not publication_id:
-        publication_id = hashnode_distribution_service.fetch_publication_id(access_token)
+        publication_id = await hashnode_distribution_service.fetch_publication_id(access_token)
         distributions_store_service.set_hashnode_publication_id(user_id, publication_id)
 
     article_url = build_public_article_url(username, slug)
@@ -100,7 +95,7 @@ def publish_hashnode_distribution(
     ]
     description = extract_description(metadata)
 
-    post = hashnode_distribution_service.publish_post(
+    post = await hashnode_distribution_service.publish_post(
         access_token,
         {
             "title": title,

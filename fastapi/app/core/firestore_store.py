@@ -54,6 +54,12 @@ class FirestoreStore:
     def _field_path(cls, field: str):
         return firestore.FieldPath.document_id() if field == cls.DOCUMENT_ID_FIELD else field
 
+    # NOTE: This list-based cursor is intentionally different from pagination.py's
+    # offset-based cursor. This firestore_store cursor is designed for Firestore document
+    # pagination with start_after semantics (list of field values). The pagination module
+    # uses a simple offset for REST endpoints. Both formats are incompatible by design —
+    # do not attempt to merge them.
+
     @staticmethod
     def _encode_cursor(values: list[Any]) -> str:
         payload = json.dumps(values, separators=(",", ":"), ensure_ascii=True).encode("utf-8")

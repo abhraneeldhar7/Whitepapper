@@ -2,6 +2,22 @@ type RequestMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 type QueryPrimitive = string | number | boolean | null | undefined;
 type AuthMode = "required" | "optional" | "none";
 
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+export class NetworkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NetworkError";
+  }
+}
+
 type ClerkWindow = Window & {
   Clerk?: {
     loaded?: boolean;
@@ -174,7 +190,7 @@ function createRequestClient(resolveToken: TokenResolver): ApiClient {
 
     if (!response.ok) {
       const message = await response.text();
-      throw new Error(message || `Request failed with ${response.status}`);
+      throw new ApiError(message || `Request failed with ${response.status}`, response.status);
     }
 
     if (response.status === 204) {

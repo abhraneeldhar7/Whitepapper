@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 
+from app.core.config import get_settings
 from app.core.firestore_store import firestore_store
 from app.core.reserved_paths import is_reserved_username
 from app.services.collections_service import collections_service
@@ -21,27 +22,10 @@ USERS_COLLECTION = "users"
 USER_ID_KEY = "userId"
 USERNAME_KEY = "username"
 USERNAME_UPDATE_COOLDOWN = timedelta(days=7)
+PAPERS_COLLECTION = "papers"
 
 
 class UserService:
-    def _user_by_username_cache_key(self, username: str) -> str:
-        return f"users:username:{username}"
-
-    def _load_cached_user(self, key: str) -> dict | None:
-        # Redis cache removed for users; always miss.
-        return None
-
-    def _set_cached_user(self, user_doc: dict) -> None:
-        # No-op: user caching removed.
-        return None
-
-    def getcached_user__by_username(self, username: str) -> dict | None:
-        return None
-
-    def invalidate_user(self, username: str | None) -> None:
-        # No-op for compatibility; Redis user cache has been removed.
-        return None
-
     def _generate_username(self, email: str | None, user_id: str, fallback_username: str | None) -> str:
         base = ""
         if email and "@" in email:
@@ -129,20 +113,29 @@ class UserService:
         return utc_now() - updated_at >= USERNAME_UPDATE_COOLDOWN
 
     @staticmethod
-    def _refresh_user_papers_after_username_change(user_id: str) -> None:
+    def _refresh_user_papers_after_username_change(user_id: str, new_username: str) -> None:
         papers = papers_service.list_owned(user_id)
-        for paper in papers:
+        now = utc_now()
+
+        seven_days_ago = utc_now() - timedelta(days=7)
+        recent_papers = [p for p in papers if (p.get("updatedAt") or p.get("createdAt") or utc_now()) >= seven_days_ago]
+
+        for paper in recent_papers:
             paper_id = paper.get("paperId")
             if not paper_id:
                 continue
             try:
-                papers_service.update(paper_id, {}, force_metadata_refresh=True)
+                metadata = paper.get("metadata")
+                if isinstance(metadata, dict):
+                    author_url = f"{get_settings().public_site_url}/{new_username}"
+                    slug = paper.get("slug")
+                    canonical = f"{author_url}/{slug}".rstrip("/")
+                    metadata["authorUrl"] = author_url
+                    metadata["canonical"] = canonical
+                    metadata["updatedAt"] = now
+                    firestore_store.update(PAPERS_COLLECTION, paper_id, {"metadata": metadata, "updatedAt": now})
             except Exception:
-                logger.exception(
-                    "Failed to refresh paper metadata after username change for user_id=%s paper_id=%s",
-                    user_id,
-                    paper_id,
-                )
+                logger.exception("Failed to update lightweight metadata for paper_id=%s", paper_id)
 
     def update_user(self, user_id: str, user_doc: dict) -> dict:
         current = firestore_store.get(USERS_COLLECTION, user_id)
@@ -200,9 +193,8 @@ class UserService:
 
         firestore_store.update(USERS_COLLECTION, user_id, payload)
         current.update(payload)
-        self.invalidate_user(previous_username)
         if username_changed:
-            self._refresh_user_papers_after_username_change(user_id)
+            self._refresh_user_papers_after_username_change(user_id, next_username)
         return current
 
     def get_by_username(self, username: str) -> dict:
@@ -274,9 +266,9 @@ class UserService:
             deleted_counts["papers"] += result.get("papers", 0)
             deleted_counts["storageObjects"] += result.get("storageObjects", 0)
 
-        from app.services._dev_api_service import _dev_api_service
+        from app.services.dev_api_service import dev_api_service
 
-        deleted_counts["apiKeys"] += _dev_api_service.delete_by_owner(user_id)
+        deleted_counts["apiKeys"] += dev_api_service.delete_by_owner(user_id)
 
         mcp_deleted = mcp_authorization_service.delete_user_data(user_id)
         deleted_counts["mcpTokens"] += mcp_deleted.get("mcpTokens", 0)
@@ -285,7 +277,6 @@ class UserService:
         deleted_counts["storageObjects"] += self.delete_user_assets(user_id)
 
         firestore_store.delete(USERS_COLLECTION, user_id)
-        self.invalidate_user(user_doc.get(USERNAME_KEY))
         deleted_counts["users"] = 1
         return deleted_counts
 

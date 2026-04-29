@@ -1,6 +1,6 @@
 import hashlib
+import json
 import logging
-import pickle
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -34,7 +34,7 @@ class DevApiService:
             payload = client.get(self._doc_cache_key(key_hash))
             if payload is None:
                 return None
-            value = pickle.loads(payload)
+            value = json.loads(payload)
             return value if isinstance(value, dict) else None
         except Exception:
             logger.exception("API key cache read failed for key_hash=%s", key_hash)
@@ -51,7 +51,7 @@ class DevApiService:
             client.setex(
                 self._doc_cache_key(key_hash),
                 API_KEY_CACHE_POLICY.ttl_seconds,
-                pickle.dumps(doc),
+                json.dumps(doc).encode("utf-8"),
             )
         except Exception:
             logger.exception("API key cache write failed for key_hash=%s", key_hash)
@@ -159,7 +159,6 @@ class DevApiService:
         old_hash = current.get(API_KEY_HASH_KEY)
         client = self._redis()
 
-        # Prefer cache doc when present, then persist rotated hash to Firestore.
         cached_doc = self._read_cached_doc(old_hash, client=client) if old_hash else None
         next_doc = dict(cached_doc or current)
 
@@ -243,7 +242,7 @@ class DevApiService:
                 payload = client.get(key)
                 if payload is None:
                     continue
-                cached_doc = pickle.loads(payload)
+                cached_doc = json.loads(payload)
                 if not isinstance(cached_doc, dict):
                     continue
             except Exception:
@@ -287,4 +286,4 @@ class DevApiService:
         return len(key_ids)
 
 
-_dev_api_service = DevApiService()
+dev_api_service = DevApiService()

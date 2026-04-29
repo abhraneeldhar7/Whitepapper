@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from app.api.deps.ownership import require_owned_project
 from app.schemas.entities import ApiKeyCreateResponse, ApiKeySummary
 from app.services.auth_service import get_verified_id
-from app.services._dev_api_service import _dev_api_service
+from app.services.dev_api_service import dev_api_service
 from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
@@ -45,7 +45,7 @@ def _add_usage_increment(background_tasks: BackgroundTasks, key_doc: dict) -> No
     if not key_hash:
         return
     background_tasks.add_task(
-        _dev_api_service.increment_usage,
+        dev_api_service.increment_usage,
         key_hash,
     )
 
@@ -80,7 +80,7 @@ async def get_project_bundle(
     x_api_key: XApiKey = None,
 ) -> dict:
     raw_key = _extract_api_key(x_api_key)
-    key_doc = _dev_api_service.validate_key(raw_key)
+    key_doc = dev_api_service.validate_key(raw_key)
     project_id = _extract_key_project_id(key_doc)
     project, collections = await asyncio.gather(
         asyncio.to_thread(projects_service.get_by_id, project_id, True),
@@ -92,7 +92,7 @@ async def get_project_bundle(
 
     return {
         "project":project,
-        "collections": [collection for collection in collections],
+        "collections": collections,
     }
 
 
@@ -105,7 +105,7 @@ async def get_collection_bundle(
     x_api_key: XApiKey = None,
 ) -> dict:
     raw_key = _extract_api_key(x_api_key)
-    key_doc = _dev_api_service.validate_key(raw_key)
+    key_doc = dev_api_service.validate_key(raw_key)
     key_project_id = _extract_key_project_id(key_doc)
     if bool(collection_id) == bool(collection_slug):
         raise HTTPException(status_code=400, detail="Provide exactly one of: id or slug.")
@@ -134,7 +134,7 @@ async def get_collection_bundle(
 
     return {
         "collection": collection,
-        "papers": [(paper) for paper in papers],
+        "papers": papers,
     }
 
 
@@ -147,7 +147,7 @@ async def get_paper(
     x_api_key: XApiKey = None,
 ) -> dict:
     raw_key = _extract_api_key(x_api_key)
-    key_doc = _dev_api_service.validate_key(raw_key)
+    key_doc = dev_api_service.validate_key(raw_key)
     key_project_id = _extract_key_project_id(key_doc)
     paper = await asyncio.to_thread(_resolve_paper_for_project, key_project_id, paper_id, paper_slug)
     _add_usage_increment(background_tasks, key_doc)
@@ -165,7 +165,7 @@ def get_project_api_doc(
     user_id: CurrentUserIdDep,
 ) -> ApiKeySummary | None:
     require_owned_project(user_id, project_id)
-    return _dev_api_service.get_project_api_key(project_id, user_id)
+    return dev_api_service.get_project_api_key(project_id, user_id)
 
 
 @api_keys_router.post("/projects/{project_id}/api-key", response_model=ApiKeyCreateResponse, status_code=201)
@@ -174,20 +174,20 @@ def create_api_key(
     user_id: CurrentUserIdDep,
 ) -> ApiKeyCreateResponse:
     require_owned_project(user_id, project_id)
-    return _dev_api_service.create(user_id, project_id)
+    return dev_api_service.create(user_id, project_id)
 
 
 @api_keys_router.patch("/api-keys/{key_id}", response_model=ApiKeySummary)
 def toggle_api_key(key_id: str, payload: ApiKeyToggleRequest, user_id: CurrentUserIdDep) -> ApiKeySummary:
-    key_doc = _dev_api_service.get_by_id(key_id)
+    key_doc = dev_api_service.get_by_id(key_id)
     if key_doc.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
-    return _dev_api_service.toggle_active(key_id, payload.isActive)
+    return dev_api_service.toggle_active(key_id, payload.isActive)
 
 
 @api_keys_router.post("/api-keys/{key_id}/reset", response_model=ApiKeyCreateResponse)
 def reset_api_key(key_id: str, user_id: CurrentUserIdDep) -> ApiKeyCreateResponse:
-    key_doc = _dev_api_service.get_by_id(key_id)
+    key_doc = dev_api_service.get_by_id(key_id)
     if key_doc.get("ownerId") != user_id:
         raise HTTPException(status_code=403, detail="Not allowed.")
-    return _dev_api_service.reset(key_id)
+    return dev_api_service.reset(key_id)

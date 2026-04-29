@@ -8,20 +8,20 @@ _cache_prefix: str = "whitepapper"
 
 def _redis_kwargs(settings: Settings) -> dict:
     return {
-        "host": settings.valkey_host,
-        "port": settings.valkey_port,
-        "username": settings.valkey_user,
-        "password": settings.valkey_password,
+        "host": settings.redis_host,
+        "port": settings.redis_port,
+        "username": settings.redis_user,
+        "password": settings.redis_password,
         "ssl": True,
         "decode_responses": False,
     }
 
 
 def _build_redis_client(settings: Settings) -> Redis | None:
-    if settings.valkey_service_uri:
-        return Redis.from_url(settings.valkey_service_uri, decode_responses=False)
+    if settings.redis_service_uri:
+        return Redis.from_url(settings.redis_service_uri, decode_responses=False)
 
-    if not settings.valkey_host or not settings.valkey_port:
+    if not settings.redis_host or not settings.redis_port:
         return None
 
     return Redis(**_redis_kwargs(settings))

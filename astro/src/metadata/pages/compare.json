@@ -1,0 +1,28 @@
+{
+  "path": "/compare",
+  "title": "Compare | Whitepapper vs Alternatives",
+  "description": "Compare Whitepapper with Dev.to, Hashnode, Ghost and other content platforms. See why developers choose Whitepapper for publishing workflows.",
+  "canonical": "/compare",
+  "image": "/assets/ogImages/root.png",
+  "keywords": "whitepapper vs devto, whitepapper vs hashnode, whitepapper vs ghost, CMS comparison, developer blog platform",
+  "robots": "index, follow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Compare | Whitepapper vs Dev.to, Hashnode, Ghost",
+  "ogDescription": "Compare Whitepapper with Dev.to, Hashnode, Ghost and other content platforms.",
+  "ogUrl": "/compare",
+  "ogImage": "/assets/ogImages/root.png",
+  "ogImageAlt": "Whitepapper comparison page",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Compare | Whitepapper vs Alternatives",
+  "twitterDescription": "Compare Whitepapper with Dev.to, Hashnode, Ghost. See the difference.",
+  "twitterImage": "/assets/ogImages/root.png",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Comparison: Whitepapper vs Alternatives",
+    "description": "Feature comparison between Whitepapper and other content platforms."
+  }
+}

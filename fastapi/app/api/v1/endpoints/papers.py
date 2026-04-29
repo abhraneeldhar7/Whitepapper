@@ -120,8 +120,8 @@ def patch_paper(
     return updated
 
 
-@router.post("/papers/{paper_id}/metadata/generate", response_model=PaperMetadata)
-def generate_paper_metadata(
+@router.post("/papers/{paper_id}/metadata/preview", response_model=PaperMetadata)
+def preview_paper_metadata(
     paper_id: str,
     payload: PaperMetadataGenerateRequest,
     user_id: str = Depends(get_verified_id),
@@ -132,7 +132,7 @@ def generate_paper_metadata(
         raise HTTPException(status_code=403, detail="Not allowed.")
     if str(generated_payload.get("paperId") or "").strip() != paper_id:
         raise HTTPException(status_code=400, detail="paperId does not match the payload paper.")
-    return papers_service.generate_metadata_preview(generated_payload)
+    return papers_service.preview_metadata(generated_payload)
 
 
 @router.get("/papers/slug/available")

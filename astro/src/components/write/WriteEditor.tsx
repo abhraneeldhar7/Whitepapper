@@ -52,7 +52,8 @@ import {
   MAX_THUMBNAIL_WIDTH,
 } from "@/lib/constants";
 import type { PaperDoc, PaperMetadata, UserDoc } from "@/lib/entities";
-import { compressImage, copyToClipboard, deepEqual, downloadMarkdownFile, isImageFile } from "@/lib/utils";
+import { compressImage, copyToClipboard, deepEqual, downloadMarkdownFile, isImageFile, normalizeSlug } from "@/lib/utils";
+import { uploadImage } from "@/lib/useImageUpload";
 import { resolveIntegrationBaseUrl } from "@/lib/integrationBaseUrl";
 import click1Sound from "@/assets/sounds/click1.mp3";
 import click2Sound from "@/assets/sounds/click2.mp3";
@@ -89,14 +90,7 @@ function toApiStatus(value: UiStatus): PaperDoc["status"] {
 }
 
 function toReadableSlug(value: string): string {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return normalized || "untitled-paper";
+  return normalizeSlug(value) || "untitled-paper";
 }
 
 const metadataFieldConfig: Array<{ key: keyof PaperMetadata; type: "text" | "number" | "boolean" | "list" | "image" }> = [
@@ -444,40 +438,29 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
   }
 
   async function onThumbnailUpload(file: File) {
-    setUploadingThumb(true);
     let localPreview: string | null = null;
-    const uploadPromise = (async () => {
-      if (!isImageFile(file)) throw new Error('Only image files are allowed.');
-      const compressed = await compressImage({
-        file,
-        maxWidth: MAX_THUMBNAIL_WIDTH,
-        maxHeight: MAX_THUMBNAIL_HEIGHT,
-        crop: false,
-      });
-      const uploadableFile = compressed instanceof File ? compressed : file;
-      localPreview = URL.createObjectURL(uploadableFile);
-      setTempUploadingThumbnail(localPreview);
-      return uploadThumbnail(paperId, uploadableFile);
-    })();
-
-    toast.promise(uploadPromise, {
-      loading: "Uploading thumbnail...",
-      success: "Thumbnail uploaded.",
-      error: (error) => (error instanceof Error ? error.message : "Thumbnail upload failed."),
+    await uploadImage<{ url: string }>(file, {
+      compress: { maxWidth: MAX_THUMBNAIL_WIDTH, maxHeight: MAX_THUMBNAIL_HEIGHT, crop: false },
+      upload: (f) => uploadThumbnail(paperId, f),
+      onStart: () => setUploadingThumb(true),
+      onFinish: () => {
+        if (localPreview) URL.revokeObjectURL(localPreview);
+        setTempUploadingThumbnail(null);
+        setUploadingThumb(false);
+      },
+      toastMessages: {
+        loading: "Uploading thumbnail...",
+        success: "Thumbnail uploaded.",
+        error: (error) => (error instanceof Error ? error.message : "Thumbnail upload failed."),
+      },
+      onPrepare: (uploadableFile) => {
+        localPreview = URL.createObjectURL(uploadableFile);
+        setTempUploadingThumbnail(localPreview);
+      },
+      onSuccess: (uploaded) => {
+        setPaperDoc((prev) => ({ ...prev, thumbnailUrl: uploaded.url }));
+      },
     });
-
-    try {
-      const uploaded = await uploadPromise;
-      setPaperDoc((prev) => ({ ...prev, thumbnailUrl: uploaded.url }));
-    } catch {
-      // toast.promise handles failure UI.
-    } finally {
-      if (localPreview) {
-        URL.revokeObjectURL(localPreview);
-      }
-      setTempUploadingThumbnail(null);
-      setUploadingThumb(false);
-    }
   }
 
   async function onEditorImageUpload(file: File): Promise<{ success: boolean; url?: string; message?: string }> {
@@ -489,33 +472,22 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
       };
     }
 
-    setUploadingEmbeddedCount((prev) => prev + 1);
-    const uploadPromise = (async () => {
-      if (!isImageFile(file)) throw new Error('Only image files are allowed.');
-      const compressed = await compressImage({
-        file,
-        maxWidth: MAX_EMBEDDED_WIDTH,
-        maxHeight: MAX_EMBEDDED_HEIGHT,
-        crop: false,
-      });
-      const uploadableFile = compressed instanceof File ? compressed : file;
-      return uploadEmbeddedImage(paperId, uploadableFile);
-    })();
-
-    toast.promise(uploadPromise, {
-      loading: "Uploading embedded image...",
-      success: "Embedded image uploaded.",
-      error: (error) => (error instanceof Error ? error.message : "Embedded image upload failed."),
+    const result = await uploadImage<{ url: string }>(file, {
+      compress: { maxWidth: MAX_EMBEDDED_WIDTH, maxHeight: MAX_EMBEDDED_HEIGHT, crop: false },
+      upload: (f) => uploadEmbeddedImage(paperId, f),
+      onStart: () => setUploadingEmbeddedCount((prev) => prev + 1),
+      onFinish: () => setUploadingEmbeddedCount((prev) => Math.max(0, prev - 1)),
+      toastMessages: {
+        loading: "Uploading embedded image...",
+        success: "Embedded image uploaded.",
+        error: (error) => (error instanceof Error ? error.message : "Embedded image upload failed."),
+      },
     });
 
-    try {
-      const uploaded = await uploadPromise;
-      return { success: true, url: uploaded.url };
-    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : "Upload failed." };
-    } finally {
-      setUploadingEmbeddedCount((prev) => Math.max(0, prev - 1));
+    if (result) {
+      return { success: true, url: result.url };
     }
+    return { success: false, message: "Upload failed." };
   }
 
   const hasThumbPreview = Boolean(tempUploadingThumbnail || pageDetails.thumbnailUrl);

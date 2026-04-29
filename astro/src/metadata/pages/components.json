@@ -1,0 +1,24 @@
+{
+  "path": "/components",
+  "title": "Components | Whitepapper",
+  "description": "Reusable frontend components from Whitepapper: markdown renderer, table of contents, and UI elements for your content API projects.",
+  "canonical": "/components",
+  "image": "/assets/ogImages/root.png",
+  "keywords": "whitepapper components, markdown renderer, table of contents, frontend components, npm",
+  "robots": "index, follow",
+  "ogType": "website",
+  "ogTitle": "Components | Whitepapper",
+  "ogDescription": "Reusable frontend components from Whitepapper for your content projects.",
+  "ogUrl": "/components",
+  "ogImage": "/assets/ogImages/root.png",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Components | Whitepapper",
+  "twitterDescription": "Frontend components from Whitepapper: markdown, TOC, UI elements.",
+  "twitterImage": "/assets/ogImages/root.png",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Components",
+    "description": "Reusable frontend UI components by Whitepapper."
+  }
+}

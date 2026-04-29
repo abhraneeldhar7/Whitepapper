@@ -17,6 +17,10 @@ const PRIVATE_PATHS = [
   "/sso-callback/",
   "/unauthorized",
   "/unauthorized/",
+  "/mcp/connect",
+  "/mcp/connect/",
+  "/welcome",
+  "/welcome/",
 ];
 
 export const GET: APIRoute = ({ site, url }) => {
@@ -25,22 +29,6 @@ export const GET: APIRoute = ({ site, url }) => {
   const disallowLines = PRIVATE_PATHS.map((path) => `Disallow: ${path}`).join("\n");
 
   const body = `User-agent: *
-Allow: /
-${disallowLines}
-
-User-agent: GPTBot
-Allow: /
-${disallowLines}
-
-User-agent: ClaudeBot
-Allow: /
-${disallowLines}
-
-User-agent: PerplexityBot
-Allow: /
-${disallowLines}
-
-User-agent: Google-Extended
 Allow: /
 ${disallowLines}
 

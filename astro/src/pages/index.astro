@@ -46,48 +46,24 @@ Astro.response.headers.set(
 
 const featuresDivs = [
 	{
-		icon: ZapIcon,
-		title: "Fast",
-		description:
-			"Cached at edge using Cloudflare CDN for global fast access.",
+		icon: BotIcon,
+		title: "MCP ready",
+		description: "Let your agents automate content writing.",
 	},
 	{
 		icon: WorkflowIcon,
 		title: "Distribution",
-		description:
-			"One-click distribution to Dev.to, Hashnode, and Medium, Linkedin",
+		description: "Write once, distribute everywhere.",
+	},
+	{
+		icon: UnplugIcon,
+		title: "Dev API",
+		description: "Zero configuration API to power your websites.",
 	},
 	{
 		icon: SearchCheckIcon,
 		title: "SEO",
-		description:
-			"Automated SEO emtatags and JSON-LD generation for every paper.",
-	},
-	{
-		icon: UnplugIcon,
-		title: "Content API",
-		description: "Zero configuration API to power your websites",
-	},
-	{
-		icon: SquareMIcon,
-		title: "WYSIWYG Editor",
-		description: "Rich markdown editor with in-built SEO handling.",
-	},
-	{
-		icon: BotIcon,
-		title: "MCP ready",
-		description: "Make your agents write SEO rich structured content.",
-	},
-	{
-		icon: GithubIcon,
-		title: "Open Source",
-		description: "Fully open source on GitHub with a self hosting guide",
-	},
-	{
-		icon: BookMarkedIcon,
-		title: "Learn",
-		description:
-			"Read how whitepapper pushes your content above other platforms",
+		description: "Automated SEO tags and JSON-LD generation.",
 	},
 ];
 
@@ -104,7 +80,7 @@ import vscode_mcp from "@/assets/landingPage/vscode_mcp.png";
 import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 ---
 
-<Layout reserveNavSpace={false}>
+<Layout>
 	<main
 		class="relative font-[Satoshi] font-[420]"
 		aria-label="Whitepapper home"
@@ -114,7 +90,7 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 			aria-labelledby="home-hero-title"
 		>
 			<div
-				class="pt-45 pb-20 md:pb-30 relative mx-auto w-full"
+				class="pt-45 pb-15 relative mx-auto w-full"
 				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
 			>
 				<HeroFloatingIcon
@@ -219,64 +195,122 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 			</div>
 		</section>
 
-		<!-- <div
-			class="w-full text-[15px] text-center bg-foreground text-background px-4 py-3 sticky top-[50px] z-[5]"
-		>
-			Whitepapper is <a
-				class="underline"
-				href="https://github.com/abhraneeldhar7/Whitepapper"
-				target="_blank">open-sourced</a
-			> for my schizo folks
-		</div> -->
-
-		<section
-			class="px-5 md:px-15 mt-20 md:mt-30"
-			aria-label="Rich text editor"
-		>
+		<div class="px-5 md:px-15 my-10">
 			<div
-				class="mx-auto w-full"
+				class="grid md:grid-cols-4 grid-cols-2 justify-between mx-auto w-full gap-6 md:gap-10"
+				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+			>
+				{
+					featuresDivs.map((item) => (
+						<div class="flex flex-col gap-2">
+							<div class="flex gap-3 items-center">
+								<item.icon size={18} />
+								<p class="text-[18px]">{item.title}</p>
+							</div>
+							<p class="text-muted-foreground text-[15px]">
+								{item.description}
+							</p>
+						</div>
+					))
+				}
+			</div>
+		</div>
+
+		<section class="mt-15 md:mt-25 px-5 md:px-15" aria-label="MCP server">
+			<div
+				class="w-full mx-auto"
 				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
 			>
 				<div
-					class="flex md:flex-row flex-col gap-1 justify-between items-start"
+					class="gap-7 md:gap-15 w-full relative overflow-hidden grid md:grid-cols-2 grid-cols-1"
 				>
-					<h2 class="md:flex-1 text-[34px] md:text-[40px] font-[500]">
-						Rich content editor
-					</h2>
-					<div
-						class="md:flex-1 md:text-[19px] md:mt-3 md:text-right flex flex-col items-end gap-2"
-					>
-						<p class="text-muted-foreground">
-							With a built-in wysiwyg editor, you can write and
-							format your content without <a class="underline"
-								>leaving</a
-							> the platform. Focus on your words, not on markdown syntax
-							or external tools.
+					<div class="md:flex-1 flex flex-col h-full">
+						<h2 class="text-[34px] md:text-[40px] font-[500]">
+							Whitepapper MCP
+						</h2>
+						<p
+							class="mt-1 md:text-[19px] text-muted-foreground max-w-[400px]"
+						>
+							Connect whitepapper to agents and automate content
+							writing for your projects
 						</p>
-						<a class="flex items-center gap-2"
-							>link stuff <ArrowRight className="size-4" />
-						</a>
+
+						<div
+							class="mt-10 relative overflow-hidden w-full h-[260px] md:h-full"
+						>
+							<div
+								class="bg-gradient-to-b h-[120px] w-full absolute top-[-1px] left-0 from-background from-0% to-transparent to-100% z-3"
+							>
+							</div>
+							<div
+								class="border-[3px] border-[#fafafa]/30 border-t-0 rounded-b-[50px] overflow-hidden px-[10px] pb-[30px] bg-[#050505] h-full"
+							>
+								<div
+									class="relative rounded-b-[45px] overflow-hidden h-full"
+								>
+									<img
+										src={chatgpt_mobile.src}
+										class="h-full absolute w-full bottom-0 left-0 right-0 object-bottom object-cover"
+										loading="lazy"
+									/>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div
+						class="md:flex-1 overflow-hidden relative rounded-[20px] md:rounded-[30px]"
+					>
+						<img
+							src={BlueBgPattern.src}
+							class="absolute z-[-1] top-0 left-0 h-full w-full"
+							loading="lazy"
+						/>
+						<img
+							src={vscode_mcp.src}
+							class="translate-y-5 -translate-x-5 md:translate-y-15 md:-translate-x-15 rounded-[10px]"
+							loading="lazy"
+						/>
 					</div>
 				</div>
 
-				<div
-					class="heroText mt-8 md:mt-15 relative p-4 md:p-14 overflow-hidden md:rounded-[30px] rounded-[20px] h-full"
-					style="animation-delay: 0.3s; animation-duration: 0.8s;"
-				>
-					<Image
-						src={BlueBgPattern}
-						alt="Green pattern background"
-						class="absolute object-cover left-0 top-0 z-[-1] h-full w-full"
-						loading="eager"
-						quality={60}
-					/>
-					<Image
-						src={HeroDashboardLight}
-						alt="Whitepapper dashboard preview"
-						class="h-full rounded-[10px] w-full"
-						loading="eager"
-						fetchpriority="high"
-					/>
+				<div class="flex flex-col gap-5 mt-8 md:mt-15">
+					<div
+						class="flex md:flex-row flex-col-reverse gap-4 md:gap-10 border-b pb-5"
+					>
+						<p class="w-[200px] font-[500] text-[15px] md:pt-1">
+							4 min read
+						</p>
+						<div>
+							<h3 class="text-[20px]">
+								Lorem, ipsum dolor adipisicing elit. Aliquam,
+								ex.
+							</h3>
+							<p class="text-[15px] text-muted-foreground mt-2">
+								Lorem ipsum dolor sit, amet consectetur
+								adipisicing elit. Tempore omnis veritatis ipsum
+								maiores.
+							</p>
+						</div>
+					</div>
+					<div
+						class="flex md:flex-row flex-col-reverse gap-4 md:gap-10"
+					>
+						<p class="w-[200px] font-[500] text-[15px] md:pt-1">
+							4 min read
+						</p>
+						<div>
+							<h3 class="text-[20px]">
+								Lorem, ipsum dolor adipisicing elit. Aliquam,
+								ex.
+							</h3>
+							<p class="text-[15px] text-muted-foreground mt-2">
+								Lorem ipsum dolor sit, amet consectetur
+								adipisicing elit. Tempore omnis veritatis ipsum
+								maiores.
+							</p>
+						</div>
+					</div>
 				</div>
 			</div>
 		</section>
@@ -419,27 +453,6 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 			</div>
 		</section>
 
-		<!-- <div class="px-5 md:px-15">
-		<div
-			class="md:mt-12 md:mb-27 mt-4 mb-17 grid grid-cols-2 md:flex w-full mx-auto gap-3 md:justify-between"
-			style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
-		>
-			{
-				featuresDivs.slice(0, 4).map((item) => (
-					<div class="flex flex-col flex-1 gap-2 p-3 transition-all duration-300 hover:bg-card">
-						<div class="flex items-center gap-3">
-							<item.icon size={19} />
-							<h2 class="text-[17px] font-[450]">{item.title}</h2>
-						</div>
-						<p class="text-sm text-foreground">
-							{item.description}
-						</p>
-					</div>
-				))
-			}
-		</div>
-	</div> -->
-
 		<section
 			class="mt-10 mx-auto flex w-full flex-col px-5 md:px-15"
 			aria-label="Product highlights"
@@ -464,22 +477,27 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 					<img
 						src="/appLogo.png"
 						class="object-contain h-[14px] w-[14px] md:h-[20px] md:w-[20px] z-[2] absolute top-[6%] left-[10%]"
+						loading="lazy"
 					/>
 					<img
 						src="/appLogo.png"
 						class="object-contain h-[14px] w-[14px] md:h-[20px] md:w-[20px] z-[2] absolute top-[32%] left-[25%]"
+						loading="lazy"
 					/>
 					<img
 						src="/appLogo.png"
 						class="object-contain h-[14px] w-[14px] md:h-[20px] md:w-[20px] z-[2] absolute top-[12%] right-[14%]"
+						loading="lazy"
 					/>
 					<img
 						src="/appLogo.png"
 						class="object-contain h-[14px] w-[14px] md:h-[20px] md:w-[20px] z-[2] absolute top-[20%] right-[30%]"
+						loading="lazy"
 					/>
 					<img
 						src="/appLogo.png"
 						class="object-contain h-[14px] w-[14px] md:h-[20px] md:w-[20px] z-[2] absolute top-[45%] right-[28%]"
+						loading="lazy"
 					/>
 					<img
 						src={worldmapDots.src}
@@ -488,102 +506,6 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 					<div
 						class="bg-gradient-to-t md:h-[50%] h-[70%] w-full absolute bottom-0 left-0 from-background from-20% md:from-40% to-transparent to-100% z-3"
 					>
-					</div>
-				</div>
-			</div>
-		</section>
-
-		<section class="mt-15 md:mt-25 px-5 md:px-15" aria-label="MCP server">
-			<div
-				class="w-full mx-auto"
-				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
-			>
-				<div
-					class="gap-7 md:gap-15 w-full relative overflow-hidden grid md:grid-cols-2 grid-cols-1"
-				>
-					<div class="md:flex-1 flex flex-col h-full">
-						<h2 class="text-[34px] md:text-[40px] font-[500]">
-							Whitepapper MCP
-						</h2>
-						<p
-							class="mt-1 md:text-[19px] text-muted-foreground max-w-[400px]"
-						>
-							Connect whitepapper to agents and automate content
-							writing for your projects
-						</p>
-
-						<div
-							class="mt-10 relative overflow-hidden w-full h-[260px] md:h-full"
-						>
-							<div
-								class="bg-gradient-to-b h-[120px] w-full absolute top-[-1px] left-0 from-background from-0% to-transparent to-100% z-3"
-							>
-							</div>
-							<div
-								class="border-[3px] border-[#fafafa]/30 border-t-0 rounded-b-[50px] overflow-hidden px-[10px] pb-[30px] bg-[#050505] h-full"
-							>
-								<div
-									class="relative rounded-b-[45px] overflow-hidden h-full"
-								>
-									<img
-										src={chatgpt_mobile.src}
-										class="h-full absolute w-full bottom-0 left-0 right-0 object-bottom object-cover"
-									/>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<div
-						class="md:flex-1 overflow-hidden relative rounded-[20px] md:rounded-[30px]"
-					>
-						<img
-							src={BlueBgPattern.src}
-							class="absolute z-[-1] top-0 left-0 h-full w-full"
-						/>
-						<img
-							src={vscode_mcp.src}
-							class="translate-y-5 -translate-x-5 md:translate-y-15 md:-translate-x-15 rounded-[10px]"
-						/>
-					</div>
-				</div>
-
-				<div class="flex flex-col gap-5 mt-8 md:mt-15">
-					<div
-						class="flex md:flex-row flex-col-reverse gap-4 md:gap-10 border-b pb-5"
-					>
-						<p class="w-[200px] font-[500] text-[15px] md:pt-1">
-							4 min read
-						</p>
-						<div>
-							<h3 class="text-[20px]">
-								Lorem, ipsum dolor adipisicing elit. Aliquam,
-								ex.
-							</h3>
-							<p class="text-[15px] text-muted-foreground mt-2">
-								Lorem ipsum dolor sit, amet consectetur
-								adipisicing elit. Tempore omnis veritatis ipsum
-								maiores.
-							</p>
-						</div>
-					</div>
-					<div
-						class="flex md:flex-row flex-col-reverse gap-4 md:gap-10"
-					>
-						<p class="w-[200px] font-[500] text-[15px] md:pt-1">
-							4 min read
-						</p>
-						<div>
-							<h3 class="text-[20px]">
-								Lorem, ipsum dolor adipisicing elit. Aliquam,
-								ex.
-							</h3>
-							<p class="text-[15px] text-muted-foreground mt-2">
-								Lorem ipsum dolor sit, amet consectetur
-								adipisicing elit. Tempore omnis veritatis ipsum
-								maiores.
-							</p>
-						</div>
 					</div>
 				</div>
 			</div>
@@ -639,6 +561,7 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 									<img
 										src="/appLogo.png"
 										class="h-[22px] w-[22px] absolute bottom-3 right-3 z-2"
+										loading="lazy"
 									/>
 								</div>
 							</div>
@@ -659,13 +582,13 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 
 					<div class="md:flex-1 flex md:gap-10">
 						<a
-							href="https://www.npmjs.com/package/whitepapper"
-							target="_blank"
+							href="/components"
 							class="flex items-center justify-start flex-col w-full md:max-w-[300px] mx-auto"
 						>
 							<img
 								src={npmLogo.src}
 								class="mb-14 h-[100px] w-[100px]"
+								loading="lazy"
 							/>
 							<p
 								class="text-center max-w-[250px] text-center mx-auto"
@@ -679,25 +602,45 @@ import chatgpt_mobile from "@/assets/landingPage/chatgpt_mobile.jpeg";
 						<div
 							class="hidden md:flex flex-1 font-[500] flex-col gap-4"
 						>
-							<Button className="w-fit" variant="ghost"
-								>Markdown renderer</Button
+							<a
+								href="/components/markdown"
+								data-astro-prefetch="viewport"
+							>
+								<Button className="w-fit" variant="ghost"
+									>Markdown renderer</Button
+								>
+							</a>
+							<a href="/components/lines-toc" data-astro-prefetch="viewport">
+								<Button className="w-fit" variant="ghost"
+								>Lines table of content</Button
+								>
+							</a>
+							<a
+							href="/components/mobile-toc"
+							data-astro-prefetch="viewport"
 							>
 							<Button className="w-fit" variant="ghost"
-								>Markdown renderer</Button
+							>Mobile table of content</Button
 							>
+						</a>
+						<a
+							href="/components/linear-toc"
+							data-astro-prefetch="viewport"
+						>
 							<Button className="w-fit" variant="ghost"
-								>Markdown renderer</Button
+								>Linear style table of content</Button
 							>
-							<Button className="w-fit" variant="ghost"
-								>Markdown renderer</Button
-							>
+						</a>
 						</div>
 					</div>
 				</div>
 			</div>
 		</section>
 
-		<section class="mx-auto mt-30 md:mt-60 px-5 md:px-15" aria-label="FAQs">
+		<section
+			class="mx-auto flex justify-center mt-30 md:mt-60 px-5 md:px-15"
+			aria-label="FAQs"
+		>
 			<div
 				class="w-full"
 				style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}

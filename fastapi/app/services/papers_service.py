@@ -1,4 +1,3 @@
-import re
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
@@ -17,6 +16,7 @@ from app.services.projects_service import projects_service
 from app.services.slug_utils import normalize_slug
 from app.services.storage_service import storage_service
 from app.utils.cache import add_cache_buster
+from app.utils.content import HTML_IMAGE_PATTERN, MARKDOWN_IMAGE_PATTERN
 from app.utils.datetime import utc_now
 from app.utils.pagination import apply_order_by, paginate_items
 
@@ -30,8 +30,6 @@ PAPER_STATUS_KEY = "status"
 PAPER_STATUS_PUBLISHED = "published"
 SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
 METADATA_IMAGE_FIELDS = ("ogImage", "twitterImage", "coverImageUrl")
-MARKDOWN_IMAGE_PATTERN = re.compile(r"!\[[^\]]*]\(([^)\s]+)", re.IGNORECASE)
-HTML_IMAGE_PATTERN = re.compile(r"<img[^>]+src=[\"']([^\"']+)[\"']", re.IGNORECASE)
 class PapersService:
 
     @staticmethod
@@ -108,32 +106,13 @@ class PapersService:
             project_doc=self._resolve_project_doc(paper_doc.get(PAPER_PROJECT_KEY)),
         )
 
-    def invalidate_paper(
-        self,
-        paper_id: str,
-        owner_username: str | None = None,
-        slug: str | None = None,
-        project_id: str | None = None,
-    ) -> None:
-        return None
-
     def _refresh_collection_pages_number(self, collection_id: str) -> None:
-        from app.services.collections_service import collections_service
-
         papers = self.list_by_collection_id(collection_id)
         now = utc_now()
         firestore_store.update(
             "collections",
             collection_id,
             {"pagesNumber": len(papers), "updatedAt": now},
-        )
-        collection = firestore_store.get("collections", collection_id)
-        if not collection:
-            return
-        collections_service.invalidate_collection(
-            collection_id=collection_id,
-            project_id=collection.get("projectId"),
-            slug=collection.get("slug"),
         )
 
     def _refresh_project_pages_number(self, project_id: str) -> None:
@@ -504,7 +483,7 @@ class PapersService:
 
         return {"paperId": paper_id, "projectId": resolved_project_id}
 
-    def update(self, paper_id: str, payload: dict, *, force_metadata_refresh: bool = False) -> dict:
+    def update(self, paper_id: str, payload: dict) -> dict:
         current = firestore_store.get(PAPERS_COLLECTION, paper_id)
         if not current:
             raise HTTPException(status_code=404, detail="Paper not found.")
@@ -525,37 +504,16 @@ class PapersService:
                 raise HTTPException(status_code=409, detail="Paper slug already exists.")
             payload["slug"] = new_slug
 
-        if not payload and not force_metadata_refresh:
+        if not payload:
             return current
 
-        previous_slug = current.get(PAPER_SLUG_KEY)
-        previous_project_id = current.get(PAPER_PROJECT_KEY)
-        owner_username = None
-        owner_id = current.get(PAPER_OWNER_KEY)
-        if previous_slug and owner_id:
-            from app.services.user_service import user_service
-
-            try:
-                owner_username = user_service.get_by_id(owner_id).get("username")
-            except HTTPException:
-                owner_username = None
         payload["updatedAt"] = utc_now()
-        merged_doc = {**current, **payload}
-
-        if force_metadata_refresh:
-            payload["metadata"] = self._build_metadata(merged_doc)
 
         firestore_store.update(PAPERS_COLLECTION, paper_id, payload)
         current.update(payload)
-        self.invalidate_paper(
-            paper_id=paper_id,
-            owner_username=owner_username,
-            slug=previous_slug,
-            project_id=previous_project_id,
-        )
         return current
 
-    def generate_metadata_preview(self, paper_doc: dict) -> dict:
+    def preview_metadata(self, paper_doc: dict) -> dict:
         preview_payload = dict(paper_doc)
         if preview_payload.get("slug"):
             preview_payload["slug"] = normalize_slug(preview_payload["slug"])
@@ -689,20 +647,6 @@ class PapersService:
         if owner_id:
             deleted_storage_objects = self.delete_paper_assets(owner_id, paper_id)
         firestore_store.delete(PAPERS_COLLECTION, paper_id)
-        owner_username = None
-        if owner_id:
-            from app.services.user_service import user_service
-
-            try:
-                owner_username = user_service.get_by_id(owner_id).get("username")
-            except HTTPException:
-                owner_username = None
-        self.invalidate_paper(
-            paper_id=paper_id,
-            owner_username=owner_username,
-            slug=current.get(PAPER_SLUG_KEY),
-            project_id=current.get(PAPER_PROJECT_KEY),
-        )
 
         if collection_id:
             self._refresh_collection_pages_number(collection_id)

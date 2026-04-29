@@ -21,9 +21,6 @@ COLLECTION_SLUG_KEY = "slug"
 COLLECTION_PUBLIC_KEY = "isPublic"
 class CollectionsService:
 
-    def invalidate_collection(self, collection_id: str, project_id: str | None = None, slug: str | None = None) -> None:
-        return None
-
     def _unique_slug(self, project_id: str, source: str, exclude_collection_id: str | None = None) -> str:
         base = normalize_slug(source) or "collection"
         project_collections = self.list_project_collections(project_id)
@@ -65,18 +62,12 @@ class CollectionsService:
         if bool(current.get("isPublic", False)) == target_visibility:
             return current
 
-        previous_slug = current.get(COLLECTION_SLUG_KEY)
         visibility_patch = {
             "isPublic": target_visibility,
             "updatedAt": utc_now(),
         }
         firestore_store.update(COLLECTIONS_COLLECTION, collection_id, visibility_patch)
         current.update(visibility_patch)
-        self.invalidate_collection(
-            collection_id=collection_id,
-            project_id=current.get(COLLECTION_PROJECT_KEY),
-            slug=previous_slug,
-        )
         return current
 
     @staticmethod
@@ -191,15 +182,9 @@ class CollectionsService:
         if not payload:
             return current
 
-        previous_slug = current.get(COLLECTION_SLUG_KEY)
         payload["updatedAt"] = utc_now()
         firestore_store.update(COLLECTIONS_COLLECTION, collection_id, payload)
         current.update(payload)
-        self.invalidate_collection(
-            collection_id=collection_id,
-            project_id=current.get(COLLECTION_PROJECT_KEY),
-            slug=previous_slug,
-        )
         return current
 
     def set_visibility(self, collection_id: str, is_public: bool, *, background: bool = True) -> dict:
@@ -235,11 +220,6 @@ class CollectionsService:
             deleted_counts["storageObjects"] += result.get("storageObjects", 0)
 
         firestore_store.delete(COLLECTIONS_COLLECTION, collection_id)
-        self.invalidate_collection(
-            collection_id=collection_id,
-            project_id=current.get(COLLECTION_PROJECT_KEY),
-            slug=current.get(COLLECTION_SLUG_KEY),
-        )
         deleted_counts["collections"] = 1
         return deleted_counts
 
@@ -275,6 +255,5 @@ class CollectionsService:
             if str(item.get(COLLECTION_SLUG_KEY) or "").strip() == candidate
         ]
         return all(item.get(COLLECTION_ID_KEY) == collection_id for item in matches)
-
 
 collections_service = CollectionsService()

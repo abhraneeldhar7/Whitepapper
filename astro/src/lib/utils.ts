@@ -178,6 +178,16 @@ export function downloadMarkdownFile(content: string, slug?: string): void {
 
 
 
+export function normalizeSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export async function compressImage({ file, maxWidth, maxHeight, crop = false }: {
   file: File | Blob,
   maxWidth?: number,

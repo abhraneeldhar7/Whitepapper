@@ -1,4 +1,4 @@
-export function resolveSiteUrl(candidate: string | undefined | null, fallbackOrigin: string): string {
+export function resolveSiteUrl(candidate: string | undefined | null, fallbackOrigin = ""): string {
   const resolved = String(candidate || fallbackOrigin).trim().replace(/\/+$/, "");
   return resolved || fallbackOrigin.replace(/\/+$/, "");
 }
@@ -65,7 +65,8 @@ export function isAbsoluteUrl(value: string | undefined | null): boolean {
   return /^https?:\/\//i.test(String(value || "").trim());
 }
 
-export function resolvePathname(candidate: string | undefined | null, siteUrl = "https://whitepapper.local"): string {
+export function resolvePathname(candidate: string | undefined | null, siteUrl = ""): string {
+  if (!siteUrl) return String(candidate || "").replace(/\/+$/, "") || "/";
   const value = String(candidate || "").trim();
   if (!value) return "";
   try {
@@ -101,7 +102,7 @@ type ResolvePreferredPaperPathOptions = {
 
 export function resolvePreferredPaperPath(options: ResolvePreferredPaperPathOptions): string {
   const slug = String(options.slug || "").trim().toLowerCase();
-  const siteUrl = resolveSiteUrl(options.siteUrl, "https://whitepapper.local");
+  const siteUrl = resolveSiteUrl(options.siteUrl);
   const canonical = String(options.canonical || "").trim();
   const canonicalPath = resolvePathname(canonical, siteUrl);
   const normalizedAuthorHandle = normalizeHandle(options.authorHandle);

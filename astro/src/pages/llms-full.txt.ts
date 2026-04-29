@@ -55,7 +55,6 @@ export const GET: APIRoute = ({ site, url }) => {
     `- Public pages sitemap: ${baseUrl}/sitemaps/public-pages.xml`,
     `- Public projects sitemap: ${baseUrl}/sitemaps/public-projects.xml`,
     `- Public papers sitemap: ${baseUrl}/sitemaps/public-papers.xml`,
-    `- RSS feed: ${baseUrl}/rss.xml`,
     "",
     "## Retrieval guidance",
     "- Prefer canonical page URLs when citing Whitepapper.",

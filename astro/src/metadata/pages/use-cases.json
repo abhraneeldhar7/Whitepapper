@@ -1,0 +1,25 @@
+{
+  "path": "/use-cases",
+  "title": "Use Cases | Whitepapper",
+  "description": "Discover Whitepapper use cases: developer blog, documentation site, portfolio content API, and multi-platform content distribution.",
+  "canonical": "/use-cases",
+  "image": "/assets/ogImages/root.png",
+  "keywords": "whitepapper use cases, developer blog, documentation site, content API portfolio",
+  "robots": "index, follow",
+  "ogType": "website",
+  "ogTitle": "Use Cases | Whitepapper",
+  "ogDescription": "Discover how developers use Whitepapper for blogs, docs, portfolios, and distribution.",
+  "ogUrl": "/use-cases",
+  "ogImage": "/assets/ogImages/root.png",
+  "ogImageAlt": "Whitepapper use cases",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Use Cases | Whitepapper",
+  "twitterDescription": "Developer use cases for Whitepapper: blogs, docs, API, distribution.",
+  "twitterImage": "/assets/ogImages/root.png",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Use Cases",
+    "description": "Developer publishing use cases for Whitepapper."
+  }
+}

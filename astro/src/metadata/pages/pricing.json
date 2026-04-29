@@ -1,0 +1,24 @@
+{
+  "path": "/pricing",
+  "title": "Pricing | Whitepapper",
+  "description": "Whitepapper pricing plans for solo developers and teams. Free tier available with optional pro features for advanced publishing workflows.",
+  "canonical": "/pricing",
+  "image": "/assets/ogImages/root.png",
+  "keywords": "whitepapper pricing, developer CMS pricing, free CMS, pro plan",
+  "robots": "index, follow",
+  "ogType": "website",
+  "ogTitle": "Pricing | Whitepapper",
+  "ogDescription": "Whitepapper pricing — free tier for solo devs, pro for teams.",
+  "ogUrl": "/pricing",
+  "ogImage": "/assets/ogImages/root.png",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Pricing | Whitepapper",
+  "twitterDescription": "Whitepapper pricing plans. Start free, upgrade when you need more.",
+  "twitterImage": "/assets/ogImages/root.png",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Pricing",
+    "description": "Whitepapper pricing and subscription plans."
+  }
+}

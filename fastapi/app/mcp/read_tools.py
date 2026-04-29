@@ -350,7 +350,10 @@ def register_read_tools(server: FastMCP) -> None:
     @server.tool(
         description=(
             "Cost: medium. Use when: you need the exact current paper, usually before editing. "
-            "Set includeBody=false if you only need metadata or routing fields."
+            "IMPORTANT: The paper title is rendered as an <h1> on the public page by the framework — "
+            "do NOT add another <h1> inside the body content. The thumbnail and title/heading are "
+            "displayed outside the content body area. Set includeBody=false if you only need "
+            "metadata or routing fields."
         ),
         annotations=READ_ONLY,
     )
@@ -368,6 +371,8 @@ def register_read_tools(server: FastMCP) -> None:
     @server.tool(
         description=(
             "Cost: medium. Use when: you know the paper slug but not paperId. "
+            "IMPORTANT: paper title is rendered as <h1> on the public page — do NOT add another <h1> in body. "
+            "Thumbnail and heading are outside the content body. "
             "Pass projectId when the slug should resolve inside a specific project."
         ),
         annotations=READ_ONLY,
@@ -393,7 +398,8 @@ def register_read_tools(server: FastMCP) -> None:
     @server.tool(
         description=(
             "Cost: cheap to medium. Use when: you already have multiple exact paper IDs and want one batch read "
-            "instead of calling get_paper_by_id repeatedly."
+            "instead of calling get_paper_by_id repeatedly. "
+            "Note: paper title is rendered as <h1> on the public page by the framework (outside body)."
         ),
         annotations=READ_ONLY,
     )

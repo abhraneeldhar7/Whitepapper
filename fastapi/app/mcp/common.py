@@ -13,6 +13,7 @@ from app.services.collections_service import collections_service
 from app.services.mcp_auth import mcp_authorization_service
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
+from app.utils.pagination import normalize_limit as _pagination_normalize_limit
 
 READ_ONLY = ToolAnnotations(readOnlyHint=True)
 
@@ -77,7 +78,7 @@ def tool_guard(handler: Callable[..., Any]) -> Callable[..., Any]:
 
 def normalize_limit(limit: int) -> int:
     try:
-        return max(1, min(int(limit or 25), 100))
+        return _pagination_normalize_limit(limit)
     except Exception as exc:
         raise mcp_http_error(400, "VALIDATION_ERROR", "limit must be an integer between 1 and 100.") from exc
 

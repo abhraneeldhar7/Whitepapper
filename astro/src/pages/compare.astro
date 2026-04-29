@@ -10,10 +10,14 @@ type SiteCollectionResponse = {
 const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
   .trim()
   .replace(/\/+$/, "");
-const whitepapperApiKey = String(import.meta.env.WHITEPAPPER_API_KEY ?? "").trim();
+const whitepapperApiKey = String(
+  import.meta.env.WHITEPAPPER_API_KEY ?? "",
+).trim();
 
 if (!apiBaseUrl || !whitepapperApiKey) {
-  throw new Error("PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.");
+  throw new Error(
+    "PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.",
+  );
 }
 
 const response = await fetch(
@@ -45,8 +49,9 @@ Astro.response.headers.set(
     <SiteContentListingPage
       pageTitle="compare"
       primaryTitle="Compare"
+      backHref="/"
+      backLabel="Home"
       primaryPapers={comparePages.papers}
     />
   </main>
 </Layout>
-

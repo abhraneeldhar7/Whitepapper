@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import HTTPException
 from pydantic import BaseModel
@@ -143,3 +143,9 @@ def resolve_distribution_context(user_id: str, input_payload: DistributionPublis
     if not username:
         raise HTTPException(status_code=400, detail="User handle is missing.")
     return paper_doc, title, body, slug, metadata, username
+
+
+class DistributionPublishResult(BaseModel):
+    platform: Literal["hashnode", "devto"]
+    postId: str
+    url: str | None = None

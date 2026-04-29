@@ -47,9 +47,10 @@ function escapeXml(value: string): string {
 
 export const GET: APIRoute = ({ site, url }) => {
   const baseUrl = (site?.toString() || url.origin).replace(/\/+$/, "");
+  const lastmod = "2026-04-29";
   const urlEntries = PUBLIC_STATIC_PATHS.map((path) => {
     const absolute = `${baseUrl}${path === "/" ? "" : path}`;
-    return `<url><loc>${escapeXml(absolute)}</loc></url>`;
+    return `<url><loc>${escapeXml(absolute)}</loc><lastmod>${escapeXml(lastmod)}</lastmod></url>`;
   }).join("\n");
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

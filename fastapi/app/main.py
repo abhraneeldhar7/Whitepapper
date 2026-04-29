@@ -2,7 +2,6 @@ import logging
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings, parse_csv
@@ -40,38 +39,16 @@ app.add_middleware(
 app.add_middleware(McpBearerAuthMiddleware)
 
 
-async def _dispatch_exact_mcp_root(request: Request) -> Response:
-    response_status = 500
-    response_headers: list[tuple[bytes, bytes]] = []
-    response_body = bytearray()
-
-    async def receive():
-        return await request.receive()
-
-    async def send(message):
-        nonlocal response_status, response_headers
-        if message["type"] == "http.response.start":
-            response_status = int(message["status"])
-            response_headers = list(message.get("headers", []))
-            return
-
-        if message["type"] == "http.response.body":
-            response_body.extend(message.get("body", b""))
-
-    scope = dict(request.scope)
-    root_path = str(scope.get("root_path") or "")
-    scope["root_path"] = f"{root_path}{MCP_HTTP_PREFIX}"
-    scope["path"] = "/"
-    scope["raw_path"] = b"/"
-
-    await mcp_http_app(scope, receive, send)
-    headers = {key.decode("latin-1"): value.decode("latin-1") for key, value in response_headers}
-    return Response(content=bytes(response_body), status_code=response_status, headers=headers)
-
-
-@app.api_route("/mcp", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
-async def canonicalize_mcp_root(request: Request):
-    return await _dispatch_exact_mcp_root(request)
+@app.middleware("http")
+async def route_mcp_root(request, call_next):
+    if request.url.path == MCP_HTTP_PREFIX and request.method == "GET":
+        scope = dict(request.scope)
+        root_path = str(scope.get("root_path") or "")
+        scope["root_path"] = f"{root_path}{MCP_HTTP_PREFIX}"
+        scope["path"] = "/"
+        scope["raw_path"] = b"/"
+        return await mcp_http_app(scope, request.receive, request._send)
+    return await call_next(request)
 
 
 @app.middleware("http")

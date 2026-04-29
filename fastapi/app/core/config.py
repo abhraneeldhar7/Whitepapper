@@ -33,11 +33,11 @@ class Settings(BaseSettings):
 
     cron_secret: str | None = None
 
-    valkey_service_uri: str | None = None
-    valkey_host: str | None = None
-    valkey_port: int | None = None
-    valkey_user: str | None = None
-    valkey_password: str | None = None
+    redis_service_uri: str | None = None
+    redis_host: str | None = None
+    redis_port: int | None = None
+    redis_user: str | None = None
+    redis_password: str | None = None
     groq_api_key: str | None = None
 
 

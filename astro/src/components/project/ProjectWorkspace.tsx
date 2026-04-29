@@ -36,6 +36,7 @@ import {
 import { MAX_COLLECTIONS_PER_PROJECT, MAX_DESCRIPTION_LENGTH, MAX_PAPERS_PER_USER } from "@/lib/limits";
 import { sortPapersLatestFirst } from "@/lib/paperSort";
 import { uploadProjectEmbeddedImage, uploadProjectLogo } from "@/lib/api/uploads";
+import { uploadImage } from "@/lib/useImageUpload";
 import {
   MAX_EMBEDDED_HEIGHT,
   MAX_EMBEDDED_WIDTH,
@@ -43,7 +44,8 @@ import {
   MAX_PROJECT_LOGO_WIDTH,
 } from "@/lib/constants";
 import type { CollectionDoc, PaperDoc, ProjectDoc, UserDoc } from "@/lib/entities";
-import { compressImage, copyToClipboardWithToast, formatFirestoreDate, isImageFile } from "@/lib/utils";
+import { copyToClipboardWithToast, formatFirestoreDate, normalizeSlug } from "@/lib/utils";
+import { readTabFromQuery, writeTabToQuery } from "@/lib/queryTab";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
 import PaperPreviewSheet from "../paperPreviewSheet";
@@ -67,37 +69,6 @@ type ProjectWorkspaceProps = {
 type ProjectTab = "overview" | "api" | "mcp";
 
 const projectTabs: ProjectTab[] = ["overview", "api", "mcp"];
-
-function normalizeProjectSlug(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function readTabFromQuery(): ProjectTab {
-  if (typeof window === "undefined") {
-    return "overview";
-  }
-
-  const rawTab = new URLSearchParams(window.location.search).get("tab");
-  if (rawTab && projectTabs.includes(rawTab as ProjectTab)) {
-    return rawTab as ProjectTab;
-  }
-
-  return "overview";
-}
-
-function writeTabToQuery(tab: ProjectTab): void {
-  const params = new URLSearchParams(window.location.search);
-  params.set("tab", tab);
-  const query = params.toString();
-  const url = `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`;
-  window.history.pushState({}, "", url);
-}
 
 function resolveFallbackMcpConnectionInfo(): McpConnectionInfo | null {
   const apiBaseUrl = String
@@ -140,7 +111,7 @@ export default function ProjectWorkspace({
   initialUser,
   isMobileUA,
 }: ProjectWorkspaceProps) {
-  const [activeTab, setActiveTab] = useState<ProjectTab>(readTabFromQuery);
+  const [activeTab, setActiveTab] = useState<ProjectTab>(() => readTabFromQuery(projectTabs, "overview"));
   const [project, setProject] = useState<ProjectDoc>(initialProject);
   const [draftProject, setDraftProject] = useState<ProjectDoc | null>(null);
   const [pages, setPages] = useState<PaperDoc[]>(() => sortPapersLatestFirst(initialPages));
@@ -235,7 +206,7 @@ export default function ProjectWorkspace({
       return;
     }
 
-    const normalizedSlug = normalizeProjectSlug(draftProject.slug || "");
+    const normalizedSlug = normalizeSlug(draftProject.slug || "");
     if (!normalizedSlug) {
       setSlugCheckMessage("Slug is required.");
       toast.error("Project slug cannot be empty.");
@@ -329,47 +300,36 @@ export default function ProjectWorkspace({
   async function handleProjectLogoUpload(file: File) {
     if (!project) return;
 
-    setUploadingProjectLogo(true);
     let localPreview: string | null = null;
 
-    const uploadPromise = (async () => {
-      if (!isImageFile(file)) throw new Error('Only image files are allowed.');
-      const compressed = await compressImage({
-        file,
-        maxWidth: MAX_PROJECT_LOGO_WIDTH,
-        maxHeight: MAX_PROJECT_LOGO_HEIGHT,
-        crop: true,
-      });
-      const uploadableFile = compressed instanceof File ? compressed : file;
-      localPreview = URL.createObjectURL(uploadableFile);
-      setTempUploadingProjectLogo(localPreview);
-      return uploadProjectLogo(project.projectId, uploadableFile);
-    })();
-
-    toast.promise(uploadPromise, {
-      loading: "Uploading project logo...",
-      success: "Project logo uploaded.",
-      error: (error) => (error instanceof Error ? error.message : "Project logo upload failed."),
+    await uploadImage<{ url: string }>(file, {
+      compress: { maxWidth: MAX_PROJECT_LOGO_WIDTH, maxHeight: MAX_PROJECT_LOGO_HEIGHT, crop: true },
+      upload: (f) => uploadProjectLogo(project.projectId, f),
+      onStart: () => setUploadingProjectLogo(true),
+      onFinish: () => {
+        if (localPreview) URL.revokeObjectURL(localPreview);
+        setTempUploadingProjectLogo(null);
+        setUploadingProjectLogo(false);
+      },
+      toastMessages: {
+        loading: "Uploading project logo...",
+        success: "Project logo uploaded.",
+        error: (error) => (error instanceof Error ? error.message : "Project logo upload failed."),
+      },
+      onPrepare: (uploadableFile) => {
+        localPreview = URL.createObjectURL(uploadableFile);
+        setTempUploadingProjectLogo(localPreview);
+      },
+      onSuccess: (uploaded) => {
+        if (editingProject) {
+          setDraftProject((prev) => (prev ? { ...prev, logoUrl: uploaded.url } : prev));
+        } else {
+          setDraftProject({ ...project, logoUrl: uploaded.url });
+          setSlugCheckMessage(null);
+          setEditingProject(true);
+        }
+      },
     });
-
-    try {
-      const uploaded = await uploadPromise;
-      if (editingProject) {
-        setDraftProject((prev) => (prev ? { ...prev, logoUrl: uploaded.url } : prev));
-      } else {
-        setDraftProject({ ...project, logoUrl: uploaded.url });
-        setSlugCheckMessage(null);
-        setEditingProject(true);
-      }
-    } catch {
-      // toast.promise handles failure UI.
-    } finally {
-      if (localPreview) {
-        URL.revokeObjectURL(localPreview);
-      }
-      setTempUploadingProjectLogo(null);
-      setUploadingProjectLogo(false);
-    }
   }
 
   async function onProjectDescriptionImageUpload(file: File): Promise<{ success: boolean; url?: string; message?: string }> {
@@ -377,34 +337,22 @@ export default function ProjectWorkspace({
       return { success: false, message: "Project is not available." };
     }
 
-    setUploadingProjectEmbeddedCount((prev) => prev + 1);
-
-    const uploadPromise = (async () => {
-      if (!isImageFile(file)) throw new Error('Only image files are allowed.');
-      const compressed = await compressImage({
-        file,
-        maxWidth: MAX_EMBEDDED_WIDTH,
-        maxHeight: MAX_EMBEDDED_HEIGHT,
-        crop: false,
-      });
-      const uploadableFile = compressed instanceof File ? compressed : file;
-      return uploadProjectEmbeddedImage(project.projectId, uploadableFile);
-    })();
-
-    toast.promise(uploadPromise, {
-      loading: "Uploading image...",
-      success: "Image uploaded.",
-      error: (error) => (error instanceof Error ? error.message : "Image upload failed."),
+    const result = await uploadImage<{ url: string }>(file, {
+      compress: { maxWidth: MAX_EMBEDDED_WIDTH, maxHeight: MAX_EMBEDDED_HEIGHT, crop: false },
+      upload: (f) => uploadProjectEmbeddedImage(project.projectId, f),
+      onStart: () => setUploadingProjectEmbeddedCount((prev) => prev + 1),
+      onFinish: () => setUploadingProjectEmbeddedCount((prev) => Math.max(0, prev - 1)),
+      toastMessages: {
+        loading: "Uploading image...",
+        success: "Image uploaded.",
+        error: (error) => (error instanceof Error ? error.message : "Image upload failed."),
+      },
     });
 
-    try {
-      const uploaded = await uploadPromise;
-      return { success: true, url: uploaded.url };
-    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : "Upload failed." };
-    } finally {
-      setUploadingProjectEmbeddedCount((prev) => Math.max(0, prev - 1));
+    if (result) {
+      return { success: true, url: result.url };
     }
+    return { success: false, message: "Upload failed." };
   }
 
   async function handleCreatePage() {
@@ -722,7 +670,7 @@ export default function ProjectWorkspace({
                           value={draftProject?.slug || ""}
                           className="mt-2 md:w-[300px]"
                           onChange={(event) => {
-                            const normalized = normalizeProjectSlug(event.target.value);
+                            const normalized = normalizeSlug(event.target.value);
                             setSlugCheckMessage(null);
                             setDraftProject((prev) => (prev ? { ...prev, slug: normalized } : prev));
                           }}
@@ -1080,82 +1028,8 @@ export default function ProjectWorkspace({
 
           </TabsContent>
 
-          <TabsContent value="mcp" className="mt-5">
+<TabsContent value="mcp" className="mt-5">
             <div className="space-y-6 max-w-[800px] w-full mx-auto">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <Label>MCP Setup</Label>
-                  
-                </div>
-                {resolvedMcpConnectionInfo ? (
-                  <>
-                  
-                    <div className="">
-                      <MarkdownRender content={
-                        `\n\n\`\`\`json\n${mcpManualConfig}\n\`\`\``
-                      } />
-                    </div>
-                  </>
-                ) : (
-                  <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
-                    MCP connection info is unavailable.
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <Label>Active Connections</Label>
-                {mcpAuthorizations.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No active MCP connections for this account yet.</p>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="grid gap-3 text-sm">
-                      <div className="flex items-start gap-4">
-                        <p className="min-w-[90px] text-muted-foreground">Monthly Usage</p>
-                        <div className="flex flex-1 flex-col gap-2">
-                          <p className="font-[450] text-[12px]">{mcpMonthlyUsage} / {mcpMonthlyLimit}</p>
-                          <Progress className="w-full" value={mcpMonthlyProgress} />
-                        </div>
-                      </div>
-                    </div>
-
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Agent</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead className="text-right">Action</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {mcpAuthorizations.map((authorization) => (
-                          <TableRow key={authorization.authorizationId}>
-                            <TableCell>
-                              <div className="flex flex-col gap-1">
-                                <span className="font-medium">{authorization.agentName || "Whitepapper MCP client"}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>{formatFirestoreDate(authorization.createdAt)}</TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => {
-                                  setRevokingMcpAuthorizationId(authorization.authorizationId);
-                                  setRevokeMcpDialogOpen(true);
-                                }}
-                              >
-                                Revoke
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </div>
-
               <div className="space-y-4">
                 <Label>Content guidelines</Label>
                 {editingProject ? (
@@ -1205,31 +1079,6 @@ export default function ProjectWorkspace({
                   </div>
                 )}
               </div>
-
-              <Dialog open={revokeMcpDialogOpen} onOpenChange={setRevokeMcpDialogOpen}>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Revoke MCP connection?</DialogTitle>
-                  <DialogDescription>
-                    This will invalidate the selected IDE connection{selectedMcpAuthorization?.agentName ? ` (${selectedMcpAuthorization.agentName})` : ""}.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      setRevokeMcpDialogOpen(false);
-                      setRevokingMcpAuthorizationId(null);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button variant="destructive" loading={revokingMcpAuthorization} onClick={() => { void handleRevokeMcpAuthorization(); }}>
-                    Revoke
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
             </div>
           </TabsContent>
         </Tabs>

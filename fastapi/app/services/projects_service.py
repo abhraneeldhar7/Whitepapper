@@ -29,9 +29,6 @@ PROJECT_PUBLIC_KEY = "isPublic"
 SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
 class ProjectsService:
 
-    def invalidate_project(self, project_id: str, owner_username: str | None = None, slug: str | None = None) -> None:
-        return None
-
     def _get_owner_username(self, owner_id: str | None) -> str | None:
         if not owner_id:
             return None
@@ -91,15 +88,12 @@ class ProjectsService:
         if bool(current.get("isPublic", False)) == target_visibility:
             return current
 
-        previous_slug = current.get(PROJECT_SLUG_KEY)
-        owner_username = self._get_owner_username(current.get(PROJECT_OWNER_KEY))
         visibility_patch = {
             "isPublic": target_visibility,
             "updatedAt": utc_now(),
         }
         firestore_store.update(PROJECTS_COLLECTION, project_id, visibility_patch)
         current.update(visibility_patch)
-        self.invalidate_project(project_id=project_id, owner_username=owner_username, slug=previous_slug)
         return current
 
     def list_owned(self, owner_id: str, public: bool = False) -> list[dict]:
@@ -257,12 +251,9 @@ class ProjectsService:
         if not payload:
             return current
 
-        previous_slug = current.get(PROJECT_SLUG_KEY)
-        owner_username = self._get_owner_username(current.get(PROJECT_OWNER_KEY))
         payload["updatedAt"] = utc_now()
         firestore_store.update(PROJECTS_COLLECTION, project_id, payload)
         current.update(payload)
-        self.invalidate_project(project_id=project_id, owner_username=owner_username, slug=previous_slug)
         return current
 
     async def upload_logo(self, project_id: str, file: UploadFile) -> dict[str, str]:
@@ -339,41 +330,19 @@ class ProjectsService:
 
         from app.services.collections_service import collections_service
         from app.services.papers_service import papers_service
-        from app.services._dev_api_service import _dev_api_service
+        from app.services.dev_api_service import dev_api_service
 
         deleted_counts = {
             "projects": 0,
-            "collections": 0,
-            "papers": 0,
             "apiKeys": 0,
             "storageObjects": 0,
         }
-        collections = firestore_store.find_by_fields("collections", {"projectId": project_id})
-        for collection in collections:
-            result = collections_service.delete_cascade(collection["collectionId"])
-            deleted_counts["collections"] += result.get("collections", 0)
-            deleted_counts["papers"] += result.get("papers", 0)
-            deleted_counts["storageObjects"] += result.get("storageObjects", 0)
-
-        papers = papers_service.list_by_project_id(project_id)
-        for paper in papers:
-            if paper.get("collectionId"):
-                continue
-            result = papers_service.delete_cascade(paper["paperId"])
-            deleted_counts["papers"] += result.get("papers", 0)
-            deleted_counts["storageObjects"] += result.get("storageObjects", 0)
-
-        deleted_counts["apiKeys"] += _dev_api_service.delete_by_project(project_id)
+        deleted_counts["apiKeys"] += dev_api_service.delete_by_project(project_id)
 
         owner_id = current.get(PROJECT_OWNER_KEY)
         if owner_id:
             deleted_counts["storageObjects"] += self.delete_project_assets(owner_id, project_id)
         firestore_store.delete(PROJECTS_COLLECTION, project_id)
-        self.invalidate_project(
-            project_id=project_id,
-            owner_username=self._get_owner_username(current.get(PROJECT_OWNER_KEY)),
-            slug=current.get(PROJECT_SLUG_KEY),
-        )
         deleted_counts["projects"] = 1
         return deleted_counts
 
@@ -391,6 +360,5 @@ class ProjectsService:
             if str(item.get(PROJECT_SLUG_KEY) or "").strip() == candidate
         ]
         return all(item.get(PROJECT_ID_KEY) == project_id for item in matches)
-
 
 projects_service = ProjectsService()

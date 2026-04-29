@@ -9,6 +9,7 @@ const RESTRICTED_PATHS = [
   "/sign-up",
   "/sso-callback",
   "/unauthorized",
+  "/mcp/connect",
 ];
 
 export const GET: APIRoute = ({ site, url }) => {

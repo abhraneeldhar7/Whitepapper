@@ -1,18 +1,24 @@
 import about from "./about.json";
 import blogs from "./blogs.json";
+import compare from "./compare.json";
+import components from "./components.json";
 import contact from "./contact.json";
 import dashboard from "./dashboard.json";
 import docs from "./docs.json";
 import error404 from "./404.json";
+import features from "./features.json";
+import glossary from "./glossary.json";
 import home from "./home.json";
 import integrations from "./integrations.json";
 import login from "./login.json";
+import pricing from "./pricing.json";
 import privacyPolicy from "./privacy-policy.json";
 import resources from "./resources.json";
 import settings from "./settings.json";
 import termsOfService from "./terms-of-service.json";
 import unauthorized from "./unauthorized.json";
 import updates from "./updates.json";
+import useCases from "./use-cases.json";
 import welcome from "./welcome.json";
 import write from "./write.json";
 
@@ -57,27 +63,31 @@ export type PageSeoConfig = {
   jsonLd?: JsonLdValue;
 };
 
-const CODE_PAGE_SEO_BY_PATH: Record<string, PageSeoConfig> = {
+const PAGE_SEO_BY_PATH: Record<string, PageSeoConfig> = {
   [home.path]: home,
   [about.path]: about,
   [blogs.path]: blogs,
+  [compare.path]: compare,
+  [components.path]: components,
   [contact.path]: contact,
+  [dashboard.path]: dashboard,
   [docs.path]: docs,
+  [error404.path]: error404,
+  [features.path]: features,
+  [glossary.path]: glossary,
   [integrations.path]: integrations,
+  [login.path]: login,
+  [pricing.path]: pricing,
   [privacyPolicy.path]: privacyPolicy,
   [resources.path]: resources,
-  [termsOfService.path]: termsOfService,
-  [updates.path]: updates,
-  [login.path]: login,
-  [dashboard.path]: dashboard,
   [settings.path]: settings,
-  [write.path]: write,
+  [termsOfService.path]: termsOfService,
   [unauthorized.path]: unauthorized,
+  [updates.path]: updates,
+  [useCases.path]: useCases,
   [welcome.path]: welcome,
-  [error404.path]: error404,
+  [write.path]: write,
 };
-
-let runtimePageSeoByPath: Record<string, PageSeoConfig> = {};
 
 function normalizeJsonLdItems(value?: JsonLdValue): Record<string, unknown>[] {
   if (!value) return [];
@@ -130,36 +140,7 @@ function resolveAliasPath(pathname: string): string {
   return pathname;
 }
 
-function getSeoFromSources(pathname: string): PageSeoConfig | null {
-  const fromCode = CODE_PAGE_SEO_BY_PATH[pathname] || null;
-  const fromRuntime = runtimePageSeoByPath[pathname] || null;
-  return mergePageSeoConfig(fromCode, fromRuntime);
-}
-
-export function setRuntimePageSeoConfig(config: PageSeoConfig): void {
-  if (!config?.path) return;
-  const key = normalizePathname(config.path);
-  runtimePageSeoByPath = {
-    ...runtimePageSeoByPath,
-    [key]: config,
-  };
-}
-
-export function setRuntimePageSeoConfigs(configs: PageSeoConfig[]): void {
-  const next: Record<string, PageSeoConfig> = {};
-  for (const config of configs || []) {
-    if (!config?.path) continue;
-    next[normalizePathname(config.path)] = config;
-  }
-  runtimePageSeoByPath = next;
-}
-
 export function getPageSeoConfig(pathname: string): PageSeoConfig | null {
   const normalizedPathname = normalizePathname(pathname);
-  const direct = getSeoFromSources(normalizedPathname);
-  if (direct) {
-    return direct;
-  }
-
-  return getSeoFromSources(resolveAliasPath(normalizedPathname));
+  return PAGE_SEO_BY_PATH[normalizedPathname] || PAGE_SEO_BY_PATH[resolveAliasPath(normalizedPathname)] || null;
 }

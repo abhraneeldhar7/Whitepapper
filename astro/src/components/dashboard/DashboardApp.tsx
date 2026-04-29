@@ -22,23 +22,30 @@ import { MAX_PAPERS_PER_USER, MAX_PROJECTS_PER_USER } from "@/lib/limits";
 import { sortPapersLatestFirst } from "@/lib/paperSort";
 import { readTabFromQuery, writeTabToQuery } from "@/lib/queryTab";
 import type { PaperDoc, ProjectDoc, UserDoc } from "@/lib/entities";
+import { revokeMcpAuthorization, type McpAuthorizationListResponse, type McpAuthorizationSummary, type McpConnectionInfo } from "@/lib/api/mcp";
+import { formatFirestoreDate, copyToClipboardWithToast } from "@/lib/utils";
 import FolderNotes from "../folderComponent";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
 import PaperPreviewSheet from "../paperPreviewSheet";
 import ScrollToTop from "../scrollToTop";
 import ProjectCard from "../project/ProjectCard";
+import { Progress } from "../ui/progress";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import MarkdownRender from "../ui/markdown-render/markdown-render";
 
 type DashboardAppProps = {
   initialProjects: ProjectDoc[];
   initialPages: PaperDoc[];
   initialUser: UserDoc;
+  initialMcpAuthorizations: McpAuthorizationListResponse;
+  mcpConnectionInfo: McpConnectionInfo | null;
   isMobileUA: boolean;
 };
-type DashboardTab = "pages" | "settings";
+type DashboardTab = "pages" | "mcp";
 
 
-const dashboardTabs = ["pages", "settings"];
+const dashboardTabs: DashboardTab[] = ["pages", "mcp"];
 
 function buildOptimisticProject(ownerId?: string, name?: string, isPublic?: boolean): ProjectDoc {
   const now = new Date().toISOString();
@@ -57,7 +64,7 @@ function buildOptimisticProject(ownerId?: string, name?: string, isPublic?: bool
   };
 }
 
-export default function DashboardApp({ initialProjects, initialPages, initialUser, isMobileUA }: DashboardAppProps) {
+export default function DashboardApp({ initialProjects, initialPages, initialUser, initialMcpAuthorizations, mcpConnectionInfo, isMobileUA }: DashboardAppProps) {
   const [activeTab, setActiveTab] = useState<DashboardTab>(() =>
     readTabFromQuery<DashboardTab>(dashboardTabs as readonly DashboardTab[], "pages"),
   );
@@ -70,6 +77,12 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectPublic, setNewProjectPublic] = useState(true);
+  const [mcpAuthorizations, setMcpAuthorizations] = useState<McpAuthorizationSummary[]>(initialMcpAuthorizations.authorizations);
+  const [mcpUsage, setMcpUsage] = useState(initialMcpAuthorizations.usage);
+  const [mcpLimitPerMonth, setMcpLimitPerMonth] = useState(initialMcpAuthorizations.limitPerMonth);
+  const [revokingMcpAuthorizationId, setRevokingMcpAuthorizationId] = useState<string | null>(null);
+  const [revokingMcpAuthorization, setRevokingMcpAuthorization] = useState(false);
+  const [revokeMcpDialogOpen, setRevokeMcpDialogOpen] = useState(false);
 
   // Sync state with props to get fresh data when navigating back
   useEffect(() => {
@@ -151,6 +164,63 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
     setPreviewOpen(false);
   }
 
+  function resolveFallbackMcpConnectionInfo(): McpConnectionInfo | null {
+    const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
+    const fallbackBaseUrl =
+      apiBaseUrl ||
+      (typeof window !== "undefined" ? String(window.location.origin || "").trim().replace(/\/+$/, "") : "");
+
+    if (!fallbackBaseUrl) {
+      return null;
+    }
+
+    const endpointUrl = `${fallbackBaseUrl}/mcp`;
+    return {
+      serverName: "whitepapper",
+      transport: "http",
+      endpointUrl,
+      manualConfig: {
+        servers: {
+          whitepapper: {
+            url: endpointUrl,
+            type: "http",
+          },
+        },
+        inputs: [],
+      },
+    };
+  }
+
+  async function handleRevokeMcpAuthorization() {
+    if (!revokingMcpAuthorizationId) {
+      return;
+    }
+    setRevokingMcpAuthorization(true);
+    try {
+      await revokeMcpAuthorization(revokingMcpAuthorizationId);
+      setMcpAuthorizations((prev) =>
+        prev.filter((authorization) => authorization.authorizationId !== revokingMcpAuthorizationId),
+      );
+      setRevokeMcpDialogOpen(false);
+      setRevokingMcpAuthorizationId(null);
+      toast.success("MCP connection revoked.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to revoke MCP connection.");
+    } finally {
+      setRevokingMcpAuthorization(false);
+    }
+  }
+
+  const resolvedMcpConnectionInfo = mcpConnectionInfo || resolveFallbackMcpConnectionInfo();
+  const mcpManualConfig = resolvedMcpConnectionInfo ? JSON.stringify(resolvedMcpConnectionInfo.manualConfig, null, 2) : "";
+  const mcpMonthlyUsage = mcpUsage;
+  const mcpMonthlyLimit = mcpLimitPerMonth;
+  const mcpMonthlyProgress = mcpMonthlyLimit > 0
+    ? Math.min(100, Math.max(0, (mcpMonthlyUsage / mcpMonthlyLimit) * 100))
+    : 0;
+  const selectedMcpAuthorization =
+    mcpAuthorizations.find((authorization) => authorization.authorizationId === revokingMcpAuthorizationId) || null;
+
 
   return (
     <div className="min-h-screen bg-background px-[15px] pt-15 pb-20">
@@ -173,7 +243,7 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
         }}>
           <TabsList>
             <TabsTrigger value="pages">Pages</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="mcp">MCP</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pages" className="mt-10">
@@ -238,7 +308,7 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
                     {projects && projects.length > 0 && (
                       <div className="flex flex-col items-center">
                         <button
-                          
+
                           className="border-0 bg-transparent p-0 outline-0"
                           onClick={() => setCreateDialogOpen(true)}
                           aria-label="Create project"
@@ -291,14 +361,14 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
                     </div>
                     <DialogFooter>
                       <Button
-                        
+
                         variant="secondary"
                         onClick={() => setCreateDialogOpen(false)}
                         disabled={creatingProject}
                       >
                         Cancel
                       </Button>
-                      <Button  onClick={handleCreateProject} loading={creatingProject}>
+                      <Button onClick={handleCreateProject} loading={creatingProject}>
                         Create
                       </Button>
                     </DialogFooter>
@@ -309,8 +379,106 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
             </div>
           </TabsContent>
 
-          <TabsContent value="analytics" />
-          <TabsContent value="settings" />
+
+
+          <TabsContent value="mcp" className="mt-5">
+            <div className="space-y-6 max-w-[800px] w-full mx-auto">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label>MCP Setup</Label>
+                </div>
+                {resolvedMcpConnectionInfo ? (
+                  <div className="">
+                    <MarkdownRender content={
+                      `\n\n\`\`\`json\n${mcpManualConfig}\n\`\`\``
+                    } />
+                  </div>
+                ) : (
+                  <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                    MCP connection info is unavailable.
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <Label>Active Connections</Label>
+                {mcpAuthorizations.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No active MCP connections for this account yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid gap-3 text-sm">
+                      <div className="flex items-start gap-4">
+                        <p className="min-w-[90px] text-muted-foreground">Monthly Usage</p>
+                        <div className="flex flex-1 flex-col gap-2">
+                          <p className="font-[450] text-[12px]">{mcpMonthlyUsage} / {mcpMonthlyLimit}</p>
+                          <Progress className="w-full" value={mcpMonthlyProgress} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Agent</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {mcpAuthorizations.map((authorization) => (
+                          <TableRow key={authorization.authorizationId}>
+                            <TableCell>
+                              <div className="flex flex-col gap-1">
+                                <span className="font-medium">{authorization.agentName || "Whitepapper MCP client"}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>{formatFirestoreDate(authorization.createdAt)}</TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => {
+                                  setRevokingMcpAuthorizationId(authorization.authorizationId);
+                                  setRevokeMcpDialogOpen(true);
+                                }}
+                              >
+                                Revoke
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+
+              <Dialog open={revokeMcpDialogOpen} onOpenChange={setRevokeMcpDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Revoke MCP connection?</DialogTitle>
+                    <DialogDescription>
+                      This will invalidate the selected IDE connection.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setRevokeMcpDialogOpen(false);
+                        setRevokingMcpAuthorizationId(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button variant="destructive" loading={revokingMcpAuthorization} onClick={() => { void handleRevokeMcpAuthorization(); }}>
+                      Revoke
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
       <PaperPreviewSheet

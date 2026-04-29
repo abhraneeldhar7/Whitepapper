@@ -1,23 +1,21 @@
 /* Paragraphs */
 .markdownDiv {
     word-break: break-word;
-    font-family: var(--font-satoshi, var(--font-sans));
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
     font-size: 16px;
     font-weight: 400;
-    color: var(--muted-foreground, #1a1a1a);
+    color: #6b7280;
 }
 
 .markdownDiv p {
-    /* font-size: 17px; */
     line-height: 2;
     margin: 0 0 0.9em;
-    /* opacity: 0.8; */
 }
 
 
 /* Headers */
 .markdownDiv h1 {
-    color: var(--foreground, #1a1a1a);
+    color: #111827;
     font-size: 2.2em;
     font-weight: 550;
     line-height: 1.12;
@@ -26,7 +24,7 @@
 }
 
 .markdownDiv h2 {
-    color: var(--foreground, #1a1a1a);
+    color: #111827;
     font-size: 2em;
     font-weight: 540;
     line-height: 1.16;
@@ -35,7 +33,7 @@
 }
 
 .markdownDiv h3 {
-    color: var(--foreground, #1a1a1a);
+    color: #111827;
     font-size: 1.8em;
     font-weight: 530;
     line-height: 1.22;
@@ -89,7 +87,7 @@
     height: 0px;
     margin: 30px 0;
     opacity: 0.4;
-    border: 1px solid var(--border);
+    border: 1px solid #e5e5e7;
 }
 
 /* Lists */
@@ -139,11 +137,11 @@
 
 /* Blockquotes */
 .markdownDiv blockquote {
-    border-left: 2px solid var(--accent) !important;
+    border-left: 2px solid #3b82f6;
     padding: 10px 12px 10px 1rem;
     margin: 1.5em 0;
-    color: var(--foreground);
-    background: color-mix(in srgb, var(--muted, #f3f4f6) 50%, transparent);
+    color: #111827;
+    background: #f3f4f6;
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
     font-style: normal;
@@ -159,29 +157,29 @@
 
 /* Links */
 .markdownDiv a {
-    color: var(--foreground) !important;
+    color: #111827 !important;
     text-decoration: underline !important;
     text-underline-offset: 4px;
     transition: color 0.2s ease;
 }
 
 .markdownDiv a:hover {
-    color: var(--muted-foreground) !important;
+    color: #6b7280 !important;
 }
 
 .markdownDiv a strong {
-    font-weight: 600 !important;
-    color: var(--foreground);
+    font-weight: 600;
+    color: #111827;
 }
 
 
 
 /* Inline Code */
-.markdownDiv code:not(.shiki code) {
+.markdownDiv :not(pre)>code {
     font-size: 0.85em;
     font-weight: 500 !important;
-    background-color: var(--muted) !important;
-    color: var(--foreground, #1a1a1a) !important;
+    background-color: #f3f4f6 !important;
+    color: #111827 !important;
     padding: 0.35em 0.6em;
     border-radius: 4px;
     margin: 1.5em 0;
@@ -198,25 +196,27 @@
 /* Block Code */
 
 .markdownCopyButton {
-    position: absolute;
-    top: 0.54rem;
-    right: 0.54rem;
+    position: static;
     z-index: 2;
-    padding: 7px;
+    padding: 8px;
     border-radius: 5px;
-    background-color: var(--foreground);
-    color: var(--background);
+    background-color: transparent;
+    color: #6b7280;
     transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .markdownCopyButton:hover,
 .markdownCopyButton:focus-visible {
-    background-color: color-mix(in srgb, var(--foreground) 60%, transparent);
+    background-color: #6b7280;
+    color: #111827;
 }
 
 @media (min-width: 768px) {
     .markdownCopyButton {
-        opacity: 0;
+        opacity: 1;
     }
 
     .markdownCodeBlock:hover .markdownCopyButton,
@@ -225,19 +225,46 @@
     }
 }
 
-.markdownDiv .markdownCodeBlock{
+.markdownDiv .markdownCodeBlock {
     position: relative;
+    margin: 1.5em 0;
+    border-radius: 12px;
+    border: 1px solid #e5e5e7;
+    overflow: hidden;
+    padding: 3px;
+    padding-top: 1px;
+    background-color: #f3f4f6;
 }
-.markdownDiv .markdownCodeBlock .shiki {
-    /* background-color: var(--card) !important; */
+
+.markdownCodeBlockHeader {
+    padding: 4px 0.5em;
+    padding-left: 0.7em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.markdownCodeBlockLanguage {
     font-size: 0.9em;
-    /* border: 1px solid var(--border) !important; */
-    border-radius: 8px !important;
+    line-height: 1em;
+    font-weight: 500;
+}
+
+.markdownCodeBlockActions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.markdownDiv .markdownCodeBlock .shiki {
+    font-size: 0.9em;
+    border-radius: 9px !important;
     padding: 0.8em 1.2em !important;
     max-height: 300px;
     overflow: auto !important;
     scrollbar-width: none !important;
-    margin: 1.5em 0;
+    margin: 0 !important;
     font-weight: 500 !important;
 }
 
@@ -249,19 +276,11 @@
 
 
 
-
 /* Highlighted Text */
 
-/* .markdownDiv mark {
-    background-color: var(--primary, #3b82f6) !important;
-    color: var(--primary-foreground);
-    padding: 5px;
-    border-radius: 3px;
-} */
-
 .markdownDiv .highlight {
-    background-color: var(--primary, #3b82f6) !important;
-    color: var(--primary-foreground);
+    background-color: #3b82f6 !important;
+    color: #ffffff;
     padding: 5px;
     font-weight: 450;
     border-radius: 3px;
@@ -273,8 +292,8 @@
 }
 
 .markdownDiv strong {
-    font-weight: 600 !important;
-    color: var(--foreground);
+    font-weight: 600;
+    color: #111827;
 }
 
 /* Tables */
@@ -282,7 +301,7 @@
     width: 100%;
     overflow: auto !important;
     scrollbar-width: none !important;
-    border: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 50%, transparent);
+    border: 1px solid #e5e5e7;
     border-radius: 8px;
 }
 
@@ -301,13 +320,13 @@
 }
 
 .markdownDiv th {
-    background-color: color-mix(in srgb, var(--card, #f3f4f6) 80%, transparent) !important;
-    color: var(--foreground, #1a1a1a) !important;
+    background-color: #f9fafb !important;
+    color: #111827 !important;
     font-weight: 600;
     text-align: left;
     padding: 0.875rem 1rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 40%, transparent) !important;
-    border-right: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 20%, transparent) !important;
+    border-bottom: 1px solid #e5e5e7 !important;
+    border-right: 1px solid #e5e5e7 !important;
     transition: all 0.25s ease-in-out;
     max-width: 150px;
     white-space: normal;
@@ -325,9 +344,9 @@
 
 .markdownDiv td {
     padding: 0.875rem 1rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 20%, transparent) !important;
-    border-right: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 15%, transparent) !important;
-    color: var(--foreground, #1a1a1a) !important;
+    border-bottom: 1px solid #e5e5e7 !important;
+    border-right: 1px solid #e5e5e7 !important;
+    color: #111827 !important;
     background-color: transparent !important;
     transition: all 0.25s ease-in-out;
     max-width: 200px;
@@ -346,14 +365,14 @@
 }
 
 .markdownDiv tr:hover td {
-    background-color: color-mix(in srgb, var(--muted, #f3f4f6) 30%, transparent) !important;
+    background-color: #f3f4f6 !important;
 }
 
 /* Task Lists */
 .markdownDiv input[type="checkbox"] {
     margin-right: 0.5em;
     transform: scale(1.2);
-    accent-color: var(--primary, #3b82f6);
+    accent-color: #3b82f6;
 }
 
 .markdownDiv ul.contains-task-list {
@@ -389,7 +408,7 @@
     display: block;
     text-align: center;
     font-size: 0.9em;
-    color: var(--foreground);
+    color: #111827;
     margin-top: -1em;
     margin-bottom: 1.5em;
     opacity: 0.8;
@@ -397,11 +416,11 @@
 
 /* Keyboard Input */
 .markdownDiv kbd {
-    background-color: var(--muted, #f3f4f6);
-    border: 1px solid var(--border, #e5e5e5);
+    background-color: #f3f4f6;
+    border: 1px solid #e5e5e7;
     border-radius: 4px;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-    color: var(--foreground, #1a1a1a);
+    color: #111827;
     font-size: 0.85em;
     padding: 0.2em 0.4em;
     white-space: nowrap;
@@ -441,7 +460,7 @@
 
 /* Abbreviations */
 .markdownDiv abbr[title] {
-    border-bottom: 1px dotted var(--border, #e5e5e5);
+    border-bottom: 1px dotted #e5e5e7;
     cursor: help;
     text-decoration: none;
 }
@@ -465,7 +484,7 @@
 
     /* Headers */
     .markdownDiv h1 {
-        color: var(--foreground, #1a1a1a);
+        color: #111827;
         font-size: 2em;
         font-weight: 550;
         line-height: 1.12;
@@ -474,12 +493,12 @@
     }
 
     .markdownDiv h2 {
-        color: var(--foreground, #1a1a1a);
+        color: #111827;
         font-size: 1.8em;
     }
 
     .markdownDiv h3 {
-        color: var(--foreground, #1a1a1a);
+        color: #111827;
         font-size: 1.6em;
     }
 

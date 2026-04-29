@@ -76,19 +76,16 @@ Astro.response.headers.set(
 );
 ---
 
-<Layout
-  title="Documentation | Whitepapper"
-  description="Documentation for Whitepapper: quickstart, core concepts, editor, SEO, Dev API, distribution, and self-host guides."
->
+<Layout>
   <div class="pb-5 md:pb-10 px-5">
     <div class="flex gap-10 justify-between">
       <div class="hidden md:block h-full">
-        <DocsSidebar navSections={docsNavSections} currentPath="/docs"/>
+        <DocsSidebar navSections={docsNavSections} currentPath="/docs" />
       </div>
 
       <main class="w-full pt-30 md:pt-35" aria-label="Documentation home">
         <div
-          class="fixed top-[50px] md:top-[55px] left-0 w-full z-[2] flex justify-between items-center gap-10"
+          class="fixed top-[50px] md:top-[54px] left-0 w-full z-[2] flex justify-between items-center gap-10"
         >
           <div class="md:w-[250px] md:block hidden shrink-0"></div>
 
@@ -104,7 +101,7 @@ Astro.response.headers.set(
             </div>
             <div class="w-full h-[20px] md:h-[32px] relative">
               <h1
-                class="absolute left-0 top-1/2 -translate-y-1/2 right-0 text-[20px] md:text-[32px] truncate font-[500] leading-[1.5em] md:px-[10px]"
+                class="absolute left-0 top-1/2 -translate-y-1/2 right-0 text-[18px] md:text-[22px] truncate font-[500] leading-[1.5em] md:px-[10px]"
               >
                 Documentation
               </h1>

@@ -15,6 +15,7 @@ from app.services.storage_service import storage_service
 from app.services.user_service import user_service
 from app.services.projects_service import projects_service
 from app.services.papers_service import papers_service
+from app.utils.sorting import sort_items_latest_first
 
 router = APIRouter(prefix="/users", tags=["users"])
 logger = logging.getLogger(__name__)
@@ -105,9 +106,8 @@ def get_dashboard_data(user_id: str = Depends(get_verified_id)) -> DashboardResp
     projects = projects_service.list_owned(user_id)
     standalone_papers = papers_service.list_standalone(owner_id=user_id)
 
-    # Sort by updatedAt in descending order
-    projects.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
-    standalone_papers.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
+    projects = sort_items_latest_first(projects)
+    standalone_papers = sort_items_latest_first(standalone_papers)
 
     return DashboardResponse(
         user=user,

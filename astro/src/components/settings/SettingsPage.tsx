@@ -6,8 +6,8 @@ import { uploadProfileImage } from "@/lib/api/uploads";
 import { updateCurrentUser } from "@/lib/api/users";
 import { MAX_PROFILE_IMAGE_HEIGHT, MAX_PROFILE_IMAGE_WIDTH } from "@/lib/constants";
 import type { UserDoc } from "@/lib/entities";
-import { compressImage, isImageFile } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { uploadImage } from "@/lib/useImageUpload";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,32 +44,18 @@ export default function SettingsPage({ initialUser }: SettingsPageProps) {
   }
 
   async function onPickAvatar(file: File) {
-    setUploadingAvatar(true);
-
-    const uploadPromise = (async () => {
-      if (!isImageFile(file)) throw new Error('Only image files are allowed.');
-      const compressed = await compressImage({
-        file,
-        maxWidth: MAX_PROFILE_IMAGE_WIDTH,
-        maxHeight: MAX_PROFILE_IMAGE_HEIGHT,
-        crop: true,
-      });
-      const uploadableFile = compressed instanceof File ? compressed : file;
-      return uploadProfileImage(uploadableFile);
-    })();
-
-    toast.promise(uploadPromise, {
-      loading: "Uploading profile picture...",
-      success: "Profile picture updated.",
-      error: (error) => (error instanceof Error ? error.message : "Failed to upload profile picture."),
+    await uploadImage<{ url: string }>(file, {
+      compress: { maxWidth: MAX_PROFILE_IMAGE_WIDTH, maxHeight: MAX_PROFILE_IMAGE_HEIGHT, crop: true },
+      upload: uploadProfileImage,
+      onStart: () => setUploadingAvatar(true),
+      onFinish: () => setUploadingAvatar(false),
+      toastMessages: {
+        loading: "Uploading profile picture...",
+        success: "Profile picture updated.",
+        error: (error) => (error instanceof Error ? error.message : "Failed to upload profile picture."),
+      },
+      onSuccess: ({ url }) => updateField("avatarUrl", url),
     });
-
-    try {
-      const { url } = await uploadPromise;
-      updateField("avatarUrl", url);
-    } finally {
-      setUploadingAvatar(false);
-    }
   }
 
   async function onSave() {
@@ -181,7 +167,7 @@ export default function SettingsPage({ initialUser }: SettingsPageProps) {
 
 
         <div className="md:flex-1">
-          <h2>Integraitons</h2>
+          <h2>Integrations</h2>
 
           <div className="mt-5 flex flex-col w-full gap-4">
             <HashnodeCard

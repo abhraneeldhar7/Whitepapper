@@ -4,7 +4,9 @@ import DashboardApp from "@/components/dashboard/DashboardApp";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import { createApiClient } from "@/lib/api/client";
 import { getDashboardData } from "@/lib/api/users";
+import { getMcpConnectionInfo, listMcpAuthorizations } from "@/lib/api/mcp";
 import type { UserDoc } from "@/lib/entities";
+import type { McpAuthorizationListResponse, McpConnectionInfo } from "@/lib/api/mcp";
 import { isMobileUserAgent } from "@/lib/userAgent";
 
 const { userId, getToken } = Astro.locals.auth();
@@ -53,6 +55,13 @@ const dashboardData = await getDashboardData(serverClient).catch((error) => {
 });
 
 const { user: initialUser, projects: initialProjects, papers: initialPages } = dashboardData;
+
+const [initialMcpAuthorizations, mcpConnectionInfo] = await Promise.all([
+  listMcpAuthorizations(serverClient).catch(
+    () => ({ authorizations: [], usage: 0, limitPerMonth: 0 }) as McpAuthorizationListResponse,
+  ),
+  getMcpConnectionInfo(serverClient).catch(() => null as McpConnectionInfo | null),
+]);
 ---
 
 <Layout showSiteNav={false}>
@@ -61,6 +70,8 @@ const { user: initialUser, projects: initialProjects, papers: initialPages } = d
     initialProjects={initialProjects}
     initialPages={initialPages}
     initialUser={initialUser}
+    initialMcpAuthorizations={initialMcpAuthorizations}
+    mcpConnectionInfo={mcpConnectionInfo}
     isMobileUA={isMobileUA}
   >
     <DashboardSkeleton slot="fallback" />

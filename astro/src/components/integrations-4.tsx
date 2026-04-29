@@ -64,7 +64,7 @@ export default function IntegrationsSection({ hideText = false }: { hideText?: b
                             variant="outline"
                             size="sm"
                             asChild>
-                            <a href="/integrations" ata-astro-prefetch="viewport">Integrations</a>
+                            <a href="/integrations" data-astro-prefetch="viewport">Integrations</a>
                         </Button>
                     </div>}
             </div>

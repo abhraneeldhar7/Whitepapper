@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from app.api.v1.endpoints.distributions.common import (
     DistributionPublishInput,
+    DistributionPublishResult,
     build_public_article_url,
     extract_article_section,
     extract_canonical_url,
@@ -26,12 +27,6 @@ router = APIRouter()
 class DevtoDistributionUpsertRequest(BaseModel):
     accessToken: str = Field(min_length=1)
     storeInCloud: bool = False
-
-
-class DistributionPublishResult(BaseModel):
-    platform: Literal["hashnode", "devto"]
-    postId: str
-    url: str | None = None
 
 
 @router.get("/devto", response_model=DevtoDistribution | None)

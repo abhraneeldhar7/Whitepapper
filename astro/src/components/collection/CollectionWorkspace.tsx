@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { copyToClipboardWithToast } from "@/lib/utils";
+import { copyToClipboardWithToast, normalizeSlug } from "@/lib/utils";
 import { sortPapersLatestFirst } from "@/lib/paperSort";
 import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import {
@@ -40,16 +40,6 @@ type CollectionWorkspaceProps = {
   initialUser?: UserDoc | null;
   isMobileUA: boolean;
 };
-
-function normalizeCollectionSlug(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 export default function CollectionWorkspace({
   projectId,
@@ -141,7 +131,7 @@ export default function CollectionWorkspace({
       return;
     }
 
-    const normalizedSlug = normalizeCollectionSlug(draftCollection.slug || "");
+    const normalizedSlug = normalizeSlug(draftCollection.slug || "");
     if (!normalizedSlug) {
       setSlugCheckMessage("Slug is required.");
       toast.error("Collection slug cannot be empty.");
@@ -335,7 +325,7 @@ export default function CollectionWorkspace({
                       value={draftCollection?.slug || ""}
                       className="mt-2 w-[300px]"
                       onChange={(event) => {
-                        const normalized = normalizeCollectionSlug(event.target.value);
+                        const normalized = normalizeSlug(event.target.value);
                         setSlugCheckMessage(null);
                         setDraftCollection((prev) => (prev ? { ...prev, slug: normalized } : prev));
                       }}

@@ -9,7 +9,7 @@ import { formatFirestoreDate } from "@/lib/utils";
 import type { PageSeoConfig } from "@/metadata/pages";
 import { ChevronLeft, DotIcon } from "lucide-react";
 import styles from "virtual:astro:image-styles.css";
-import { MAX_COTNENT_PAPER_WIDTH } from "@/lib/design";
+import { MAX_CONTENT_PAPER_WIDTH } from "@/lib/design";
 
 type Props = {
   paper: PaperDoc;
@@ -31,7 +31,7 @@ const readingTimeMinutes = Math.max(1, metadata.readingTimeMinutes || 1);
   <div class="flex justify-between px-[15px] md:px-[35px] md:gap-10">
     <div class="md:w-[300px] hidden md:block"></div>
     <main
-      style={{ maxWidth: `${MAX_COTNENT_PAPER_WIDTH}px` }}
+      style={{ maxWidth: `${MAX_CONTENT_PAPER_WIDTH}px` }}
       class="mx-auto min-h-screen w-full pt-20 md:pt-30 pb-20"
     >
       <a

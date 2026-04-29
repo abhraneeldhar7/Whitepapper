@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import re
+import threading
+import time
 from datetime import datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 
 from app.core.config import get_settings
+from app.utils.content import HTML_IMAGE_PATTERN, MARKDOWN_IMAGE_PATTERN
 from app.services.groq_service import groqService
 
 DEFAULT_LICENSE = "https://creativecommons.org/licenses/by/4.0/"
@@ -37,6 +42,11 @@ STOP_WORDS = {
 
 def _strip_trailing_slash(value: str) -> str:
     return value[:-1] if value.endswith("/") else value
+
+
+_metadata_cache: dict = {}
+_METADATA_CACHE_TTL = 300
+_metadata_cache_lock = threading.Lock()
 
 
 def _normalize_site_url() -> str:
@@ -85,11 +95,11 @@ def _extract_first_image_url(body: str) -> str:
     if not body:
         return ""
 
-    markdown_match = re.search(r"!\[[^\]]*]\(([^)\s]+)", body, flags=re.IGNORECASE)
+    markdown_match = MARKDOWN_IMAGE_PATTERN.search(body)
     if markdown_match:
         return (markdown_match.group(1) or "").strip()
 
-    html_match = re.search(r"<img[^>]+src=[\"']([^\"']+)[\"']", body, flags=re.IGNORECASE)
+    html_match = HTML_IMAGE_PATTERN.search(body)
     if html_match:
         return (html_match.group(1) or "").strip()
 
@@ -192,6 +202,19 @@ class PaperMetadataService:
     def build_metadata(self, *, paper_doc: dict, author_doc: dict | None, project_doc: dict | None = None) -> dict:
         site_url = _normalize_site_url()
 
+        cache_key = hashlib.sha256(json.dumps({
+            "title": paper_doc.get("title"),
+            "body": (paper_doc.get("body") or "")[:200],
+            "slug": paper_doc.get("slug"),
+            "author": (author_doc or {}).get("username"),
+            "project": (project_doc or {}).get("name"),
+        }, sort_keys=True).encode()).hexdigest()
+
+        with _metadata_cache_lock:
+            cached = _metadata_cache.get(cache_key)
+            if cached and time.time() - cached[0] < _METADATA_CACHE_TTL:
+                return cached[1]
+
         title = (paper_doc.get("title") or "Untitled Paper").strip() or "Untitled Paper"
         slug = (paper_doc.get("slug") or "").strip()
         status = (paper_doc.get("status") or "draft").strip().lower()
@@ -259,7 +282,7 @@ class PaperMetadataService:
         abstract = _safe_description(ai_abstract, fallback=fallback_abstract, max_len=320)
         robots = "index, follow" if status == "published" else "noindex, nofollow"
 
-        return {
+        result = {
             "title": f"{title} - by {display_name} | Whitepapper",
             "metaDescription": meta_description,
             "canonical": canonical,
@@ -301,9 +324,9 @@ class PaperMetadataService:
             # AI-provided items (non-deterministic)
             "keyTakeaways": ai_key_takeaways,
             "faq": ai_faq,
-            "author_bio": ai_author_bio,
+            "authorBio": ai_author_bio,
             # JSON-LD built server-side and stored for rendering
-            "jsonld": build_article_jsonld(
+            "jsonLd": build_article_jsonld(
                 title=title,
                 description=meta_description,
                 author_name=display_name,
@@ -317,6 +340,11 @@ class PaperMetadataService:
                 keywords=og_tags,
             ),
         }
+
+        with _metadata_cache_lock:
+            _metadata_cache[cache_key] = (time.time(), result)
+
+        return result
 
 
 paper_metadata_service = PaperMetadataService()

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { ChevronRight } from 'lucide-react'
+import { ArrowUpRight, ChevronRight } from 'lucide-react'
 import type { ImageMetadata } from 'astro'
 import hashnodeLogo from "@/assets/logos/hashnodeLogo.png"
 import devtoLogo from "@/assets/logos/devto.webp"
@@ -42,43 +42,17 @@ export default function IntegrationsSection() {
     ]
     return (
         <section>
-            <div className="py-32">
-                <div className="mx-auto max-w-5xl px-6">
+            <div className="pt-30">
+                <div className="mx-auto max-w-5xl px-4">
                     <div className="text-center">
                         <h2 className="text-[30px] md:text-[40px] font-[400]">Use Whitepapper in your workflow</h2>
                         <p className="text-muted-foreground mt-6">Connect seamlessly with your platforms and websites to enhance your content distribution.</p>
                     </div>
 
-                    <div className="mt-12 grid gap-7 md:grid-cols-3 grid-cols-1">
+                    <div className="mt-15 grid gap-5 md:grid-cols-2 grid-cols-1 max-w-[700px] mx-auto w-full">
                         {integrations.map((item, index) => (
                             <IntegrationCard title={item.title} description={item.description} logo={item.logo} key={index} link={item.href} />
                         ))}
-
-                        <Card className="p-5">
-                            <div className="relative">
-                                <div className='relative h-[40px]'>
-                                    <img src={linkedinLogo.src} alt="LinkedIn logo" height={34} width={34} className='rounded-[5px] absolute z-4' />
-                                    <img src={xLogo.src} alt="X logo" height={34} width={34} className='rounded-[5px] z-2 top-0 absolute translate-x-5' />
-                                    <img src={substackLogo.src} alt="Substack logo" height={34} width={34} className='rounded-[5px] absolute top-0 translate-x-10' />
-                                </div>
-
-                                <div className="space-y-2 py-6">
-                                    <h3 className="text-base font-medium">Comming soon</h3>
-                                    <p className="text-muted-foreground line-clamp-2 text-sm">More platforms applied for approval and under development</p>
-                                </div>
-
-                                <div className="flex gap-3 border-t border-dashed pt-6">
-                                    <a href="/docs/distribution/platform-status">
-                                        <Button size="sm">
-                                            Learn More
-                                            <ChevronRight />
-                                        </Button>
-                                    </a>
-                                </div>
-                            </div>
-                        </Card>
-
-
                     </div>
                 </div>
             </div>
@@ -88,24 +62,17 @@ export default function IntegrationsSection() {
 
 const IntegrationCard = ({ title, description, logo, link }: { title: string; description: string; logo: ImageMetadata; link?: string }) => {
     return (
-        <Card className="p-5">
-            <div className="relative">
-                <img src={logo.src} alt={`${title} logo`} height={40} width={40} className='rounded-[5px]' />
+        <a data-astro-prefetch="viewport" href={link} className="p-5 rounded-[8px] h-55 relative overflow-hidden group">
+            <img src={logo.src} alt={`${title} logo`} height={40} width={40} className='rounded-[5px]' />
 
-                <div className="space-y-2 py-6">
-                    <h3 className="text-base font-medium">{title}</h3>
-                    <p className="text-muted-foreground line-clamp-2 text-sm">{description}</p>
-                </div>
-
-                <div className="flex gap-3 border-t border-dashed pt-6">
-                    <a href={link}>
-                        <Button size="sm">
-                            Learn More
-                            <ChevronRight />
-                        </Button>
-                    </a>
-                </div>
+            <div className="space-y-2 py-6">
+                <h3 className="text-base font-medium">{title}</h3>
+                <p className="text-muted-foreground line-clamp-2 text-sm">{description}</p>
             </div>
-        </Card>
+
+            <p className='justify-end mt-auto w-full font-[450] text-muted-foreground text-[12px] flex items-center gap-2'>Integrate <ArrowUpRight size={12} /></p>
+
+            <div className='w-[120%] h-[0px] group-hover:h-[40px] blur-[40px] bg-primary absolute bottom-[-20px] rounded-[50%] translate-x-[-50%] left-[50%] transition-all duration-500 z-[-1]' />
+        </a>
     )
 }

@@ -148,7 +148,7 @@ function NewAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
                         </InputOTPGroup>
                     </InputOTP>
 
-                    <Button loading={loading} disabled={isDisabled} className="h-[45px] w-full" type="submit">
+                    <Button size="lg" loading={loading} disabled={isDisabled} className="h-[45px] w-full" type="submit">
                         Verify Code
                     </Button>
 
@@ -252,6 +252,7 @@ function NewAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
                 className={styles.heroText}
                 loading={loading}
                 type="submit"
+                size="lg"
             >
                 Create Account
             </Button>
@@ -358,7 +359,7 @@ function OldAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
                 </div>
             </div>
 
-            <Button style={{ animationDelay: "0.2s" }} type="submit" className={styles.heroText} loading={loading} disabled={isDisabled}>
+            <Button size="lg" style={{ animationDelay: "0.2s" }} type="submit" className={styles.heroText} loading={loading} disabled={isDisabled}>
                 Login
             </Button>
         </form>
@@ -387,7 +388,7 @@ export default function LoginPage() {
         if (!clerk?.loaded || !clerk?.client) {
             return null;
         }
-        
+
         return clerk;
     };
 
@@ -420,7 +421,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="mx-auto flex min-h-[100svh] w-full max-w-[400px] flex-col items-center justify-start gap-[30px] px-[15px] pt-25">
+        <div className="mx-auto flex min-h-[100svh] w-full max-w-[420px] flex-col items-center justify-start gap-[30px] px-5 pt-22">
             <ScrollToTop />
             <img src="/appLogo.png" height={70} width={70} alt="Whitepapper" />
 
@@ -453,7 +454,7 @@ export default function LoginPage() {
                     onClick={handleGoogleAuthClick}
                     loading={oauthLoading}
                     disabled={isAnyLoading}
-
+                    size="lg"
                     className={`${styles.heroText} w-full bg-[white] text-[black] hover:bg-[white]/70`}
                 >
                     <img src={googleLogo.src} alt="Google" height={17} width={17} className="mr-[10px]" /> Continue with Google

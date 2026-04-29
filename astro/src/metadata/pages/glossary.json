@@ -1,0 +1,24 @@
+{
+  "path": "/glossary",
+  "title": "Glossary | Whitepapper",
+  "description": "Glossary of content publishing, SEO, and developer terms used in Whitepapper's documentation and platform.",
+  "canonical": "/glossary",
+  "image": "/assets/ogImages/root.png",
+  "keywords": "whitepapper glossary, publishing terms, SEO glossary, content API terms",
+  "robots": "index, follow",
+  "ogType": "website",
+  "ogTitle": "Glossary | Whitepapper",
+  "ogDescription": "Content publishing and SEO glossary for Whitepapper users.",
+  "ogUrl": "/glossary",
+  "ogImage": "/assets/ogImages/root.png",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Glossary | Whitepapper",
+  "twitterDescription": "Publishing and SEO glossary for Whitepapper.",
+  "twitterImage": "/assets/ogImages/root.png",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Glossary",
+    "description": "Definitions of terms used in Whitepapper's documentation and platform."
+  }
+}

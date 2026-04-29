@@ -10,13 +10,19 @@ type SiteBlogCollectionResponse = {
 const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
   .trim()
   .replace(/\/+$/, "");
-const whitepapperApiKey = String(import.meta.env.WHITEPAPPER_API_KEY ?? "").trim();
+const whitepapperApiKey = String(
+  import.meta.env.WHITEPAPPER_API_KEY ?? "",
+).trim();
 
 if (!apiBaseUrl || !whitepapperApiKey) {
-  throw new Error("PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.");
+  throw new Error(
+    "PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.",
+  );
 }
 
-async function fetchSiteBlogCollectionBySlug(slug: string): Promise<SiteBlogCollectionResponse> {
+async function fetchSiteBlogCollectionBySlug(
+  slug: string,
+): Promise<SiteBlogCollectionResponse> {
   const response = await fetch(
     `${apiBaseUrl}/dev/collection?slug=${encodeURIComponent(slug)}`,
     {
@@ -30,7 +36,9 @@ async function fetchSiteBlogCollectionBySlug(slug: string): Promise<SiteBlogColl
 
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(message || `Upstream request failed with ${response.status}`);
+    throw new Error(
+      message || `Upstream request failed with ${response.status}`,
+    );
   }
 
   return response.json() as Promise<SiteBlogCollectionResponse>;
@@ -38,12 +46,10 @@ async function fetchSiteBlogCollectionBySlug(slug: string): Promise<SiteBlogColl
 
 const resourcesBlogs = await fetchSiteBlogCollectionBySlug("resources");
 
-
 Astro.response.headers.set(
   "Cache-Control",
   "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
 );
-
 ---
 
 <Layout>
@@ -51,9 +57,13 @@ Astro.response.headers.set(
     <SiteContentListingPage
       pageTitle="resources"
       primaryTitle="Resources"
+      backHref="/blogs"
+      backLabel="Blogs"
       primaryBlogs={resourcesBlogs.papers.slice(0, 2)}
-      secondaryBlogs={resourcesBlogs.papers.slice(2, resourcesBlogs.papers.length)}
+      secondaryBlogs={resourcesBlogs.papers.slice(
+        2,
+        resourcesBlogs.papers.length,
+      )}
     />
   </main>
 </Layout>
-

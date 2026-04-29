@@ -122,8 +122,6 @@ const resolvedSeo = seo ?? docsPageSeo;
 ---
 
 <Layout
-  title={pageTitleWithBrand}
-  description={pageDescription}
   seo={resolvedSeo}
 >
   <div class="pb-5 md:pb-10 px-4">
@@ -165,7 +163,7 @@ const resolvedSeo = seo ?? docsPageSeo;
               </div>
               <div class="w-full h-[20px] md:h-[32px] relative">
                 <h1
-                  class="absolute left-0 top-1/2 -translate-y-1/2 right-0 text-[18px] truncate font-[500] leading-[1.5em]"
+                  class="absolute left-0 top-1/2 -translate-y-1/2 right-0 text-[18px] md:text-[22px] truncate font-[500] leading-[1.5em]"
                 >
                   {pageTitle}
                 </h1>

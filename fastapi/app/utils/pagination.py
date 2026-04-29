@@ -5,9 +5,18 @@ import json
 from typing import Any
 
 
-def normalize_page_limit(limit: int | None) -> int:
+def normalize_limit(limit: int | None) -> int:
     return max(1, min(int(limit or 25), 100))
 
+
+normalize_page_limit = normalize_limit
+
+
+# NOTE: This offset-based cursor is intentionally different from firestore_store.py's
+# list-based cursor. This pagination module is for REST endpoints where offset/limit
+# pagination is standard. firestore_store.py uses a different cursor format suitable
+# for Firestore document pagination with start_after semantics. Both formats are
+# incompatible by design — do not attempt to merge them.
 
 def _encode_cursor(offset: int) -> str:
     payload = json.dumps({"offset": int(offset)}, separators=(",", ":"), ensure_ascii=True).encode("utf-8")

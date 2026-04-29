@@ -57,9 +57,10 @@ Astro.response.headers.set(
     <SiteContentListingPage
       pageTitle="updates"
       primaryTitle="Updates"
+      backHref="/blogs"
+      backLabel="Blogs"
       primaryBlogs={updateBlogs.papers.slice(0, 4)}
       secondaryBlogs={updateBlogs.papers.slice(5, updateBlogs.papers.length)}
     />
   </main>
 </Layout>
-

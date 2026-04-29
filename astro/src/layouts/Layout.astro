@@ -8,13 +8,9 @@ import "../styles/global.css";
 
 interface Props {
   hideFooter?: boolean;
-  title?: string;
-  description?: string;
-  image?: string;
   seo?: PageSeoConfig | null;
   noindex?: boolean;
   showSiteNav?: boolean;
-  reserveNavSpace?: boolean;
   enableClientRouter?: boolean;
   enableToaster?: boolean;
 }
@@ -23,9 +19,6 @@ const pathname = Astro.url.pathname;
 
 const {
   hideFooter = false,
-  title,
-  description,
-  image,
   seo = null,
   noindex = false,
   showSiteNav = true,
@@ -42,75 +35,51 @@ const {
     pathname === "/sign-in" ||
     pathname === "/sign-up",
 } = Astro.props as Props;
+
 const themeCookie = Astro.cookies.get("theme")?.value ?? null;
 const isDarkTheme = themeCookie === "dark";
-const authHelpers = showSiteNav ? Astro.locals.auth() : null;
-const token = authHelpers ? await authHelpers.getToken().catch(() => null) : null;
-const isSignedIn = Boolean(token);
+
+const isSignedIn = showSiteNav
+  ? Boolean(await Astro.locals.auth().getToken().catch(() => null))
+  : false;
+
+const origin = Astro.url.origin.replace(/\/+$/, "");
+const PRODUCTION_DOMAIN = "whitepapper.antk.in";
+
 const routeSeoConfig = getPageSeoConfig(pathname);
 const pageSeoConfig = mergePageSeoConfig(routeSeoConfig, seo);
-const ROOT_OG_IMAGE_URL = "/assets/ogImages/root.png";
 
-const pathToTitle = (path: string) => {
-  if (path === "/") return "Whitepapper";
-  const parts = path
-    .split("/")
-    .filter(Boolean)
-    .map((segment) =>
-      segment
-        .split("-")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" "),
-    );
-  return `${parts.join(" | ")} | Whitepapper`;
-};
-
-const resolveAbsoluteUrl = (value?: string | null) => {
+function resolveUrl(value?: string | null): string {
   const raw = String(value || "").trim();
   if (!raw) return "";
-
-  const normalizedRaw = raw.replace(/^\/+/, "");
-  if (
-    normalizedRaw === "src/assets/orgImage.png" ||
-    normalizedRaw === "src/assets/ogImage.png" ||
-    normalizedRaw === "assets/ogImages/root.png"
-  ) {
-    const origin = Astro.url.origin.replace(/\/+$/, "");
-    return `${origin}${ROOT_OG_IMAGE_URL}`;
-  }
-
-  if (raw.startsWith("http://") || raw.startsWith("https://")) {
-    try {
-      const parsed = new URL(raw);
-      const currentOrigin = Astro.url.origin.replace(/\/+$/, "");
-      const currentHost = new URL(currentOrigin).host;
-      const isKnownPublicHost = parsed.host === "whitepapper.antk.in" || parsed.host === "www.whitepapper.antk.in";
-      const isLocalRuntime = currentHost === "localhost:4321" || currentHost === "127.0.0.1:4321";
-
-      // Keep source JSON static while ensuring local dev URLs stay local.
-      if (isKnownPublicHost && isLocalRuntime) {
-        return `${currentOrigin}${parsed.pathname}${parsed.search}${parsed.hash}`;
-      }
-    } catch {
-      return raw;
-    }
-    return raw;
-  }
-  const origin = Astro.url.origin.replace(/\/+$/, "");
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
   return `${origin}${raw.startsWith("/") ? "" : "/"}${raw}`;
-};
+}
 
-const siteTitle = pageSeoConfig?.title ?? title ?? pathToTitle(pathname);
-const siteDescription =
-  pageSeoConfig?.description ??
-  description ??
-  "The tool to publish, distribute, automate content writing for websites, socials, docs, blogs | Most powerful and fastest CMS.";
-const siteImage =
-  resolveAbsoluteUrl(pageSeoConfig?.image) ||
-  image ||
-  `${Astro.url.origin}${ROOT_OG_IMAGE_URL}`;
-const canonical =
-  resolveAbsoluteUrl(pageSeoConfig?.canonical) || `${Astro.url.origin}${pathname}`;
+function resolveJsonLdUrls(value: unknown): unknown {
+  if (typeof value === "string") {
+    if (value.includes(PRODUCTION_DOMAIN)) {
+      return value.replace(new RegExp(`https?://${PRODUCTION_DOMAIN.replace(".", "\\.")}`, "g"), origin);
+    }
+    return value;
+  }
+  if (Array.isArray(value)) return value.map(resolveJsonLdUrls);
+  if (value && typeof value === "object") {
+    const result: Record<string, unknown> = {};
+    for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+      result[key] = resolveJsonLdUrls(v);
+    }
+    return result;
+  }
+  return value;
+}
+
+const ROOT_OG_IMAGE = "/assets/ogImages/root.png";
+
+const siteTitle = pageSeoConfig?.title ?? "Whitepapper";
+const siteDescription = pageSeoConfig?.description ?? "";
+const siteImage = resolveUrl(pageSeoConfig?.image) || `${origin}${ROOT_OG_IMAGE}`;
+const canonical = resolveUrl(pageSeoConfig?.canonical) || `${origin}${pathname}`;
 const robotsMeta = noindex
   ? "noindex, nofollow"
   : pageSeoConfig?.robots || "index, follow";
@@ -121,37 +90,34 @@ const localeMeta = pageSeoConfig?.locale || pageSeoConfig?.ogLocale || "en_US";
 const authorMeta = pageSeoConfig?.author || "";
 const ogTitleMeta = pageSeoConfig?.ogTitle || siteTitle;
 const ogDescriptionMeta = pageSeoConfig?.ogDescription || siteDescription;
-const ogUrlMeta = resolveAbsoluteUrl(pageSeoConfig?.ogUrl) || canonical;
-const ogImageMeta = resolveAbsoluteUrl(pageSeoConfig?.ogImage) || siteImage;
+const ogUrlMeta = resolveUrl(pageSeoConfig?.ogUrl) || canonical;
+const ogImageMeta = resolveUrl(pageSeoConfig?.ogImage) || siteImage;
 const ogImageAltMeta = pageSeoConfig?.ogImageAlt || `${siteTitle} social preview`;
 const ogImageWidthMeta = pageSeoConfig?.ogImageWidth;
 const ogImageHeightMeta = pageSeoConfig?.ogImageHeight;
 const ogPublishedTimeMeta = pageSeoConfig?.ogPublishedTime || "";
 const ogModifiedTimeMeta = pageSeoConfig?.ogModifiedTime || "";
-const ogAuthorUrlMeta = resolveAbsoluteUrl(pageSeoConfig?.ogAuthorUrl) || "";
+const ogAuthorUrlMeta = resolveUrl(pageSeoConfig?.ogAuthorUrl) || "";
 const ogTagsMeta = Array.isArray(pageSeoConfig?.ogTags) ? pageSeoConfig.ogTags : [];
 const twitterCardMeta = pageSeoConfig?.twitterCard || "summary_large_image";
 const twitterTitleMeta = pageSeoConfig?.twitterTitle || siteTitle;
 const twitterDescriptionMeta = pageSeoConfig?.twitterDescription || siteDescription;
-const twitterImageMeta = resolveAbsoluteUrl(pageSeoConfig?.twitterImage) || ogImageMeta;
+const twitterImageMeta = resolveUrl(pageSeoConfig?.twitterImage) || ogImageMeta;
 const twitterImageAltMeta = pageSeoConfig?.twitterImageAlt || ogImageAltMeta;
 const twitterCreatorMeta = pageSeoConfig?.twitterCreator || "";
 const twitterSiteMeta = pageSeoConfig?.twitterSite || "";
 const articleSectionMeta = pageSeoConfig?.articleSection || "";
-const articlePublishedTimeMeta =
-  pageSeoConfig?.articlePublishedTime || ogPublishedTimeMeta;
-const articleModifiedTimeMeta =
-  pageSeoConfig?.articleModifiedTime || ogModifiedTimeMeta;
-const articleAuthorMeta =
-  resolveAbsoluteUrl(pageSeoConfig?.articleAuthor) || ogAuthorUrlMeta;
+const articleModifiedTimeMeta = pageSeoConfig?.articleModifiedTime || ogModifiedTimeMeta;
+const articleAuthorMeta = resolveUrl(pageSeoConfig?.articleAuthor) || ogAuthorUrlMeta;
 const articleTagsMeta = Array.isArray(pageSeoConfig?.articleTags)
   ? pageSeoConfig.articleTags
   : [];
-const jsonLdItems = Array.isArray(pageSeoConfig?.jsonLd)
-  ? pageSeoConfig?.jsonLd
+const jsonLdItemsRaw = Array.isArray(pageSeoConfig?.jsonLd)
+  ? pageSeoConfig.jsonLd
   : pageSeoConfig?.jsonLd
     ? [pageSeoConfig.jsonLd]
     : [];
+const jsonLdItems = jsonLdItemsRaw.map((item) => resolveJsonLdUrls(item));
 ---
 
 <!doctype html>
@@ -205,6 +171,35 @@ const jsonLdItems = Array.isArray(pageSeoConfig?.jsonLd)
     {enableClientRouter ? <ClientRouter /> : null}
     <script is:inline>
       (() => {
+        try {
+          const storageKey = "theme";
+          const root = document.documentElement;
+          const stored = localStorage.getItem(storageKey);
+          const cookieMatch = document.cookie.match(/(?:^|; )theme=([^;]+)/);
+          const cookieTheme = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+          const resolved = stored || cookieTheme || "light";
+          const isDark = resolved === "dark";
+          root.classList.toggle("dark", isDark);
+          root.style.colorScheme = isDark ? "dark" : "light";
+          if (stored !== resolved) {
+            localStorage.setItem(storageKey, resolved);
+          }
+          if (cookieTheme !== resolved) {
+            document.cookie = `theme=${resolved}; path=/; max-age=31536000`;
+          }
+        } catch {
+          // ignore theme init errors
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    {showSiteNav && <SiteTopNav isSignedIn={isSignedIn} />}
+    <slot />
+    {!hideFooter && <Footer />}
+    {enableToaster ? <Toaster client:load /> : null}
+    <script is:inline>
+      (() => {
         if (window.__wpReadyFlagsHooked) {
           return;
         }
@@ -228,36 +223,6 @@ const jsonLdItems = Array.isArray(pageSeoConfig?.jsonLd)
         document.addEventListener("astro:before-swap", clearReadyFlags);
       })();
     </script>
-    <script is:inline>
-      (() => {
-        try {
-          const storageKey = "theme";
-          const root = document.documentElement;
-          const stored = localStorage.getItem(storageKey);
-          const cookieMatch = document.cookie.match(/(?:^|; )theme=([^;]+)/);
-          const cookieTheme = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
-          const resolved = stored || cookieTheme || "light";
-          const isDark = resolved === "dark";
-          root.classList.toggle("dark", isDark);
-          root.style.colorScheme = isDark ? "dark" : "light";
-          if (stored !== resolved) {
-            localStorage.setItem(storageKey, resolved);
-          }
-          if (cookieTheme !== resolved) {
-            document.cookie = `theme=${resolved}; path=/; max-age=31536000`;
-          }
-        } catch {
-          // ignore theme init errors (e.g. storage blocked)
-        }
-      })();
-    </script>
-  </head>
-  <body>
-    {showSiteNav && <SiteTopNav isSignedIn={isSignedIn} />}
-    <!-- {showSiteNav && reserveNavSpace && <div class="h-[58px] w-full"></div>} -->
-    <slot />
-    {!hideFooter && <Footer />}
-    {enableToaster ? <Toaster client:load /> : null}
   </body>
 </html>
 

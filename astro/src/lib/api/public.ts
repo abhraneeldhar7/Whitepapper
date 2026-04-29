@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/api/client";
+import { apiClient, type ApiClient } from "@/lib/api/client";
 import type {
   CollectionDoc,
   PaperDoc,
@@ -23,21 +23,23 @@ export type PublicProjectResponse = {
   papers: PaperDoc[];
 };
 
-export async function getPublicProfile(handle: string): Promise<PublicProfileResponse> {
-  return apiClient.get<PublicProfileResponse>(`/public/${handle}`, { auth: "none" });
+export async function getPublicProfile(handle: string, client: ApiClient = apiClient): Promise<PublicProfileResponse> {
+  return client.get<PublicProfileResponse>(`/public/${handle}`, { auth: "none" });
 }
 
 export async function getPublicProjectBySlug(
   handle: string,
   projectSlug: string,
+  client: ApiClient = apiClient,
 ): Promise<PublicProjectResponse> {
-  return apiClient.get<PublicProjectResponse>(`/public/${handle}/projects/${projectSlug}`, { auth: "none" });
+  return client.get<PublicProjectResponse>(`/public/${handle}/projects/${projectSlug}`, { auth: "none" });
 }
 
 
 export async function getPublicPaperPageData(
   handle: string,
   slug: string,
+  client: ApiClient = apiClient,
 ): Promise<PublicPaperPagePayload> {
-  return apiClient.get<PublicPaperPagePayload>(`/public/${handle}/papers/${slug}`, { auth: "none" });
+  return client.get<PublicPaperPagePayload>(`/public/${handle}/papers/${slug}`, { auth: "none" });
 }

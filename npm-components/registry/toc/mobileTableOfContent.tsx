@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { AnimatedThemeToggler } from '../animated-theme-toggler'
+import { AnimatedThemeToggler } from './animated-theme-toggler'
 
 interface Heading {
     id: string
@@ -54,7 +54,7 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
 
     const tocRef = useRef<HTMLDivElement>(null)
     const scrollListRef = useRef<HTMLDivElement>(null)
-    const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const scrollRafRef = useRef<number | null>(null)
     const pillRef = useRef<HTMLDivElement>(null)
     const scrollRootRef = useRef<HTMLElement | Window | null>(null)
 
@@ -122,11 +122,11 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
     const handleScroll = useCallback(() => {
         if (headings.length === 0) return
 
-        if (scrollTimeoutRef.current) {
-            clearTimeout(scrollTimeoutRef.current)
+        if (scrollRafRef.current !== null) {
+            window.cancelAnimationFrame(scrollRafRef.current)
         }
 
-        scrollTimeoutRef.current = setTimeout(() => {
+        scrollRafRef.current = window.requestAnimationFrame(() => {
             const contentEl = document.getElementById(contentContainerId) as HTMLElement | null
             if (!contentEl) return
 
@@ -184,7 +184,8 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
                 setCurrentHeadingText(currentActive.text)
             }
 
-        }, 16)
+            scrollRafRef.current = null
+        })
     }, [contentContainerId, headings, topOffset])
 
     // Attach scroll listener
@@ -203,7 +204,9 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
             } else {
                 root.removeEventListener('scroll', handleScroll)
             }
-            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current)
+            if (scrollRafRef.current !== null) {
+                window.cancelAnimationFrame(scrollRafRef.current)
+            }
         }
     }, [handleScroll])
 
@@ -212,10 +215,9 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
         if (isExpanded && activeId && scrollListRef.current) {
             const activeElement = document.getElementById(`toc-btn-${activeId}`)
             if (activeElement) {
-                // Wait for the expansion transition to finish slightly for smoother visual
-                setTimeout(() => {
+                window.requestAnimationFrame(() => {
                     activeElement.scrollIntoView({ block: 'center', behavior: 'smooth' })
-                }, 100)
+                })
             }
         }
     }, [isExpanded, activeId])
@@ -262,8 +264,8 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
                 }
                 /* Hide scrollbar for IE, Edge and Firefox */
                 .no-scrollbar {
-                    -ms-overflow-style: none;  /* IE and Edge */
-                    scrollbar-width: none;  /* Firefox */
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
                 }
                 
                 @keyframes slideUpFade {
@@ -300,13 +302,11 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
                     onClick={() => !isExpanded && setIsExpanded(true)}
                 >
                     {/* Header Section (Always Visible) */}
-                    {/* flex-shrink-0 ensures this stays 45px height regardless of container expansion */}
                     <div className={`flex items-center gap-3 shrink-0 h-[45px] w-full px-3 transition-all duration-300 ${isExpanded ? "opacity-100 border-b border-border/10" : "opacity-100"}`}>
                         <CircleProgress value={progress} />
 
                         {/* Current heading text area */}
                         <div className="flex-1 min-w-0 h-full relative overflow-hidden flex items-center">
-                            {/* We use a key to trigger the animation when text changes */}
                             <div
                                 key={currentHeadingText}
                                 className="text-[12px] font-[500] truncate w-full animate-slide-up-fade absolute"
@@ -321,7 +321,6 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
                     </div>
 
                     {/* Expanded List Section */}
-                    {/* flex-1 ensures it fills the remaining space, min-h-0 allows internal scrolling */}
                     <div className={`flex-1 min-h-0 w-full transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0"}`}>
                         <div
                             ref={scrollListRef}
@@ -346,7 +345,7 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
                                             {[...Array(heading.level - 1)].map((_, i) => (
                                                 <div
                                                     key={i}
-                                                    className="w-[6px]" // Smaller indentation
+                                                    className="w-[6px]"
                                                 />))}
                                         </div>
 

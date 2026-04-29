@@ -25,9 +25,6 @@ from app.services.mcp_auth import mcp_authorization_service
 from app.services.user_service import user_service
 
 MCP_HTTP_PREFIX = "/mcp"
-MCP_SCOPES = ["mcp"]
-_PENDING_AUTH_TTL_SECONDS = 15 * 60
-_PENDING_CODE_TTL_SECONDS = 10 * 60
 logger = logging.getLogger(__name__)
 
 
@@ -63,13 +60,11 @@ class RegisteredClient:
     created_at: float
 
 
+# In-memory OAuth state: intentional design choice. State is ephemeral — lost on restart,
+# but acceptable since MCP tokens are re-authorizable. Avoids Redis dependency for auth flow.
 _pending_authorizations: dict[str, PendingAuthorization] = {}
 _pending_codes: dict[str, PendingCode] = {}
 _registered_clients: dict[str, RegisteredClient] = {}
-
-
-def _settings():
-    return get_settings()
 
 
 def _required_env(value: str | None, env_name: str) -> str:
@@ -79,36 +74,16 @@ def _required_env(value: str | None, env_name: str) -> str:
     return normalized
 
 
-def _public_api_url() -> str:
-    return _required_env(_settings().public_api_url, "PUBLIC_API_URL").rstrip("/")
-
-
-def _public_site_url() -> str:
-    return _required_env(_settings().public_site_url, "PUBLIC_SITE_URL").rstrip("/")
-
-
-def _mcp_endpoint_url() -> str:
-    return f"{_public_api_url()}{MCP_HTTP_PREFIX}"
-
-
-def _well_known_resource_url() -> str:
-    return f"{_public_api_url()}/.well-known/oauth-protected-resource"
-
-
-def _authorization_server_metadata_url() -> str:
-    return f"{_public_api_url()}/.well-known/oauth-authorization-server"
-
-
 def _oauth_register_url() -> str:
-    return f"{_public_api_url()}/oauth/register"
+    return f"{_required_env(get_settings().public_api_url, 'PUBLIC_API_URL').rstrip('/')}/oauth/register"
 
 
 def _oauth_authorize_url() -> str:
-    return f"{_public_api_url()}/oauth/authorize"
+    return f"{_required_env(get_settings().public_api_url, 'PUBLIC_API_URL').rstrip('/')}/oauth/authorize"
 
 
 def _oauth_token_url() -> str:
-    return f"{_public_api_url()}/oauth/token"
+    return f"{_required_env(get_settings().public_api_url, 'PUBLIC_API_URL').rstrip('/')}/oauth/token"
 
 
 def _json_no_cache(payload: Any, status_code: int = 200) -> JSONResponse:
@@ -137,7 +112,7 @@ async def _read_request_payload(request: Request) -> dict[str, Any]:
 
 
 def _mcp_connection_payload() -> dict[str, Any]:
-    endpoint_url = _mcp_endpoint_url()
+    endpoint_url = f"{_required_env(get_settings().public_api_url, 'PUBLIC_API_URL').rstrip('/')}{MCP_HTTP_PREFIX}"
     return {
         "serverName": "whitepapper",
         "transport": "http",
@@ -154,17 +129,6 @@ def _mcp_connection_payload() -> dict[str, Any]:
     }
 
 
-def _cleanup_pending_state() -> None:
-    now = time.time()
-    for request_id, item in list(_pending_authorizations.items()):
-        if now - item.created_at > _PENDING_AUTH_TTL_SECONDS:
-            del _pending_authorizations[request_id]
-
-    for code, item in list(_pending_codes.items()):
-        if now - item.created_at > _PENDING_CODE_TTL_SECONDS:
-            del _pending_codes[code]
-
-
 def _normalize_redirect_uris(raw_value: Any) -> list[str]:
     if isinstance(raw_value, list):
         return [_validate_redirect_uri(str(item)) for item in raw_value if str(item).strip()]
@@ -176,7 +140,7 @@ def _normalize_redirect_uris(raw_value: Any) -> list[str]:
 def _normalize_scope(scope_raw: str | None) -> list[str]:
     scopes = [item.strip() for item in str(scope_raw or "").split(" ") if item.strip()]
     if not scopes:
-        return list(MCP_SCOPES)
+        return ["mcp"]
     return scopes
 
 
@@ -197,9 +161,9 @@ def _auth_error_response(detail: str, *, error: str = "invalid_token", status_co
     response = _json_no_cache(body, status_code=status_code)
     response.headers["WWW-Authenticate"] = (
         'Bearer realm="whitepapper-mcp", '
-        f'resource_metadata="{_well_known_resource_url()}", '
+        f'resource_metadata="{_required_env(get_settings().public_api_url, "PUBLIC_API_URL").rstrip("/")}/.well-known/oauth-protected-resource", '
         f'authorization_uri="{_oauth_authorize_url()}", '
-        f'scope="{" ".join(MCP_SCOPES)}"'
+        f'scope="mcp"'
     )
     return response
 
@@ -209,7 +173,6 @@ def _encode_redirect_params(params: dict[str, str | None]) -> str:
 
 
 def _load_pending_authorization(request_id: str) -> PendingAuthorization:
-    _cleanup_pending_state()
     item = _pending_authorizations.get(request_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Authorization request not found or expired.")
@@ -217,7 +180,6 @@ def _load_pending_authorization(request_id: str) -> PendingAuthorization:
 
 
 def _load_pending_code(code: str) -> PendingCode:
-    _cleanup_pending_state()
     item = _pending_codes.get(code)
     if item is None:
         raise HTTPException(status_code=400, detail="Authorization code is invalid or expired.")
@@ -245,7 +207,7 @@ class McpBearerAuthMiddleware(BaseHTTPMiddleware):
         access_token = AccessToken(
             token=raw_token,
             client_id=str(token_doc.get("tokenId") or ""),
-            scopes=list(MCP_SCOPES),
+            scopes=["mcp"],
             claims={"sub": str(token_doc.get("userId") or "")},
         )
         request.scope["auth"] = AuthCredentials(access_token.scopes)
@@ -260,9 +222,9 @@ def build_mcp_router() -> APIRouter:
     async def oauth_protected_resource() -> JSONResponse:
         return _json_no_cache(
             {
-                "resource": _mcp_endpoint_url(),
-                "authorization_servers": [_public_api_url()],
-                "scopes_supported": MCP_SCOPES,
+                "resource": f"{_required_env(get_settings().public_api_url, 'PUBLIC_API_URL').rstrip('/')}{MCP_HTTP_PREFIX}",
+                "authorization_servers": [_required_env(get_settings().public_api_url, "PUBLIC_API_URL").rstrip("/")],
+                "scopes_supported": ["mcp"],
                 "bearer_methods_supported": ["header"],
                 "resource_name": "Whitepapper MCP",
             }
@@ -271,8 +233,8 @@ def build_mcp_router() -> APIRouter:
     async def oauth_authorization_server() -> JSONResponse:
         return _json_no_cache(
             {
-                "issuer": _public_api_url(),
-                "service_documentation": f"{_public_site_url()}/integrations",
+                "issuer": _required_env(get_settings().public_api_url, "PUBLIC_API_URL").rstrip("/"),
+                "service_documentation": f"{_required_env(get_settings().public_site_url, 'PUBLIC_SITE_URL').rstrip('/')}/integrations",
                 "authorization_endpoint": _oauth_authorize_url(),
                 "token_endpoint": _oauth_token_url(),
                 "registration_endpoint": _oauth_register_url(),
@@ -283,14 +245,14 @@ def build_mcp_router() -> APIRouter:
                 "token_endpoint_auth_methods_supported": ["none"],
                 "code_challenge_methods_supported": ["S256"],
                 "authorization_response_iss_parameter_supported": False,
-                "scopes_supported": MCP_SCOPES,
+                "scopes_supported": ["mcp"],
             }
         )
 
     async def openid_configuration() -> JSONResponse:
         return _json_no_cache(
             {
-                "issuer": _public_api_url(),
+                "issuer": _required_env(get_settings().public_api_url, "PUBLIC_API_URL").rstrip("/"),
                 "authorization_endpoint": _oauth_authorize_url(),
                 "token_endpoint": _oauth_token_url(),
                 "registration_endpoint": _oauth_register_url(),
@@ -301,7 +263,7 @@ def build_mcp_router() -> APIRouter:
                 "token_endpoint_auth_methods_supported": ["none"],
                 "code_challenge_methods_supported": ["S256"],
                 "authorization_response_iss_parameter_supported": False,
-                "scopes_supported": MCP_SCOPES,
+                "scopes_supported": ["mcp"],
                 "subject_types_supported": ["public"],
                 "id_token_signing_alg_values_supported": ["RS256"],
             }
@@ -324,7 +286,7 @@ def build_mcp_router() -> APIRouter:
                 "client_id": client_id,
                 "client_id_issued_at": int(time.time()),
                 "client_name": client_name,
-                "client_uri": "https://code.visualstudio.com",
+                "client_uri": payload.get("client_uri") or "https://code.visualstudio.com",
                 "redirect_uris": redirect_uris,
                 "grant_types": ["authorization_code"],
                 "response_types": ["code"],
@@ -376,7 +338,7 @@ def build_mcp_router() -> APIRouter:
             created_at=time.time(),
         )
 
-        consent_url = f"{_public_site_url()}/mcp/connect?request_id={urlencode({'request_id': request_id})[11:]}"
+        consent_url = f"{_required_env(get_settings().public_site_url, 'PUBLIC_SITE_URL').rstrip('/')}/mcp/connect?request_id={request_id}"
         return RedirectResponse(url=consent_url, status_code=302)
 
     @router.get("/oauth/consent/context")
@@ -490,11 +452,8 @@ def build_mcp_router() -> APIRouter:
         methods=["GET"],
     )
     router.add_api_route("/oauth/register", oauth_register, methods=["POST"])
-    router.add_api_route("/register", oauth_register, methods=["POST"])
     router.add_api_route("/oauth/authorize", oauth_authorize, methods=["GET"])
-    router.add_api_route("/authorize", oauth_authorize, methods=["GET"])
     router.add_api_route("/oauth/token", oauth_token, methods=["POST"])
-    router.add_api_route("/token", oauth_token, methods=["POST"])
 
     @router.get(f"{MCP_HTTP_PREFIX}/config")
     async def get_mcp_connection_info() -> JSONResponse:

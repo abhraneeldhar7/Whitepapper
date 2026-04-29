@@ -1,14 +1,89 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import meImg from "@/assets/me.jpg";
+import { Label } from "@/components/ui/label";
+import xLogo from "@/assets/logos/xLogo.jpg";
+import mediumLogo from "@/assets/logos/mediumLogo.jpeg";
+import peerListLogo from "@/assets/logos/peerList.webp";
+import linkedinLogo from "@/assets/logos/linkedinLogo.png";
+import devtoLogo from "@/assets/logos/devto.webp";
+import hashnodeLogo from "@/assets/logos/hashnodeLogo.png";
+
+const getAge = () => {
+    const today = new Date();
+    const birthDate = new Date("2005-03-18");
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+        age--;
+    }
+
+    return age;
+};
+
+const socials = [
+    { name: "LinkedIn", logo: linkedinLogo, url: "https://www.linkedin.com/in/abhraneeldhar" },
+    { name: "X (Twitter)", logo: xLogo, url: "https://x.com/veryNeel" },
+    { name: "Medium", logo: mediumLogo, url: "https://medium.com/@abhraneeldhar7" },
+    { name: "Dev.to", logo: devtoLogo, url: "https://dev.to/abhraneeldhar" },
+    { name: "Hashnode", logo: hashnodeLogo, url: "https://hashnode.com/@abhraneeldhar" },
+    { name: "Peerlist", logo: peerListLogo, url: "https://peerlist.io/abhraneeldhar" },
+];
 ---
 
 <Layout>
-    <main class="h-[100svh] px-4 flex flex-col items-center justify-center" aria-label="Contact Whitepapper">
-        <section class="space-y-2 text-[16px] text-muted-foreground" aria-labelledby="contact-title">
-            <h1 id="contact-title" class="sr-only">Contact Whitepapper</h1>
-            <p >Hello, I am <span class="text-foreground">Abhraneel</span></p>
-            <p>I make tools for developers and normal people</p>
-            <p>Reach me at <a href="mailto:abhraneeldhar@gmail.com" class="underline text-foreground">abhraneeldhar@gmail.com</a></p>
+    <main
+        class="h-[100svh] px-4 flex flex-col items-center justify-center"
+        aria-label="Contact Whitepapper"
+    >
+        <section
+            class="flex flex-col gap-7 text-[17px] text-muted-foreground max-w-[500px] w-full mx-auto justify-center"
+            aria-labelledby="contact-title"
+        >
+            <div class="h-10"></div>
+            <div class="flex items-end gap-3 justify-between w-full">
+                <p class="shrink-0">
+                    Hello, I am <a href="https://veryneel.vercel.app" target="_blank" class="text-foreground text-[20px] underline"
+                        >Abhraneel <span class="hidden md:inline">Dhar</span></a>
+                </p>
+                <div class="flex justify-center w-full px-2">
+                    <img
+                        src={meImg.src}
+                        class="aspect-square object-cover max-w-[240px] w-full grayscale hover:grayscale-0 active:grayscale-0 transition-all duration-300 ease-in-out"
+                    />
+                </div>
+            </div>
+            <p>
+                {getAge()}, Design Engineer. I expertise in controlling what the
+                user feels when they use my products.
+            </p>
+            <p>
+                Reach me at <a
+                    href="mailto:abhraneeldhar@gmail.com"
+                    class="underline text-foreground">abhraneeldhar@gmail.com</a
+                >
+            </p>
+            <div class="mt-10">
+                <Label>Socials</Label>
+                <div class="flex gap-4 md:gap-10 mt-4">
+                    {
+                        socials.map((item) => (
+                            <a href={item.url} target="_blank" class="flex-1">
+                    <img
+                                        src={item.logo.src}
+                                        alt={`${item.name} profile`}
+                                        class="object-square w-full rounded-[5px] md:rounded-[10px] grayscale hover:grayscale-0 active:grayscale-0 transition-all duration-300 ease-in-out hover:translate-y-[-3px] active:translate-y-[-3px]"
+                                    />
+                            </a>
+                        ))
+                    }
+                </div>
+            </div>
         </section>
     </main>
 </Layout>

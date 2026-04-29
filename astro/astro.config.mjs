@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   output: 'server',
+  trailingSlash: 'never',
   adapter: vercel(),
   integrations: [react(), clerk()],
   vite: {

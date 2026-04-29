@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 interface KeyDisplay {
     label: string;
@@ -9,7 +9,7 @@ interface KeyDisplay {
 export default function OnscreenKeyboard({ className }: { className?: string }) {
     const releaseDelayMs = 100;
     const [activeCodes, setActiveCodes] = useState<Set<string>>(() => new Set());
-    const releaseTimersRef = React.useRef<Map<string, number>>(new Map());
+    const releaseTimersRef = useRef<Map<string, number>>(new Map());
 
     useEffect(() => {
         const clearAllActiveKeys = (): void => {
@@ -200,7 +200,7 @@ export default function OnscreenKeyboard({ className }: { className?: string }) 
                     rounded-md transition-all duration-300 bg-foreground/5 border-foreground/5 border
                     ${active ? "opacity-[1]" : "opacity-[0]"}
                   `}>
-                                    {/* {label} */}
+                                    {label}
                                 </div>
                             );
                         })}

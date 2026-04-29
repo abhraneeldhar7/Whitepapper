@@ -9,6 +9,7 @@ from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
 from app.utils.cache import add_cache_buster
 from app.utils.content import extract_image_urls
+from app.utils.sorting import sort_items_latest_first
 
 router = APIRouter(tags=["projects"])
 
@@ -155,9 +156,8 @@ def get_project_dashboard(
         standalone=True,
     )
 
-    # Sort by updatedAt in descending order
-    collections.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
-    project_papers.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
+    collections = sort_items_latest_first(collections)
+    project_papers = sort_items_latest_first(project_papers)
 
     return ProjectDashboardResponse(
         project=project,

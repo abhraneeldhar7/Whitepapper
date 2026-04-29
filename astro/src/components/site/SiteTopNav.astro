@@ -13,21 +13,19 @@ const { isSignedIn = false } = Astro.props as Props;
 
 const desktopNavButtonsList = [
   { title: "Docs", href: "/docs" },
-  // { title: "Use Cases", href: "/use-cases" },
-  // { title: "Blogs", href: "/blogs" },
-  // { title: "Components", href: "/components" },
-  // { title: "Integrations", href: "/integrations" },
-  // { title: "Pricing", href: "/pricing" },
+  { title: "Use Cases", href: "/use-cases" },
+  { title: "Features", href: "/features" },
+  { title: "Components", href: "/components" },
+  { title: "Integrations", href: "/integrations" },
+  { title: "Contact", href: "/contact" },
 ];
 const mobileNavButtonsList = [
   { title: "Docs", href: "/docs" },
-  // { title: "Use Cases", href: "/use-cases" },
   { title: "Blogs", href: "/blogs" },
-  { title: "Components", href: "/components" },
-  // { title: "Compare", href: "/compare" },
   { title: "Features", href: "/features" },
   { title: "Integrations", href: "/integrations" },
-  { title: "Pricing", href: "/pricing" },
+  { title: "Contact", href: "/contact" },
+  { title: "About", href: "/about" },
 ];
 ---
 
@@ -44,9 +42,10 @@ const mobileNavButtonsList = [
       <a href="/" aria-label="Whitepapper home" data-astro-prefetch="viewport">
         <img src="/appLogo.png" height="30" width="30" alt="Whitepapper" />
       </a>
+      <div class="w-[140px] md:block hidden ml-2"/>
     </div>
 
-    <div class="hidden gap-3 text-[14px] leading-[1em] md:flex" role="list">
+    <div class="hidden gap-5 text-[12px] leading-[1em] md:flex" role="list">
       {
         desktopNavButtonsList.map((button) => (
           <a
@@ -56,8 +55,8 @@ const mobileNavButtonsList = [
           >
             {button.title}
             <ArrowUpRight
-              size={12}
-              className="opacity-[0] transition-all duration-300 group-hover:opacity-[1]"
+              size={11}
+              className="opacity-[0] transition-all duration-300 group-hover:opacity-[0.5]"
             />
           </a>
         ))
@@ -87,8 +86,4 @@ const mobileNavButtonsList = [
       </div>
     </div>
   </nav>
-
-  <!-- <div class="hidden md:block relative z-[20] pointer-events-auto">
-    <AnimatedThemeToggler size={16} client:load />
-  </div> -->
 </header>

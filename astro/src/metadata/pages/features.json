@@ -1,0 +1,28 @@
+{
+  "path": "/features",
+  "title": "Features | Whitepapper",
+  "description": "Explore Whitepapper's features: markdown editor, content API, SEO metadata, public pages, multi-platform distribution, and MCP automation for developers.",
+  "canonical": "/features",
+  "image": "/assets/ogImages/root.png",
+  "keywords": "whitepapper features, developer CMS features, content API, SEO metadata, distribution, MCP",
+  "robots": "index, follow",
+  "author": "Abhraneel Dhar",
+  "siteName": "Whitepapper",
+  "locale": "en_US",
+  "ogType": "website",
+  "ogTitle": "Features | Whitepapper",
+  "ogDescription": "Explore Whitepapper's features: markdown editor, content API, SEO metadata, public pages, multi-platform distribution, and MCP automation.",
+  "ogUrl": "/features",
+  "ogImage": "/assets/ogImages/root.png",
+  "ogImageAlt": "Whitepapper features overview",
+  "twitterCard": "summary_large_image",
+  "twitterTitle": "Features | Whitepapper",
+  "twitterDescription": "Explore Whitepapper: markdown editor, content API, SEO metadata, public pages, distribution.",
+  "twitterImage": "/assets/ogImages/root.png",
+  "jsonLd": {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Whitepapper Features",
+    "description": "Developer publishing platform features: markdown editor, API, SEO, distribution."
+  }
+}
