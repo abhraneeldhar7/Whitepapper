@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "whitepapper": {
+      "type": "remote",
+      "url": "https://api.papper.antk.in/mcp",
+      "oauth": {}
+    }
+  }
+}

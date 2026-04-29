@@ -382,8 +382,8 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
 
 
           <TabsContent value="mcp" className="mt-5">
-            <div className="space-y-6 max-w-[800px] w-full mx-auto">
-              <div className="space-y-3">
+            <div className="space-y-6 max-w-[800px] w-full mx-auto mt-10">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <Label>MCP Setup</Label>
                 </div>

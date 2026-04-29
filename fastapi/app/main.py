@@ -41,13 +41,10 @@ app.add_middleware(McpBearerAuthMiddleware)
 
 @app.middleware("http")
 async def route_mcp_root(request, call_next):
-    if request.url.path == MCP_HTTP_PREFIX and request.method == "GET":
-        scope = dict(request.scope)
-        root_path = str(scope.get("root_path") or "")
-        scope["root_path"] = f"{root_path}{MCP_HTTP_PREFIX}"
-        scope["path"] = "/"
-        scope["raw_path"] = b"/"
-        return await mcp_http_app(scope, request.receive, request._send)
+    if request.url.path == MCP_HTTP_PREFIX:
+        scope = request.scope
+        scope["path"] = MCP_HTTP_PREFIX + "/"
+        scope["raw_path"] = (MCP_HTTP_PREFIX + "/").encode()
     return await call_next(request)
 
 

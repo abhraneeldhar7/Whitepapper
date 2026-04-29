@@ -1,6 +1,6 @@
 {
   "name": "whitepapper",
-  "version": "0.1.15",
+  "version": "0.1.17",
   "description": "CLI to add reusable Whitepapper UI components from the public registry.",
   "type": "module",
   "bin": {
