@@ -2,6 +2,9 @@
 
 Reusable React components from [Whitepapper](https://whitepapper.antk.in) — a markdown-first content platform for developers. These are extracted from production use and work in any React project.
 
+![ogImage](https://raw.githubusercontent.com/abhraneeldhar7/Whitepapper/master/astro/public/assets/ogImages/root.png)
+
+
 ## Package
 
 - **CLI name:** `whitepapper`
