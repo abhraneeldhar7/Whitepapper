@@ -9,7 +9,7 @@ import { AuthenticateWithRedirectCallback } from "@clerk/astro/components";
 <Layout noindex={true} hideFooter={true} showSiteNav={false}>
 	<div class="px-4 py-10 max-w-[600px] w-full flex flex-col mx-auto h-screen">
 		<AuthenticateWithRedirectCallback
-			client:load
+			client:only="react" 
 			signInUrl="/login"
 			signUpUrl="/login"
 			signUpFallbackRedirectUrl="/dashboard"
