@@ -1,0 +1,8 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import SsoCompleteGate from "@/components/site/SsoCompleteGate";
+---
+
+<Layout noindex={true} hideFooter={true} showSiteNav={false}>
+  <SsoCompleteGate client:load />
+</Layout>
