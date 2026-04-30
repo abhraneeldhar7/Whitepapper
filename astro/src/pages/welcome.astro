@@ -9,13 +9,13 @@ import { AuthenticateWithRedirectCallback } from "@clerk/astro/components";
 <Layout noindex={true} hideFooter={true} showSiteNav={false}>
 	<div class="px-4 py-10 max-w-[600px] w-full flex flex-col mx-auto h-screen">
 		<AuthenticateWithRedirectCallback
-			client:only="react" 
 			signInUrl="/login"
 			signUpUrl="/login"
 			signUpFallbackRedirectUrl="/dashboard"
 			signInFallbackRedirectUrl="/dashboard"
 		/>
-		<div class="relative w-full aspect-2/1 px-5 py-20">
+		<p>wait</p>
+		<!-- <div class="relative w-full aspect-2/1 px-5 py-20">
 			<h1 class="text-[white] font-[450] text-[30px]">
 				<span class="text-[32px]">Welcome to </span>
 				<br />
@@ -86,6 +86,6 @@ import { AuthenticateWithRedirectCallback } from "@clerk/astro/components";
 		>
 			<TriangleAlert size={15} />
 			<p class="text-[16px]">Do not close this screen</p>
-		</div>
+		</div> -->
 	</div>
 </Layout>
