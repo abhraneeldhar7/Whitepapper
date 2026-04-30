@@ -1,2 +1,2 @@
-export const MAX_LANDING_PAGE_WIDTH = 1250;
+export const MAX_LANDING_PAGE_WIDTH = 1200;
 export const MAX_CONTENT_PAPER_WIDTH = 700;

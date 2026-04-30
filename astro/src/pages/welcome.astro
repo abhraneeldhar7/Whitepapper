@@ -4,6 +4,7 @@ import bgGradient from "@/assets/landingPage/blueBgPattern.jpg";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoaderCircle, TriangleAlert, UserRoundIcon } from "lucide-react";
 import { AuthenticateWithRedirectCallback } from "@clerk/astro/components";
+import WelcomeGate from "@/components/site/WelcomeGate";
 ---
 
 <Layout noindex={true} hideFooter={true} showSiteNav={false}>
@@ -12,8 +13,9 @@ import { AuthenticateWithRedirectCallback } from "@clerk/astro/components";
 			signInUrl="/login"
 			signUpUrl="/login"
 			signInFallbackRedirectUrl="/dashboard"
-			signUpFallbackRedirectUrl="/sso-complete"
+			signUpFallbackRedirectUrl="/dashboard"
 		/>
+		<WelcomeGate client:load />
 		
 		
 		<div class="relative w-full aspect-2/1 px-5 py-20">

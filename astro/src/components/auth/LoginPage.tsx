@@ -114,7 +114,7 @@ function NewAccountForm({ redirectUrl, getClerk, globalLoading, onLoadingChange 
                 return;
             }
 
-            await finalizeAuthAndRedirect(clerk, completeSignUp.createdSessionId, "/sso-complete");
+            await finalizeAuthAndRedirect(clerk, completeSignUp.createdSessionId, "/dashboard");
             toast.success("Account created successfully!");
         } catch (err: any) {
             toast.error(err.errors?.[0]?.message || "Invalid code");

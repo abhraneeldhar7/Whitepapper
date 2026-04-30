@@ -11,7 +11,7 @@ const isPublicAuthRoute = createRouteMatcher([
   "/login(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
-  "/welcome(.*)"
+  "/sso-complete(.*)"
 ]);
 
 export const onRequest = clerkMiddleware(async (auth, context, next) => {
