@@ -39,10 +39,6 @@ const {
 const themeCookie = Astro.cookies.get("theme")?.value ?? null;
 const isDarkTheme = themeCookie === "dark";
 
-const isSignedIn = showSiteNav
-  ? Boolean(await Astro.locals.auth().getToken().catch(() => null))
-  : false;
-
 const origin = Astro.url.origin.replace(/\/+$/, "");
 const PRODUCTION_DOMAIN = "whitepapper.antk.in";
 
@@ -194,7 +190,7 @@ const jsonLdItems = jsonLdItemsRaw.map((item) => resolveJsonLdUrls(item));
     </script>
   </head>
   <body>
-    {showSiteNav && <SiteTopNav isSignedIn={isSignedIn} />}
+    {showSiteNav && <SiteTopNav />}
     <slot />
     {!hideFooter && <Footer />}
     {enableToaster ? <Toaster client:load /> : null}

@@ -1,4 +1,5 @@
 import { MenuIcon, XIcon } from "lucide-react";
+import { useAuth } from "@clerk/astro/react";
 
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "../ui/button";
@@ -11,10 +12,12 @@ type NavButton = {
 
 type LandingMobileMenuProps = {
   navButtons: NavButton[];
-  isSignedIn?: boolean;
 };
 
-export default function LandingMobileMenu({ navButtons, isSignedIn = false }: LandingMobileMenuProps) {
+export default function LandingMobileMenu({ navButtons }: LandingMobileMenuProps) {
+  const { isSignedIn, isLoaded } = useAuth();
+  const showButton = isLoaded && isSignedIn !== undefined;
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -41,7 +44,7 @@ export default function LandingMobileMenu({ navButtons, isSignedIn = false }: La
             </div>
           </div>
         </SheetHeader>
-        {isSignedIn ?
+        {showButton && (isSignedIn ?
           <a href="/dashboard" className="w-full my-3" data-astro-prefetch="viewport">
             <Button className="w-full" size="lg">Go to Dashboard</Button>
           </a>
@@ -49,7 +52,7 @@ export default function LandingMobileMenu({ navButtons, isSignedIn = false }: La
           <a href="/login" className="w-full my-3" data-astro-prefetch="viewport">
             <Button className="w-full" size="lg">Login</Button>
           </a>
-        }
+        )}
 
         <nav className="flex flex-col gap-2" aria-label="Mobile navigation">
           {navButtons.map((button) => (

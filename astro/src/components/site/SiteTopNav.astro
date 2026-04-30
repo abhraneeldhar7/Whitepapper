@@ -1,15 +1,10 @@
 ---
+import AuthButton from "@/components/site/AuthButton";
 import LandingMobileMenu from "@/components/landing/LandingMobileMenu";
 import { ArrowUpRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
-interface Props {
-  isSignedIn?: boolean;
-}
 import { MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
 import { AnimatedThemeToggler } from "../ui/animated-theme-toggler";
-import type { size } from "astro:schema";
-const { isSignedIn = false } = Astro.props as Props;
 
 const desktopNavButtonsList = [
   { title: "Docs", href: "/docs" },
@@ -65,23 +60,12 @@ const mobileNavButtonsList = [
 
     <div class="flex gap-4">
       <AnimatedThemeToggler client:load size={16} className="md:block hidden mr-2"/>
-      {
-        isSignedIn ? (
-          <a href="/dashboard" data-astro-prefetch="viewport">
-            <Button> Dashboard </Button>
-          </a>
-        ) : (
-          <a href="/login" data-astro-prefetch="viewport">
-            <Button> Login </Button>
-          </a>
-        )
-      }
+      <AuthButton client:load />
 
       <div class="md:hidden">
         <LandingMobileMenu
           client:load
           navButtons={mobileNavButtonsList}
-          isSignedIn={isSignedIn}
         />
       </div>
     </div>

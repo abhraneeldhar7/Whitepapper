@@ -12,12 +12,8 @@ import { getDefaultRedirectPath, resolveSafeRedirectTarget } from "@/lib/authRed
 import styles from "./login.module.css"
 
 async function finalizeAuthAndRedirect(clerk: any, sessionId: string, redirectUrl: string): Promise<void> {
-    await clerk.setActive({
-        session: sessionId,
-        navigate: async () => {
-            window.location.replace(redirectUrl);
-        },
-    });
+    await clerk.setActive({ session: sessionId });
+    window.location.replace(redirectUrl);
 }
 
 type NewAccountFormProps = {
