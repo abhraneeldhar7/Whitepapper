@@ -2,6 +2,7 @@
 import Layout from "@/layouts/Layout.astro";
 import DocsMobileNav from "@/components/docs/DocsMobileNav";
 import DocsSidebar from "@/components/docs/DocsSidebar.astro";
+import { isMobileUserAgent } from "@/lib/userAgent";
 import {
   docsNavSections,
   getDocsPageByRoute,
@@ -21,12 +22,9 @@ import {
 import { ChevronRight } from "lucide-react";
 const sectionIconByTitle: Record<string, LucideIcon> = {
   "Getting Started": Rocket,
-  "Core Concepts": FolderKanban,
-  Editor: PenSquare,
-  SEO: Search,
+  MCP: Server,
   "Dev API": Braces,
-  Distribution: Send,
-  "Self Host": Server,
+  SEO: Search,
 };
 
 const sectionCards = docsNavSections
@@ -48,12 +46,15 @@ const sectionCards = docsNavSections
 
 const importantDocRoutes: Array<{ route: string; icon: LucideIcon }> = [
   { route: "/docs/quickstart", icon: Rocket },
-  { route: "/docs/projects", icon: FolderKanban },
-  { route: "/docs/papers", icon: FileText },
-  { route: "/docs/seo/overview", icon: Search },
-  { route: "/docs/dev-api/overview", icon: Braces },
-  { route: "/docs/self-host/overview", icon: Server },
+  { route: "/docs/entities", icon: FileText },
+  { route: "/docs/mcp/quickstart", icon: Server },
+  { route: "/docs/seo/auto-tags", icon: Search },
+  { route: "/docs/dev-api/quickstart", icon: Braces },
 ];
+
+const userAgent = Astro.request.headers.get("user-agent");
+const shouldRenderDesktop = !isMobileUserAgent(userAgent);
+const shouldRenderMobile = isMobileUserAgent(userAgent);
 
 const importantDocs = importantDocRoutes
   .map((entry) => {
@@ -79,9 +80,13 @@ Astro.response.headers.set(
 <Layout>
   <div class="pb-5 md:pb-10 px-5">
     <div class="flex gap-10 justify-between">
-      <div class="hidden md:block h-full">
-        <DocsSidebar navSections={docsNavSections} currentPath="/docs" />
-      </div>
+      {
+        shouldRenderDesktop && (
+          <div class="hidden md:block h-full">
+            <DocsSidebar navSections={docsNavSections} currentPath="/docs" />
+          </div>
+        )
+      }
 
       <main class="w-full pt-30 md:pt-35" aria-label="Documentation home">
         <div
@@ -92,13 +97,17 @@ Astro.response.headers.set(
           <div
             class="flex w-full gap-1 items-center z-[5] bg-background/85 backdrop-blur-[20px] px-[15px] md:px-[30px] py-2 md:py-4"
           >
-            <div class="md:hidden">
-              <DocsMobileNav
-                client:load
-                navSections={docsNavSections}
-                currentPath="/docs"
-              />
-            </div>
+            {
+              shouldRenderMobile && (
+                <div class="md:hidden">
+                  <DocsMobileNav
+                    client:load
+                    navSections={docsNavSections}
+                    currentPath="/docs"
+                  />
+                </div>
+              )
+            }
             <div class="w-full h-[20px] md:h-[32px] relative">
               <h1
                 class="absolute left-0 top-1/2 -translate-y-1/2 right-0 text-[18px] md:text-[22px] truncate font-[500] leading-[1.5em] md:px-[10px]"

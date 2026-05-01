@@ -13,6 +13,7 @@ import type {
 import type { PageSeoConfig } from "@/metadata/pages";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { LinearTableOfContent } from "../ui/toc/linearTableOfContent";
+import { MAX_CONTENT_PAPER_WIDTH } from "@/lib/design";
 
 type Props = {
   markdown: string;
@@ -121,12 +122,10 @@ const docsPageSeo = {
 const resolvedSeo = seo ?? docsPageSeo;
 ---
 
-<Layout
-  seo={resolvedSeo}
->
+<Layout seo={resolvedSeo}>
   <div class="pb-5 md:pb-10 px-4">
     <div class="flex gap-10 justify-between">
-        {
+      {
         !shouldRenderMobileToc && (
           <DocsSidebar
             navSections={navSections}
@@ -138,11 +137,12 @@ const resolvedSeo = seo ?? docsPageSeo;
       }
 
       <main
-        class="max-w-[700px] w-full pt-30"
+        style={{ maxWidth: `${MAX_CONTENT_PAPER_WIDTH}px` }}
+        class="w-full pt-30"
         aria-label={`${pageTitle} documentation content`}
       >
         <div
-          class="fixed top-[50px] md:top-[53px] left-0 w-full z-[4] flex justify-between items-center gap-10"
+          class="fixed top-[50px] md:top-[50px] left-0 w-full z-[4] flex justify-between items-center gap-10"
         >
           <div class="md:w-[300px] md:block hidden shrink-0"></div>
 

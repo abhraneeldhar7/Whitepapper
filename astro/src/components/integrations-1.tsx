@@ -19,25 +19,25 @@ export default function IntegrationsSection() {
             title: "Hashnode",
             description: "Connect your hashnode account to publish from whitepapper",
             logo: hashnodeLogo,
-            href: "/docs/distribution/hashnode"
+            href: "/settings"
         },
         {
             title: "DevTo",
             description: "Connect your Devto account to cross post papers.",
             logo: devtoLogo,
-            href: "/docs/distribution/devto"
+            href: "/settings"
         },
         {
             title: "REST API",
             description: "Use whitepapper as a content engine for your websites, blogs, articles",
             logo: rssLogo,
-            href: "/docs/dev-api/overview"
+            href: "/docs/dev-api/quickstart"
         },
         {
             title: "Medium",
             description: "Use Medium's import feature to cross post from whitepapper",
             logo: mediumLogo,
-            href: "/docs/distribution/medium-import"
+            href: "/settings"
         },
     ]
     return (

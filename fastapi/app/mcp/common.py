@@ -124,24 +124,6 @@ def project_paper(
     return apply_projection(item, fields=fields, excludeFields=excludeFields)
 
 
-def project_collection(
-    collection: dict[str, Any],
-    *,
-    fields: list[str] | None = None,
-    excludeFields: list[str] | None = None,
-) -> dict[str, Any]:
-    return apply_projection(collection, fields=fields, excludeFields=excludeFields)
-
-
-def project_project(
-    project: dict[str, Any],
-    *,
-    fields: list[str] | None = None,
-    excludeFields: list[str] | None = None,
-) -> dict[str, Any]:
-    return apply_projection(project, fields=fields, excludeFields=excludeFields)
-
-
 def compact_project(project: dict[str, Any]) -> dict[str, Any]:
     return {
         "projectId": project.get("projectId"),
@@ -173,16 +155,6 @@ def compact_paper(paper: dict[str, Any]) -> dict[str, Any]:
         "status": paper.get("status"),
         "updatedAt": paper.get("updatedAt"),
     }
-
-
-def mutation_response(entity: str, doc: dict[str, Any], *, verbose: bool) -> dict[str, Any]:
-    if verbose:
-        return doc
-    if entity == "project":
-        return compact_project(doc)
-    if entity == "collection":
-        return compact_collection(doc)
-    return compact_paper(doc)
 
 
 def owned_project(userId: str, projectId: str) -> dict[str, Any]:

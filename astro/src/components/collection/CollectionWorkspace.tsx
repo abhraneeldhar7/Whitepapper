@@ -3,6 +3,7 @@ import { Copy, Ellipsis, LockIcon, NotebookPen, PencilIcon, PlusIcon, RssIcon, S
 import { toast } from "sonner";
 
 import UserPopover from "@/components/userPopover";
+import { useUser } from "@/components/providers/UserProvider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,7 +38,7 @@ type CollectionWorkspaceProps = {
   initialProjectName: string;
   initialCollection: CollectionDoc;
   initialPages: PaperDoc[];
-  initialUser?: UserDoc | null;
+  initialUser: UserDoc;
   isMobileUA: boolean;
 };
 
@@ -50,6 +51,8 @@ export default function CollectionWorkspace({
   initialUser,
   isMobileUA,
 }: CollectionWorkspaceProps) {
+  if (!initialUser) return null;
+  const { user: currentUser } = useUser();
   const [collection, setCollection] = useState<CollectionDoc | null>(initialCollection);
   const [draftCollection, setDraftCollection] = useState<CollectionDoc | null>(null);
   const [pages, setPages] = useState<PaperDoc[]>(() => sortPapersLatestFirst(initialPages));
@@ -227,7 +230,7 @@ export default function CollectionWorkspace({
     setPreviewOpen(false);
   }
 
-  if (!collection || !initialUser || collection.collectionId !== collectionId) {
+  if (!collection || !currentUser || collection.collectionId !== collectionId) {
     return null;
   }
 
@@ -240,7 +243,7 @@ export default function CollectionWorkspace({
     <div className="min-h-screen bg-background px-[15px] pt-15 pb-20">
       <ScrollToTop />
       <div className="z-[10] fixed top-4 right-4">
-        <UserPopover user={initialUser} />
+        <UserPopover />
       </div>
 
       <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
@@ -470,7 +473,7 @@ export default function CollectionWorkspace({
                     <PaperCardComponent
                       showStatus
                       key={page.paperId}
-                      handle={initialUser?.username ?? "user"}
+                      handle={currentUser?.username ?? "user"}
                       paperData={page}
                       onSelect={(paper) => {
                         setSelectedPaper(paper);
@@ -488,7 +491,7 @@ export default function CollectionWorkspace({
         open={previewOpen}
         onOpenChange={setPreviewOpen}
         paper={selectedPaper}
-        handle={initialUser?.username ?? "user"}
+        handle={currentUser?.username ?? "user"}
         isMobileUA={isMobileUA}
         onPaperDeleted={handlePaperDeleted}
       />

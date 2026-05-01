@@ -245,12 +245,14 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+    ;
 }
 
 .markdownCodeBlockLanguage {
     font-size: 0.9em;
     line-height: 1em;
     font-weight: 500;
+    padding-bottom: 2px;
 }
 
 .markdownCodeBlockActions {

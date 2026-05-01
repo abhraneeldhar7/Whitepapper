@@ -5,6 +5,8 @@ import { LaptopIcon, LogOutIcon, SettingsIcon, UserIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { SignOutButton } from "@clerk/astro/react";
+import { useUser } from "@/components/providers/UserProvider";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { UserDoc } from "@/lib/entities";
 
 function getDisplayName(name: string | null | undefined, username: string | null | undefined): string {
@@ -16,15 +18,29 @@ function getAvatarFallback(displayName: string): string {
 }
 
 type UserPopoverProps = {
-  user: UserDoc
+  user?: UserDoc | null;
 };
 
-export default function UserPopover({ user }: UserPopoverProps) {
+export default function UserPopover({ user: propUser }: UserPopoverProps) {
+  const { user: contextUser, isLoading } = useUser();
   const [popoverOpen, setPopoverOpen] = useState(false);
+
+  const user = propUser ?? contextUser;
+
+  if (isLoading && !user) {
+    return (
+      <div className="h-9 w-9">
+        <Skeleton className="h-9 w-9 rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <></>;
+  }
+
   const displayName = getDisplayName(user?.displayName, user?.username);
   const avatarFallback = getAvatarFallback(displayName);
-
-  if (!user) return <></>
 
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
@@ -49,7 +65,7 @@ export default function UserPopover({ user }: UserPopoverProps) {
           <div className="w-full">
             <p className="text-[15px] font-[500] truncate">{displayName}</p>
             <p className="text-[12px] truncate font-[500] opacity-[0.8]">
-              {user ? `@${user.username}` : "Loading user..."}
+              @{user.username}
             </p>
           </div>
         </div>
@@ -85,7 +101,6 @@ export default function UserPopover({ user }: UserPopoverProps) {
           </SignOutButton>
         </div>
       </PopoverContent>
-    </Popover >
+    </Popover>
   );
 }
-

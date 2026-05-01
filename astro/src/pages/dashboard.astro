@@ -1,12 +1,10 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import DashboardApp from "@/components/dashboard/DashboardApp";
-import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
+import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton.astro";
 import { createApiClient } from "@/lib/api/client";
 import { getDashboardData } from "@/lib/api/users";
-import { getMcpConnectionInfo, listMcpAuthorizations } from "@/lib/api/mcp";
 import type { UserDoc } from "@/lib/entities";
-import type { McpAuthorizationListResponse, McpConnectionInfo } from "@/lib/api/mcp";
 import { isMobileUserAgent } from "@/lib/userAgent";
 
 const { userId, getToken } = Astro.locals.auth();
@@ -18,18 +16,25 @@ const clerkUser = await Astro.locals.currentUser();
 const serverClient = createApiClient(token);
 const dashboardData = await getDashboardData(serverClient).catch((error) => {
   const message = error instanceof Error ? error.message : "";
-  if (!message.includes("404") && !message.toLowerCase().includes("user not found")) {
+  if (
+    !message.includes("404") &&
+    !message.toLowerCase().includes("user not found")
+  ) {
     throw error;
   }
 
   const fallbackUsername =
     clerkUser?.username ||
-    (clerkUser?.primaryEmailAddress?.emailAddress?.split("@", 1)[0]?.toLowerCase().replace(/[^a-z0-9-]/g, "-")) ||
+    clerkUser?.primaryEmailAddress?.emailAddress
+      ?.split("@", 1)[0]
+      ?.toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-") ||
     `user-${userId?.slice(-6).toLowerCase()}`;
 
   const fallbackUser: UserDoc = {
     userId: userId || "",
-    displayName: clerkUser?.firstName || clerkUser?.fullName || fallbackUsername,
+    displayName:
+      clerkUser?.firstName || clerkUser?.fullName || fallbackUsername,
     description: "",
     email: clerkUser?.primaryEmailAddress?.emailAddress || null,
     avatarUrl: clerkUser?.imageUrl || null,
@@ -54,24 +59,19 @@ const dashboardData = await getDashboardData(serverClient).catch((error) => {
   };
 });
 
-const { user: initialUser, projects: initialProjects, papers: initialPages } = dashboardData;
-
-const [initialMcpAuthorizations, mcpConnectionInfo] = await Promise.all([
-  listMcpAuthorizations(serverClient).catch(
-    () => ({ authorizations: [], usage: 0, limitPerMonth: 0 }) as McpAuthorizationListResponse,
-  ),
-  getMcpConnectionInfo(serverClient).catch(() => null as McpConnectionInfo | null),
-]);
+const {
+  user: initialUser,
+  projects: initialProjects,
+  papers: initialPages,
+} = dashboardData;
 ---
 
-<Layout showSiteNav={false}>
+<Layout showSiteNav={false} initialUser={initialUser} hideUserProvider={true}>
   <DashboardApp
     client:only="react"
     initialProjects={initialProjects}
     initialPages={initialPages}
     initialUser={initialUser}
-    initialMcpAuthorizations={initialMcpAuthorizations}
-    mcpConnectionInfo={mcpConnectionInfo}
     isMobileUA={isMobileUA}
   >
     <DashboardSkeleton slot="fallback" />

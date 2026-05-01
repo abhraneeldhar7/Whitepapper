@@ -1,9 +1,15 @@
 ---
 import Footer from "@/components/footer.astro";
 import SiteTopNav from "@/components/site/SiteTopNav.astro";
-import { getPageSeoConfig, mergePageSeoConfig, type PageSeoConfig } from "@/metadata/pages";
+import {
+  getPageSeoConfig,
+  mergePageSeoConfig,
+  type PageSeoConfig,
+} from "@/metadata/pages";
 import { Toaster } from "@/components/ui/sonner";
 import { ClientRouter } from "astro:transitions";
+import { UserProvider } from "@/components/providers/UserProvider";
+import type { UserDoc } from "@/lib/entities";
 import "../styles/global.css";
 
 interface Props {
@@ -13,6 +19,8 @@ interface Props {
   showSiteNav?: boolean;
   enableClientRouter?: boolean;
   enableToaster?: boolean;
+  initialUser?: UserDoc | null;
+  hideUserProvider?: boolean;
 }
 
 const pathname = Astro.url.pathname;
@@ -34,6 +42,8 @@ const {
     pathname === "/login" ||
     pathname === "/sign-in" ||
     pathname === "/sign-up",
+  initialUser = null,
+  hideUserProvider = false,
 } = Astro.props as Props;
 
 const themeCookie = Astro.cookies.get("theme")?.value ?? null;
@@ -55,7 +65,10 @@ function resolveUrl(value?: string | null): string {
 function resolveJsonLdUrls(value: unknown): unknown {
   if (typeof value === "string") {
     if (value.includes(PRODUCTION_DOMAIN)) {
-      return value.replace(new RegExp(`https?://${PRODUCTION_DOMAIN.replace(".", "\\.")}`, "g"), origin);
+      return value.replace(
+        new RegExp(`https?://${PRODUCTION_DOMAIN.replace(".", "\\.")}`, "g"),
+        origin,
+      );
     }
     return value;
   }
@@ -74,8 +87,10 @@ const ROOT_OG_IMAGE = "/assets/ogImages/root.png";
 
 const siteTitle = pageSeoConfig?.title ?? "Whitepapper";
 const siteDescription = pageSeoConfig?.description ?? "";
-const siteImage = resolveUrl(pageSeoConfig?.image) || `${origin}${ROOT_OG_IMAGE}`;
-const canonical = resolveUrl(pageSeoConfig?.canonical) || `${origin}${pathname}`;
+const siteImage =
+  resolveUrl(pageSeoConfig?.image) || `${origin}${ROOT_OG_IMAGE}`;
+const canonical =
+  resolveUrl(pageSeoConfig?.canonical) || `${origin}${pathname}`;
 const robotsMeta = noindex
   ? "noindex, nofollow"
   : pageSeoConfig?.robots || "index, follow";
@@ -88,23 +103,29 @@ const ogTitleMeta = pageSeoConfig?.ogTitle || siteTitle;
 const ogDescriptionMeta = pageSeoConfig?.ogDescription || siteDescription;
 const ogUrlMeta = resolveUrl(pageSeoConfig?.ogUrl) || canonical;
 const ogImageMeta = resolveUrl(pageSeoConfig?.ogImage) || siteImage;
-const ogImageAltMeta = pageSeoConfig?.ogImageAlt || `${siteTitle} social preview`;
+const ogImageAltMeta =
+  pageSeoConfig?.ogImageAlt || `${siteTitle} social preview`;
 const ogImageWidthMeta = pageSeoConfig?.ogImageWidth;
 const ogImageHeightMeta = pageSeoConfig?.ogImageHeight;
 const ogPublishedTimeMeta = pageSeoConfig?.ogPublishedTime || "";
 const ogModifiedTimeMeta = pageSeoConfig?.ogModifiedTime || "";
 const ogAuthorUrlMeta = resolveUrl(pageSeoConfig?.ogAuthorUrl) || "";
-const ogTagsMeta = Array.isArray(pageSeoConfig?.ogTags) ? pageSeoConfig.ogTags : [];
+const ogTagsMeta = Array.isArray(pageSeoConfig?.ogTags)
+  ? pageSeoConfig.ogTags
+  : [];
 const twitterCardMeta = pageSeoConfig?.twitterCard || "summary_large_image";
 const twitterTitleMeta = pageSeoConfig?.twitterTitle || siteTitle;
-const twitterDescriptionMeta = pageSeoConfig?.twitterDescription || siteDescription;
+const twitterDescriptionMeta =
+  pageSeoConfig?.twitterDescription || siteDescription;
 const twitterImageMeta = resolveUrl(pageSeoConfig?.twitterImage) || ogImageMeta;
 const twitterImageAltMeta = pageSeoConfig?.twitterImageAlt || ogImageAltMeta;
 const twitterCreatorMeta = pageSeoConfig?.twitterCreator || "";
 const twitterSiteMeta = pageSeoConfig?.twitterSite || "";
 const articleSectionMeta = pageSeoConfig?.articleSection || "";
-const articleModifiedTimeMeta = pageSeoConfig?.articleModifiedTime || ogModifiedTimeMeta;
-const articleAuthorMeta = resolveUrl(pageSeoConfig?.articleAuthor) || ogAuthorUrlMeta;
+const articleModifiedTimeMeta =
+  pageSeoConfig?.articleModifiedTime || ogModifiedTimeMeta;
+const articleAuthorMeta =
+  resolveUrl(pageSeoConfig?.articleAuthor) || ogAuthorUrlMeta;
 const articleTagsMeta = Array.isArray(pageSeoConfig?.articleTags)
   ? pageSeoConfig.articleTags
   : [];
@@ -117,7 +138,11 @@ const jsonLdItems = jsonLdItemsRaw.map((item) => resolveJsonLdUrls(item));
 ---
 
 <!doctype html>
-<html lang="en" class={isDarkTheme ? "dark" : ""} style={`color-scheme: ${isDarkTheme ? "dark" : "light"};`}>
+<html
+  lang="en"
+  class={isDarkTheme ? "dark" : ""}
+  style={`color-scheme: ${isDarkTheme ? "dark" : "light"};`}
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -134,24 +159,67 @@ const jsonLdItems = jsonLdItemsRaw.map((item) => resolveJsonLdUrls(item));
     <meta property="og:url" content={ogUrlMeta} />
     <meta property="og:locale" content={localeMeta} />
     <meta property="og:image" content={ogImageMeta} />
-    {ogImageWidthMeta ? <meta property="og:image:width" content={String(ogImageWidthMeta)} /> : null}
-    {ogImageHeightMeta ? <meta property="og:image:height" content={String(ogImageHeightMeta)} /> : null}
+    {
+      ogImageWidthMeta ? (
+        <meta property="og:image:width" content={String(ogImageWidthMeta)} />
+      ) : null
+    }
+    {
+      ogImageHeightMeta ? (
+        <meta property="og:image:height" content={String(ogImageHeightMeta)} />
+      ) : null
+    }
     <meta property="og:image:alt" content={ogImageAltMeta} />
-    {ogModifiedTimeMeta ? <meta property="og:updated_time" content={ogModifiedTimeMeta} /> : null}
-    {ogPublishedTimeMeta ? <meta property="article:published_time" content={ogPublishedTimeMeta} /> : null}
-    {articleModifiedTimeMeta ? <meta property="article:modified_time" content={articleModifiedTimeMeta} /> : null}
-    {articleSectionMeta ? <meta property="article:section" content={articleSectionMeta} /> : null}
-    {articleAuthorMeta ? <meta property="article:author" content={articleAuthorMeta} /> : null}
+    {
+      ogModifiedTimeMeta ? (
+        <meta property="og:updated_time" content={ogModifiedTimeMeta} />
+      ) : null
+    }
+    {
+      ogPublishedTimeMeta ? (
+        <meta property="article:published_time" content={ogPublishedTimeMeta} />
+      ) : null
+    }
+    {
+      articleModifiedTimeMeta ? (
+        <meta
+          property="article:modified_time"
+          content={articleModifiedTimeMeta}
+        />
+      ) : null
+    }
+    {
+      articleSectionMeta ? (
+        <meta property="article:section" content={articleSectionMeta} />
+      ) : null
+    }
+    {
+      articleAuthorMeta ? (
+        <meta property="article:author" content={articleAuthorMeta} />
+      ) : null
+    }
     {ogTagsMeta.map((tag) => <meta property="article:tag" content={tag} />)}
-    {articleTagsMeta.map((tag) => <meta property="article:tag" content={tag} />)}
+    {
+      articleTagsMeta.map((tag) => (
+        <meta property="article:tag" content={tag} />
+      ))
+    }
     <meta name="twitter:card" content={twitterCardMeta} />
     <meta name="twitter:url" content={canonical} />
     <meta name="twitter:title" content={twitterTitleMeta} />
     <meta name="twitter:description" content={twitterDescriptionMeta} />
     <meta name="twitter:image" content={twitterImageMeta} />
     <meta name="twitter:image:alt" content={twitterImageAltMeta} />
-    {twitterCreatorMeta ? <meta name="twitter:creator" content={twitterCreatorMeta} /> : null}
-    {twitterSiteMeta ? <meta name="twitter:site" content={twitterSiteMeta} /> : null}
+    {
+      twitterCreatorMeta ? (
+        <meta name="twitter:creator" content={twitterCreatorMeta} />
+      ) : null
+    }
+    {
+      twitterSiteMeta ? (
+        <meta name="twitter:site" content={twitterSiteMeta} />
+      ) : null
+    }
     {keywordsMeta ? <meta name="keywords" content={keywordsMeta} /> : null}
     <meta name="robots" content={robotsMeta} />
     {
@@ -172,7 +240,9 @@ const jsonLdItems = jsonLdItemsRaw.map((item) => resolveJsonLdUrls(item));
           const root = document.documentElement;
           const stored = localStorage.getItem(storageKey);
           const cookieMatch = document.cookie.match(/(?:^|; )theme=([^;]+)/);
-          const cookieTheme = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+          const cookieTheme = cookieMatch
+            ? decodeURIComponent(cookieMatch[1])
+            : null;
           const resolved = stored || cookieTheme || "light";
           const isDark = resolved === "dark";
           root.classList.toggle("dark", isDark);
@@ -190,8 +260,19 @@ const jsonLdItems = jsonLdItemsRaw.map((item) => resolveJsonLdUrls(item));
     </script>
   </head>
   <body>
-    {showSiteNav && <SiteTopNav />}
-    <slot />
+    <div class="min-h-screen">
+      {showSiteNav && <SiteTopNav />}
+      {
+        hideUserProvider ? (
+          <slot />
+        ) : (
+          <UserProvider client:only="react" initialUser={initialUser}>
+            <slot />
+          </UserProvider>
+        )
+      }
+    </div>
+
     {!hideFooter && <Footer />}
     {enableToaster ? <Toaster client:load /> : null}
     <script is:inline>

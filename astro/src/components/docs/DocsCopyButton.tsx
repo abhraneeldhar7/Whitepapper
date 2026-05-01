@@ -6,9 +6,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 type DocsCopyButtonProps = {
   markdown: string;
 };
-import chatgptLogo from "@/assets/logos/openai.svg"
+import chatgptLogo from "@/assets/logos/chatgpt.svg"
 import claudeLogo from "@/assets/logos/claude.svg"
-import geminiLogo from "@/assets/logos/gemini.svg"
 
 const buildAssistantPrompt = (url: string) => `I'm looking at this whitepapper documentation:
 ${url}

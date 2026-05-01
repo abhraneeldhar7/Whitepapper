@@ -23,7 +23,8 @@ import { toast } from "sonner";
 import TextEditor from "@/components/pre_made_components/editor/textEditor";
 import type { TextEditorRef } from "@/components/pre_made_components/editor/textEditor";
 import { Button } from "@/components/ui/button";
-import cloudsimageUrl from "@/assets/clouds.jpg?url";
+import blueBgPattern from "@/assets/landingPage/blueBgPattern.jpg"
+
 import {
   Dialog,
   DialogDescription,
@@ -899,13 +900,14 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
 
                     <div className="space-y-2">
                       <Label>Metadata</Label>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 w-full">
                         {metadata ? (
-                          <Button type="button" className="w-full" onClick={handleOpenMetadataDialog}>
+                          <Button variant="secondary" type="button" className="w-full" onClick={handleOpenMetadataDialog}>
                             <CodeXmlIcon /> View
                           </Button>
                         ) : (
                           <Button
+                            className="w-full"
                             type="button"
                             onClick={handleGenerateMetadataFromSheet}
                             loading={metadataGenerating}
@@ -1105,11 +1107,11 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2 h-full w-full relative overflow-hidden text-[black] group select-none cursor-pointer">
-            <img src={cloudsimageUrl} alt="" className="absolute h-full w-full object-cover z-[-1] group-hover:dark:opacity-[0.8] group-hover:opacity-[0.9] transition-all duration-300 opacity-[0.6] dark:opacity-[1]" />
+          <div className="flex flex-col items-center justify-center gap-3 h-full w-full relative overflow-hidden text-foreground group select-none cursor-pointer">
+            <img src={blueBgPattern.src} alt="" className="absolute h-full w-full object-cover z-[-1] group-hover:dark:opacity-[0.8] group-hover:opacity-[0.6] transition-all duration-250 opacity-[0.4]" />
             <p />
-            <ImagePlusIcon size={34} className="opacity-[0.5]" />
-            <p className="text-[14px] font-[500] opacity-[0.5]">Add Thumbnail</p>
+            <ImagePlusIcon size={32} className="" />
+            <p className="text-[12px] font-[500] ">Add Thumbnail</p>
           </div>
         )}
 
@@ -1316,7 +1318,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
               </ScrollArea>
               <DialogFooter >
                 <Button type="button" variant="outline" onClick={() => setMetadataEditMode((prev) => !prev)}>
-                  {metadataEditMode ? <XIcon /> : <PencilIcon className="size-3"/>}
+                  {metadataEditMode ? <XIcon /> : <PencilIcon className="size-3" />}
                   {metadataEditMode ? "Cancel" : "Edit"}
                 </Button>
                 {metadataEditMode &&
@@ -1326,7 +1328,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                     disabled={!metadataEditMode}
                   >
                     <SaveIcon />
-                    Save 
+                    Save
                   </Button>
                 }
 

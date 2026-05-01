@@ -6,6 +6,7 @@ import FolderNotes from "@/components/folderComponent";
 import TextEditor from "@/components/pre_made_components/editor/textEditor";
 import MarkdownRender from "@/components/ui/markdown-render/markdown-render";
 import UserPopover from "@/components/userPopover";
+import { useUser } from "@/components/providers/UserProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,7 +63,7 @@ type ProjectWorkspaceProps = {
   initialApiDoc: ApiKeySummary | null;
   initialMcpAuthorizations: McpAuthorizationListResponse;
   mcpConnectionInfo: McpConnectionInfo | null;
-  initialUser?: UserDoc | null;
+  initialUser: UserDoc;
   isMobileUA: boolean;
 };
 
@@ -111,6 +112,8 @@ export default function ProjectWorkspace({
   initialUser,
   isMobileUA,
 }: ProjectWorkspaceProps) {
+  if (!initialUser) return null;
+  const { user: currentUser } = useUser();
   const [activeTab, setActiveTab] = useState<ProjectTab>(() => readTabFromQuery(projectTabs, "overview"));
   const [project, setProject] = useState<ProjectDoc>(initialProject);
   const [draftProject, setDraftProject] = useState<ProjectDoc | null>(null);
@@ -510,7 +513,7 @@ export default function ProjectWorkspace({
 
 
 
-  if (!initialUser) {
+  if (!currentUser) {
     return null;
   }
 
@@ -536,7 +539,7 @@ export default function ProjectWorkspace({
     <div className="min-h-screen px-[15px] pt-15 pb-20">
       <ScrollToTop />
       <div className="z-[10] fixed top-4 right-4">
-        <UserPopover user={initialUser} />
+        <UserPopover />
       </div>
 
       <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
@@ -718,8 +721,8 @@ export default function ProjectWorkspace({
                               </div>
                             </PopoverContent>
                           </Popover>
-                          {project.isPublic && initialUser &&
-                            <a target="_blank" href={`/${initialUser.username}/p/${project.slug}`}>
+                          {project.isPublic && currentUser &&
+                            <a target="_blank" href={`/${currentUser.username}/p/${project.slug}`}>
                               <Button variant="ghost">Open <SquareArrowOutUpRight /></Button>
                             </a>
                           }
@@ -823,7 +826,7 @@ export default function ProjectWorkspace({
                         <PaperCardComponent
                           showStatus
                           key={page.paperId}
-                          handle={initialUser?.username ?? "user"}
+                          handle={currentUser?.username ?? "user"}
                           paperData={page}
                           onSelect={(paper) => {
                             setSelectedPaper(paper);
@@ -1087,7 +1090,7 @@ export default function ProjectWorkspace({
         open={previewOpen}
         onOpenChange={setPreviewOpen}
         paper={selectedPaper}
-        handle={initialUser?.username ?? "user"}
+        handle={currentUser?.username ?? "user"}
         isMobileUA={isMobileUA}
         onPaperDeleted={handlePaperDeleted}
       />

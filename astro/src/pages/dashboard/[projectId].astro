@@ -36,7 +36,7 @@ if (!initialUser || !projectData) {
 const { project: initialProject, collections: initialCollections, papers: initialPages } = projectData;
 ---
 
-<Layout showSiteNav={false}>
+<Layout showSiteNav={false} initialUser={initialUser}>
   <ProjectWorkspace
     client:only="react"
     projectId={projectId}

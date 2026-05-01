@@ -6,6 +6,7 @@ from fastmcp import FastMCP
 
 from app.mcp.common import (
     READ_ONLY,
+    apply_projection,
     compact_collection,
     compact_paper,
     compact_project,
@@ -18,9 +19,7 @@ from app.mcp.common import (
     owned_paper,
     owned_project,
     paged,
-    project_collection,
     project_paper,
-    project_project,
     tool_guard,
     assert_collection_project,
     mcp_http_error,
@@ -59,7 +58,7 @@ def register_read_tools(server: FastMCP) -> None:
         )
         return {
             "projects": [
-                project_project(project, fields=projectFields, excludeFields=projectExcludeFields)
+                apply_projection(project, fields=projectFields, excludeFields=projectExcludeFields)
                 for project in projects_page["items"]
             ],
             "projectsNextCursor": projects_page["nextCursor"],
@@ -87,7 +86,7 @@ def register_read_tools(server: FastMCP) -> None:
         userId = current_mcp_userId()
         page = projects_service.list_owned_paginated(userId, limit=normalize_limit(limit), cursor=cursor)
         return paged(
-            [project_project(project, fields=fields, excludeFields=excludeFields) for project in page["items"]],
+            [apply_projection(project, fields=fields, excludeFields=excludeFields) for project in page["items"]],
             page["nextCursor"],
         )
 
@@ -108,9 +107,9 @@ def register_read_tools(server: FastMCP) -> None:
     ) -> dict[str, Any]:
         userId = current_mcp_userId()
         owned_project(userId, projectId)
-        page = collections_service.list_project_collections_paginated(projectId, limit=normalize_limit(limit), cursor=cursor)
+        page = collections_service.list_apply_projections_paginated(projectId, limit=normalize_limit(limit), cursor=cursor)
         return paged(
-            [project_collection(collection, fields=fields, excludeFields=excludeFields) for collection in page["items"]],
+            [apply_projection(collection, fields=fields, excludeFields=excludeFields) for collection in page["items"]],
             page["nextCursor"],
         )
 
@@ -204,7 +203,7 @@ def register_read_tools(server: FastMCP) -> None:
     ) -> dict[str, Any]:
         userId = current_mcp_userId()
         project = owned_project(userId, projectId)
-        result: dict[str, Any] = {"project": project_project(project, fields=projectFields, excludeFields=projectExcludeFields)}
+        result: dict[str, Any] = {"project": apply_projection(project, fields=projectFields, excludeFields=projectExcludeFields)}
 
         if includeStandalonePapers:
             papers_page = papers_service.list_owned_filtered_paginated(
@@ -221,13 +220,13 @@ def register_read_tools(server: FastMCP) -> None:
             result["standalonePapersNextCursor"] = papers_page["nextCursor"]
 
         if includeCollections:
-            collections_page = collections_service.list_project_collections_paginated(
+            collections_page = collections_service.list_apply_projections_paginated(
                 projectId,
                 limit=normalize_limit(collectionLimit),
                 cursor=collectionCursor,
             )
             result["collections"] = [
-                project_collection(collection, fields=collectionFields, excludeFields=collectionExcludeFields)
+                apply_projection(collection, fields=collectionFields, excludeFields=collectionExcludeFields)
                 for collection in collections_page["items"]
             ]
             result["collectionsNextCursor"] = collections_page["nextCursor"]
@@ -296,7 +295,7 @@ def register_read_tools(server: FastMCP) -> None:
     ) -> dict[str, Any]:
         userId = current_mcp_userId()
         collection = owned_collection(userId, collectionId)
-        result: dict[str, Any] = {"collection": project_collection(collection, fields=collectionFields, excludeFields=collectionExcludeFields)}
+        result: dict[str, Any] = {"collection": apply_projection(collection, fields=collectionFields, excludeFields=collectionExcludeFields)}
         if includePapers:
             page = papers_service.list_by_collectionId_paginated(collectionId, limit=normalize_limit(paperLimit), cursor=paperCursor)
             result["papers"] = [
@@ -430,7 +429,7 @@ def register_read_tools(server: FastMCP) -> None:
     ) -> list[dict[str, Any]]:
         userId = current_mcp_userId()
         return [
-            project_collection(collection, fields=fields, excludeFields=excludeFields)
+            apply_projection(collection, fields=fields, excludeFields=excludeFields)
             for collection in collections_service.get_many_by_ids(collectionIds)
             if str(collection.get("ownerId") or "") == userId
         ]
@@ -460,7 +459,7 @@ def register_read_tools(server: FastMCP) -> None:
     ) -> dict[str, Any]:
         userId = current_mcp_userId()
         project = owned_project(userId, projectId)
-        collections_page = collections_service.list_project_collections_paginated(
+        collections_page = collections_service.list_apply_projections_paginated(
             projectId,
             limit=normalize_limit(collectionLimit),
             cursor=collectionCursor,
@@ -473,9 +472,9 @@ def register_read_tools(server: FastMCP) -> None:
             cursor=standalonePaperCursor,
         )
         result: dict[str, Any] = {
-            "project": project_project(project, fields=projectFields, excludeFields=projectExcludeFields),
+            "project": apply_projection(project, fields=projectFields, excludeFields=projectExcludeFields),
             "collections": [
-                project_collection(collection, fields=collectionFields, excludeFields=collectionExcludeFields)
+                apply_projection(collection, fields=collectionFields, excludeFields=collectionExcludeFields)
                 for collection in collections_page["items"]
             ],
             "collectionsNextCursor": collections_page["nextCursor"],

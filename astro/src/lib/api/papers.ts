@@ -100,7 +100,7 @@ export async function generatePaperMetadata(
   paperDoc: PaperDoc,
   client: ApiClient = apiClient,
 ): Promise<PaperMetadata> {
-  return client.post<PaperMetadata>(`/papers/${paperId}/metadata/generate`, {
+  return client.post<PaperMetadata>(`/papers/${paperId}/metadata/preview`, {
     body: {
       payload: paperDoc,
     },
