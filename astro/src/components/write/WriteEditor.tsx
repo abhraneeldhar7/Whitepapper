@@ -43,15 +43,15 @@ import {
 } from "@/lib/api/papers";
 import { uploadEmbeddedImage, uploadPaperMetadataImage, uploadThumbnail } from "@/lib/api/uploads";
 import { countImagesInContent, MAX_IMAGES_PER_PAPER, MAX_PAPER_BODY_LENGTH } from "@/lib/limits";
-import { updateCurrentUser } from "@/lib/api/users";
+import { getCurrentUser, updateCurrentUser } from "@/lib/api/users";
+import { apiClient } from "@/lib/api/client";
 import {
   MAX_EMBEDDED_HEIGHT,
   MAX_EMBEDDED_WIDTH,
   MAX_THUMBNAIL_HEIGHT,
   MAX_THUMBNAIL_WIDTH,
 } from "@/lib/constants";
-import type { PaperDoc, PaperMetadata } from "@/lib/entities";
-import { useUser } from "@/components/providers/UserProvider";
+import type { PaperDoc, PaperMetadata, UserDoc } from "@/lib/entities";
 import { compressImage, copyToClipboard, deepEqual, downloadMarkdownFile, isImageFile, normalizeSlug } from "@/lib/utils";
 import { uploadImage } from "@/lib/useImageUpload";
 import click1Sound from "@/assets/sounds/click1.mp3";
@@ -122,8 +122,12 @@ const metadataFieldConfig: Array<{ key: keyof PaperMetadata; type: "text" | "num
 ];
 
 export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorProps) {
-  const { user } = useUser();
+  const [user, setUser] = useState<UserDoc | null>(null);
   const paperId = initialPaper.paperId;
+
+  useEffect(() => {
+    getCurrentUser(apiClient).then(setUser).catch(() => setUser(null));
+  }, []);
   const [paperDoc, setPaperDoc] = useState<PaperDoc>(() => ({
     ...initialPaper,
     body: initialPaper.body || "",
@@ -282,30 +286,50 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
   }
 
   function resolvePublicPaperUrl(nextSlug?: string): string | null {
-    return `/${nextSlug || slug}`;
+    if (!user?.username) return null;
+    return `/${user.username}/${nextSlug || slug}`;
   }
 
   async function resolveAutoSlugForSave(): Promise<string> {
     const currentSlug = String(slug || "").trim();
-    if (!currentSlug.startsWith(INIT_PAPER_SLUG_PREFIX)) {
+    const isInitSlug = currentSlug.startsWith(INIT_PAPER_SLUG_PREFIX);
+
+    if (!isInitSlug) {
+      if (currentSlug !== savedPaperDoc.slug) {
+        const available = await checkPaperSlugAvailable(currentSlug, paperId);
+        if (!available) {
+          throw new Error("This URL is already taken. Try a different one.");
+        }
+      }
       return currentSlug;
     }
 
-    const baseSlug = toReadableSlug(title || body.slice(0, 60));
-    if (baseSlug === "untitled-paper") {
-      return currentSlug;
+    const fromTitle = toReadableSlug(title);
+    if (fromTitle && fromTitle !== "untitled-paper") {
+      const available = await checkPaperSlugAvailable(fromTitle, paperId);
+      if (available) {
+        setPaperDoc((prev) => ({ ...prev, slug: fromTitle }));
+        return fromTitle;
+      }
+      const suffix = Math.random().toString(36).slice(2, 7);
+      setPaperDoc((prev) => ({ ...prev, slug: `${fromTitle}-${suffix}` }));
+      return `${fromTitle}-${suffix}`;
     }
 
-    const available = await checkPaperSlugAvailable(baseSlug, paperId);
-    if (available) {
-      setPaperDoc((prev) => ({ ...prev, slug: baseSlug }));
-      return baseSlug;
+    const fromBody = toReadableSlug(body.slice(0, 60));
+    if (fromBody && fromBody !== "untitled-paper") {
+      const available = await checkPaperSlugAvailable(fromBody, paperId);
+      if (available) {
+        setPaperDoc((prev) => ({ ...prev, slug: fromBody }));
+        return fromBody;
+      }
+      const suffix = Math.random().toString(36).slice(2, 7);
+      setPaperDoc((prev) => ({ ...prev, slug: `${fromBody}-${suffix}` }));
+      return `${fromBody}-${suffix}`;
     }
 
-    const suffix = Math.random().toString(36).slice(2, 7);
-    const fallback = `${baseSlug}-${suffix}`;
-    setPaperDoc((prev) => ({ ...prev, slug: fallback }));
-    return fallback;
+    setPaperDoc((prev) => ({ ...prev, slug: paperId }));
+    return paperId;
   }
 
   async function handleSaveAction() {
@@ -332,31 +356,28 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
       return;
     }
 
-    const savePromise = onSave(resolvedSlug);
-    toast.promise(savePromise, {
-      loading: "Saving...",
-      success: (updated) => (updated.status === "public" ? "Published." : "Paper saved."),
-      error: (error) => (error instanceof Error ? error.message : "Failed to save page."),
-    });
-
+    const toastId = toast.loading("Saving...");
     try {
-      const updated = await savePromise;
+      const updated = await onSave(resolvedSlug);
+      toast.dismiss(toastId);
       if (updated.status === "public") {
         const publicUrl = resolvePublicPaperUrl(updated.slug);
         if (publicUrl) {
-          const visitPublishedPage = () => {
-            window.open(publicUrl, "_blank", "noopener,noreferrer");
-          };
           toast.success("Published", {
             action: {
               label: "Visit",
-              onClick: visitPublishedPage,
+              onClick: () => window.open(publicUrl, "_blank", "noopener,noreferrer"),
             },
           });
+        } else {
+          toast.success("Published");
         }
+      } else {
+        toast.success("Paper saved.");
       }
-    } catch {
-      // toast.promise handles failure UI.
+    } catch (error) {
+      toast.dismiss(toastId);
+      toast.error(error instanceof Error ? error.message : "Failed to save page.");
     }
   }
 
@@ -895,8 +916,7 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
       <div className="px-5">
 
         <div
-          className={`rounded-lg overflow-hidden flex items-center justify-center relative group shrink-0 cursor-pointer ${hasThumbPreview ? "aspect-[5/3]" : "h-[300px]"
-            }`}
+          className={`rounded-lg overflow-hidden flex items-center justify-center relative group shrink-0 cursor-pointer`}
           onClick={() => thumbnailInputRef.current?.click()}
         >
           {tempUploadingThumbnail ? (

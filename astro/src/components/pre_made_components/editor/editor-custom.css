@@ -309,6 +309,9 @@
     padding: 0.2em 0.4em;
     border-radius: 4px;
     margin: 0 2px;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 :is(.g-md-editor-component, .g-md-editor-component .yfm) pre {
@@ -384,6 +387,10 @@
     border-bottom: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 40%, transparent) !important;
     border-right: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 20%, transparent) !important;
     transition: all 0.25s ease-in-out;
+    max-width: 150px;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
 }
 
 :is(.g-md-editor-component, .g-md-editor-component .yfm) th:last-child,
@@ -405,6 +412,11 @@
     color: var(--foreground, #1a1a1a) !important;
     background-color: transparent !important;
     transition: all 0.25s ease-in-out;
+    max-width: 200px;
+    font-size: 15px;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
 }
 
 :is(.g-md-editor-component, .g-md-editor-component .yfm) td:last-child,

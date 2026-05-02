@@ -1,4 +1,5 @@
 import { apiClient, type ApiClient } from "@/lib/api/client";
+import { mapRequestStatus } from "@/lib/api/papers";
 import type {
   DevtoDistribution,
   HashnodeDistribution,
@@ -49,8 +50,9 @@ export async function publishHashnodeDistribution(
   input: DistributionPublishInput,
   client: ApiClient = apiClient,
 ): Promise<DistributionPublishResult> {
+  const payload = input.payload ? mapRequestStatus(input.payload as Record<string, unknown>) : input.payload;
   return client.post<DistributionPublishResult>("/distributions/hashnode/publish", {
-    body: input,
+    body: { ...input, payload },
   });
 }
 
@@ -75,7 +77,8 @@ export async function publishDevtoDistribution(
   input: DistributionPublishInput,
   client: ApiClient = apiClient,
 ): Promise<DistributionPublishResult> {
+  const payload = input.payload ? mapRequestStatus(input.payload as Record<string, unknown>) : input.payload;
   return client.post<DistributionPublishResult>("/distributions/devto/publish", {
-    body: input,
+    body: { ...input, payload },
   });
 }

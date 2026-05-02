@@ -21,7 +21,7 @@ function mapResponseStatus(paper: Record<string, unknown>): PaperDoc {
   } as unknown as PaperDoc;
 }
 
-function mapRequestStatus(input: Record<string, unknown>): Record<string, unknown> {
+export function mapRequestStatus(input: Record<string, unknown>): Record<string, unknown> {
   if (input.status && typeof input.status === "string") {
     return { ...input, status: FRONTEND_STATUS_MAP[input.status] ?? input.status };
   }
@@ -132,9 +132,10 @@ export async function generatePaperMetadata(
   paperDoc: PaperDoc,
   client: ApiClient = apiClient,
 ): Promise<PaperMetadata> {
+  const mappedPayload = mapRequestStatus(paperDoc as unknown as Record<string, unknown>);
   return client.post<PaperMetadata>(`/papers/${paperId}/metadata/preview`, {
     body: {
-      payload: paperDoc,
+      payload: mappedPayload,
     },
   });
 }
