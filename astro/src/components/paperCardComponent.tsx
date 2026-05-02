@@ -10,7 +10,7 @@ export default function PaperCardComponent({
     onSelect,
     showStatus = false,
 }: {
-    handle: string;
+    handle?: string;
     paperData: PaperDoc;
     onSelect?: (paper: PaperDoc) => void;
     showStatus?: boolean;
@@ -90,10 +90,14 @@ export default function PaperCardComponent({
             >
                 {cardBody}
             </button>
-        ) : (
+        ) : handle ? (
             <a href={paperData.status == "published" ? `/${handle}/${paperData.slug}` : `/write/${paperData.paperId}`} target={paperData.status == "published" ? "_blank" : ""} className="relative">
                 {cardBody}
             </a>
+        ) : (
+            <div className="relative opacity-70 pointer-events-none">
+              {cardBody}
+            </div>
         )}
 
 

@@ -64,9 +64,11 @@ export default function UserPopover({ user: propUser }: UserPopoverProps) {
           </div>
           <div className="w-full">
             <p className="text-[15px] font-[500] truncate">{displayName}</p>
-            <p className="text-[12px] truncate font-[500] opacity-[0.8]">
-              @{user.username}
-            </p>
+            <div className="relative w-full">
+              <p className="text-[12px] absolute left-0 right-0 truncate font-[500] opacity-[0.8]">
+                @{user.username}
+              </p>
+            </div>
           </div>
         </div>
         <div className="flex flex-col w-full gap-1">

@@ -120,11 +120,12 @@ async function resolveBrowserToken(_auth: AuthMode): Promise<string | null> {
   return token;
 }
 
-function createServerTokenResolver(token: string | null): TokenResolver {
+function createServerTokenResolver(getToken: () => Promise<string | null>): TokenResolver {
   return async (auth: AuthMode) => {
     if (auth === "none") {
       return null;
     }
+    const token = await getToken();
     if (!token && auth === "required") {
       throw new Error(MISSING_TOKEN_ERROR);
     }
@@ -236,8 +237,12 @@ function createRequestClient(resolveToken: TokenResolver): ApiClient {
   };
 }
 
-export function createApiClient(token: string | null): ApiClient {
-  return createRequestClient(createServerTokenResolver(token));
+export function createApiClient(tokenOrGetToken: (() => Promise<string | null>) | string | null): ApiClient {
+  if (typeof tokenOrGetToken === "function") {
+    return createRequestClient(createServerTokenResolver(tokenOrGetToken));
+  }
+  const staticToken = tokenOrGetToken;
+  return createRequestClient(createServerTokenResolver(async () => staticToken));
 }
 
 export const apiClient: ApiClient = createRequestClient(resolveBrowserToken);

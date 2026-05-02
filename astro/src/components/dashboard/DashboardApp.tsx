@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { FolderPlus, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { UserProvider, useUser } from "@/components/providers/UserProvider";
 import UserPopover from "@/components/userPopover";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,14 +21,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import { createProject } from "@/lib/api/projects";
 import {
-  getMcpConnectionInfo,
   listMcpAuthorizations,
   revokeMcpAuthorization,
 } from "@/lib/api/mcp";
-import type { McpAuthorizationSummary, McpConnectionInfo } from "@/lib/api/mcp";
+import type { McpAuthorizationSummary } from "@/lib/api/mcp";
 import { MAX_PAPERS_PER_USER, MAX_PROJECTS_PER_USER } from "@/lib/limits";
 import { sortPapersLatestFirst } from "@/lib/paperSort";
-import type { PaperDoc, ProjectDoc, UserDoc } from "@/lib/entities";
+import type { PaperDoc, ProjectDoc } from "@/lib/entities";
 import { formatFirestoreDate } from "@/lib/utils";
 import FolderNotes from "../folderComponent";
 import EmptyPaperNotes from "../emptyPagesComp";
@@ -37,7 +37,8 @@ import ScrollToTop from "../scrollToTop";
 import ProjectCard from "../project/ProjectCard";
 import { Progress } from "../ui/progress";
 import PostRender from "@/components/ui/markdown-render/markdown-render";
-import { MAX_CONTENT_PAPER_WIDTH } from "@/lib/design";
+import { readTabFromQuery, writeTabToQuery } from "@/lib/queryTab";
+import { MAX_CONTENT_PAPER_WIDTH, MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
 
 import chatgptLogo from "@/assets/logos/chatgpt.svg"
 import openCodeLogo from "@/assets/logos/opencode.svg"
@@ -47,27 +48,10 @@ import codexLogo from "@/assets/logos/codex.svg"
 type DashboardAppProps = {
   initialProjects: ProjectDoc[];
   initialPages: PaperDoc[];
-  initialUser: UserDoc;
   isMobileUA: boolean;
 };
 type DashboardTab = "overview" | "mcp";
-
-function buildOptimisticProject(ownerId?: string, name?: string, isPublic?: boolean): ProjectDoc {
-  const now = new Date().toISOString();
-  const nonce = Date.now();
-  return {
-    projectId: `optimistic-project-${nonce}`,
-    ownerId: ownerId || "optimistic-owner",
-    name: name?.trim() || "Creating project...",
-    slug: `creating-project-${nonce}`,
-    description: "",
-    contentGuidelines: "",
-    isPublic: Boolean(isPublic),
-    pagesNumber: 0,
-    createdAt: now,
-    updatedAt: now,
-  };
-}
+const dashboardTabs: DashboardTab[] = ["overview", "mcp"];
 
 const AGENT_LOGOS: Record<string, string> = {
   chatgpt: chatgptLogo.src,
@@ -84,14 +68,38 @@ function getAgentLogo(agentName: string): string | null {
   return null;
 }
 
-function buildMcpUrl(): string {
+function buildMcpData() {
   const base = (import.meta.env.PUBLIC_API_BASE_URL as string)?.trim().replace(/\/+$/, "")
     || (typeof window !== "undefined" ? window.location.origin.replace(/\/+$/, "") : "");
-  return base ? `${base}/mcp` : "";
+  if (!base) return { url: "", config: "" };
+  const url = `${base}/mcp`;
+  const config = JSON.stringify({
+    servers: { whitepapper: { url, type: "http" } },
+    inputs: [],
+  }, null, 2);
+  return { url, config };
 }
 
-export default function DashboardApp({ initialProjects, initialPages, initialUser, isMobileUA }: DashboardAppProps) {
-  const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
+const SKELETON_AGENTS = [
+  { name: "ChatGPT", logo: chatgptLogo },
+  { name: "GitHub Copilot", logo: copilotLogo },
+  { name: "OpenCode", logo: openCodeLogo },
+  { name: "Codex", logo: codexLogo },
+];
+
+export default function DashboardApp(props: DashboardAppProps) {
+  return (
+    <UserProvider>
+      <DashboardContent {...props} />
+    </UserProvider>
+  );
+}
+
+function DashboardContent({ initialProjects, initialPages, isMobileUA }: DashboardAppProps) {
+  const { user: currentUser } = useUser();
+  const [activeTab, setActiveTab] = useState<DashboardTab>(() =>
+    readTabFromQuery<DashboardTab>(dashboardTabs, "overview"),
+  );
   const [projects, setProjects] = useState<ProjectDoc[]>(initialProjects);
   const [pages, setPages] = useState<PaperDoc[]>(() => sortPapersLatestFirst(initialPages));
   const [creatingPage, setCreatingPage] = useState(false);
@@ -105,7 +113,6 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
   const [mcpAuthorizations, setMcpAuthorizations] = useState<McpAuthorizationSummary[]>([]);
   const [mcpUsage, setMcpUsage] = useState(0);
   const [mcpLimitPerMonth, setMcpLimitPerMonth] = useState(0);
-  const [mcpConnectionInfo, setMcpConnectionInfo] = useState<McpConnectionInfo | null>(null);
   const [mcpLoading, setMcpLoading] = useState(false);
   const mcpFetchedRef = useRef(false);
   const [revokingMcpAuthorizationId, setRevokingMcpAuthorizationId] = useState<string | null>(null);
@@ -116,17 +123,11 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
     if (activeTab !== "mcp" || mcpFetchedRef.current) return;
     setMcpLoading(true);
     mcpFetchedRef.current = true;
-    Promise.all([
-      listMcpAuthorizations(),
-      getMcpConnectionInfo().catch(() => null),
-    ]).then(([authResp, connInfo]) => {
+    listMcpAuthorizations().then((authResp) => {
       setMcpAuthorizations(authResp.authorizations);
       setMcpUsage(authResp.usage);
       setMcpLimitPerMonth(authResp.limitPerMonth);
-      setMcpConnectionInfo(connInfo);
-    }).catch(() => {
-      // MCP data is non-critical
-    }).finally(() => {
+    }).catch(() => { }).finally(() => {
       setMcpLoading(false);
     });
   }, [activeTab]);
@@ -160,8 +161,6 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
       return;
     }
     setCreatingProject(true);
-    const optimisticProject = buildOptimisticProject(initialUser?.userId, newProjectName, newProjectPublic);
-    setProjects((prev) => [optimisticProject, ...prev]);
     try {
       const project = await createProject({
         name: newProjectName.trim() || undefined,
@@ -173,9 +172,9 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
       setNewProjectPublic(true);
       window.location.href = `/dashboard/${project.projectId}`;
     } catch (error) {
-      setProjects((prev) => prev.filter((p) => p.projectId !== optimisticProject.projectId));
-      setCreatingProject(false);
       toast.error(error instanceof Error ? error.message : "Failed to create project.");
+    } finally {
+      setCreatingProject(false);
     }
   }
 
@@ -201,29 +200,27 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
     }
   }
 
-  const resolvedMcpInfo = mcpConnectionInfo;
-  const mcpUrl = resolvedMcpInfo?.endpointUrl || buildMcpUrl();
-  const mcpManualConfig = resolvedMcpInfo ? JSON.stringify(resolvedMcpInfo.manualConfig, null, 2) : "";
-  const setupMarkdown = resolvedMcpInfo
-    ? `\`\`\`json\n${mcpManualConfig}\n\`\`\``
-    : "";
+  const handle = currentUser?.username;
+  const mcpData = buildMcpData();
   const mcpProgress = mcpLimitPerMonth > 0
     ? Math.min(100, Math.max(0, (mcpUsage / mcpLimitPerMonth) * 100))
     : 0;
 
   return (
-    <div className="min-h-screen bg-background px-[15px] pt-15 pb-20">
+    <div className="min-h-screen bg-background px-5 md:px-15 pt-20">
       <ScrollToTop />
 
-      <div className="z-[10] flex p-[10px] justify-end fixed top-0 left-0 w-full">
-        <UserPopover user={initialUser} />
+      <div className="z-[10] top-5 right-5 fixed">
+        <UserPopover />
       </div>
 
-      <div className="mx-auto flex w-full max-w-[1000px] flex-col gap-5">
+      <div className="mx-auto flex w-full flex-col gap-5"
+        style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+      >
         <p className="text-sm text-muted-foreground">Dashboard</p>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DashboardTab)}>
-          <TabsList>
+        <Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value as DashboardTab); writeTabToQuery(value); }}>
+          <TabsList className="sticky top-5 z-[10]">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="mcp">MCP</TabsTrigger>
           </TabsList>
@@ -249,7 +246,7 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
                   <PaperCardComponent
                     showStatus
                     key={page.paperId}
-                    handle={initialUser?.username ?? "user"}
+                    handle={handle}
                     paperData={page}
                     onSelect={(paper) => { setSelectedPaper(paper); setPreviewOpen(true); }}
                   />
@@ -319,113 +316,124 @@ export default function DashboardApp({ initialProjects, initialPages, initialUse
               open={previewOpen}
               onOpenChange={setPreviewOpen}
               paper={selectedPaper}
-              handle={initialUser?.username ?? "user"}
+              handle={handle}
               isMobileUA={isMobileUA}
               onPaperDeleted={handlePaperDeleted}
             />
           </TabsContent>
 
           <TabsContent value="mcp" className="mt-5">
-            {mcpLoading ? (
-              <div className="space-y-8 w-full mx-auto mt-10" style={{ maxWidth: MAX_CONTENT_PAPER_WIDTH }}>
-                <div className="space-y-3">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-                <div className="space-y-3">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-32 w-full" />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                  <Skeleton className="h-2 w-full" />
-                </div>
-                <div className="space-y-3">
-                  <Skeleton className="h-4 w-32" />
-                  {[1, 2].map((i) => (
-                    <div key={i} className="flex gap-4 items-center">
-                      <Skeleton className="h-8 w-8 rounded-full" />
-                      <div className="flex-1 space-y-1">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-24" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-10 w-full mx-auto mt-10" style={{ maxWidth: MAX_CONTENT_PAPER_WIDTH }}>
-                {mcpUrl && (
-                  <div className="space-y-3">
-                    <Label>MCP URL</Label>
-                    <PostRender content={`~~~url\n${mcpUrl}\n~~~`} />
-                  </div>
-                )}
-
-                {setupMarkdown && (
-                  <div className="space-y-3">
-                    <Label>Manual config</Label>
-                    <PostRender content={setupMarkdown} />
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <Label>Monthly usage</Label>
-                    <p className="font-[450] text-[12px]">{mcpUsage} / {mcpLimitPerMonth}</p>
-                  </div>
-                  <Progress className="w-full" value={mcpProgress} />
-                  <p className="text-[14px] text-center text-muted-foreground">Limits reset at beginning of every month</p>
-                </div>
-
+            <div className="space-y-10 w-full mx-auto mt-10" style={{ maxWidth: MAX_CONTENT_PAPER_WIDTH }}>
+              {mcpData.url && (
                 <div className="space-y-4">
-                  <Label>Active connections</Label>
-                  {mcpAuthorizations.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No active MCP connections for this account yet.</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {mcpAuthorizations.map((item) => {
-                        const agentLogo = getAgentLogo(item.agentName ?? "");
-                        return (
-                          <div key={item.authorizationId} className="flex gap-4">
-                            <div className="shrink-0 pt-1">
-                              {agentLogo && <img src={agentLogo} className="w-[27px] h-[27px] dark:invert" />}
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-[16px] truncate">{item.agentName}</p>
-                              <p className="text-[12px] text-muted-foreground">{formatFirestoreDate(item.createdAt)}</p>
-                            </div>
-                            <Button size="sm" variant="destructive" onClick={() => { setRevokingMcpAuthorizationId(item.authorizationId); setRevokeMcpDialogOpen(true); }}>
-                              Revoke
-                            </Button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  <div className="flex pt-4 justify-center w-full">
-                    <a href="/docs/mcp/quickstart" className="underline text-[14px] text-center text-muted-foreground">How to connect my agents?</a>
-                  </div>
+                  <Label>MCP URL</Label>
+                  <PostRender content={`~~~${mcpData.url.split(":").slice(0, 1).join("")}\n${mcpData.url}\n~~~`} />
                 </div>
+              )}
 
-                <Dialog open={revokeMcpDialogOpen} onOpenChange={setRevokeMcpDialogOpen}>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Revoke MCP connection?</DialogTitle>
-                      <DialogDescription>This will invalidate the selected IDE connection.</DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                      <Button variant="secondary" onClick={() => { setRevokeMcpDialogOpen(false); setRevokingMcpAuthorizationId(null); }}>Cancel</Button>
-                      <Button variant="destructive" loading={revokingMcpAuthorization} onClick={handleRevokeMcpAuthorization}>Revoke</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+              {mcpData.config && (
+                <div className="space-y-4">
+                  <Label>Manual config</Label>
+                  <PostRender content={`\`\`\`json\n${mcpData.config}\n\`\`\``} />
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <Label>Monthly usage</Label>
+                  {mcpLoading ? (
+                    <Skeleton className="h-[14px] w-16" />
+                  ) : (
+                    <p className="font-[450] text-[12px]">{mcpUsage} / {mcpLimitPerMonth}</p>
+                  )}
+                </div>
+                <Progress className="w-full" value={mcpLoading ? 0 : mcpProgress} />
+                <p className="text-[14px] text-center text-muted-foreground">Limits reset at beginning of every month</p>
               </div>
-            )}
+
+              <div className="space-y-4">
+                <Label>Active connections</Label>
+                {mcpLoading ? (
+                  <div className="space-y-4">
+                    {SKELETON_AGENTS.map((item, i) => (
+                      <div key={i} className="flex gap-4 items-center animate-pulse" style={{ animationDelay: `${i * 150}ms` }}>
+                        <div className="shrink-0 pt-1">
+                          <img src={item.logo.src} className="w-[27px] h-[27px] dark:invert" />
+                        </div>
+
+                        <div className="flex-1">
+                          <Skeleton className="h-[15px] w-[140px]" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : mcpAuthorizations.length === 0 ? (
+                  <div className="space-y-5 mt-10">
+                    <div className="grid md:grid-cols-4 grid-cols-2 gap-5">
+                      {SKELETON_AGENTS.map((item, index) => (
+                        <a href={index == 0 ? "/docs/mcp/chatgpt" : index == 1 ? "/docs/mcp/copilot" : index == 2 ? "/docs/mcp/opencode" : "/docs/mcp/codex"} target="_blank" className="flex flex-col flex-1 items-center justify-start gap-4 transition-all duration-300 hover:bg-muted py-6">
+                          <img src={item.logo.src} className="w-[32px] h-[32px] dark:invert" />
+                          <p className="text-center">{item.name}</p>
+                        </a>
+                      ))}
+                    </div>
+                    <p className="text-[14px] text-center ">No active MCP connections, read the guide to connect your agents.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6 mt-5">
+                    {mcpAuthorizations.map((item) => {
+                      const agentLogo = getAgentLogo(item.agentName ?? "");
+                      return (
+                        <div key={item.authorizationId} className="flex gap-4">
+                          <div className="shrink-0 pt-1">
+                            {agentLogo && <img src={agentLogo} className="w-[27px] h-[27px] dark:invert" />}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[16px] truncate">{item.agentName}</p>
+                            <p className="text-[12px] text-muted-foreground">{formatFirestoreDate(item.createdAt)}</p>
+                          </div>
+                          <Button size="sm" variant="destructive" onClick={() => { setRevokingMcpAuthorizationId(item.authorizationId); setRevokeMcpDialogOpen(true); }}>
+                            Revoke
+                          </Button>
+                        </div>
+                      )
+                    })}
+                    <div className="flex pt-4 justify-center w-full">
+                      <a target="_blank" href="/docs/mcp/quickstart" className="underline text-[14px] text-center text-muted-foreground">How to connect my agents?</a>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+              <Dialog open={revokeMcpDialogOpen} onOpenChange={setRevokeMcpDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Revoke MCP connection?</DialogTitle>
+                    <DialogDescription>This will invalidate the selected IDE connection.</DialogDescription>
+                  </DialogHeader>
+                  {(() => {
+                    const item = mcpAuthorizations.find((a) => a.authorizationId === revokingMcpAuthorizationId);
+                    const agentLogo = item ? getAgentLogo(item.agentName ?? "") : null;
+                    return item ? (
+                      <div className="flex gap-4 my-2">
+                        <div className="shrink-0 pt-1">
+                          {agentLogo && <img src={agentLogo} className="w-[27px] h-[27px] dark:invert" />}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[16px] truncate">{item.agentName}</p>
+                          <p className="text-[12px] text-muted-foreground">{formatFirestoreDate(item.createdAt)}</p>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
+                  <DialogFooter>
+                    <Button variant="secondary" onClick={() => { setRevokeMcpDialogOpen(false); setRevokingMcpAuthorizationId(null); }}>Cancel</Button>
+                    <Button variant="destructive" loading={revokingMcpAuthorization} onClick={handleRevokeMcpAuthorization}>Revoke</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

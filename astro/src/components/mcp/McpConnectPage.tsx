@@ -72,12 +72,12 @@ export default function McpConnectPage({ initialContext = null, initialRequestId
   }, [initialContext, requestId]);
 
   async function handleDecision(action: "approve" | "deny") {
-    if (!requestId) {
+    if (!requestId || !context) {
       return;
     }
     setSubmittingAction(action);
     try {
-      const result = await submitMcpConsentDecision(requestId, action);
+      const result = await submitMcpConsentDecision(requestId, action, context.csrfToken);
       window.location.href = result.redirectTo;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to complete MCP consent.");

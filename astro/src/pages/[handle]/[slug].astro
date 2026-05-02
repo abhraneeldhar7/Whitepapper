@@ -1,6 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import { getPublicPaperPageData } from "@/lib/api/public";
+import { ApiError } from "@/lib/api/client";
 import { formatFirestoreDate } from "@/lib/utils";
 import PostRender from "@/components/ui/markdown-render/markdown-render";
 import { LinesTableOfContent } from "@/components/ui/toc/linesTableOfContent";
@@ -34,6 +35,7 @@ Astro.response.headers.set(
   "Cache-Control",
   "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
 );
+Astro.response.headers.set("Vary", "Accept-Encoding");
 
 let paper: PaperDoc;
 try {
@@ -42,6 +44,9 @@ try {
   const message = error instanceof Error ? error.message : "";
   if (message.includes("403") || message.includes("Not allowed")) {
     return Astro.redirect("/unauthorized", 302);
+  }
+  if (error instanceof ApiError && error.status >= 500) {
+    return new Response(null, { status: 502 });
   }
   return new Response(null, { status: 404 });
 }
@@ -87,7 +92,7 @@ const seo = buildPaperSeoConfig(metadata, {
       <header>
         <h1
           itemprop="headline"
-          class="text-[28px] md:text-[35px] font-[600] font-[]"
+          class="text-[28px] md:text-[35px] font-[600]"
           style={{ lineHeight: "1.4em" }}
         >
           {paper.title}
@@ -112,7 +117,7 @@ const seo = buildPaperSeoConfig(metadata, {
           <div
             class="flex items-center gap-1 text-[14px] text-muted-foreground"
           >
-            <time datetime={metadata.dateModified} itemprop="dateModified">
+            <time datetime={metadata.datePublished || metadata.dateModified} itemprop="datePublished">
               {updatedDate}
             </time>
             <DotIcon size={20}/>

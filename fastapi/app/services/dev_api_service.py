@@ -82,7 +82,7 @@ class DevApiService:
         return keyDoc
 
     def create(self, ownerId: str, projectId: str) -> dict:
-        existing = firestore_store.find_by_fields(API_KEYS_COLLECTION, {"projectId": project_id})
+        existing = firestore_store.find_by_fields(API_KEYS_COLLECTION, {"projectId": projectId})
         if existing:
             raise HTTPException(status_code=409, detail="A key already exists for this project.")
 
@@ -91,8 +91,8 @@ class DevApiService:
         keyHash = self.hash_rawKey(rawKey)
         created = {
             API_KEY_ID_KEY: keyId,
-            "ownerId": owner_id,
-            "projectId": project_id,
+            "ownerId": ownerId,
+            "projectId": projectId,
             API_KEY_HASH_KEY: keyHash,
             "usage": 0,
             "limitPerMonth": DEV_API_LIMIT_PER_MONTH,
@@ -108,7 +108,7 @@ class DevApiService:
 
     def toggle_active(self, keyId: str, isActive: bool) -> dict:
         current = self.get_by_id(keyId)
-        target = bool(is_active)
+        target = bool(isActive)
         current["isActive"] = target
         firestore_store.update(API_KEYS_COLLECTION, keyId, current)
 
@@ -136,7 +136,7 @@ class DevApiService:
 
     def delete_by_project(self, projectId: str) -> int:
         deleted = 0
-        for keyDoc in firestore_store.find_by_fields(API_KEYS_COLLECTION, {"projectId": project_id}):
+        for keyDoc in firestore_store.find_by_fields(API_KEYS_COLLECTION, {"projectId": projectId}):
             keyId = str(keyDoc.get(API_KEY_ID_KEY) or "").strip()
             if not keyId:
                 continue
@@ -146,7 +146,7 @@ class DevApiService:
 
     def delete_by_owner(self, ownerId: str) -> int:
         deleted = 0
-        for keyDoc in firestore_store.find_by_fields(API_KEYS_COLLECTION, {"ownerId": owner_id}):
+        for keyDoc in firestore_store.find_by_fields(API_KEYS_COLLECTION, {"ownerId": ownerId}):
             keyId = str(keyDoc.get(API_KEY_ID_KEY) or "").strip()
             if not keyId:
                 continue
@@ -213,7 +213,7 @@ class DevApiService:
     def get_project_api_key(self, projectId: str, ownerId: str) -> dict | None:
         matches = firestore_store.find_by_fields(
             API_KEYS_COLLECTION,
-            {"projectId": project_id, "ownerId": owner_id},
+            {"projectId": projectId, "ownerId": ownerId},
         )
         keyDoc = matches[0] if matches else None
         if not keyDoc:

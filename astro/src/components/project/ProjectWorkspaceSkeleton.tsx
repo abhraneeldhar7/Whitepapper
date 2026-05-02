@@ -1,226 +1,115 @@
-import { Skeleton } from "@/components/ui/skeleton";
-
-function UserPopoverSkeleton() {
-  return <Skeleton className="h-9 w-9 rounded-full" />;
-}
-
-function BreadcrumbSkeleton() {
-  return <Skeleton className="h-4 w-48" />;
-}
-
-function TabsSkeleton() {
-  return (
-    <div className="flex gap-2">
-      <Skeleton className="h-9 w-24" />
-      <Skeleton className="h-9 w-14" />
-      <Skeleton className="h-9 w-14" />
-    </div>
-  );
-}
-
-function EditButtonSkeleton() {
-  return <Skeleton className="h-9 w-20" />;
-}
-
-function ProjectLogoSkeleton() {
-  return <Skeleton className="h-[90px] w-[90px] rounded-lg" />;
-}
-
-function FormFieldSkeleton({ labelWidth = "w-24", inputWidth = "md:w-[300px] w-full" }: { labelWidth?: string; inputWidth?: string }) {
-  return (
-    <div className="space-y-2">
-      <Skeleton className={`h-4 ${labelWidth}`} />
-      <Skeleton className={`h-9 ${inputWidth}`} />
-    </div>
-  );
-}
-
-function StatusButtonSkeleton() {
-  return <Skeleton className="h-9 w-[100px]" />;
-}
-
-function DescriptionSkeleton() {
-  return (
-    <div className="space-y-4 mt-15">
-      <Skeleton className="h-4 w-36" />
-      <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground h-[250px]">
-        <Skeleton className="h-9 w-9 rounded-full" />
-        <Skeleton className="h-4 w-40" />
-      </div>
-    </div>
-  );
-}
-
-function CreatePageCardSkeleton() {
-  return (
-    <div className="flex flex-col items-center cursor-pointer">
-      <Skeleton className="md:w-[180px] md:h-[180px] w-[120px] h-[120px] rounded-lg" />
-      <Skeleton className="h-4 w-20 mt-2" />
-    </div>
-  );
-}
-
-function PageCardSkeleton() {
-  return (
-    <div className="rounded-xl overflow-hidden border">
-      <Skeleton className="aspect-[5/3] w-full" />
-      <div className="p-3 space-y-2">
-        <Skeleton className="h-4 w-[85%]" />
-        <Skeleton className="h-4 w-[60%]" />
-        <div className="flex items-center justify-between pt-2">
-          <Skeleton className="h-5 w-14 rounded-full" />
-          <Skeleton className="h-3 w-16" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CreateCollectionCardSkeleton() {
-  return (
-    <div className="flex flex-col items-center">
-      <Skeleton className="h-24 w-24 rounded-lg opacity-50" />
-      <Skeleton className="h-4 w-32 mt-2" />
-    </div>
-  );
-}
-
-function CollectionCardSkeleton() {
-  return (
-    <div className="rounded-xl overflow-hidden border">
-      <Skeleton className="aspect-[5/3] w-full" />
-      <div className="p-3 space-y-2">
-        <Skeleton className="h-4 w-[80%]" />
-        <Skeleton className="h-3 w-[50%]" />
-      </div>
-    </div>
-  );
-}
-
-function ApiTabSkeleton() {
-  return (
-    <div className="space-y-6 max-w-[800px] w-full mx-auto">
-      <div className="space-y-4">
-        <div className="grid gap-3 text-sm">
-          <div className="flex items-start gap-4">
-            <Skeleton className="h-4 w-[90px]" />
-            <div className="flex flex-1 flex-col gap-2">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-2 w-full rounded-full" />
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-4 w-[90px]" />
-            <Skeleton className="h-5 w-16 rounded-full" />
-          </div>
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-4 w-[90px]" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <Skeleton className="h-9 w-24" />
-          <Skeleton className="h-9 w-20" />
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-[200px] w-full rounded-md" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-[90%]" />
-          <Skeleton className="h-4 w-[75%]" />
-          <Skeleton className="h-4 w-[80%]" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function McpTabSkeleton() {
-  return (
-    <div className="space-y-6 max-w-[800px] w-full mx-auto">
-      <div className="space-y-4">
-        <Skeleton className="h-5 w-32" />
-        <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-          <Skeleton className="h-4 w-48" />
-          <div className="flex mt-2">
-            <Skeleton className="h-8 w-16" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+import FolderNotes from "../folderComponent";
+import { Label } from "../ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Skeleton } from "../ui/skeleton";
+import abstractLightPic from "@/assets/abstract_light.jpg";
+import abstractDarkPic from "@/assets/abstract_dark.jpg";
+import { MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
 
 export default function ProjectWorkspaceSkeleton() {
   return (
-    <div className="min-h-screen px-[15px] pt-15 pb-20">
-      <div className="z-[10] fixed top-4 right-4">
-        <UserPopoverSkeleton />
+    <div className="min-h-screen bg-background px-5 md:px-15 pt-20">
+      <div className="z-[10] flex p-[10px] justify-end fixed top-0 left-0 w-full">
+        <Skeleton className="h-9 w-9 rounded-full" />
       </div>
 
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
-        <div>
-          <BreadcrumbSkeleton />
-        </div>
+      <div className="mx-auto w-full" style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}>
 
-        <TabsSkeleton />
+        <div className="mx-auto flex w-full flex-col gap-5">
 
-        <div className="flex flex-col gap-8 md:flex-row">
-          <div className="space-y-6 md:flex-2">
-            <div className="flex items-center gap-2 justify-end w-full">
-              <EditButtonSkeleton />
-            </div>
+          <div className="text-sm text-muted-foreground flex flex-row gap-2 items-center">
+            <a href="/dashboard" className="transition-all duration-300 hover:text-foreground">Dashboard</a> 
+            /
+            <Skeleton className="w-[120px] h-[14px]" />
+          </div>
 
-            <div className="flex md:flex-row flex-col md:gap-10 gap-6">
-              <div>
-                <Skeleton className="h-4 w-24 mb-3" />
-                <ProjectLogoSkeleton />
-              </div>
+          <Tabs value="overview">
+            <TabsList className="sticky top-5 z-[10]">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="api">API</TabsTrigger>
+            </TabsList>
 
-              <div className="flex flex-col gap-5 w-full">
-                <FormFieldSkeleton labelWidth="w-28" />
-                <FormFieldSkeleton labelWidth="w-24" />
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-16" />
-                  <div className="flex items-center gap-2 mt-2">
-                    <StatusButtonSkeleton />
-                    <Skeleton className="h-9 w-16" />
+            <TabsContent value="overview" className="mt-10">
+              <div className="flex gap-15 md:flex-row flex-col">
+                <div className="space-y-6 md:flex-1">
+                  <div className="md:max-w-[400px] space-y-6">
+                    <div className="flex md:flex-row flex-col md:gap-10 gap-6">
+                      <div>
+                        <Label>Project Logo</Label>
+                        <div className="flex items-center gap-3 mt-3">
+                          <div className="flex md:flex-col items-start gap-2">
+                            <Skeleton className="h-[90px] w-[90px] rounded-[10px]" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-5 w-full">
+                        <div className="space-y-2">
+                          <Label htmlFor="project-name">Project name</Label>
+                          <Skeleton className="w-full h-[15px]" />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="project-slug">Project URL</Label>
+                          <Skeleton className="w-full h-[15px]" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mt-15">
+                    <Label>Project description</Label>
+                    <div className="mt-6 space-y-1">
+                      <Skeleton className="w-full h-[15px]" />
+                      <Skeleton className="w-full h-[15px]" />
+                      <Skeleton className="w-full h-[15px]" />
+                      <Skeleton className="w-full h-[15px]" />
+                      <Skeleton className="w-full h-[15px]" />
+                      <Skeleton className="w-full h-[15px]" />
+                      <Skeleton className="w-full h-[15px]" />
+                      <Skeleton className="w-full h-[15px]" />
+                      <Skeleton className="w-full h-[15px]" />
+                      <Skeleton className="w-full h-[15px]" />
+                      <Skeleton className="w-full h-[15px]" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="md:flex-1 space-y-10">
+                  <div className="space-y-5">
+                    <Label>Pages</Label>
+
+                    <div className="grid grid-cols-2 gap-5">
+                      {[1, 2].map((page) => (
+                        <div key={page} className="flex flex-col relative justify-start gap-2">
+                          <div className="overflow-hidden aspect-5/3">
+                            <img className="dark:hidden w-full object-cover border w-full h-full opacity-[0.7] rounded-[3px]" src={abstractLightPic.src} width={640} height={360} loading="lazy" decoding="async" />
+                            <img className="hidden dark:block w-full object-cover w-full h-full border opacity-[0.4] rounded-[3px]" src={abstractDarkPic.src} width={640} height={360} loading="lazy" decoding="async" />
+                          </div>
+                          <Skeleton className="w-full h-[16px]" />
+                          <Skeleton className="w-[90%] h-[16px]" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <Label>Collections</Label>
+                    <div className="grid grid-cols-2 gap-5">
+                      {[1, 2, 3, 4].map((_, i) => (
+                        <div key={i} className="flex flex-col items-center">
+                          <FolderNotes />
+                          <Skeleton className="h-4 w-20 mt-2" />
+                          <Skeleton className="h-3 w-12 mt-1" />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <DescriptionSkeleton />
-          </div>
-
-          <div className="space-y-12 md:flex-2">
-            <div className="space-y-5">
-              <Skeleton className="h-5 w-16" />
-              <div className="grid grid-cols-2 gap-5">
-                <CreatePageCardSkeleton />
-                <PageCardSkeleton />
-                <PageCardSkeleton />
-                <PageCardSkeleton />
-              </div>
-            </div>
-
-            <div className="space-y-5">
-              <Skeleton className="h-5 w-24" />
-              <div className="grid grid-cols-2 gap-5">
-                <CreateCollectionCardSkeleton />
-                <CollectionCardSkeleton />
-                <CollectionCardSkeleton />
-                <CollectionCardSkeleton />
-              </div>
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         </div>
-
-        <ApiTabSkeleton />
-        <McpTabSkeleton />
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
 import { program } from "commander";
 import prompts from "prompts";
 import pc from "picocolors";
@@ -23,6 +24,10 @@ type Registry = {
   components: Component[];
 };
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const cliPkg = JSON.parse(readFileSync(path.resolve(__dirname, "../package.json"), "utf8"));
+const CLI_USER_AGENT = `whitepapper-cli/${cliPkg.version || "0.1.0"}`;
+
 const DEFAULT_REGISTRY_URLS = [
   "https://raw.githubusercontent.com/abhraneeldhar7/whitepapper/master/npm-components/registry/registry.json",
 ];
@@ -41,6 +46,7 @@ async function loadLocalRegistryFallback(): Promise<Registry | null> {
   const currentDir = path.dirname(currentFilePath);
 
   // Works for both ts source (npm-components/cli/src) and published dist (npm-components/cli/dist).
+  // NOTE: These paths assume a monorepo structure and will not resolve for published npm consumers.
   const candidates = [
     path.resolve(currentDir, "../../registry/registry.json"),
     path.resolve(process.cwd(), "npm-components/registry/registry.json"),
@@ -62,12 +68,26 @@ async function loadLocalRegistryFallback(): Promise<Registry | null> {
   return null;
 }
 
+function startSpinner(message: string): () => void {
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+  let i = 0;
+  const timer = setInterval(() => {
+    process.stdout.write(`\r${pc.cyan(frames[i])} ${message}`);
+    i = (i + 1) % frames.length;
+  }, 80);
+  return () => {
+    clearInterval(timer);
+    process.stdout.write("\r\x1b[K");
+  };
+}
+
 async function fetchRegistry(): Promise<Registry> {
   const errors: string[] = [];
+  const stopSpinner = startSpinner("Fetching registry...");
 
   for (const url of getRegistryCandidates()) {
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: { "User-Agent": CLI_USER_AGENT } });
       if (!response.ok) {
         errors.push(`${url} -> HTTP ${response.status}`);
         continue;
@@ -79,17 +99,20 @@ async function fetchRegistry(): Promise<Registry> {
         continue;
       }
 
+      stopSpinner();
       return parsed;
     } catch (error) {
       errors.push(`${url} -> ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
+  stopSpinner();
   const local = await loadLocalRegistryFallback();
   if (local) {
     return local;
   }
 
+  stopSpinner();
   throw new Error(
     `Could not reach registry. Tried:\n${errors.map((line) => `  - ${line}`).join("\n")}`,
   );
@@ -104,10 +127,13 @@ function sanitizeRelativePath(fileName: string): string {
 async function writeComponentFiles(component: Component, outdir: string): Promise<void> {
   await fs.mkdir(outdir, { recursive: true });
 
-  for (const file of component.files) {
-    const response = await fetch(file.url);
+  for (let i = 0; i < component.files.length; i++) {
+    const file = component.files[i];
+    process.stdout.write(`\r  ${pc.dim(`[${i + 1}/${component.files.length}]`)} ${file.name}...`);
+
+    const response = await fetch(file.url, { headers: { "User-Agent": CLI_USER_AGENT } });
     if (!response.ok) {
-      console.log(pc.red(`x Failed to fetch ${file.name}`));
+      console.log(pc.red(`\r  ${pc.dim(`[${i + 1}/${component.files.length}]`)} ${file.name} ${pc.red("failed")}`));
       continue;
     }
 
@@ -117,7 +143,7 @@ async function writeComponentFiles(component: Component, outdir: string): Promis
 
     await fs.mkdir(path.dirname(destination), { recursive: true });
     await fs.writeFile(destination, content, "utf8");
-    console.log(pc.green(`+ ${destination}`));
+    console.log(pc.green(`\r  ${pc.dim(`[${i + 1}/${component.files.length}]`)} ${destination}`));
   }
 }
 
@@ -136,7 +162,7 @@ function printInstallHint(component: Component): void {
   }
 }
 
-program.name("whitepapper").description("Add reusable Whitepapper components to your project").version("0.1.0");
+program.name("whitepapper").description("Add reusable Whitepapper components to your project").version(cliPkg.version || "0.1.0");
 
 program
   .command("list")

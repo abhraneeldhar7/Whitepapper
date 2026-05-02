@@ -158,15 +158,21 @@ class FirestoreStore:
             items.append(data)
         return items
 
-    def list_all(self, collection: str) -> list[dict[str, Any]]:
+    def list_all(self, collection: str, limit: int | None = 500) -> list[dict[str, Any]]:
         items = []
-        for snap in self._collection(collection).stream():
+        query = self._collection(collection)
+        if limit is not None:
+            query = query.limit(max(1, limit))
+        for snap in query.stream():
             items.append(snap.to_dict())
         return items
 
-    def list_all_with_ids(self, collection: str) -> list[dict[str, Any]]:
+    def list_all_with_ids(self, collection: str, limit: int | None = 500) -> list[dict[str, Any]]:
         items = []
-        for snap in self._collection(collection).stream():
+        query = self._collection(collection)
+        if limit is not None:
+            query = query.limit(max(1, limit))
+        for snap in query.stream():
             data = snap.to_dict()
             data["_id"] = snap.id
             items.append(data)

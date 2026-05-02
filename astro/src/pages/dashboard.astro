@@ -1,77 +1,28 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import DashboardApp from "@/components/dashboard/DashboardApp";
-import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton.astro";
+import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import { createApiClient } from "@/lib/api/client";
-import { getDashboardData } from "@/lib/api/users";
-import type { UserDoc } from "@/lib/entities";
+import { listStandalonePapers } from "@/lib/api/papers";
+import { listProjects } from "@/lib/api/projects";
 import { isMobileUserAgent } from "@/lib/userAgent";
 
-const { userId, getToken } = Astro.locals.auth();
+const { getToken } = Astro.locals.auth();
+const serverClient = createApiClient(getToken);
 
-const token = await getToken();
+const [initialProjects, initialPages] = await Promise.all([
+  listProjects(serverClient),
+  listStandalonePapers(serverClient),
+]);
+
 const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
-const clerkUser = await Astro.locals.currentUser();
-
-const serverClient = createApiClient(token);
-const dashboardData = await getDashboardData(serverClient).catch((error) => {
-  const message = error instanceof Error ? error.message : "";
-  if (
-    !message.includes("404") &&
-    !message.toLowerCase().includes("user not found")
-  ) {
-    throw error;
-  }
-
-  const fallbackUsername =
-    clerkUser?.username ||
-    clerkUser?.primaryEmailAddress?.emailAddress
-      ?.split("@", 1)[0]
-      ?.toLowerCase()
-      .replace(/[^a-z0-9-]/g, "-") ||
-    `user-${userId?.slice(-6).toLowerCase()}`;
-
-  const fallbackUser: UserDoc = {
-    userId: userId || "",
-    displayName:
-      clerkUser?.firstName || clerkUser?.fullName || fallbackUsername,
-    description: "",
-    email: clerkUser?.primaryEmailAddress?.emailAddress || null,
-    avatarUrl: clerkUser?.imageUrl || null,
-    username: fallbackUsername || "user",
-    plan: "free",
-    preferences: {
-      showKeyboardEffect: true,
-      typingSoundEnabled: true,
-      hashnodeStoreInCloud: false,
-      hashnodeIntegrated: false,
-      devtoStoreInCloud: false,
-      devtoIntegrated: false,
-    },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  return {
-    user: fallbackUser,
-    projects: [],
-    papers: [],
-  };
-});
-
-const {
-  user: initialUser,
-  projects: initialProjects,
-  papers: initialPages,
-} = dashboardData;
 ---
 
-<Layout showSiteNav={false} initialUser={initialUser} hideUserProvider={true}>
+<Layout showSiteNav={false} hideUserProvider={true}>
   <DashboardApp
     client:only="react"
     initialProjects={initialProjects}
     initialPages={initialPages}
-    initialUser={initialUser}
     isMobileUA={isMobileUA}
   >
     <DashboardSkeleton slot="fallback" />

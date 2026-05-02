@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckIcon, CopyIcon, Ellipsis, FolderPlus, LockIcon, NotebookPen, PencilIcon, PlusIcon, RssIcon, SaveIcon, SquareArrowOutUpRight, XIcon } from "lucide-react";
+import { CheckIcon, ChevronRight, CopyIcon, Ellipsis, FolderPlus, LockIcon, NotebookPen, PencilIcon, PlusIcon, Rss, RssIcon, SaveIcon, SquareArrowOutUpRight, Trash2Icon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import FolderNotes from "@/components/folderComponent";
 import TextEditor from "@/components/pre_made_components/editor/textEditor";
 import MarkdownRender from "@/components/ui/markdown-render/markdown-render";
 import UserPopover from "@/components/userPopover";
-import { useUser } from "@/components/providers/UserProvider";
+import { UserProvider, useUser } from "@/components/providers/UserProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,16 +16,18 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { createCollection } from "@/lib/api/collections";
-import { createApiKey, resetApiKey, setApiKeyActive, type ApiKeySummary } from "@/lib/api/api_keys";
+import { createApiKey, getProjectApiKey, resetApiKey, setApiKeyActive, type ApiKeySummary } from "@/lib/api/api_keys";
 import { revokeMcpAuthorization, type McpAuthorizationListResponse, type McpAuthorizationSummary, type McpConnectionInfo } from "@/lib/api/mcp";
 import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import {
@@ -34,7 +36,7 @@ import {
   updateProject,
   updateProjectVisibility,
 } from "@/lib/api/projects";
-import { MAX_COLLECTIONS_PER_PROJECT, MAX_DESCRIPTION_LENGTH, MAX_PAPERS_PER_USER } from "@/lib/limits";
+import { DEV_API_LIMIT_PER_MONTH, MAX_COLLECTIONS_PER_PROJECT, MAX_DESCRIPTION_LENGTH, MAX_PAPERS_PER_USER } from "@/lib/limits";
 import { sortPapersLatestFirst } from "@/lib/paperSort";
 import { uploadProjectEmbeddedImage, uploadProjectLogo } from "@/lib/api/uploads";
 import { uploadImage } from "@/lib/useImageUpload";
@@ -54,65 +56,35 @@ import ScrollToTop from "../scrollToTop";
 import { ApiShowcase } from "../apiShowcase";
 import ProjectCard from "./ProjectCard";
 import { Progress } from "../ui/progress";
+import { MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
 
 type ProjectWorkspaceProps = {
   projectId: string;
   initialProject: ProjectDoc;
   initialPages: PaperDoc[];
   initialCollections: CollectionDoc[];
-  initialApiDoc: ApiKeySummary | null;
-  initialMcpAuthorizations: McpAuthorizationListResponse;
-  mcpConnectionInfo: McpConnectionInfo | null;
-  initialUser: UserDoc;
   isMobileUA: boolean;
 };
 
-type ProjectTab = "overview" | "api" | "mcp";
+type ProjectTab = "overview" | "api";
 
-const projectTabs: ProjectTab[] = ["overview", "api", "mcp"];
+const projectTabs: ProjectTab[] = ["overview", "api"];
 
-function resolveFallbackMcpConnectionInfo(): McpConnectionInfo | null {
-  const apiBaseUrl = String
-  
-  
-  (import.meta.env.PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
-  const fallbackBaseUrl =
-    apiBaseUrl ||
-    (typeof window !== "undefined" ? String(window.location.origin || "").trim().replace(/\/+$/, "") : "");
-
-  if (!fallbackBaseUrl) {
-    return null;
-  }
-
-  const endpointUrl = `${fallbackBaseUrl}/mcp`;
-  return {
-    serverName: "whitepapper",
-    transport: "http",
-    endpointUrl,
-    manualConfig: {
-      servers: {
-        whitepapper: {
-          url: endpointUrl,
-          type: "http",
-        },
-      },
-      inputs: [],
-    },
-  };
+export default function ProjectWorkspace(props: ProjectWorkspaceProps) {
+  return (
+    <UserProvider>
+      <ProjectWorkspaceInner {...props} />
+    </UserProvider>
+  );
 }
 
-export default function ProjectWorkspace({
+function ProjectWorkspaceInner({
   projectId,
   initialProject,
   initialPages,
   initialCollections,
-  initialApiDoc,
-  initialMcpAuthorizations,
-  mcpConnectionInfo,
-  initialUser,
   isMobileUA,
 }: ProjectWorkspaceProps) {
-  if (!initialUser) return null;
   const { user: currentUser } = useUser();
   const [activeTab, setActiveTab] = useState<ProjectTab>(() => readTabFromQuery(projectTabs, "overview"));
   const [project, setProject] = useState<ProjectDoc>(initialProject);
@@ -135,10 +107,11 @@ export default function ProjectWorkspace({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [slugCheckMessage, setSlugCheckMessage] = useState<string | null>(null);
   const [updatingProjectVisibility, setUpdatingProjectVisibility] = useState(false);
-  const [apiDoc, setApiDoc] = useState<ApiKeySummary | null>(initialApiDoc);
-  const [mcpAuthorizations, setMcpAuthorizations] = useState<McpAuthorizationSummary[]>(initialMcpAuthorizations.authorizations);
-  const [mcpUsage, setMcpUsage] = useState(initialMcpAuthorizations.usage);
-  const [mcpLimitPerMonth, setMcpLimitPerMonth] = useState(initialMcpAuthorizations.limitPerMonth);
+  const [apiDoc, setApiDoc] = useState<ApiKeySummary | null>(null);
+  const [apiLoading, setApiLoading] = useState(true);
+  const [mcpAuthorizations, setMcpAuthorizations] = useState<McpAuthorizationSummary[]>([]);
+  const [mcpUsage, setMcpUsage] = useState(0);
+  const [mcpLimitPerMonth, setMcpLimitPerMonth] = useState(0);
   const [creatingApiKey, setCreatingApiKey] = useState(false);
   const [togglingApiKey, setTogglingApiKey] = useState(false);
   const [resettingApiKey, setResettingApiKey] = useState(false);
@@ -158,13 +131,9 @@ export default function ProjectWorkspace({
     setDraftProject(null);
     setPages(sortPapersLatestFirst(initialPages));
     setCollections(initialCollections);
-    setApiDoc(initialApiDoc);
-    setMcpAuthorizations(initialMcpAuthorizations.authorizations);
-    setMcpUsage(initialMcpAuthorizations.usage);
-    setMcpLimitPerMonth(initialMcpAuthorizations.limitPerMonth);
     setEditingProject(false);
     setSlugCheckMessage(null);
-  }, [initialProject, initialPages, initialCollections, initialApiDoc, initialMcpAuthorizations]);
+  }, [initialProject, initialPages, initialCollections]);
 
 
   useEffect(() => {
@@ -180,6 +149,10 @@ export default function ProjectWorkspace({
   useEffect(() => {
     setApiKeyCopied(false);
   }, [apiKeyDialogOpen, createdApiKey]);
+
+  useEffect(() => {
+    getProjectApiKey(projectId).then((doc) => { setApiDoc(doc); setApiLoading(false); }).catch(() => setApiLoading(false));
+  }, [projectId]);
 
   function beginEditProject() {
     setDraftProject({ ...project });
@@ -513,10 +486,6 @@ export default function ProjectWorkspace({
 
 
 
-  if (!currentUser) {
-    return null;
-  }
-
   const editableProject = editingProject ? draftProject : project;
   const projectNameForDisplay = editableProject?.name || project.name;
   const projectSlugForDisplay = editableProject?.slug || project.slug;
@@ -524,255 +493,230 @@ export default function ProjectWorkspace({
   const projectContentGuidelines = editableProject?.contentGuidelines || "";
   const logoPreview = tempUploadingProjectLogo || editableProject?.logoUrl || "";
   const projectPreviewKey = `${project.projectId}:${project.updatedAt}:${projectDescription.length}`;
-  const resolvedMcpConnectionInfo = mcpConnectionInfo || resolveFallbackMcpConnectionInfo();
-  const mcpManualConfig = resolvedMcpConnectionInfo ? JSON.stringify(resolvedMcpConnectionInfo.manualConfig, null, 2) : "";
-  // SDK connect snippet removed as per user request
-  const selectedMcpAuthorization =
-    mcpAuthorizations.find((authorization) => authorization.authorizationId === revokingMcpAuthorizationId) || null;
-  const mcpMonthlyUsage = mcpUsage;
-  const mcpMonthlyLimit = mcpLimitPerMonth;
-  const mcpMonthlyProgress = mcpMonthlyLimit > 0
-    ? Math.min(100, Math.max(0, (mcpMonthlyUsage / mcpMonthlyLimit) * 100))
-    : 0;
-
   return (
-    <div className="min-h-screen px-[15px] pt-15 pb-20">
+    <div className="min-h-screen bg-background px-5 md:px-15 pt-20">
       <ScrollToTop />
-      <div className="z-[10] fixed top-4 right-4">
+
+      <div className="z-[10] top-5 right-5 fixed">
         <UserPopover />
       </div>
 
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
-        <div>
-          <p className="text-sm text-muted-foreground">
-            <a href="/dashboard" data-astro-prefetch="viewport" className="transition-all duration-300 hover:text-foreground">Dashboard</a> / {projectNameForDisplay}
-          </p>
-        </div>
+      <div className="mx-auto flex w-full flex-col gap-5"
+        style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+      >
 
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => {
-            const nextTab = projectTabs.includes(value as ProjectTab)
-              ? (value as ProjectTab)
-              : "overview";
-            setActiveTab(nextTab);
-            writeTabToQuery(nextTab);
-          }}
-        >
-          <TabsList>
+        <p className="text-sm text-muted-foreground">
+          <a href="/dashboard" data-astro-prefetch="viewport" className="transition-all duration-300 hover:text-foreground">Dashboard</a> / {projectNameForDisplay}
+        </p>
+
+        <Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value as ProjectTab); writeTabToQuery(value); }}>
+          <TabsList className="sticky top-5 z-[10]">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="api">API</TabsTrigger>
-            <TabsTrigger value="mcp">MCP</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="mt-5">
-            <div className="flex flex-col gap-8 md:flex-row">
-              <div className="space-y-6 md:flex-2">
-                <div className="flex items-center gap-2 justify-end w-full">
-                  {editingProject ? (
-                    <>
-                      <Button
+          <TabsContent value="overview" className="mt-10">
 
-                        variant="secondary"
-                        onClick={cancelEditProject}
-                        disabled={savingProject || isProjectAssetUploading}
-                      >
-                        <XIcon /> Cancel
-                      </Button>
-                      <Button
+            <div className="flex gap-15 md:flex-row flex-col">
 
-                        onClick={handleSaveProjectDetails}
-                        loading={savingProject}
-                        disabled={isProjectAssetUploading || savingProject}
-                      >
-                        <SaveIcon /> Save
-                      </Button>
-                    </>
-                  ) : (
-                    <Button onClick={beginEditProject}>
-                      <PencilIcon /> Edit
-                    </Button>
-                  )}
-                </div>
+              <div className="space-y-6 md:flex-1">
 
+                <div className="md:max-w-[400px] space-y-6">
 
-
-                <div className="flex md:flex-row flex-col md:gap-10 gap-6">
-                  <div>
-                    <Label>Project Logo</Label>
-                    <div className="flex items-center gap-3 mt-3">
-                      <div className="flex md:flex-col items-start gap-2">
-                        <div
-                          className="h-[90px] w-[90px] shrink-0 cursor-pointer"
-                          onClick={() => {
-                            projectLogoInputRef.current?.click();
-                          }}
-                        >
-                          {logoPreview ? (
-                            <img
-                              src={logoPreview}
-                              alt="Project logo"
-                              className={`h-full w-full object-cover ${uploadingProjectLogo ? 'animate-pulse' : ''}`}
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-[24px] font-semibold text-muted-foreground">
-                              {projectNameForDisplay.slice(0, 1).toUpperCase() || "P"}
-                            </div>
-                          )}
-                        </div>
-                        {editingProject && editableProject?.logoUrl ? (
-                          <Button
-
-                            variant="destructive"
-                            className="md:w-full"
-                            onClick={() => setDraftProject((prev) => (prev ? { ...prev, logoUrl: null } : prev))}
-                            disabled={uploadingProjectLogo || savingProject}
+                  <div className="flex md:flex-row flex-col md:gap-10 gap-6">
+                    <div>
+                      <Label>Project Logo</Label>
+                      <div className="flex items-center gap-3 mt-3">
+                        <div className="flex md:flex-col items-start gap-2">
+                          <div
+                            className="h-[90px] w-[90px] shrink-0 cursor-pointer relative"
+                            onClick={() => {
+                              projectLogoInputRef.current?.click();
+                            }}
                           >
-                            Remove
-                          </Button>
+                            {logoPreview ? (
+                              <img
+                                src={logoPreview}
+                                alt="Project logo"
+                                className={`h-full w-full object-cover ${uploadingProjectLogo ? 'animate-pulse' : ''}`}
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[24px] font-semibold text-muted-foreground">
+                                {projectNameForDisplay.slice(0, 1).toUpperCase() || "P"}
+                              </div>
+                            )}
+
+                            {editingProject && editableProject?.logoUrl ? (
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-0 right-0 z-2"
+                                onClick={() => setDraftProject((prev) => (prev ? { ...prev, logoUrl: null } : prev))}
+                                disabled={uploadingProjectLogo || savingProject}
+                              >
+                                <XIcon />
+                              </Button>
+                            ) : null}
+
+                          </div>
+
+                        </div>
+                        <input
+                          type="file"
+                          ref={projectLogoInputRef}
+                          className="hidden"
+                          accept="image/*"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) {
+                              void handleProjectLogoUpload(file);
+                              event.target.value = "";
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-5 w-full">
+                      <div className="space-y-1">
+                        <Label htmlFor="project-name">Project name</Label>
+                        {editingProject ?
+                          <Input
+                            id="project-name"
+                            className="mt-1"
+                            value={draftProject?.name || ""}
+                            onChange={(event) =>
+                              setDraftProject((prev) => (prev ? { ...prev, name: event.target.value } : prev))
+                            }
+                            maxLength={120}
+                          /> :
+                          <p className="text-[15px]">{projectNameForDisplay}</p>
+                        }
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label htmlFor="project-slug">Project URL</Label>
+                        {editingProject ?
+                          <Input
+                            id="project-slug"
+                            className="mt-1"
+                            value={draftProject?.slug || ""}
+                            onChange={(event) => {
+                              const normalized = normalizeSlug(event.target.value);
+                              setSlugCheckMessage(null);
+                              setDraftProject((prev) => (prev ? { ...prev, slug: normalized } : prev));
+                            }}
+                            maxLength={120}
+                          /> :
+                          <>
+                            {project.isPublic ?
+                              <a className="text-[15px]  flex items-center gap-2">/{projectSlugForDisplay} <Rss size={14} /></a>
+                              :
+                              <p className="text-[15px] text-muted-foreground flex items-center gap-2">/{projectSlugForDisplay} <LockIcon size={14} /></p>
+                            }
+                          </>
+                        }
+                        {editingProject && slugCheckMessage ? (
+                          <p className="text-xs mt-2 text-destructive">
+                            {slugCheckMessage}
+                          </p>
                         ) : null}
                       </div>
-                      <input
-                        type="file"
-                        ref={projectLogoInputRef}
-                        className="hidden"
-                        accept="image/*"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) {
-                            void handleProjectLogoUpload(file);
-                            event.target.value = "";
-                          }
-                        }}
-                      />
+
+
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-5 w-full ">
-                    <div>
-                      <Label htmlFor="project-name">Project name</Label>
-                      {editingProject ?
-                        <Input
-                          id="project-name"
-                          value={draftProject?.name || ""}
-                          className="mt-2 md:w-[300px]"
-                          onChange={(event) =>
-                            setDraftProject((prev) => (prev ? { ...prev, name: event.target.value } : prev))
-                          }
-                          maxLength={120}
-                        /> :
-                        <p className="mt-[5px]">{projectNameForDisplay}</p>
-                      }
-                    </div>
+                  <div className="flex gap-2 w-full">
+                    {editingProject ? (
+                      <>
+                        <Button
+                          variant="secondary"
+                          onClick={cancelEditProject}
+                          disabled={savingProject || isProjectAssetUploading}
+                        >
+                          <XIcon /> Cancel
+                        </Button>
+                        <Button
 
-                    <div>
-                      <Label htmlFor="project-slug">Project URL</Label>
-                      {editingProject ?
-                        <Input
-                          id="project-slug"
-                          value={draftProject?.slug || ""}
-                          className="mt-2 md:w-[300px]"
-                          onChange={(event) => {
-                            const normalized = normalizeSlug(event.target.value);
-                            setSlugCheckMessage(null);
-                            setDraftProject((prev) => (prev ? { ...prev, slug: normalized } : prev));
-                          }}
-                          maxLength={120}
-                        /> :
-                        <p className="mt-[5px]">/{projectSlugForDisplay}</p>
-                      }
-                      {editingProject && slugCheckMessage ? (
-                        <p className="text-xs mt-2 text-destructive">
-                          {slugCheckMessage}
-                        </p>
-                      ) : null}
-                    </div>
+                          onClick={handleSaveProjectDetails}
+                          loading={savingProject}
+                          disabled={isProjectAssetUploading || savingProject}
+                        >
+                          <SaveIcon /> Save
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="flex gap-3 items-center">
+                        <Button onClick={beginEditProject}>
+                          <PencilIcon /> Edit
+                        </Button>
 
-                    <div>
-                      <Label>Status</Label>
-                      <div className="mt-2 w-full flex items-center justify-between gap-2">
-
-                        <div className="flex gap-2">
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant={editingProject ? "secondary" : "outline"} loading={updatingProjectVisibility} className={`w-[100px] ${project.isPublic && "text-primary"}`}>
-                                {project.isPublic ? <RssIcon size={14} /> : <LockIcon size={14} />}
-                                {project.isPublic ? "Public" : "Draft"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[120px] p-[3px]">
-                              <div className="flex flex-col gap-[5px]">
-                                <Button
-                                  size="sm"
-                                  variant={project.isPublic ? "ghost" : "default"}
-                                  onClick={() => { void handleProjectVisibilityChange(false); }}
-                                  disabled={updatingProjectVisibility}
-                                >
-                                  <LockIcon className="mr-1" size={14} /> Draft
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="icon" className="rounded-[50%]"><Ellipsis /></Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[150px] p-[3px]">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" loading={updatingProjectVisibility} size="sm" className={`w-full ${project.isPublic && "text-primary"}`}>
+                                  {project.isPublic ? <RssIcon /> : <LockIcon />}
+                                  {project.isPublic ? "Public" : "Draft"}
+                                  <ChevronRight className="ml-auto text-foreground" />
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant={project.isPublic ? "default" : "ghost"}
-                                  onClick={() => { void handleProjectVisibilityChange(true); }}
-                                  disabled={updatingProjectVisibility}
-                                >
-                                  <RssIcon className="mr-1" size={14} /> Public
-                                </Button>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                          {project.isPublic && currentUser &&
-                            <a target="_blank" href={`/${currentUser.username}/p/${project.slug}`}>
-                              <Button variant="ghost">Open <SquareArrowOutUpRight /></Button>
-                            </a>
-                          }
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[120px] p-[3px]">
+                                <div className="flex flex-col gap-[5px]">
+                                  <Button
+                                    size="sm"
+                                    variant={project.isPublic ? "ghost" : "default"}
+                                    onClick={() => { void handleProjectVisibilityChange(false); }}
+                                    disabled={updatingProjectVisibility}
+                                  >
+                                    <LockIcon /> Draft
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant={project.isPublic ? "default" : "ghost"}
+                                    onClick={() => { void handleProjectVisibilityChange(true); }}
+                                    disabled={updatingProjectVisibility}
+                                  >
+                                    <RssIcon className="mr-1" size={14} /> Public
+                                  </Button>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
 
-                        </div>
+                            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                              <DialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-destructive w-full justify-start"><Trash2Icon /> Delete</Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Delete project?</DialogTitle>
+                                  <DialogDescription>
+                                    This will delete this project <span className="text-[15px] font-[500]">{projectNameForDisplay}</span> and all its pages
+                                  </DialogDescription>
+                                </DialogHeader>
 
+                                <DialogFooter>
+                                  <Button variant="secondary" onClick={() => setDeleteOpen(false)} disabled={deleteLoading}>
+                                    Cancel
+                                  </Button>
+                                  <Button variant="destructive" onClick={handleDeleteProject} loading={deleteLoading}>
+                                    Confirm delete
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
 
-
-
-                        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button variant="outline" size="icon" className="rounded-[50%]">
-                                <Ellipsis className="text-destructive" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="end">
-                              <Button
-
-                                variant="ghost"
-                                className="w-full text-destructive"
-                                onClick={() => setDeleteOpen(true)}
-                              >
-                                Delete project
-                              </Button>
-                            </PopoverContent>
-                          </Popover>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Delete project?</DialogTitle>
-                              <DialogDescription>
-                                This will delete this project <span className="text-[15px] font-[500]">{projectNameForDisplay}</span> and all its pages
-                              </DialogDescription>
-                            </DialogHeader>
-
-                            <DialogFooter>
-                              <Button variant="secondary" onClick={() => setDeleteOpen(false)} disabled={deleteLoading}>
-                                Cancel
-                              </Button>
-                              <Button variant="destructive" onClick={handleDeleteProject} loading={deleteLoading}>
-                                Confirm delete
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                          </PopoverContent>
+                        </Popover>
                       </div>
-
-                    </div>
+                    )}
                   </div>
                 </div>
+
 
 
 
@@ -799,9 +743,19 @@ export default function ProjectWorkspace({
                 </div>
               </div>
 
-              <div className="space-y-12 md:flex-2">
+              <div className="md:flex-1 space-y-10">
                 <div className="space-y-5">
                   <Label>Pages</Label>
+
+                  <PaperPreviewSheet
+                    open={previewOpen}
+                    onOpenChange={setPreviewOpen}
+                    paper={selectedPaper}
+                    handle={currentUser?.username ?? "user"}
+                    isMobileUA={isMobileUA}
+                    onPaperDeleted={handlePaperDeleted}
+                  />
+
 
                   {pages.length === 0 ? (
                     <div className="flex flex-col items-center">
@@ -924,60 +878,81 @@ export default function ProjectWorkspace({
             </div>
           </TabsContent>
 
-          <TabsContent value="api" className="mt-5">
+
+          <TabsContent value="api" className="mt-10">
             <div className="space-y-6 max-w-[800px] w-full mx-auto">
-              {!apiDoc ? (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">No API key created for this project.</p>
-                  <Button onClick={handleCreateApiKey} loading={creatingApiKey}>
-                    Create API key
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid gap-3 text-sm">
-                    <div className="flex items-start gap-4">
-                      <p className="min-w-[90px] text-muted-foreground">Monthly Usage</p>
-                      <div className="flex flex-1 flex-col gap-2">
-                        <p className="font-[450] text-[12px]">{apiDoc.usage} / {apiDoc.limitPerMonth}</p>
-                        <Progress className="w-full" value={(apiDoc.usage / apiDoc.limitPerMonth) * 100} />
-                      </div>
+              <div className="space-y-5">
+                {!apiLoading && !apiDoc &&
+                  <div className="space-y-2">
+                    <Label>Create api key</Label>
+                    <p className="text-[15px]">No api key exists for this project, create one to use the contents in your websites and projects</p>
+                    <Button onClick={handleCreateApiKey} loading={creatingApiKey}>
+                      Create API key
+                    </Button>
+                  </div>
+                }
+
+                <div className="text-sm space-y-3">
+
+                  <div className="space-y-4">
+                    <div className="flex justify-between">
+                      <Label>Monthly usage</Label>
+                      {apiLoading ? (
+                        <Skeleton className="h-[14px] w-16" />
+                      ) : (
+                        <p className="font-[450] text-[12px]">{apiDoc ? apiDoc?.usage : 0} / {apiDoc ? apiDoc.usage : DEV_API_LIMIT_PER_MONTH}</p>
+                      )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <p className="min-w-[90px] text-muted-foreground">Status</p>
-                      <Badge variant={apiDoc.isActive ? "secondary" : "outline"}>
-                        {apiDoc.isActive ? "Active" : "Disabled"}
+                    <Progress className="w-full" value={apiLoading ? 0 : apiDoc ? apiDoc.usage : DEV_API_LIMIT_PER_MONTH} />
+                  </div>
+
+
+                  <div className="flex items-center gap-3">
+                    <p className="w-[100px] text-muted-foreground">Status</p>
+                    {apiLoading ? (
+                      <Skeleton className="h-4 w-16" />
+                    ) : (
+                      <Badge variant={apiDoc?.isActive ? "secondary" : "outline"}>
+                        {apiDoc ? (apiDoc.isActive ? "Active" : "Disabled") : "Not created"}
                       </Badge>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <p className="min-w-[90px] text-muted-foreground">Created</p>
-                      <p className="font-[450]">{formatFirestoreDate(apiDoc.createdAt)}</p>
-                    </div>
+                    )}
                   </div>
-
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant={apiDoc.isActive ? "secondary" : "default"}
-                      onClick={() => {
-                        void handleToggleApiKey(!apiDoc.isActive);
-                      }}
-                      loading={togglingApiKey}
-                      disabled={resettingApiKey}
-                    >
-                      {apiDoc.isActive ? "Disable" : "Enable"}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => setResetConfirmOpen(true)}
-                      disabled={togglingApiKey || resettingApiKey}
-                    >
-                      Reset
-                    </Button>
+                  <div className="flex items-center gap-3">
+                    <p className="w-[100px] text-muted-foreground">Created</p>
+                    {apiLoading ? (
+                      <Skeleton className="h-4 w-20" />
+                    ) : apiDoc ? (
+                      <p className="font-[450]">{formatFirestoreDate(apiDoc.createdAt)}</p>
+                    ) : (
+                      <p className="font-[450] text-muted-foreground">—</p>
+                    )}
                   </div>
                 </div>
-              )}
 
-              {apiDoc ? <ApiShowcase /> : null}
+                <div className="flex justify-end gap-2">
+                  {apiDoc &&
+                    <>
+                      <Button
+                        variant={apiDoc.isActive ? "secondary" : "default"}
+                        onClick={() => { void handleToggleApiKey(!apiDoc.isActive); }}
+                        loading={togglingApiKey || apiLoading}
+                        disabled={resettingApiKey}
+                      >
+                        {apiDoc.isActive ? "Disable" : "Enable"}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => setResetConfirmOpen(true)}
+                        disabled={togglingApiKey || resettingApiKey || apiLoading}
+                      >
+                        Reset
+                      </Button>
+                    </>
+                  }
+                </div>
+
+                <ApiShowcase />
+              </div>
             </div>
 
             <Dialog open={apiKeyDialogOpen} onOpenChange={setApiKeyDialogOpen}>
@@ -1031,70 +1006,9 @@ export default function ProjectWorkspace({
 
           </TabsContent>
 
-<TabsContent value="mcp" className="mt-5">
-            <div className="space-y-6 max-w-[800px] w-full mx-auto">
-              <div className="space-y-4">
-                <Label>Content guidelines</Label>
-                {editingProject ? (
-                  <>
-                    <Textarea
-                      value={draftProject?.contentGuidelines ?? ""}
-                      onChange={(event) =>
-                        setDraftProject((prev) => (prev ? { ...prev, contentGuidelines: event.target.value } : prev))
-                      }
-                      placeholder="Describe the audience, tone, style, and constraints the AI should follow."
-                      className="min-h-[140px]"
-                    />
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        variant="secondary"
-                        onClick={cancelEditProject}
-                        disabled={savingProject}
-                      >
-                        <XIcon /> Cancel
-                      </Button>
-                      <Button
-                        onClick={handleSaveProjectDetails}
-                        loading={savingProject}
-                        disabled={savingProject}
-                      >
-                        <SaveIcon /> Save
-                      </Button>
-                    </div>
-                  </>
-                ) : projectContentGuidelines.trim().length > 0 ? (
-                  <div className="rounded-md border bg-muted/20 p-4 text-sm whitespace-pre-wrap">
-                    {projectContentGuidelines}
-                    <div className="flex mt-2">
-                      <Button size="sm" variant="outline" onClick={beginEditProject}>
-                        <PencilIcon /> Edit
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                    No content guidelines provided.
-                    <div className="flex mt-2">
-                      <Button size="sm" variant="outline" onClick={beginEditProject}>
-                        <PencilIcon /> Add
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </TabsContent>
         </Tabs>
       </div>
-      <PaperPreviewSheet
-        open={previewOpen}
-        onOpenChange={setPreviewOpen}
-        paper={selectedPaper}
-        handle={currentUser?.username ?? "user"}
-        isMobileUA={isMobileUA}
-        onPaperDeleted={handlePaperDeleted}
-      />
-    </div >
+    </div>
   );
 }
 

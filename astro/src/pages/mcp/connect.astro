@@ -6,8 +6,7 @@ import { getMcpConsentContext, type McpConsentContext } from "@/lib/api/mcp";
 
 const requestId = Astro.url.searchParams.get("request_id") || "";
 const { getToken } = Astro.locals.auth();
-const token = await getToken();
-const serverClient = createApiClient(token);
+const serverClient = createApiClient(getToken);
 const initialContext = requestId
   ? await getMcpConsentContext(requestId, serverClient).catch(() => null as McpConsentContext | null)
   : null;

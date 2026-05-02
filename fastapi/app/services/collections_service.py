@@ -93,6 +93,15 @@ class CollectionsService:
         items = apply_order_by(items, order_by=order_by)
         return paginate_items(items, limit=limit, cursor=cursor)
 
+    def list_apply_projections_paginated(
+        self,
+        projectId: str,
+        *,
+        limit: int = 25,
+        cursor: str | None = None,
+    ) -> dict:
+        return self.list_project_collections_paginated(projectId, limit=limit, cursor=cursor)
+
     def get_many_by_ids(self, collectionIds: list[str]) -> list[dict]:
         return firestore_store.get_many(COLLECTIONS_COLLECTION, collectionIds)
 

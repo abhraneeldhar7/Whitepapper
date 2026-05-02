@@ -2,54 +2,33 @@
 import ProjectWorkspace from "@/components/project/ProjectWorkspace";
 import ProjectWorkspaceSkeleton from "@/components/project/ProjectWorkspaceSkeleton";
 import Layout from "@/layouts/Layout.astro";
-import { getProjectApiKey } from "@/lib/api/api_keys";
 import { createApiClient } from "@/lib/api/client";
-import { getMcpConnectionInfo, listMcpAuthorizations } from "@/lib/api/mcp";
 import { getProjectDashboardData } from "@/lib/api/projects";
-import { getCurrentUser } from "@/lib/api/users";
-import type { ApiKeySummary } from "@/lib/api/api_keys";
-import type { McpAuthorizationListResponse, McpConnectionInfo } from "@/lib/api/mcp";
-import type { UserDoc } from "@/lib/entities";
 import { isMobileUserAgent } from "@/lib/userAgent";
 
 const { getToken } = Astro.locals.auth();
 const projectId = Astro.params.projectId as string;
 
-const token = await getToken();
-const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
+const serverClient = createApiClient(getToken);
 
-const serverClient = createApiClient(token);
-const [initialUser, projectData, initialApiDoc, initialMcpAuthorizations, mcpConnectionInfo] = await Promise.all([
-  getCurrentUser(serverClient).catch(() => null as UserDoc | null),
-  getProjectDashboardData(projectId, serverClient).catch(() => null),
-  getProjectApiKey(projectId, serverClient).catch(() => null as ApiKeySummary | null),
-  listMcpAuthorizations(serverClient).catch(
-    () => ({ authorizations: [], usage: 0, limitPerMonth: 0 }) as McpAuthorizationListResponse,
-  ),
-  getMcpConnectionInfo(serverClient).catch(() => null as McpConnectionInfo | null),
-]);
-
-if (!initialUser || !projectData) {
+const projectData = await getProjectDashboardData(projectId, serverClient).catch(() => null);
+if (!projectData) {
   return Astro.redirect("/404");
 }
 
 const { project: initialProject, collections: initialCollections, papers: initialPages } = projectData;
+const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 ---
 
-<Layout showSiteNav={false} initialUser={initialUser}>
+<Layout showSiteNav={false} hideUserProvider={true}>
   <ProjectWorkspace
     client:only="react"
     projectId={projectId}
     initialProject={initialProject}
     initialPages={initialPages}
     initialCollections={initialCollections}
-    initialApiDoc={initialApiDoc}
-    initialMcpAuthorizations={initialMcpAuthorizations}
-    mcpConnectionInfo={mcpConnectionInfo}
-    initialUser={initialUser}
     isMobileUA={isMobileUA}
   >
     <ProjectWorkspaceSkeleton slot="fallback" />
   </ProjectWorkspace>
 </Layout>
-

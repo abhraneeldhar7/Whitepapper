@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from functools import lru_cache
-
 from clerk_backend_api import AuthenticateRequestOptions, Clerk
 from fastapi import HTTPException, Request
 
@@ -13,7 +11,7 @@ def _parse_authorized_parties(raw: str | None) -> list[str]:
     return [part.strip() for part in raw.split(",") if part.strip()]
 
 
-@lru_cache
+# @lru_cache()
 def _clerk_client() -> Clerk:
     settings = get_settings()
     if not settings.clerk_secret_key:
@@ -23,8 +21,7 @@ def _clerk_client() -> Clerk:
         )
     return Clerk(bearer_auth=settings.clerk_secret_key)
 
-
-@lru_cache
+# @lru_cache()
 def _auth_options() -> AuthenticateRequestOptions:
     settings: Settings = get_settings()
     return AuthenticateRequestOptions(

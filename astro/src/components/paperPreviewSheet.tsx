@@ -24,7 +24,7 @@ type PaperPreviewSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   paper: PaperDoc | null;
-  handle: string;
+  handle?: string;
   isMobileUA: boolean;
   onPaperDeleted?: (paperId: string) => void;
 };
@@ -105,7 +105,7 @@ export default function PaperPreviewSheet({
               </Button>
             </a>
             {paper.status === "published" ? (
-              <a href={`/${handle}/${paper.slug}`} target="_blank" rel="noreferrer">
+              <a href={`/${handle || "user"}/${paper.slug}`} target="_blank" rel="noreferrer">
                 <Button variant="outline" size="sm">
                   <SquareArrowOutUpRight /> Open
                 </Button>

@@ -94,14 +94,17 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
         extractHeadings()
         const rafId = window.requestAnimationFrame(extractHeadings)
         let attempts = 0
-        const retryId = window.setInterval(() => {
+        let retryRafId: number
+        const retry = () => {
             attempts += 1
             extractHeadings()
             const contentEl = document.getElementById(contentContainerId) as HTMLElement | null
             if (attempts >= 20 || (contentEl?.querySelector('h1, h2, h3, h4, h5, h6'))) {
-                window.clearInterval(retryId)
+                return
             }
-        }, 120)
+            retryRafId = window.requestAnimationFrame(retry)
+        }
+        retryRafId = window.requestAnimationFrame(retry)
 
         const observer = new MutationObserver(() => {
             extractHeadings()
@@ -113,7 +116,7 @@ const MobileTableOfContent: React.FC<MobileTableOfContentProps> = ({ contentCont
 
         return () => {
             window.cancelAnimationFrame(rafId)
-            window.clearInterval(retryId)
+            window.cancelAnimationFrame(retryRafId)
             observer.disconnect()
         }
     }, [contentContainerId])

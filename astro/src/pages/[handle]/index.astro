@@ -2,6 +2,7 @@
 import ProfilePage from "@/components/profilePage";
 import Layout from "@/layouts/Layout.astro";
 import { getPublicProfile } from "@/lib/api/public";
+import { ApiError } from "@/lib/api/client";
 import styles from "@/components/profile.module.css";
 import { isReservedUsername } from "@/lib/reservedPaths";
 import { excerpt, fallbackDescription, resolveSiteUrl } from "@/lib/seo";
@@ -24,6 +25,7 @@ Astro.response.headers.set(
   "Cache-Control",
   "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
 );
+Astro.response.headers.set("Vary", "Accept-Encoding");
 
 let userData;
 try {
@@ -33,14 +35,15 @@ try {
   if (message.includes("403") || message.includes("Not allowed")) {
     return Astro.redirect("/unauthorized", 302);
   }
+  if (error instanceof ApiError && error.status >= 500) {
+    return new Response(null, { status: 502 });
+  }
   return new Response(null, { status: 404 });
 }
 
 // Get current user ID from Clerk
 const { userId } = Astro.locals.auth();
 
-// Filter to only show published standalone papers (not in collections) for public profile
-const publishedPapers = userData.papers.filter((p) => p.status === "published" && !p.collectionId);
 const siteUrl = resolveSiteUrl(import.meta.env.PUBLIC_SITE_URL, Astro.url.origin);
 const displayName = (userData.user.displayName || userData.user.username || handle).trim();
 const profileDescription = (userData.user.description || "").trim();
@@ -110,7 +113,7 @@ const seo = buildProfileSeo({
     <ProfilePage
       client:load
       user={userData.user}
-      papers={publishedPapers}
+      papers={userData.papers}
       projects={userData.projects}
       currentUserId={userId}
     />

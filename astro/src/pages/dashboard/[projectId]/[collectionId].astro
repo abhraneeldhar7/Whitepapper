@@ -14,10 +14,9 @@ const { getToken } = Astro.locals.auth();
 const projectId = Astro.params.projectId as string;
 const collectionId = Astro.params.collectionId as string;
 
-const token = await getToken();
 const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 
-const serverClient = createApiClient(token);
+const serverClient = createApiClient(getToken);
 const [initialUserResult, initialCollectionResult, initialPagesResult, initialProjectNameResult] = await Promise.allSettled([
   getCurrentUser(serverClient),
   getCollection(collectionId, serverClient),

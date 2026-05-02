@@ -29,6 +29,7 @@ Astro.response.headers.set(
   "Cache-Control",
   "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
 );
+Astro.response.headers.set("Vary", "Accept-Encoding");
 
 let data: Awaited<ReturnType<typeof getPublicProjectBySlug>>;
 try {
@@ -67,12 +68,9 @@ const { userId, getToken } = Astro.locals.auth();
 
 let currentUserId: string | null = null;
 if (userId) {
-  const token = await getToken();
-  if (token) {
-    const serverClient = createApiClient(token);
-    const currentUser = await getCurrentUser(serverClient).catch(() => null);
-    currentUserId = currentUser?.userId ?? null;
-  }
+  const serverClient = createApiClient(getToken);
+  const currentUser = await getCurrentUser(serverClient).catch(() => null);
+  currentUserId = currentUser?.userId ?? null;
 }
 
 const canManageProject = Boolean(currentUserId && currentUserId === data.project.ownerId);

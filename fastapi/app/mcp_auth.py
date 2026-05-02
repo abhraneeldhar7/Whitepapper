@@ -38,6 +38,7 @@ class PendingAuthorization:
     state: str | None
     code_challenge: str
     created_at: float
+    csrf_token: str
 
 
 @dataclass
@@ -336,6 +337,7 @@ def build_mcp_router() -> APIRouter:
             state=str(state).strip() or None,
             code_challenge=str(code_challenge).strip(),
             created_at=time.time(),
+            csrf_token=secrets.token_urlsafe(32),
         )
 
         consent_url = f"{_required_env(get_settings().public_site_url, 'PUBLIC_SITE_URL').rstrip('/')}/mcp/connect?request_id={request_id}"
@@ -355,6 +357,7 @@ def build_mcp_router() -> APIRouter:
                 "clientName": pending.client_name,
                 "redirectUri": pending.redirect_uri,
                 "scopes": pending.scopes,
+                "csrfToken": pending.csrf_token,
                 "user": {
                     "displayName": user_doc.get("displayName"),
                     "username": user_doc.get("username"),
@@ -371,12 +374,16 @@ def build_mcp_router() -> APIRouter:
     ) -> JSONResponse:
         request_id = str(payload.get("requestId") or "").strip()
         action = str(payload.get("action") or "approve").strip().lower()
+        csrf_token = str(payload.get("csrfToken") or "").strip()
         if not request_id:
             raise HTTPException(status_code=400, detail="requestId is required.")
         if action not in {"approve", "deny"}:
             raise HTTPException(status_code=400, detail="action must be approve or deny.")
 
         pending = _load_pending_authorization(request_id)
+        if not csrf_token or csrf_token != pending.csrf_token:
+            del _pending_authorizations[request_id]
+            raise HTTPException(status_code=403, detail="CSRF token mismatch.")
         del _pending_authorizations[request_id]
 
         if action == "deny":

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import html
+import json
 from typing import Any
 
 from fastmcp import FastMCP
@@ -17,6 +19,30 @@ from app.mcp.common import (
 from app.services.collections_service import collections_service
 from app.services.papers_service import papers_service
 from app.services.projects_service import projects_service
+
+MAX_METADATA_JSON_BYTES = 65536
+
+
+def _validate_metadata(value: dict[str, Any] | None) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    raw = json.dumps(value, ensure_ascii=False, default=str)
+    if len(raw.encode("utf-8")) > MAX_METADATA_JSON_BYTES:
+        raise mcp_http_error(400, "VALIDATION_ERROR", f"Metadata exceeds {MAX_METADATA_JSON_BYTES // 1024}KB.")
+    sanitized: dict[str, Any] = {}
+    for k, v in value.items():
+        if isinstance(v, str):
+            sanitized[k] = html.escape(v, quote=True)
+        elif isinstance(v, dict):
+            sanitized[k] = _validate_metadata(v)
+        elif isinstance(v, list):
+            sanitized[k] = [
+                html.escape(str(item), quote=True) if isinstance(item, str) else item
+                for item in v
+            ]
+        else:
+            sanitized[k] = v
+    return sanitized
 
 
 def register_write_tools(server: FastMCP) -> None:
@@ -135,7 +161,7 @@ def register_write_tools(server: FastMCP) -> None:
             payload["collectionId"] = collectionId
         if thumbnailUrl is not None: payload["thumbnailUrl"] = thumbnailUrl
         if status is not None: payload["status"] = normalize_status(status)
-        if metadata is not None: payload["metadata"] = metadata
+        if metadata is not None: payload["metadata"] = _validate_metadata(metadata)
         created = papers_service.create(userId, payload)
         paper = papers_service.get_by_id(str(created.get("paperId") or ""))
         if not paper:
@@ -177,7 +203,7 @@ def register_write_tools(server: FastMCP) -> None:
                 payload["projectId"] = None
         if thumbnailUrl is not None: payload["thumbnailUrl"] = thumbnailUrl
         if status is not None: payload["status"] = normalize_status(status)
-        if metadata is not None: payload["metadata"] = metadata
+        if metadata is not None: payload["metadata"] = _validate_metadata(metadata)
         return papers_service.update(paperId, payload)
 
     @server.tool(description="Permanently delete a paper.")
@@ -209,7 +235,7 @@ def register_write_tools(server: FastMCP) -> None:
         if body is not None: payload["body"] = body
         if thumbnailUrl is not None: payload["thumbnailUrl"] = thumbnailUrl
         if status is not None: payload["status"] = normalize_status(status)
-        if metadata is not None: payload["metadata"] = metadata
+        if metadata is not None: payload["metadata"] = _validate_metadata(metadata)
 
         if collectionId is not None:
             if collectionId:

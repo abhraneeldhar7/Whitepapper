@@ -12,10 +12,9 @@ import { isMobileUserAgent } from "@/lib/userAgent";
 const { getToken } = Astro.locals.auth();
 const id = Astro.params.id as string;
 
-const token = await getToken();
 const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 
-const serverClient = createApiClient(token);
+const serverClient = createApiClient(getToken);
 const initialUser = await getCurrentUser(serverClient).catch(() => null as UserDoc | null);
 let initialPaper: PaperDoc;
 try {

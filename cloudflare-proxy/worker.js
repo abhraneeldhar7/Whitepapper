@@ -1,3 +1,5 @@
+const MAX_BODY_SIZE = 10 * 1024 * 1024;
+
 export default {
   async fetch(request, env, ctx) {
     try {
@@ -6,6 +8,12 @@ export default {
         return new Response("Missing CLOUD_RUN_URL", { status: 500 });
       }
       const incomingUrl = new URL(request.url);
+
+      // Reject large request bodies early
+      const contentLength = request.headers.get("content-length");
+      if (contentLength && parseInt(contentLength) > MAX_BODY_SIZE) {
+        return new Response("Request body too large", { status: 413 });
+      }
       const upstreamBase = target.endsWith("/") ? target.slice(0, -1) : target;
       const upstreamUrl = `${upstreamBase}${incomingUrl.pathname}${incomingUrl.search}`;
 
@@ -22,6 +30,10 @@ export default {
       }
       const upstreamHeaders = new Headers(request.headers);
       upstreamHeaders.delete("host");
+      upstreamHeaders.delete("cache-control");
+      upstreamHeaders.delete("pragma");
+      upstreamHeaders.delete("expires");
+      upstreamHeaders.delete("surrogate-control");
       const upstreamRequestInit = {
         method: request.method,
         headers: upstreamHeaders,
@@ -61,8 +73,8 @@ export default {
       }
       return proxiedResponse;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown Worker error";
-      return new Response(`Proxy error: ${message}`, { status: 502 });
+      console.error("Proxy error:", error);
+      return new Response("Bad Gateway", { status: 502 });
     }
   }
 }
