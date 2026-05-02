@@ -6,7 +6,7 @@ import FolderNotes from "@/components/folderComponent";
 import TextEditor from "@/components/pre_made_components/editor/textEditor";
 import MarkdownRender from "@/components/ui/markdown-render/markdown-render";
 import UserPopover from "@/components/userPopover";
-import { useUser } from "@/components/providers/UserProvider";
+import { UserProvider, useUser } from "@/components/providers/UserProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,7 +68,15 @@ type ProjectTab = "overview" | "api";
 
 const projectTabs: ProjectTab[] = ["overview", "api"];
 
-export default function ProjectWorkspace({
+export default function ProjectWorkspace(props: ProjectWorkspaceProps) {
+  return (
+    <UserProvider>
+      <ProjectWorkspaceInner {...props} />
+    </UserProvider>
+  );
+}
+
+function ProjectWorkspaceInner({
   projectId,
   initialProject,
   initialPages,

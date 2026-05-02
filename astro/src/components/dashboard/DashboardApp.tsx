@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { FolderPlus, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { useUser } from "@/components/providers/UserProvider";
+import { UserProvider, useUser } from "@/components/providers/UserProvider";
 import UserPopover from "@/components/userPopover";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,7 +87,15 @@ const SKELETON_AGENTS = [
   { name: "Codex", logo: codexLogo },
 ];
 
-export default function DashboardApp({ initialProjects, initialPages, isMobileUA }: DashboardAppProps) {
+export default function DashboardApp(props: DashboardAppProps) {
+  return (
+    <UserProvider>
+      <DashboardInner {...props} />
+    </UserProvider>
+  );
+}
+
+function DashboardInner({ initialProjects, initialPages, isMobileUA }: DashboardAppProps) {
   const { user: currentUser } = useUser();
   const [activeTab, setActiveTab] = useState<DashboardTab>(() =>
     readTabFromQuery<DashboardTab>(dashboardTabs, "overview"),
@@ -321,6 +329,7 @@ export default function DashboardApp({ initialProjects, initialPages, isMobileUA
 
           <TabsContent value="mcp" className="mt-5">
             <div className="space-y-10 w-full mx-auto mt-10" style={{ maxWidth: MAX_CONTENT_PAPER_WIDTH }}>
+
               {mcpData.url && (
                 <div className="space-y-4">
                   <Label>MCP URL</Label>
@@ -328,12 +337,6 @@ export default function DashboardApp({ initialProjects, initialPages, isMobileUA
                 </div>
               )}
 
-              {mcpData.config && (
-                <div className="space-y-4">
-                  <Label>Manual config</Label>
-                  <PostRender content={`\`\`\`json\n${mcpData.config}\n\`\`\``} />
-                </div>
-              )}
 
               <div className="space-y-4">
                 <div className="flex justify-between">
@@ -347,6 +350,7 @@ export default function DashboardApp({ initialProjects, initialPages, isMobileUA
                 <Progress className="w-full" value={mcpLoading ? 0 : mcpProgress} />
                 <p className="text-[14px] text-center text-muted-foreground">Limits reset at beginning of every month</p>
               </div>
+
 
               <div className="space-y-4">
                 <Label>Active connections</Label>
@@ -400,8 +404,13 @@ export default function DashboardApp({ initialProjects, initialPages, isMobileUA
                     </div>
                   </div>
                 )}
-
               </div>
+
+
+
+
+
+
 
               <Dialog open={revokeMcpDialogOpen} onOpenChange={setRevokeMcpDialogOpen}>
                 <DialogContent className="sm:max-w-md">

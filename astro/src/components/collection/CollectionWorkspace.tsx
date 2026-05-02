@@ -3,7 +3,7 @@ import { Copy, Ellipsis, LockIcon, NotebookPen, PencilIcon, PlusIcon, RssIcon, S
 import { toast } from "sonner";
 
 import UserPopover from "@/components/userPopover";
-import { useUser } from "@/components/providers/UserProvider";
+import { UserProvider, useUser } from "@/components/providers/UserProvider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,7 +42,15 @@ type CollectionWorkspaceProps = {
   isMobileUA: boolean;
 };
 
-export default function CollectionWorkspace({
+export default function CollectionWorkspace(props: CollectionWorkspaceProps) {
+  return (
+    <UserProvider>
+      <CollectionWorkspaceInner {...props} />
+    </UserProvider>
+  );
+}
+
+function CollectionWorkspaceInner({
   projectId,
   collectionId,
   initialProjectName,
