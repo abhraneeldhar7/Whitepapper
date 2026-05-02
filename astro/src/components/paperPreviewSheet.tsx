@@ -104,7 +104,7 @@ export default function PaperPreviewSheet({
                 <NotebookPen /> Edit
               </Button>
             </a>
-            {paper.status === "published" ? (
+            {paper.status === "public" ? (
               <a href={`/${handle || "user"}/${paper.slug}`} target="_blank" rel="noreferrer">
                 <Button variant="outline" size="sm">
                   <SquareArrowOutUpRight /> Open
@@ -165,7 +165,7 @@ export default function PaperPreviewSheet({
                 <img
                   src={paper.thumbnailUrl}
                   alt={paper.title}
-                  className="h-full w-full object-contain"
+                  className="h-full w-full object-cover aspect-5/3 object-center"
                 />
               </figure>
             ) : null}

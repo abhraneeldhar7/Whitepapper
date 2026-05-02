@@ -6,8 +6,8 @@ import markdownCode from "@/components/ui/markdown-render/markdown-render.tsx?ra
 import linearCode from "@/components/ui/toc/linearTableOfContent.tsx?raw";
 import mobileCode from "@/components/ui/toc/mobileTableOfContent.tsx?raw";
 import linesCode from "@/components/ui/toc/linesTableOfContent.tsx?raw";
-import type { PaperDoc } from "@/lib/entities";
 import { buildBlogPaperMetadata, buildPaperSeoConfig } from "@/metadata/dynamic";
+import { fetchDevPaperBySlug } from "@/lib/api/contentFetcher";
 
 const componentOrder = [
   "markdown",
@@ -16,9 +16,6 @@ const componentOrder = [
   "lines-toc",
 ] as const;
 type ComponentSlug = (typeof componentOrder)[number];
-type SitePaperResponse = {
-  paper: PaperDoc;
-};
 
 const componentMeta: Record<
   ComponentSlug,
@@ -88,24 +85,16 @@ const next = nextSlug
 
 Astro.response.headers.set(
   "Cache-Control",
-  "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+  "public, max-age=300, s-maxage=300, stale-while-revalidate=300",
 );
 Astro.response.headers.set(
   "CDN-Cache-Control",
-  "public, max-age=600, stale-while-revalidate=600",
+  "public, max-age=300, stale-while-revalidate=300",
 );
 
-const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
-  .trim()
-  .replace(/\/+$/, "");
-const whitepapperApiKey = String(import.meta.env.WHITEPAPPER_API_KEY ?? "").trim();
 const siteUrl = String(import.meta.env.PUBLIC_SITE_URL ?? "")
   .trim()
   .replace(/\/+$/, "");
-
-if (!apiBaseUrl || !whitepapperApiKey) {
-  throw new Error("PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.");
-}
 
 const componentPaperSlugByRoute: Record<ComponentSlug, string> = {
   markdown: "components-markdown",
@@ -115,23 +104,7 @@ const componentPaperSlugByRoute: Record<ComponentSlug, string> = {
 };
 
 const componentPaperSlug = componentPaperSlugByRoute[componentParam];
-const paperResponse = await fetch(
-  `${apiBaseUrl}/dev/paper?slug=${encodeURIComponent(componentPaperSlug)}`,
-  {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-      "x-api-key": whitepapperApiKey,
-    },
-  },
-);
-
-if (!paperResponse.ok) {
-  const message = await paperResponse.text();
-  throw new Error(message || `Upstream request failed with ${paperResponse.status}`);
-}
-
-const { paper } = (await paperResponse.json()) as SitePaperResponse;
+const { paper } = await fetchDevPaperBySlug(componentPaperSlug);
 const markdown = `## Code\n\n\`\`\`\`tsx\n${active.code.trim()}\n\`\`\`\`\n\n${(paper.body || "").trim()}`;
 const resolvedSiteUrl = siteUrl || Astro.url.origin.replace(/\/+$/, "");
 const metadata = {

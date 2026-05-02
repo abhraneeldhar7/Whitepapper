@@ -26,7 +26,7 @@ ${sitemapEntries.map((loc) => `<sitemap><loc>${escapeXml(loc)}</loc></sitemap>`)
   return new Response(xml, {
     headers: {
       "Content-Type": "application/xml; charset=utf-8",
-      "Cache-Control": "public, max-age=1800, s-maxage=1800, stale-while-revalidate=1800",
+      "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=300",
     },
   });
 };

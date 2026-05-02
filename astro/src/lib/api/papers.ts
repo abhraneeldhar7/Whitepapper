@@ -3,6 +3,31 @@ import { countImagesInContent, MAX_IMAGES_PER_PAPER, MAX_PAPER_BODY_LENGTH } fro
 import { sortPapersLatestFirst } from "@/lib/paperSort";
 import type { PaperDoc, PaperMetadata } from "@/lib/entities";
 
+const API_STATUS_MAP: Record<string, "draft" | "public"> = {
+  draft: "draft",
+  published: "public",
+  archived: "draft",
+};
+
+const FRONTEND_STATUS_MAP: Record<string, "draft" | "published"> = {
+  draft: "draft",
+  public: "published",
+};
+
+function mapResponseStatus(paper: Record<string, unknown>): PaperDoc {
+  return {
+    ...paper,
+    status: API_STATUS_MAP[String(paper.status)] ?? "draft",
+  } as unknown as PaperDoc;
+}
+
+function mapRequestStatus(input: Record<string, unknown>): Record<string, unknown> {
+  if (input.status && typeof input.status === "string") {
+    return { ...input, status: FRONTEND_STATUS_MAP[input.status] ?? input.status };
+  }
+  return input;
+}
+
 export type PaperCreateResponse = {
   paperId: string;
 };
@@ -20,45 +45,50 @@ type UpdatePaperInput = {
   title?: string;
   slug?: string;
   body?: string;
-  status?: "draft" | "published" | "archived";
+  status?: "draft" | "public";
   metadata?: PaperMetadata | null;
 };
+
+function mapPapers(papers: Record<string, unknown>[]): PaperDoc[] {
+  return papers.map((p) => mapResponseStatus(p));
+}
 
 export async function listStandalonePapers(
   client: ApiClient = apiClient,
 ): Promise<PaperDoc[]> {
-  const papers = await client.get<PaperDoc[]>("/papers", { query: { standalone: true } });
-  return sortPapersLatestFirst(papers || []);
+  const papers = await client.get<Record<string, unknown>[]>("/papers", { query: { standalone: true } });
+  return sortPapersLatestFirst(mapPapers(papers || []));
 }
 
 export async function listOwnedPapers(
   client: ApiClient = apiClient,
 ): Promise<PaperDoc[]> {
-  const papers = await client.get<PaperDoc[]>("/papers");
-  return sortPapersLatestFirst(papers || []);
+  const papers = await client.get<Record<string, unknown>[]>("/papers");
+  return sortPapersLatestFirst(mapPapers(papers || []));
 }
 
 export async function listProjectPapers(
   projectId: string,
   client: ApiClient = apiClient,
 ): Promise<PaperDoc[]> {
-  const papers = await client.get<PaperDoc[]>("/papers", { query: { projectId } });
-  return sortPapersLatestFirst(papers || []);
+  const papers = await client.get<Record<string, unknown>[]>("/papers", { query: { projectId } });
+  return sortPapersLatestFirst(mapPapers(papers || []));
 }
 
 export async function listCollectionPapers(
   collectionId: string,
   client: ApiClient = apiClient,
 ): Promise<PaperDoc[]> {
-  const papers = await client.get<PaperDoc[]>(`/collections/${collectionId}/papers`);
-  return sortPapersLatestFirst(papers || []);
+  const papers = await client.get<Record<string, unknown>[]>(`/collections/${collectionId}/papers`);
+  return sortPapersLatestFirst(mapPapers(papers || []));
 }
 
 export async function getPaper(
   paperId: string,
   client: ApiClient = apiClient,
 ): Promise<PaperDoc> {
-  return client.get<PaperDoc>(`/papers/${paperId}`);
+  const paper = await client.get<Record<string, unknown>>(`/papers/${paperId}`);
+  return mapResponseStatus(paper);
 }
 
 export async function createPaper(
@@ -90,9 +120,11 @@ export async function updatePaper(
     }
   }
 
-  return client.patch<PaperDoc>(`/papers/${paperId}`, {
-    body: input,
+  const mappedInput = mapRequestStatus(input as unknown as Record<string, unknown>);
+  const updated = await client.patch<Record<string, unknown>>(`/papers/${paperId}`, {
+    body: mappedInput,
   });
+  return mapResponseStatus(updated);
 }
 
 export async function generatePaperMetadata(

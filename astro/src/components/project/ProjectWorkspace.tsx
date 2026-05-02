@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckIcon, ChevronRight, CopyIcon, Ellipsis, FolderPlus, LockIcon, NotebookPen, PencilIcon, PlusIcon, Rss, RssIcon, SaveIcon, SquareArrowOutUpRight, Trash2Icon, XIcon } from "lucide-react";
+import { CheckIcon, ChevronRight, CopyIcon, Ellipsis, FolderPlus, LockIcon, NotebookPen, PencilIcon, PlusIcon, Rss, RssIcon, SaveIcon, Trash2Icon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import FolderNotes from "@/components/folderComponent";
 import TextEditor from "@/components/pre_made_components/editor/textEditor";
 import MarkdownRender from "@/components/ui/markdown-render/markdown-render";
 import UserPopover from "@/components/userPopover";
-import { UserProvider, useUser } from "@/components/providers/UserProvider";
+import { useUser } from "@/components/providers/UserProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,12 +23,10 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { createCollection } from "@/lib/api/collections";
 import { createApiKey, getProjectApiKey, resetApiKey, setApiKeyActive, type ApiKeySummary } from "@/lib/api/api_keys";
-import { revokeMcpAuthorization, type McpAuthorizationListResponse, type McpAuthorizationSummary, type McpConnectionInfo } from "@/lib/api/mcp";
+
 import { createPaper, listOwnedPapers } from "@/lib/api/papers";
 import {
   checkProjectSlugAvailable,
@@ -70,15 +68,7 @@ type ProjectTab = "overview" | "api";
 
 const projectTabs: ProjectTab[] = ["overview", "api"];
 
-export default function ProjectWorkspace(props: ProjectWorkspaceProps) {
-  return (
-    <UserProvider>
-      <ProjectWorkspaceInner {...props} />
-    </UserProvider>
-  );
-}
-
-function ProjectWorkspaceInner({
+export default function ProjectWorkspace({
   projectId,
   initialProject,
   initialPages,
@@ -109,15 +99,9 @@ function ProjectWorkspaceInner({
   const [updatingProjectVisibility, setUpdatingProjectVisibility] = useState(false);
   const [apiDoc, setApiDoc] = useState<ApiKeySummary | null>(null);
   const [apiLoading, setApiLoading] = useState(true);
-  const [mcpAuthorizations, setMcpAuthorizations] = useState<McpAuthorizationSummary[]>([]);
-  const [mcpUsage, setMcpUsage] = useState(0);
-  const [mcpLimitPerMonth, setMcpLimitPerMonth] = useState(0);
   const [creatingApiKey, setCreatingApiKey] = useState(false);
   const [togglingApiKey, setTogglingApiKey] = useState(false);
   const [resettingApiKey, setResettingApiKey] = useState(false);
-  const [revokingMcpAuthorizationId, setRevokingMcpAuthorizationId] = useState<string | null>(null);
-  const [revokingMcpAuthorization, setRevokingMcpAuthorization] = useState(false);
-  const [revokeMcpDialogOpen, setRevokeMcpDialogOpen] = useState(false);
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
@@ -127,6 +111,11 @@ function ProjectWorkspaceInner({
   const isProjectAssetUploading = uploadingProjectLogo || uploadingProjectEmbeddedCount > 0;
 
   useEffect(() => {
+    const shell = document.getElementById("app-shell");
+    if (shell) shell.remove();
+  }, []);
+
+  useEffect(() => {
     setProject(initialProject);
     setDraftProject(null);
     setPages(sortPapersLatestFirst(initialPages));
@@ -134,7 +123,6 @@ function ProjectWorkspaceInner({
     setEditingProject(false);
     setSlugCheckMessage(null);
   }, [initialProject, initialPages, initialCollections]);
-
 
   useEffect(() => {
     document.documentElement.dataset.projectWorkspaceReady = "true";
@@ -458,26 +446,6 @@ function ProjectWorkspaceInner({
     }
   }
 
-  async function handleRevokeMcpAuthorization() {
-    if (!revokingMcpAuthorizationId) {
-      return;
-    }
-    setRevokingMcpAuthorization(true);
-    try {
-      await revokeMcpAuthorization(revokingMcpAuthorizationId);
-      setMcpAuthorizations((prev) =>
-        prev.filter((authorization) => authorization.authorizationId !== revokingMcpAuthorizationId),
-      );
-      setRevokeMcpDialogOpen(false);
-      setRevokingMcpAuthorizationId(null);
-      toast.success("MCP connection revoked.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to revoke MCP connection.");
-    } finally {
-      setRevokingMcpAuthorization(false);
-    }
-  }
-
   function handlePaperDeleted(paperId: string) {
     setPages((prev) => prev.filter((paper) => paper.paperId !== paperId));
     setSelectedPaper((prev) => (prev?.paperId === paperId ? null : prev));
@@ -490,7 +458,6 @@ function ProjectWorkspaceInner({
   const projectNameForDisplay = editableProject?.name || project.name;
   const projectSlugForDisplay = editableProject?.slug || project.slug;
   const projectDescription = editableProject?.description || "";
-  const projectContentGuidelines = editableProject?.contentGuidelines || "";
   const logoPreview = tempUploadingProjectLogo || editableProject?.logoUrl || "";
   const projectPreviewKey = `${project.projectId}:${project.updatedAt}:${projectDescription.length}`;
   return (
@@ -900,10 +867,10 @@ function ProjectWorkspaceInner({
                       {apiLoading ? (
                         <Skeleton className="h-[14px] w-16" />
                       ) : (
-                        <p className="font-[450] text-[12px]">{apiDoc ? apiDoc?.usage : 0} / {apiDoc ? apiDoc.usage : DEV_API_LIMIT_PER_MONTH}</p>
+                        <p className="font-[450] text-[12px]">{apiDoc ? apiDoc?.usage : 0} / {apiDoc ? apiDoc.limitPerMonth : DEV_API_LIMIT_PER_MONTH}</p>
                       )}
                     </div>
-                    <Progress className="w-full" value={apiLoading ? 0 : apiDoc ? apiDoc.usage : DEV_API_LIMIT_PER_MONTH} />
+                    <Progress className="w-full" value={(apiDoc ? apiDoc?.usage : 0) / (apiDoc ? apiDoc.limitPerMonth : DEV_API_LIMIT_PER_MONTH)} />
                   </div>
 
 

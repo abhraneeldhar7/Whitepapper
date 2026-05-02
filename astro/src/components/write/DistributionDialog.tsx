@@ -19,7 +19,6 @@ import {
   publishDevtoDistribution,
   publishHashnodeDistribution,
 } from "@/lib/api/distributions";
-import { resolveIntegrationBaseUrl } from "@/lib/integrationBaseUrl";
 import type {
   DevtoDistribution,
   HashnodeDistribution,
@@ -47,7 +46,6 @@ type DistributionDialogProps = {
   user: UserDoc | null;
   paperDoc: PaperDoc;
   status: "draft" | "public";
-  integrationBaseUrl?: string;
 };
 
 type DistributionState = {
@@ -91,7 +89,6 @@ export default function DistributionDialog({
   user,
   paperDoc,
   status,
-  integrationBaseUrl,
 }: DistributionDialogProps) {
   const [distributionState, setDistributionState] = useState<DistributionState>(emptyDistributionState);
   const [checkingPlatformMap, setCheckingPlatformMap] = useState<Partial<Record<SupportedPlatformId, boolean>>>({});
@@ -198,7 +195,7 @@ export default function DistributionDialog({
       return null;
     }
 
-    const base = resolveIntegrationBaseUrl(integrationBaseUrl);
+    const base = String(import.meta.env.PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "") || (typeof window !== "undefined" ? window.location.origin : "");
     if (!base) {
       return null;
     }

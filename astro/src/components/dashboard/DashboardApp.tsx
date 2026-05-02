@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { FolderPlus, PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { UserProvider, useUser } from "@/components/providers/UserProvider";
+import { useUser } from "@/components/providers/UserProvider";
 import UserPopover from "@/components/userPopover";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,15 +87,7 @@ const SKELETON_AGENTS = [
   { name: "Codex", logo: codexLogo },
 ];
 
-export default function DashboardApp(props: DashboardAppProps) {
-  return (
-    <UserProvider>
-      <DashboardContent {...props} />
-    </UserProvider>
-  );
-}
-
-function DashboardContent({ initialProjects, initialPages, isMobileUA }: DashboardAppProps) {
+export default function DashboardApp({ initialProjects, initialPages, isMobileUA }: DashboardAppProps) {
   const { user: currentUser } = useUser();
   const [activeTab, setActiveTab] = useState<DashboardTab>(() =>
     readTabFromQuery<DashboardTab>(dashboardTabs, "overview"),
@@ -118,6 +110,11 @@ function DashboardContent({ initialProjects, initialPages, isMobileUA }: Dashboa
   const [revokingMcpAuthorizationId, setRevokingMcpAuthorizationId] = useState<string | null>(null);
   const [revokingMcpAuthorization, setRevokingMcpAuthorization] = useState(false);
   const [revokeMcpDialogOpen, setRevokeMcpDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const shell = document.getElementById("app-shell");
+    if (shell) shell.remove();
+  }, []);
 
   useEffect(() => {
     if (activeTab !== "mcp" || mcpFetchedRef.current) return;

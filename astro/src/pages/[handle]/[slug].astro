@@ -33,7 +33,7 @@ if (rawHandle !== normalizedHandle || pageSlug !== normalizedSlug) {
 
 Astro.response.headers.set(
   "Cache-Control",
-  "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+  "public, max-age=300, s-maxage=300, stale-while-revalidate=300",
 );
 Astro.response.headers.set("Vary", "Accept-Encoding");
 

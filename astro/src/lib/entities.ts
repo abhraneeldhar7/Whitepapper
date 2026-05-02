@@ -63,7 +63,7 @@ export type PaperDoc = {
   title: string;
   slug: string;
   body: string;
-  status: "draft" | "published" | "archived";
+  status: "draft" | "public";
   metadata?: PaperMetadata | null;
   createdAt: string;
   updatedAt: string;

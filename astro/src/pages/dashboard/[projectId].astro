@@ -21,6 +21,9 @@ const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 ---
 
 <Layout showSiteNav={false} hideUserProvider={true}>
+  <div id="app-shell" style="position: fixed; inset: 0; z-index: 100; background: var(--background);">
+    <ProjectWorkspaceSkeleton />
+  </div>
   <ProjectWorkspace
     client:only="react"
     projectId={projectId}
@@ -28,7 +31,5 @@ const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
     initialPages={initialPages}
     initialCollections={initialCollections}
     isMobileUA={isMobileUA}
-  >
-    <ProjectWorkspaceSkeleton slot="fallback" />
-  </ProjectWorkspace>
+  />
 </Layout>

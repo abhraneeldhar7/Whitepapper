@@ -152,7 +152,7 @@ function buildPaperMetadata(options: { paper: PaperDoc; siteUrl: string; handle?
     canonical,
     robots:
       metadataInput?.robots ||
-      (paper.status === "published" ? "index, follow" : "noindex, nofollow"),
+      (paper.status === "public" ? "index, follow" : "noindex, nofollow"),
     ogTitle: articleTitle,
     ogDescription:
       resolveMeaningfulText(metadataInput?.ogDescription, metadataInput?.metaDescription, inferredExcerpt) ||

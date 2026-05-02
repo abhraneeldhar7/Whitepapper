@@ -38,7 +38,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   return new Response(body, {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=3600",
+      "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=300",
     },
   });
 };

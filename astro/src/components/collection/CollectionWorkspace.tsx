@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
 import { copyToClipboardWithToast, normalizeSlug } from "@/lib/utils";
 import { sortPapersLatestFirst } from "@/lib/paperSort";
 import { createPaper, listOwnedPapers } from "@/lib/api/papers";
@@ -26,7 +27,7 @@ import {
   updateCollectionVisibility,
 } from "@/lib/api/collections";
 import { MAX_DESCRIPTION_LENGTH, MAX_PAPERS_PER_USER } from "@/lib/limits";
-import type { CollectionDoc, PaperDoc, UserDoc } from "@/lib/entities";
+import type { CollectionDoc, PaperDoc } from "@/lib/entities";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
 import PaperPreviewSheet from "../paperPreviewSheet";
@@ -38,7 +39,6 @@ type CollectionWorkspaceProps = {
   initialProjectName: string;
   initialCollection: CollectionDoc;
   initialPages: PaperDoc[];
-  initialUser: UserDoc;
   isMobileUA: boolean;
 };
 
@@ -48,10 +48,8 @@ export default function CollectionWorkspace({
   initialProjectName,
   initialCollection,
   initialPages,
-  initialUser,
   isMobileUA,
 }: CollectionWorkspaceProps) {
-  if (!initialUser) return null;
   const { user: currentUser } = useUser();
   const [collection, setCollection] = useState<CollectionDoc | null>(initialCollection);
   const [draftCollection, setDraftCollection] = useState<CollectionDoc | null>(null);
@@ -65,6 +63,11 @@ export default function CollectionWorkspace({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [updatingCollectionVisibility, setUpdatingCollectionVisibility] = useState(false);
   const [slugCheckMessage, setSlugCheckMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const shell = document.getElementById("app-shell");
+    if (shell) shell.remove();
+  }, []);
 
   useEffect(() => {
     setCollection(initialCollection);
@@ -230,7 +233,7 @@ export default function CollectionWorkspace({
     setPreviewOpen(false);
   }
 
-  if (!collection || !currentUser || collection.collectionId !== collectionId) {
+  if (!collection || collection.collectionId !== collectionId) {
     return null;
   }
 
@@ -240,13 +243,16 @@ export default function CollectionWorkspace({
   const collectionDescription = editableCollection?.description || "";
 
   return (
-    <div className="min-h-screen bg-background px-[15px] pt-15 pb-20">
+    <div className="min-h-screen bg-background px-5 md:px-15 pt-20">
       <ScrollToTop />
-      <div className="z-[10] fixed top-4 right-4">
+
+      <div className="z-[10] top-5 right-5 fixed">
         <UserPopover />
       </div>
 
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
+      <div className="mx-auto flex w-full flex-col gap-5"
+        style={{ maxWidth: `${MAX_LANDING_PAGE_WIDTH}px` }}
+      >
         <div>
           <p className="text-sm text-muted-foreground">
             <a href={`/dashboard/${projectId}`} data-astro-prefetch="viewport" className="transition-all duration-300 hover:text-foreground">{initialProjectName}</a> / {collectionNameForDisplay}
@@ -498,4 +504,3 @@ export default function CollectionWorkspace({
     </div>
   );
 }
-

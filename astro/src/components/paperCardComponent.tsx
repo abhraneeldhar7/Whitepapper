@@ -1,6 +1,6 @@
 import type { PaperDoc } from "@/lib/entities";
 import { formatFirestoreDate } from "@/lib/utils";
-import { Archive, NotebookPen, RssIcon } from "lucide-react";
+import { NotebookPen, RssIcon } from "lucide-react";
 import abstractLightPic from "@/assets/abstract_light.jpg";
 import abstractDarkPic from "@/assets/abstract_dark.jpg";
 
@@ -16,23 +16,12 @@ export default function PaperCardComponent({
     showStatus?: boolean;
 }) {
     const statusLabel =
-        paperData.status === "draft"
-            ? "Draft"
-            : paperData.status === "published"
-                ? "Published"
-                : "Archived";
+        paperData.status === "draft" ? "Draft" : "Public";
     const statusClassName =
         paperData.status === "draft"
             ? "border-amber-200 bg-amber-100 text-amber-800"
-            : paperData.status === "published"
-                ? "border-emerald-200 bg-emerald-100 text-emerald-800"
-                : "border-zinc-200 bg-zinc-100 text-zinc-700";
-    const StatusIcon =
-        paperData.status === "draft"
-            ? NotebookPen
-            : paperData.status === "published"
-                ? RssIcon
-                : Archive;
+            : "border-emerald-200 bg-emerald-100 text-emerald-800";
+    const StatusIcon = paperData.status === "draft" ? NotebookPen : RssIcon;
 
     const cardBody = (
         <>
@@ -91,7 +80,7 @@ export default function PaperCardComponent({
                 {cardBody}
             </button>
         ) : handle ? (
-            <a href={paperData.status == "published" ? `/${handle}/${paperData.slug}` : `/write/${paperData.paperId}`} target={paperData.status == "published" ? "_blank" : ""} className="relative">
+            <a href={paperData.status == "public" ? `/${handle}/${paperData.slug}` : `/write/${paperData.paperId}`} target={paperData.status == "public" ? "_blank" : ""} className="relative">
                 {cardBody}
             </a>
         ) : (

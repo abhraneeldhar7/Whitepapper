@@ -9,7 +9,6 @@ import {
   KeyboardIcon,
   KeyboardOffIcon,
   LockIcon,
-  PencilIcon,
   RssIcon,
   SaveIcon,
   SettingsIcon,
@@ -27,7 +26,6 @@ import blueBgPattern from "@/assets/landingPage/blueBgPattern.jpg"
 
 import {
   Dialog,
-  DialogDescription,
   DialogClose,
   DialogContent,
   DialogFooter,
@@ -52,10 +50,10 @@ import {
   MAX_THUMBNAIL_HEIGHT,
   MAX_THUMBNAIL_WIDTH,
 } from "@/lib/constants";
-import type { PaperDoc, PaperMetadata, UserDoc } from "@/lib/entities";
+import type { PaperDoc, PaperMetadata } from "@/lib/entities";
+import { useUser } from "@/components/providers/UserProvider";
 import { compressImage, copyToClipboard, deepEqual, downloadMarkdownFile, isImageFile, normalizeSlug } from "@/lib/utils";
 import { uploadImage } from "@/lib/useImageUpload";
-import { resolveIntegrationBaseUrl } from "@/lib/integrationBaseUrl";
 import click1Sound from "@/assets/sounds/click1.mp3";
 import click2Sound from "@/assets/sounds/click2.mp3";
 import click3Sound from "@/assets/sounds/click3.mp3";
@@ -72,23 +70,11 @@ import IntegrationsSection from "../integrations-4";
 
 type WriteEditorProps = {
   initialPaper: PaperDoc;
-  initialUser?: UserDoc | null;
-  integrationBaseUrl?: string;
   isMobileUA: boolean;
 };
 
-type UiStatus = "draft" | "public";
 const typingSoundSources = [click1Sound, click2Sound, click3Sound];
 const INIT_PAPER_SLUG_PREFIX = "init-paper-";
-const EMPATHETIC_SLUG_SUFFIXES = ["new", "updated", "fresh", "kind"] as const;
-
-function toUiStatus(value: PaperDoc["status"]): UiStatus {
-  return value === "published" ? "public" : "draft";
-}
-
-function toApiStatus(value: UiStatus): PaperDoc["status"] {
-  return value === "public" ? "published" : "draft";
-}
 
 function toReadableSlug(value: string): string {
   return normalizeSlug(value) || "untitled-paper";
@@ -135,8 +121,8 @@ const metadataFieldConfig: Array<{ key: keyof PaperMetadata; type: "text" | "num
   { key: "license", type: "text" },
 ];
 
-export default function WriteEditor({ initialPaper, initialUser, integrationBaseUrl, isMobileUA }: WriteEditorProps) {
-  const [user, setUser] = useState<UserDoc | null>(initialUser ?? null);
+export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorProps) {
+  const { user } = useUser();
   const paperId = initialPaper.paperId;
   const [paperDoc, setPaperDoc] = useState<PaperDoc>(() => ({
     ...initialPaper,
@@ -149,17 +135,12 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
     metadata: initialPaper.metadata ?? null,
   }));
   const [saving, setSaving] = useState(false);
-  const [slugChecking, setSlugChecking] = useState(false);
-  const [shareLoading, setShareLoading] = useState(false);
-  const [exportLoading, setExportLoading] = useState(false);
   const [distributionDialogOpen, setDistributionDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [uploadingEmbeddedCount, setUploadingEmbeddedCount] = useState(0);
   const [tempUploadingThumbnail, setTempUploadingThumbnail] = useState<string | null>(null);
   const [metadataDialogOpen, setMetadataDialogOpen] = useState(false);
-  const [metadataGenerateConfirmOpen, setMetadataGenerateConfirmOpen] = useState(false);
-  const [metadataEditMode, setMetadataEditMode] = useState(false);
   const [metadataDraft, setMetadataDraft] = useState<PaperMetadata | null>(paperDoc.metadata ?? null);
   const [metadataGenerating, setMetadataGenerating] = useState(false);
   const [uploadingMetadataImageMap, setUploadingMetadataImageMap] = useState<Record<string, boolean>>({});
@@ -168,11 +149,10 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
   const [sheetOpen, setSheetOpen] = useState(false);
   const [isTopBarHovered, setIsTopBarHovered] = useState(false);
   const [isTopBarPinned, setIsTopBarPinned] = useState(false);
-  const [keyboardEffectEnabled, setKeyboardEffectEnabled] = useState(Boolean(user?.preferences?.showKeyboardEffect));
-  const [typingSoundEnabled, setTypingSoundEnabled] = useState(Boolean(user?.preferences?.typingSoundEnabled));
+  const [keyboardEffectEnabled, setKeyboardEffectEnabled] = useState(Boolean(initialPaper.ownerId));
+  const [typingSoundEnabled, setTypingSoundEnabled] = useState(false);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const topBarRef = useRef<HTMLDivElement>(null);
-
 
   const editorRef = useRef<TextEditorRef>(null);
 
@@ -184,15 +164,10 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
   const metadata = paperDoc.metadata ?? null;
   const pageDetails = {
     thumbnailUrl: paperDoc.thumbnailUrl || "",
-    status: toUiStatus(paperDoc.status),
+    status: paperDoc.status,
     lastSavedSlug: savedPaperDoc.slug,
   };
   const isMobile = isMobileUA;
-
-  useEffect(() => {
-    setKeyboardEffectEnabled(Boolean(user?.preferences?.showKeyboardEffect));
-    setTypingSoundEnabled(Boolean(user?.preferences?.typingSoundEnabled));
-  }, [user?.preferences?.showKeyboardEffect, user?.preferences?.typingSoundEnabled]);
 
   useEffect(() => {
     document.documentElement.dataset.writeEditorReady = "true";
@@ -223,44 +198,34 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
 
   const isAssetUploading = uploadingThumb || uploadingEmbeddedCount > 0;
 
+  const saveActionRef = useRef(handleSaveAction);
+  saveActionRef.current = handleSaveAction;
+
+  const isSavingRef = useRef(false);
+  isSavingRef.current = saving;
+  const isUploadingRef = useRef(false);
+  isUploadingRef.current = isAssetUploading;
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        if (isAssetUploading || saving) {
+        if (isUploadingRef.current || isSavingRef.current) {
           return;
         }
-        void handleSaveAction();
+        void saveActionRef.current();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [pageDetails.status, title, slug, body, pageDetails.thumbnailUrl, isAssetUploading, saving, metadata, user?.username]);
+  }, []);
 
   useEffect(() => {
     if (sheetOpen || statusPopoverOpen) {
       setIsTopBarPinned(true);
     }
   }, [sheetOpen, statusPopoverOpen]);
-
-  useEffect(() => {
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-
-      const clickedTopBar = Boolean(target.closest("[data-editor-topbar]"));
-      const clickedOverlay = Boolean(target.closest("[data-editor-overlay]"));
-      if (clickedTopBar || clickedOverlay) {
-        return;
-      }
-
-      setIsTopBarPinned(false);
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, []);
 
   function playTypingSound() {
     if (!typingSoundEnabled) {
@@ -274,61 +239,29 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
     });
   }
 
-  function updateUserPreferences(
-    patch: { showKeyboardEffect?: boolean; typingSoundEnabled?: boolean },
-  ) {
-    if (!user) {
-      return;
-    }
-
-    const nextPreferences = {
-      ...(user.preferences || {}),
-      showKeyboardEffect: keyboardEffectEnabled,
-      typingSoundEnabled,
-      ...patch,
-    };
-
-    setUser((current) =>
-      current
-        ? {
-          ...current,
-          preferences: nextPreferences,
-        }
-        : current,
-    );
-
-    void updateCurrentUser({
-      preferences: nextPreferences,
-    })
-      .then((updatedUser) => {
-        setUser(updatedUser);
-      })
-      .catch((error) => {
-        toast.error(error instanceof Error ? error.message : "Failed to save preference.");
-      });
-  }
-
   function handleToggleKeyboardEffect(checked: boolean) {
     setKeyboardEffectEnabled(checked);
-    updateUserPreferences({ showKeyboardEffect: checked });
+    updateCurrentUser({
+      preferences: { showKeyboardEffect: checked },
+    }).catch(() => { });
   }
 
   function handleToggleTypingSound(checked: boolean) {
     setTypingSoundEnabled(checked);
-    updateUserPreferences({ typingSoundEnabled: checked });
+    updateCurrentUser({
+      preferences: { typingSoundEnabled: checked },
+    }).catch(() => { });
   }
 
-  async function onSave(nextStatus?: UiStatus, slugOverride?: string) {
-    const appliedStatus = nextStatus ?? pageDetails.status;
-    const nextSlug = slugOverride ?? slug;
+  async function onSave(slugOverride?: string) {
     setSaving(true);
     try {
       const updatePayload: Parameters<typeof updatePaper>[1] = {
         title,
-        slug: nextSlug,
+        slug: slugOverride ?? slug,
         body,
         thumbnailUrl: pageDetails.thumbnailUrl || null,
-        status: toApiStatus(appliedStatus),
+        status: paperDoc.status,
       };
       if (metadata) {
         updatePayload.metadata = metadata;
@@ -343,18 +276,13 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
       setPaperDoc(normalizedUpdated);
       setSavedPaperDoc(normalizedUpdated);
       return updated;
-    } catch (error) {
-      throw error;
     } finally {
       setSaving(false);
     }
   }
 
   function resolvePublicPaperUrl(nextSlug?: string): string | null {
-    if (!user?.username) {
-      return null;
-    }
-    return `/${user.username}/${nextSlug || slug}`;
+    return `/${nextSlug || slug}`;
   }
 
   async function resolveAutoSlugForSave(): Promise<string> {
@@ -363,26 +291,24 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
       return currentSlug;
     }
 
-    const baseSlug = toReadableSlug(title);
-    const candidates = [
-      baseSlug,
-      ...EMPATHETIC_SLUG_SUFFIXES.map((suffix) => `${baseSlug}-${suffix}`),
-    ];
-
-    for (const candidate of candidates) {
-      const available = await checkPaperSlugAvailable(candidate, paperId);
-      if (available) {
-        setPaperDoc((prev) => ({ ...prev, slug: candidate }));
-        return candidate;
-      }
+    const baseSlug = toReadableSlug(title || body.slice(0, 60));
+    if (baseSlug === "untitled-paper") {
+      return currentSlug;
     }
 
-    const fallback = `${baseSlug}-${paperId.slice(0, 4)}`;
+    const available = await checkPaperSlugAvailable(baseSlug, paperId);
+    if (available) {
+      setPaperDoc((prev) => ({ ...prev, slug: baseSlug }));
+      return baseSlug;
+    }
+
+    const suffix = Math.random().toString(36).slice(2, 7);
+    const fallback = `${baseSlug}-${suffix}`;
     setPaperDoc((prev) => ({ ...prev, slug: fallback }));
     return fallback;
   }
 
-  async function handleSaveAction(nextStatus?: UiStatus) {
+  async function handleSaveAction() {
     if (isAssetUploading || saving) {
       return;
     }
@@ -406,17 +332,16 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
       return;
     }
 
-    const savePromise = onSave(nextStatus, resolvedSlug);
+    const savePromise = onSave(resolvedSlug);
     toast.promise(savePromise, {
       loading: "Saving...",
-      success: (updated) => (toUiStatus(updated.status) === "public" ? "Published." : "Paper saved."),
+      success: (updated) => (updated.status === "public" ? "Published." : "Paper saved."),
       error: (error) => (error instanceof Error ? error.message : "Failed to save page."),
     });
 
     try {
       const updated = await savePromise;
-      const resolvedStatus = toUiStatus(updated.status);
-      if (resolvedStatus === "public") {
+      if (updated.status === "public") {
         const publicUrl = resolvePublicPaperUrl(updated.slug);
         if (publicUrl) {
           const visitPublishedPage = () => {
@@ -428,10 +353,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
               onClick: visitPublishedPage,
             },
           });
-        } else {
-          toast.success("Published");
         }
-        return;
       }
     } catch {
       // toast.promise handles failure UI.
@@ -493,8 +415,6 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
 
   const hasThumbPreview = Boolean(tempUploadingThumbnail || pageDetails.thumbnailUrl);
   const slugValue = slug.trim();
-  const isSlugValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slugValue);
-  const isSlugDirty = slugValue !== savedPaperDoc.slug;
   const hasSheetChanges = !deepEqual(
     {
       ...savedPaperDoc,
@@ -510,8 +430,8 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
     },
   );
 
-  const handleSaveWithStatus = (nextStatus: UiStatus) => {
-    setPaperDoc((prev) => ({ ...prev, status: toApiStatus(nextStatus) }));
+  const handleSaveWithStatus = (nextStatus: "draft" | "public") => {
+    setPaperDoc((prev) => ({ ...prev, status: nextStatus }));
     setStatusPopoverOpen(false);
   };
 
@@ -524,59 +444,27 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
     }
   };
 
-  const handleCheckSlug = async () => {
-    if (isAssetUploading) {
-      return;
-    }
-    if (!slugValue) {
-      toast.error("Slug cannot be empty.");
-      return;
-    }
-    if (!isSlugValid) {
-      toast.error("Use only lowercase letters, numbers, and hyphens.");
-      return;
-    }
-    if (!isSlugDirty) {
-      toast.info("Slug is already in use for this page.");
-      return;
-    }
-    setSlugChecking(true);
-    try {
-      const available = await checkPaperSlugAvailable(slugValue, paperId);
-      if (!available) {
-        toast.error("Slug is already taken.");
-        return;
-      }
-      await handleSaveAction();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to check slug.");
-    } finally {
-      setSlugChecking(false);
-    }
-  };
-
   const handleShare = async () => {
-    const baseUrl = resolveIntegrationBaseUrl(integrationBaseUrl);
-    if (!baseUrl) {
-      toast.error("PUBLIC_SITE_URL is not configured.");
+    if (paperDoc.status !== "public") {
+      toast.error("This paper is private");
       return;
     }
     if (!slugValue) {
       toast.error("Save a slug before sharing.");
       return;
     }
-    if (!user?.username) {
-      toast.error("User handle is missing. Reload the page and try again.");
+    const baseUrl = String(import.meta.env.PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "")
+      || (typeof window !== "undefined" ? window.location.origin : "");
+    if (!baseUrl) {
+      toast.error("PUBLIC_SITE_URL is not configured.");
       return;
     }
-    setShareLoading(true);
-    const ok = await copyToClipboard(`${baseUrl}/${user.username}/${slugValue}`);
+    const ok = await copyToClipboard(`${baseUrl}/${slugValue}`);
     if (ok) {
       toast.info("Public URL copied.");
     } else {
       toast.error("Unable to copy public URL.");
     }
-    setShareLoading(false);
   };
 
   const handleExport = () => {
@@ -584,9 +472,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
       toast.info("Nothing to export yet.");
       return;
     }
-    setExportLoading(true);
     downloadMarkdownFile(body, slugValue || "page");
-    setExportLoading(false);
   };
 
   const handleOpenMetadataDialog = () => {
@@ -594,41 +480,25 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
       return;
     }
     setMetadataDraft(structuredClone(metadata));
-    setMetadataEditMode(false);
     setMetadataDialogOpen(true);
   };
 
-  const generateMetadata = async (showSuccessToast: boolean) => {
+  const generateMetadata = async () => {
     setMetadataGenerating(true);
     try {
       const generated = await generatePaperMetadata(paperId, {
         ...paperDoc,
-        status: toApiStatus(pageDetails.status),
         thumbnailUrl: pageDetails.thumbnailUrl || null,
         metadata: paperDoc.metadata ?? null,
       });
       setPaperDoc((prev) => ({ ...prev, metadata: generated }));
       setMetadataDraft(structuredClone(generated));
-      if (showSuccessToast) {
-        toast.success("Metadata generated");
-      }
+      toast.success("Metadata generated");
     } catch (error) {
-      if (showSuccessToast) {
-        toast.error(error instanceof Error ? error.message : "Failed to generate metadata.");
-      } else {
-        console.error(error);
-      }
+      toast.error(error instanceof Error ? error.message : "Failed to generate metadata.");
     } finally {
       setMetadataGenerating(false);
     }
-  };
-
-  const handleGenerateMetadataFromSheet = async () => {
-    await generateMetadata(true);
-  };
-
-  const handleGenerateMetadataFromDialog = async () => {
-    await generateMetadata(false);
   };
 
   const handleMetadataValueChange = (
@@ -672,7 +542,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
   };
 
   const handleMetadataImageUpload = async (field: keyof PaperMetadata, file: File) => {
-    if (!metadataDraft || !metadataEditMode) {
+    if (!metadataDraft) {
       return;
     }
 
@@ -722,7 +592,6 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
       return;
     }
     setPaperDoc((prev) => ({ ...prev, metadata: structuredClone(metadataDraft) }));
-    setMetadataEditMode(false);
   };
 
   const handleDelete = async () => {
@@ -737,7 +606,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
   };
 
   return (
-    <div className="min-h-screen flex flex-col max-w-[700px] mx-auto px-[15px] pb-8 pt-14 relative">
+    <div className="min-h-screen flex flex-col max-w-[700px] mx-auto pt-15 relative">
       <ScrollToTop />
       <div
         className="fixed top-0 left-0 w-full z-[10] md:pb-8 md:bg-[unset] bg-background/20 md:backdrop-blur-[0px] backdrop-blur-[30px]"
@@ -834,7 +703,6 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                       </div>
                     </div>
 
-
                     <div className="space-y-2">
                       <Label>Page ID</Label>
                       <div className="flex gap-2 items-center">
@@ -853,50 +721,25 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
 
                     <div className="space-y-2">
                       <Label>Custom URL</Label>
-                      <form onSubmit={(e) => {
-                        e.preventDefault()
-                        handleCheckSlug()
-                      }} className="flex gap-2 items-center">
-                        <Input
-                          className="flex-1"
-                          spellCheck={false}
-                          value={slug}
-                          onChange={(event) => setPaperDoc((prev) => ({ ...prev, slug: event.target.value }))}
-                        />
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          type="submit"
-                          disabled={!slugValue || !isSlugValid || !isSlugDirty || slugChecking || isAssetUploading}
-                          loading={slugChecking}
-                        >
-                          Check
-                        </Button>
-                      </form>
+                      <Input
+                        spellCheck={false}
+                        value={slug}
+                        disabled={slug.startsWith(INIT_PAPER_SLUG_PREFIX)}
+                        onChange={(event) => setPaperDoc((prev) => ({ ...prev, slug: event.target.value }))}
+                      />
+                      {slug.startsWith(INIT_PAPER_SLUG_PREFIX) && (
+                        <p className="text-xs text-muted-foreground">Save to auto-generate a URL from the title</p>
+                      )}
                     </div>
 
-
                     <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="secondary"
-                        className="flex-1"
-                        onClick={handleShare}
-                        disabled={shareLoading}
-                        loading={shareLoading}
-                      >
+                      <Button variant="secondary" className="flex-1" onClick={handleShare}>
                         <ForwardIcon /> Share
                       </Button>
-                      <Button
-                        variant="secondary"
-                        className="flex-1"
-                        onClick={handleExport}
-                        disabled={exportLoading}
-                        loading={exportLoading}
-                      >
+                      <Button variant="secondary" className="flex-1" onClick={handleExport}>
                         <DownloadIcon /> Export
                       </Button>
                     </div>
-
 
                     <div className="space-y-2">
                       <Label>Metadata</Label>
@@ -906,35 +749,21 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                             <CodeXmlIcon /> View
                           </Button>
                         ) : (
-                          <Button
-                            className="w-full"
-                            type="button"
-                            onClick={handleGenerateMetadataFromSheet}
-                            loading={metadataGenerating}
-                          >
+                          <Button className="w-full" type="button" onClick={generateMetadata} loading={metadataGenerating}>
                             Generate
                           </Button>
                         )}
                       </div>
                     </div>
 
-
-
                     <div className="relative h-[220px] space-y-4 overflow-hidden">
                       <Label>Distribute</Label>
                       <IntegrationsSection hideText />
                       <div className="absolute bottom-[-2px] left-0 right-0 h-full bg-gradient-to-t from-background to-transparent from-[10%] z-2" />
-
-
-                      <Button
-                        className="w-full absolute z-3 bottom-0"
-                        onClick={() => setDistributionDialogOpen(true)}
-                      >
+                      <Button className="w-full absolute z-3 bottom-0" onClick={() => setDistributionDialogOpen(true)}>
                         <RssIcon /> Distribute
                       </Button>
                     </div>
-
-
 
                     <div className="space-y-2">
                       <Label>Preferences</Label>
@@ -971,25 +800,13 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                               </DialogHeader>
                               <p>{title}</p>
                               {pageDetails.thumbnailUrl && (
-                                <img
-                                  src={pageDetails.thumbnailUrl}
-                                  alt={title || "Thumbnail"}
-                                  className="w-full h-[200px] rounded-md border object-cover"
-                                />
+                                <img src={pageDetails.thumbnailUrl} alt={title || "Thumbnail"} className="w-full h-[200px] rounded-md border object-cover" />
                               )}
                               <DialogFooter>
                                 <DialogClose asChild>
-                                  <Button variant="secondary" >
-                                    Cancel
-                                  </Button>
+                                  <Button variant="secondary">Cancel</Button>
                                 </DialogClose>
-                                <Button
-                                  className="w-[100px]"
-                                  variant="destructive"
-                                  onClick={handleDelete}
-                                  disabled={deleteLoading}
-                                  loading={deleteLoading}
-                                >
+                                <Button className="w-[100px]" variant="destructive" onClick={handleDelete} disabled={deleteLoading} loading={deleteLoading}>
                                   <Trash2Icon /> Delete
                                 </Button>
                               </DialogFooter>
@@ -1075,91 +892,99 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
         </div>
       </div>
 
-      <div
-        className={`rounded-lg overflow-hidden flex items-center justify-center relative group shrink-0 cursor-pointer ${hasThumbPreview ? "aspect-[16/9]" : "h-[300px]"
-          }`}
-        onClick={() => thumbnailInputRef.current?.click()}
-      >
-        {tempUploadingThumbnail ? (
-          <img
-            src={tempUploadingThumbnail}
-            alt="Uploading thumbnail"
-            className="w-full h-full object-cover animate-pulse"
-          />
-        ) : pageDetails.thumbnailUrl ? (
-          <div>
-            <img src={pageDetails.thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center duration-300">
-              <ImagePlusIcon size={25} className="text-white" />
-            </div>
-            <div className="absolute top-2 right-2">
-              <Button
-                size="icon"
-                variant="destructive"
-                className="z-2 md:opacity-0 group-hover:opacity-100"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setPaperDoc((prev) => ({ ...prev, thumbnailUrl: "" }));
-                }}
-              >
-                <XIcon size={16} />
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-3 h-full w-full relative overflow-hidden text-foreground group select-none cursor-pointer">
-            <img src={blueBgPattern.src} alt="" className="absolute h-full w-full object-cover z-[-1] group-hover:dark:opacity-[0.8] group-hover:opacity-[0.6] transition-all duration-250 opacity-[0.4]" />
-            <p />
-            <ImagePlusIcon size={32} className="" />
-            <p className="text-[12px] font-[500] ">Add Thumbnail</p>
-          </div>
-        )}
+      <div className="px-5">
 
-        <input
-          type="file"
-          ref={thumbnailInputRef}
-          className="hidden"
-          accept="image/*"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) {
-              void onThumbnailUpload(file);
-              event.target.value = "";
-            }
-          }}
-        />
+        <div
+          className={`rounded-lg overflow-hidden flex items-center justify-center relative group shrink-0 cursor-pointer ${hasThumbPreview ? "aspect-[5/3]" : "h-[300px]"
+            }`}
+          onClick={() => thumbnailInputRef.current?.click()}
+        >
+          {tempUploadingThumbnail ? (
+            <img
+              src={tempUploadingThumbnail}
+              alt="Uploading thumbnail"
+              className="w-full h-full object-cover animate-pulse"
+            />
+          ) : pageDetails.thumbnailUrl ? (
+            <div>
+              <img src={pageDetails.thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center duration-300">
+                <ImagePlusIcon size={25} className="text-white" />
+              </div>
+              <div className="absolute top-2 right-2">
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  className="z-2 md:opacity-0 group-hover:opacity-100"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setPaperDoc((prev) => ({ ...prev, thumbnailUrl: "" }));
+                  }}
+                >
+                  <XIcon size={16} />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-3 h-full w-full relative overflow-hidden text-foreground group select-none cursor-pointer">
+              <img src={blueBgPattern.src} alt="" className="absolute h-full w-full object-cover z-[-1] group-hover:dark:opacity-[0.8] group-hover:opacity-[0.6] transition-all duration-250 opacity-[0.4]" />
+              <p />
+              <ImagePlusIcon size={32} className="" />
+              <p className="text-[12px] font-[500] ">Add Thumbnail</p>
+            </div>
+          )}
+
+          <input
+            type="file"
+            ref={thumbnailInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) {
+                void onThumbnailUpload(file);
+                event.target.value = "";
+              }
+            }}
+          />
+        </div>
       </div>
 
-      <div className="mt-6 flex flex-col gap-2 flex-1">
-        <Textarea
-          autoFocus={body.length === 0}
-          value={title}
-          onChange={(event) => {
-            const nextTitle = event.target.value;
-            if (nextTitle !== title) {
-              playTypingSound();
-            }
-            setPaperDoc((prev) => ({ ...prev, title: nextTitle }));
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              editorRef.current?.focus();
-              editorContainerRef.current?.scrollIntoView({
-                block: "end",
-                behavior: "smooth",
-              });
-            }
-          }}
-          placeholder="Enter page title..."
-          className="bg-transparent dark:bg-transparent border-none focus:ring-0 outline-none text-[40px] md:text-[40px] font-[400] placeholder:opacity-20 resize-none border-none outline-none focus-visible:ring-0 focus:ring-0"
-        />
+
+
+
+      <div className="mt-3 flex flex-col gap-2 flex-1">
+        <div className="px-5">
+          <Textarea
+            autoFocus={body.length === 0}
+            value={title}
+            onChange={(event) => {
+              const nextTitle = event.target.value;
+              if (nextTitle !== title) {
+                playTypingSound();
+              }
+              setPaperDoc((prev) => ({ ...prev, title: nextTitle }));
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                editorRef.current?.focus();
+                editorContainerRef.current?.scrollIntoView({
+                  block: "end",
+                  behavior: "smooth",
+                });
+              }
+            }}
+            placeholder="Enter page title..."
+            className="bg-transparent dark:bg-transparent border-none focus:ring-0 outline-none text-[40px] md:text-[40px] font-[400] placeholder:opacity-20 resize-none border-none outline-none focus-visible:ring-0 focus:ring-0 px-0"
+          />
+        </div>
 
         {!isMobile && keyboardEffectEnabled &&
           <OnscreenKeyboard className="w-full fixed top-[50%] left-[50%] translate-y-[-50%] translate-x-[-50%] z-[2]" />
         }
 
-        <div ref={editorContainerRef}>
+        <div ref={editorContainerRef} className="px-2 md:px-4">
           <TextEditor
             ref={editorRef}
             initialContent={body}
@@ -1172,18 +997,14 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
             onImageUpload={onEditorImageUpload}
           />
         </div>
-
-
       </div>
+
+
 
       <Dialog
         open={metadataDialogOpen}
         onOpenChange={(open) => {
           setMetadataDialogOpen(open);
-          if (!open) {
-            setMetadataEditMode(false);
-            setMetadataGenerateConfirmOpen(false);
-          }
         }}
       >
         <DialogContent className="md:max-w-[500px] h-[70vh] md:h-[80vh] flex flex-col overflow-hidden">
@@ -1207,7 +1028,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                         <div key={key}>
                           <Label>{String(key)}</Label>
                           <div className="mt-2 relative rounded-md">
-                            {metadataEditMode && Boolean(displayImage) && !isUploadingImage ? (
+                            {Boolean(displayImage) && !isUploadingImage ? (
                               <Button
                                 type="button"
                                 variant="destructive"
@@ -1232,16 +1053,16 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                               <div
                                 role="button"
                                 tabIndex={0}
-                                className={`mt-2 flex h-[40px] w-full items-center justify-center rounded-md border border-dashed text-sm ${metadataEditMode && !isUploadingImage ? "cursor-pointer hover:bg-muted/40" : "cursor-not-allowed opacity-60"}`}
+                                className={`mt-2 flex h-[40px] w-full items-center justify-center rounded-md border border-dashed text-sm ${!isUploadingImage ? "cursor-pointer hover:bg-muted/40" : "cursor-not-allowed opacity-60"}`}
                                 onClick={() => {
-                                  if (!metadataEditMode || isUploadingImage) return;
+                                  if (isUploadingImage) return;
                                   const input = document.getElementById(`metadata-upload-${String(key)}`) as HTMLInputElement | null;
                                   input?.click();
                                 }}
                                 onKeyDown={(event) => {
                                   if (event.key !== "Enter" && event.key !== " ") return;
                                   event.preventDefault();
-                                  if (!metadataEditMode || isUploadingImage) return;
+                                  if (isUploadingImage) return;
                                   const input = document.getElementById(`metadata-upload-${String(key)}`) as HTMLInputElement | null;
                                   input?.click();
                                 }}
@@ -1254,7 +1075,7 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                               id={`metadata-upload-${String(key)}`}
                               type="file"
                               accept="image/*"
-                              disabled={!metadataEditMode || isUploadingImage}
+                              disabled={isUploadingImage}
                               className="mt-2 hidden"
                               onChange={(event) => {
                                 const file = event.target.files?.[0];
@@ -1288,7 +1109,6 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                           <Textarea
                             className="mt-2 min-h-[100px] resize-y"
                             value={valueForInput}
-                            disabled={!metadataEditMode}
                             onChange={(event) => {
                               handleMetadataValueChange(
                                 key,
@@ -1301,7 +1121,6 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                           <Input
                             className="mt-2"
                             value={valueForInput}
-                            disabled={!metadataEditMode}
                             onChange={(event) => {
                               handleMetadataValueChange(
                                 key,
@@ -1314,57 +1133,44 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
                       </div>
                     );
                   })}
+
+                  {/* jsonLd editor */}
+                  <div>
+                    <Label>jsonLd</Label>
+                    <Textarea
+                      className="mt-2 min-h-[200px] resize-y font-mono text-xs"
+                      value={metadataDraft.jsonLd ? JSON.stringify(metadataDraft.jsonLd, null, 2) : ""}
+                      onChange={(event) => {
+                        try {
+                          const parsed = JSON.parse(event.target.value);
+                          setMetadataDraft((prev) => {
+                            if (!prev) return prev;
+                            return { ...prev, jsonLd: parsed };
+                          });
+                        } catch {
+                          // allow editing invalid JSON
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
               </ScrollArea>
-              <DialogFooter >
-                <Button type="button" variant="outline" onClick={() => setMetadataEditMode((prev) => !prev)}>
-                  {metadataEditMode ? <XIcon /> : <PencilIcon className="size-3" />}
-                  {metadataEditMode ? "Cancel" : "Edit"}
+              <DialogFooter>
+                <Button
+                  type="button"
+                  onClick={handleSaveMetadataDraftLocally}
+                >
+                  <SaveIcon />
+                  Save
                 </Button>
-                {metadataEditMode &&
-                  <Button
-                    type="button"
-                    onClick={handleSaveMetadataDraftLocally}
-                    disabled={!metadataEditMode}
-                  >
-                    <SaveIcon />
-                    Save
-                  </Button>
-                }
-
-
-
-                {!metadataEditMode && <Dialog open={metadataGenerateConfirmOpen} onOpenChange={setMetadataGenerateConfirmOpen}>
-                  <DialogTrigger asChild>
-                    <Button disabled={metadataGenerating}>
-                      <CodeXmlIcon /> Generate
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Regenerate metadata?</DialogTitle>
-                      <DialogDescription>This will reset the current metadata.</DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button type="button" variant="secondary" disabled={metadataGenerating}>
-                          Cancel
-                        </Button>
-                      </DialogClose>
-                      <Button
-                        type="button"
-                        loading={metadataGenerating}
-                        onClick={async () => {
-                          await handleGenerateMetadataFromDialog();
-                          setMetadataGenerateConfirmOpen(false);
-                        }}
-                      >
-                        Confirm
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>}
-
+                <Button
+                  type="button"
+                  disabled={metadataGenerating}
+                  loading={metadataGenerating}
+                  onClick={generateMetadata}
+                >
+                  <CodeXmlIcon /> Generate
+                </Button>
               </DialogFooter>
             </div>
           ) : (
@@ -1380,7 +1186,6 @@ export default function WriteEditor({ initialPaper, initialUser, integrationBase
         user={user}
         paperDoc={paperDoc}
         status={pageDetails.status}
-        integrationBaseUrl={integrationBaseUrl}
       />
 
     </div >

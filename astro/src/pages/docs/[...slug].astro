@@ -8,15 +8,7 @@ import {
   getDocsPageNeighbors,
   getDocsPaperSlugByRoute,
 } from "@/content/docs/docsPagesStructure";
-
-const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
-  .trim()
-  .replace(/\/+$/, "");
-const whitepapperApiKey = String(import.meta.env.WHITEPAPPER_API_KEY ?? "").trim();
-
-if (!apiBaseUrl || !whitepapperApiKey) {
-  throw new Error("PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.");
-}
+import { fetchDevPaperBySlugRaw } from "@/lib/api/contentFetcher";
 
 const slugParam = Astro.params.slug || "";
 const slugValue = Array.isArray(slugParam) ? slugParam.join("/") : slugParam;
@@ -37,26 +29,10 @@ if (!page) {
 
 const paperSlug = getDocsPaperSlugByRoute(currentPath);
 if (!paperSlug) {
-  // Papers are not yet available in DB — show simple 404 as requested
   return new Response(null, { status: 404 });
 }
 
-async function fetchSitePaperBySlug(slug: string) {
-  const response = await fetch(
-    `${apiBaseUrl}/dev/paper?slug=${encodeURIComponent(slug)}`,
-    {
-      method: "GET",
-      headers: {
-        accept: "application/json",
-        "x-api-key": whitepapperApiKey,
-      },
-    },
-  );
-
-  return response;
-}
-
-const paperResponse = await fetchSitePaperBySlug(paperSlug);
+const paperResponse = await fetchDevPaperBySlugRaw(paperSlug);
 if (!paperResponse.ok) {
   if (paperResponse.status === 404) {
     return new Response(null, { status: 404 });
@@ -107,11 +83,11 @@ const docsSeo = buildPaperSeoConfig(docsMetadata, {
 const { previous, next } = getDocsPageNeighbors(page.route);
 Astro.response.headers.set(
   "Cache-Control",
-  "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+  "public, max-age=300, s-maxage=300, stale-while-revalidate=300",
 );
 Astro.response.headers.set(
   "CDN-Cache-Control",
-  "public, max-age=600, stale-while-revalidate=600",
+  "public, max-age=300, stale-while-revalidate=300",
 );
 ---
 

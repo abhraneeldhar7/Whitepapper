@@ -1,38 +1,9 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import SiteContentListingPage from "@/components/site/SiteContentListingPage.astro";
-import type { PaperDoc } from "@/lib/entities";
+import { fetchDevCollectionBySlug } from "@/lib/api/contentFetcher";
 
-type SiteCollectionResponse = {
-  papers: PaperDoc[];
-};
-
-const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
-  .trim()
-  .replace(/\/+$/, "");
-const whitepapperApiKey = String(import.meta.env.WHITEPAPPER_API_KEY ?? "").trim();
-
-if (!apiBaseUrl || !whitepapperApiKey) {
-  throw new Error("PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.");
-}
-
-const response = await fetch(
-  `${apiBaseUrl}/dev/collection?slug=${encodeURIComponent("glossary")}`,
-  {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-      "x-api-key": whitepapperApiKey,
-    },
-  },
-);
-
-if (!response.ok) {
-  const message = await response.text();
-  throw new Error(message || `Upstream request failed with ${response.status}`);
-}
-
-const glossary = (await response.json()) as SiteCollectionResponse;
+const glossary = await fetchDevCollectionBySlug("glossary");
 const routeSlugByPaperSlug: Record<string, string> = {
   "glossary-content-api": "content-api",
 };
@@ -44,7 +15,7 @@ const listingPapers = glossary.papers.map((paper) => ({
 
 Astro.response.headers.set(
   "Cache-Control",
-  "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+  "public, max-age=300, s-maxage=300, stale-while-revalidate=300",
 );
 ---
 

@@ -1,14 +1,10 @@
 ---
-import type { PaperDoc } from "@/lib/entities";
 import SiteContentPaperPage from "@/components/site/SiteContentPaperPage.astro";
 import {
     buildBlogPaperMetadata,
     buildPaperSeoConfig,
 } from "@/metadata/dynamic";
-
-type SiteBlogPaperResponse = {
-    paper: PaperDoc;
-};
+import { fetchDevPaperBySlug } from "@/lib/api/contentFetcher";
 
 const pageSlug = Astro.params.slug as string;
 const normalizedSlug = pageSlug.trim().toLowerCase();
@@ -22,45 +18,14 @@ if (pageSlug !== normalizedSlug) {
 
 Astro.response.headers.set(
     "Cache-Control",
-    "public, max-age=600, s-maxage=600, stale-while-revalidate=600",
+    "public, max-age=300, s-maxage=300, stale-while-revalidate=300",
 );
 Astro.response.headers.set(
     "CDN-Cache-Control",
-    "public, max-age=600, stale-while-revalidate=600",
+    "public, max-age=300, stale-while-revalidate=300",
 );
 
-const apiBaseUrl = String(import.meta.env.PUBLIC_API_BASE_URL ?? "")
-    .trim()
-    .replace(/\/+$/, "");
-const whitepapperApiKey = String(
-    import.meta.env.WHITEPAPPER_API_KEY ?? "",
-).trim();
-
-if (!apiBaseUrl || !whitepapperApiKey) {
-    throw new Error(
-        "PUBLIC_API_BASE_URL and WHITEPAPPER_API_KEY must be configured in Astro env.",
-    );
-}
-
-const paperResponse = await fetch(
-    `${apiBaseUrl}/dev/paper?slug=${encodeURIComponent(normalizedSlug)}`,
-    {
-        method: "GET",
-        headers: {
-            accept: "application/json",
-            "x-api-key": whitepapperApiKey,
-        },
-    },
-);
-
-if (!paperResponse.ok) {
-    const message = await paperResponse.text();
-    throw new Error(
-        message || `Upstream request failed with ${paperResponse.status}`,
-    );
-}
-
-const { paper } = (await paperResponse.json()) as SiteBlogPaperResponse;
+const { paper } = await fetchDevPaperBySlug(normalizedSlug);
 const resolvedSiteUrl = siteUrl || Astro.url.origin.replace(/\/+$/, "");
 const metadata = buildBlogPaperMetadata({ paper, siteUrl: resolvedSiteUrl });
 

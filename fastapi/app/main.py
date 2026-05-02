@@ -30,6 +30,7 @@ app.add_middleware(
         "mcp-protocol-version",
         "mcp-session-id",
         "last-event-id",
+        "x-api-key",
     ],
     expose_headers=[
         "mcp-session-id",
