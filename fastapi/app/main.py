@@ -27,6 +27,7 @@ app.add_middleware(
     allow_headers=[
         "authorization",
         "content-type",
+        "cache-control",
         "mcp-protocol-version",
         "mcp-session-id",
         "last-event-id",
@@ -35,6 +36,7 @@ app.add_middleware(
     expose_headers=[
         "mcp-session-id",
         "www-authenticate",
+        "cache-control",
     ],
 )
 app.add_middleware(McpBearerAuthMiddleware)

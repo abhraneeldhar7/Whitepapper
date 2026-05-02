@@ -43,7 +43,7 @@ const {
     pathname === "/sign-in" ||
     pathname === "/sign-up",
   initialUser = null,
-  hideUserProvider = false,
+  hideUserProvider = true,
 } = Astro.props as Props;
 
 const themeCookie = Astro.cookies.get("theme")?.value ?? null;

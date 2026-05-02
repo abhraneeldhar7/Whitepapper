@@ -18,7 +18,6 @@ export type McpConsentContext = {
   clientName?: string | null;
   redirectUri: string;
   scopes: string[];
-  csrfToken: string;
   user: {
     displayName?: string | null;
     username?: string | null;
@@ -76,13 +75,12 @@ export async function getMcpConsentContext(
 export async function submitMcpConsentDecision(
   requestId: string,
   action: "approve" | "deny",
-  csrfToken: string,
   client: ApiClient = apiClient,
 ): Promise<{ redirectTo: string }> {
   return client.post<{ redirectTo: string }>(
     `/oauth/consent/complete`,
     {
-      body: { requestId, action, csrfToken },
+      body: { requestId, action },
     },
   );
 }

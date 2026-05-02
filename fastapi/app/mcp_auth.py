@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import base64
-import hashlib
 import logging
 import secrets
 import time
@@ -10,7 +8,7 @@ from functools import lru_cache
 from typing import Any
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastmcp.server.auth import AccessToken
@@ -36,20 +34,15 @@ class PendingAuthorization:
     redirect_uri: str
     scopes: list[str]
     state: str | None
-    code_challenge: str
     created_at: float
-    csrf_token: str
 
 
 @dataclass
 class PendingCode:
     code: str
+    access_token: str
     client_id: str
-    client_name: str
     redirect_uri: str
-    user_id: str
-    scopes: list[str]
-    code_challenge: str
     created_at: float
 
 
@@ -61,8 +54,6 @@ class RegisteredClient:
     created_at: float
 
 
-# In-memory OAuth state: intentional design choice. State is ephemeral — lost on restart,
-# but acceptable since MCP tokens are re-authorizable. Avoids Redis dependency for auth flow.
 _pending_authorizations: dict[str, PendingAuthorization] = {}
 _pending_codes: dict[str, PendingCode] = {}
 _registered_clients: dict[str, RegisteredClient] = {}
@@ -73,10 +64,6 @@ def _required_env(value: str | None, env_name: str) -> str:
     if not normalized:
         raise RuntimeError(f"{env_name} must be configured.")
     return normalized
-
-
-def _oauth_register_url() -> str:
-    return f"{_required_env(get_settings().public_api_url, 'PUBLIC_API_URL').rstrip('/')}/oauth/register"
 
 
 def _oauth_authorize_url() -> str:
@@ -145,11 +132,6 @@ def _normalize_scope(scope_raw: str | None) -> list[str]:
     return scopes
 
 
-def _hash_pkce_verifier(verifier: str) -> str:
-    digest = hashlib.sha256(verifier.encode("utf-8")).digest()
-    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
-
-
 def _validate_redirect_uri(redirect_uri: str) -> str:
     resolved = str(redirect_uri or "").strip()
     if not resolved.startswith("http://") and not resolved.startswith("https://"):
@@ -169,10 +151,6 @@ def _auth_error_response(detail: str, *, error: str = "invalid_token", status_co
     return response
 
 
-def _encode_redirect_params(params: dict[str, str | None]) -> str:
-    return urlencode({key: value for key, value in params.items() if value is not None})
-
-
 def _load_pending_authorization(request_id: str) -> PendingAuthorization:
     item = _pending_authorizations.get(request_id)
     if item is None:
@@ -185,6 +163,17 @@ def _load_pending_code(code: str) -> PendingCode:
     if item is None:
         raise HTTPException(status_code=400, detail="Authorization code is invalid or expired.")
     return item
+
+
+def _cleanup_expired_pending() -> None:
+    now = time.time()
+    cutoff = now - 600
+    expired_auths = [k for k, v in _pending_authorizations.items() if v.created_at < cutoff]
+    for k in expired_auths:
+        del _pending_authorizations[k]
+    expired_codes = [k for k, v in _pending_codes.items() if v.created_at < cutoff]
+    for k in expired_codes:
+        del _pending_codes[k]
 
 
 class McpBearerAuthMiddleware(BaseHTTPMiddleware):
@@ -238,14 +227,10 @@ def build_mcp_router() -> APIRouter:
                 "service_documentation": f"{_required_env(get_settings().public_site_url, 'PUBLIC_SITE_URL').rstrip('/')}/integrations",
                 "authorization_endpoint": _oauth_authorize_url(),
                 "token_endpoint": _oauth_token_url(),
-                "registration_endpoint": _oauth_register_url(),
-                "client_id_metadata_document_supported": False,
                 "response_types_supported": ["code"],
                 "response_modes_supported": ["query"],
                 "grant_types_supported": ["authorization_code"],
                 "token_endpoint_auth_methods_supported": ["none"],
-                "code_challenge_methods_supported": ["S256"],
-                "authorization_response_iss_parameter_supported": False,
                 "scopes_supported": ["mcp"],
             }
         )
@@ -256,14 +241,10 @@ def build_mcp_router() -> APIRouter:
                 "issuer": _required_env(get_settings().public_api_url, "PUBLIC_API_URL").rstrip("/"),
                 "authorization_endpoint": _oauth_authorize_url(),
                 "token_endpoint": _oauth_token_url(),
-                "registration_endpoint": _oauth_register_url(),
-                "client_id_metadata_document_supported": False,
                 "response_types_supported": ["code"],
                 "response_modes_supported": ["query"],
                 "grant_types_supported": ["authorization_code"],
                 "token_endpoint_auth_methods_supported": ["none"],
-                "code_challenge_methods_supported": ["S256"],
-                "authorization_response_iss_parameter_supported": False,
                 "scopes_supported": ["mcp"],
                 "subject_types_supported": ["public"],
                 "id_token_signing_alg_values_supported": ["RS256"],
@@ -292,7 +273,6 @@ def build_mcp_router() -> APIRouter:
                 "grant_types": ["authorization_code"],
                 "response_types": ["code"],
                 "token_endpoint_auth_method": "none",
-                "client_secret_expires_at": 0,
             },
             status_code=201,
         )
@@ -300,14 +280,13 @@ def build_mcp_router() -> APIRouter:
     async def oauth_authorize(
         client_id: str,
         redirect_uri: str,
-        code_challenge: str,
-        code_challenge_method: str,
+        response_type: str,
         scope: str | None = None,
         state: str | None = None,
         client_name: str | None = None,
     ) -> RedirectResponse:
-        if str(code_challenge_method or "").strip().upper() != "S256":
-            raise HTTPException(status_code=400, detail="Only S256 PKCE is supported.")
+        if response_type != "code":
+            raise HTTPException(status_code=400, detail="Only response_type=code is supported.")
 
         registered_client = _registered_clients.get(str(client_id).strip())
         resolved_redirect_uri = _validate_redirect_uri(redirect_uri)
@@ -335,17 +314,17 @@ def build_mcp_router() -> APIRouter:
             redirect_uri=resolved_redirect_uri,
             scopes=_normalize_scope(scope),
             state=str(state).strip() or None,
-            code_challenge=str(code_challenge).strip(),
             created_at=time.time(),
-            csrf_token=secrets.token_urlsafe(32),
         )
+
+        _cleanup_expired_pending()
 
         consent_url = f"{_required_env(get_settings().public_site_url, 'PUBLIC_SITE_URL').rstrip('/')}/mcp/connect?request_id={request_id}"
         return RedirectResponse(url=consent_url, status_code=302)
 
     @router.get("/oauth/consent/context")
     async def get_oauth_consent_context(
-        request_id: str,
+        request_id: str = Query(alias="requestId"),
         user_id: str = Depends(get_verified_id),
     ) -> JSONResponse:
         pending = _load_pending_authorization(request_id)
@@ -357,7 +336,6 @@ def build_mcp_router() -> APIRouter:
                 "clientName": pending.client_name,
                 "redirectUri": pending.redirect_uri,
                 "scopes": pending.scopes,
-                "csrfToken": pending.csrf_token,
                 "user": {
                     "displayName": user_doc.get("displayName"),
                     "username": user_doc.get("username"),
@@ -374,32 +352,30 @@ def build_mcp_router() -> APIRouter:
     ) -> JSONResponse:
         request_id = str(payload.get("requestId") or "").strip()
         action = str(payload.get("action") or "approve").strip().lower()
-        csrf_token = str(payload.get("csrfToken") or "").strip()
         if not request_id:
             raise HTTPException(status_code=400, detail="requestId is required.")
         if action not in {"approve", "deny"}:
             raise HTTPException(status_code=400, detail="action must be approve or deny.")
 
         pending = _load_pending_authorization(request_id)
-        if not csrf_token or csrf_token != pending.csrf_token:
-            del _pending_authorizations[request_id]
-            raise HTTPException(status_code=403, detail="CSRF token mismatch.")
         del _pending_authorizations[request_id]
 
         if action == "deny":
             separator = "&" if "?" in pending.redirect_uri else "?"
-            redirect_to = f"{pending.redirect_uri}{separator}{_encode_redirect_params({'error': 'access_denied', 'state': pending.state})}"
+            redirect_to = f"{pending.redirect_uri}{separator}{urlencode({k: v for k, v in {'error': 'access_denied', 'state': pending.state}.items() if v is not None})}"
             return _json_no_cache({"redirectTo": redirect_to})
+
+        raw_token, _ = mcp_authorization_service.issue_token(
+            user_id=user_id,
+            agent_name=pending.client_name,
+        )
 
         code = secrets.token_urlsafe(32)
         _pending_codes[code] = PendingCode(
             code=code,
+            access_token=raw_token,
             client_id=pending.client_id,
-            client_name=pending.client_name,
             redirect_uri=pending.redirect_uri,
-            user_id=user_id,
-            scopes=pending.scopes,
-            code_challenge=pending.code_challenge,
             created_at=time.time(),
         )
 
@@ -418,7 +394,6 @@ def build_mcp_router() -> APIRouter:
         code = str(payload.get("code") or "").strip()
         client_id = str(payload.get("client_id") or "").strip()
         redirect_uri = _validate_redirect_uri(str(payload.get("redirect_uri") or "").strip())
-        code_verifier = str(payload.get("code_verifier") or "").strip()
         logger.info("MCP OAuth token exchange received for client_id=%s redirect_uri=%s", client_id, redirect_uri)
 
         pending_code = _load_pending_code(code)
@@ -426,20 +401,14 @@ def build_mcp_router() -> APIRouter:
             raise HTTPException(status_code=400, detail="client_id does not match the authorization code.")
         if redirect_uri != pending_code.redirect_uri:
             raise HTTPException(status_code=400, detail="redirect_uri does not match the authorization code.")
-        if _hash_pkce_verifier(code_verifier) != pending_code.code_challenge:
-            raise HTTPException(status_code=400, detail="PKCE verification failed.")
 
         del _pending_codes[code]
-        raw_token, _ = mcp_authorization_service.issue_token(
-            user_id=pending_code.user_id,
-            agent_name=pending_code.client_name,
-        )
 
         return _json_no_cache(
             {
-                "access_token": raw_token,
+                "access_token": pending_code.access_token,
                 "token_type": "Bearer",
-                "scope": " ".join(pending_code.scopes),
+                "scope": " ".join(["mcp"]),
             }
         )
 

@@ -20,7 +20,8 @@ export default {
       // Skip cache for SSE and well-known paths
       const isSSE = incomingUrl.pathname.startsWith("/mcp");
       const isWellKnown = incomingUrl.pathname.startsWith("/.well-known");
-      const shouldUseCache = request.method === "GET" && !isSSE && !isWellKnown;
+      const isOAuth = incomingUrl.pathname.startsWith("/oauth");
+      const shouldUseCache = request.method === "GET" && !isSSE && !isWellKnown && !isOAuth;
 
       const cache = caches.default;
       const cacheKey = shouldUseCache ? new Request(upstreamUrl, request) : null;

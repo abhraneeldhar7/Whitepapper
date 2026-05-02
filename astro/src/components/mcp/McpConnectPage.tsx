@@ -77,7 +77,7 @@ export default function McpConnectPage({ initialContext = null, initialRequestId
     }
     setSubmittingAction(action);
     try {
-      const result = await submitMcpConsentDecision(requestId, action, context.csrfToken);
+      const result = await submitMcpConsentDecision(requestId, action);
       window.location.href = result.redirectTo;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to complete MCP consent.");
