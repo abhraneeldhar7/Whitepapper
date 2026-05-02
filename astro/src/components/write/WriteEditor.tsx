@@ -509,13 +509,14 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
     try {
       const generated = await generatePaperMetadata(paperId, {
         ...paperDoc,
-        thumbnailUrl: pageDetails.thumbnailUrl || null,
+        thumbnailUrl: paperDoc.thumbnailUrl || null,
         metadata: paperDoc.metadata ?? null,
       });
       setPaperDoc((prev) => ({ ...prev, metadata: generated }));
       setMetadataDraft(structuredClone(generated));
       toast.success("Metadata generated");
     } catch (error) {
+      console.error("generateMetadata failed:", error);
       toast.error(error instanceof Error ? error.message : "Failed to generate metadata.");
     } finally {
       setMetadataGenerating(false);

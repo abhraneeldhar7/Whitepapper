@@ -46,17 +46,8 @@ class PendingCode:
     created_at: float
 
 
-@dataclass
-class RegisteredClient:
-    client_id: str
-    client_name: str
-    redirect_uris: list[str]
-    created_at: float
-
-
 _pending_authorizations: dict[str, PendingAuthorization] = {}
 _pending_codes: dict[str, PendingCode] = {}
-_registered_clients: dict[str, RegisteredClient] = {}
 
 
 def _required_env(value: str | None, env_name: str) -> str:
@@ -72,6 +63,10 @@ def _oauth_authorize_url() -> str:
 
 def _oauth_token_url() -> str:
     return f"{_required_env(get_settings().public_api_url, 'PUBLIC_API_URL').rstrip('/')}/oauth/token"
+
+
+def _oauth_register_url() -> str:
+    return f"{_required_env(get_settings().public_api_url, 'PUBLIC_API_URL').rstrip('/')}/oauth/register"
 
 
 def _json_no_cache(payload: Any, status_code: int = 200) -> JSONResponse:
@@ -227,6 +222,7 @@ def build_mcp_router() -> APIRouter:
                 "service_documentation": f"{_required_env(get_settings().public_site_url, 'PUBLIC_SITE_URL').rstrip('/')}/integrations",
                 "authorization_endpoint": _oauth_authorize_url(),
                 "token_endpoint": _oauth_token_url(),
+                "registration_endpoint": _oauth_register_url(),
                 "response_types_supported": ["code"],
                 "response_modes_supported": ["query"],
                 "grant_types_supported": ["authorization_code"],
@@ -241,6 +237,7 @@ def build_mcp_router() -> APIRouter:
                 "issuer": _required_env(get_settings().public_api_url, "PUBLIC_API_URL").rstrip("/"),
                 "authorization_endpoint": _oauth_authorize_url(),
                 "token_endpoint": _oauth_token_url(),
+                "registration_endpoint": _oauth_register_url(),
                 "response_types_supported": ["code"],
                 "response_modes_supported": ["query"],
                 "grant_types_supported": ["authorization_code"],
@@ -256,12 +253,7 @@ def build_mcp_router() -> APIRouter:
         client_name = str(payload.get("client_name") or payload.get("agent_name") or "MCP Client").strip()
         client_id = f"wpmcp_client_{secrets.token_urlsafe(12)}"
         redirect_uris = _normalize_redirect_uris(payload.get("redirect_uris"))
-        _registered_clients[client_id] = RegisteredClient(
-            client_id=client_id,
-            client_name=client_name or "MCP Client",
-            redirect_uris=redirect_uris,
-            created_at=time.time(),
-        )
+        mcp_authorization_service.set_client_name(client_id, client_name or "MCP Client")
         logger.info("MCP OAuth register request received for client_name=%s redirect_uris=%s", client_name, redirect_uris)
         return _json_no_cache(
             {
@@ -284,20 +276,20 @@ def build_mcp_router() -> APIRouter:
         scope: str | None = None,
         state: str | None = None,
         client_name: str | None = None,
+        agent_name: str | None = None,
     ) -> RedirectResponse:
         if response_type != "code":
             raise HTTPException(status_code=400, detail="Only response_type=code is supported.")
 
-        registered_client = _registered_clients.get(str(client_id).strip())
         resolved_redirect_uri = _validate_redirect_uri(redirect_uri)
-        if registered_client and registered_client.redirect_uris and resolved_redirect_uri not in registered_client.redirect_uris:
-            raise HTTPException(status_code=400, detail="redirect_uri is not registered for this client.")
-
         resolved_client_name = (
-            str(client_name or "").strip()
-            or (registered_client.client_name if registered_client else "")
+            str(client_name or agent_name or "").strip()
+            or mcp_authorization_service.get_agent_name_by_client_id(str(client_id).strip())
             or str(client_id).strip()
         )
+
+        if resolved_client_name and resolved_client_name != str(client_id).strip():
+            mcp_authorization_service.set_client_name(str(client_id).strip(), resolved_client_name)
 
         logger.info(
             "MCP OAuth authorize request received for client_id=%s redirect_uri=%s client_name=%s",
@@ -368,6 +360,7 @@ def build_mcp_router() -> APIRouter:
         raw_token, _ = mcp_authorization_service.issue_token(
             user_id=user_id,
             agent_name=pending.client_name,
+            client_id=pending.client_id,
         )
 
         code = secrets.token_urlsafe(32)
@@ -438,14 +431,19 @@ def build_mcp_router() -> APIRouter:
     @router.get(f"{MCP_HTTP_PREFIX}/authorizations")
     async def list_mcp_authorizations(user_id: str = Depends(get_verified_id)) -> JSONResponse:
         usage_doc = mcp_authorization_service.get_user_usage(user_id)
-        authorizations = [
-            {
+        authorizations = []
+        for item in mcp_authorization_service.list_tokens_for_user(user_id):
+            agent_name = str(item.get("agentName") or "")
+            if not agent_name or agent_name.startswith("wpmcp_client_"):
+                client_id = str(item.get("clientId") or "")
+                better_name = mcp_authorization_service.get_agent_name_by_client_id(client_id)
+                if better_name:
+                    agent_name = better_name
+            authorizations.append({
                 "authorizationId": item.get("tokenId"),
-                "agentName": item.get("agentName"),
+                "agentName": agent_name or None,
                 "createdAt": item.get("created_at"),
-            }
-            for item in mcp_authorization_service.list_tokens_for_user(user_id)
-        ]
+            })
         return _json_no_cache(
             {
                 "authorizations": authorizations,

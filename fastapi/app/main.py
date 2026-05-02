@@ -43,11 +43,19 @@ app.add_middleware(McpBearerAuthMiddleware)
 
 
 @app.middleware("http")
-async def route_mcp_root(request, call_next):
-    if request.url.path == MCP_HTTP_PREFIX:
-        scope = request.scope
-        scope["path"] = MCP_HTTP_PREFIX + "/"
-        scope["raw_path"] = (MCP_HTTP_PREFIX + "/").encode()
+async def route_mcp_root(request: Request, call_next):
+    if request.url.path in (MCP_HTTP_PREFIX, MCP_HTTP_PREFIX + "/"):
+        if request.method == "GET":
+            from fastapi.responses import JSONResponse
+            return JSONResponse({
+                "serverName": "whitepapper",
+                "transport": "http",
+                "endpointUrl": f"{str(settings.public_api_url or '').rstrip('/')}/mcp",
+            })
+        if request.url.path == MCP_HTTP_PREFIX:
+            scope = request.scope
+            scope["path"] = MCP_HTTP_PREFIX + "/"
+            scope["raw_path"] = (MCP_HTTP_PREFIX + "/").encode()
     return await call_next(request)
 
 

@@ -3,7 +3,6 @@ import Layout from "@/layouts/Layout.astro";
 import MarkdownRender from "@/components/ui/markdown-render/markdown-render";
 import { LinearTableOfContent } from "@/components/ui/toc/linearTableOfContent";
 import MobileTableOfContent from "@/components/ui/toc/mobileTableOfContent";
-import { isDesktopUserAgent } from "@/lib/userAgent";
 import type { PaperDoc, PaperMetadata } from "@/lib/entities";
 import { formatFirestoreDate } from "@/lib/utils";
 import type { PageSeoConfig } from "@/metadata/pages";
@@ -21,8 +20,6 @@ type Props = {
 
 const { paper, metadata, parentHref, parentLabel, seo } = Astro.props as Props;
 const contentContainerId = `site-content-${paper.paperId || paper.slug}`;
-const userAgent = Astro.request.headers.get("user-agent") ?? "";
-const isDesktopUA = isDesktopUserAgent(userAgent);
 const updatedDate = formatFirestoreDate(paper.updatedAt);
 const readingTimeMinutes = Math.max(1, metadata.readingTimeMinutes || 1);
 ---
@@ -118,22 +115,19 @@ const readingTimeMinutes = Math.max(1, metadata.readingTimeMinutes || 1);
     </main>
 
     <aside class="md:w-[300px]">
-      {
-        isDesktopUA ? (
-          <div class="sticky top-[140px] hidden md:block">
-            <LinearTableOfContent
-              client:load
-              containerId={contentContainerId}
-            />
-          </div>
-        ) : (
-          <MobileTableOfContent
-            topOffset={80}
-            client:load
-            contentContainerId={contentContainerId}
-          />
-        )
-      }
+      <div class="sticky top-[140px] hidden md:block">
+        <LinearTableOfContent
+          client:load
+          containerId={contentContainerId}
+        />
+      </div>
+      <div class="block md:hidden">
+        <MobileTableOfContent
+          topOffset={80}
+          client:load
+          contentContainerId={contentContainerId}
+        />
+      </div>
     </aside>
   </div>
 </Layout>

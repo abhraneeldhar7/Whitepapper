@@ -511,6 +511,14 @@ class PapersService:
 
         firestore_store.update(PAPERS_COLLECTION, paperId, payload)
         current.update(payload)
+
+        if current.get("metadata") is None and "metadata" not in payload:
+            body = (current.get("body") or "").strip()
+            if body:
+                generated = self._build_metadata(current)
+                firestore_store.update(PAPERS_COLLECTION, paperId, {"metadata": generated})
+                current["metadata"] = generated
+
         return current
 
     def preview_metadata(self, paper_doc: dict) -> dict:

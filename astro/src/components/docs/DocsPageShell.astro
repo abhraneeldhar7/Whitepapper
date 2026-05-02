@@ -5,7 +5,6 @@ import MobileTableOfContent from "@/components/ui/toc/mobileTableOfContent";
 import DocsCopyButton from "@/components/docs/DocsCopyButton";
 import DocsMobileNav from "@/components/docs/DocsMobileNav";
 import DocsSidebar from "@/components/docs/DocsSidebar.astro";
-import { isMobileUserAgent } from "@/lib/userAgent";
 import type {
   DocsNavSection,
   DocsPageEntry,
@@ -40,8 +39,6 @@ const {
 } = Astro.props as Props;
 
 const docsContentContainerId = "docs-page-content";
-const userAgent = Astro.request.headers.get("user-agent");
-const shouldRenderMobileToc = isMobileUserAgent(userAgent);
 const pageTitleWithBrand = `${pageTitle} | Whitepapper`;
 const breadcrumbItems = [
   {
@@ -227,28 +224,22 @@ const resolvedSeo = seo ?? docsPageSeo;
       </main>
 
       <aside class="hidden md:block relative w-[320px]">
-        {
-          !shouldRenderMobileToc && (
-            <div class="sticky top-[80px] w-[320px] right-10">
-              <LinearTableOfContent
-                client:load
-                offset={125}
-                containerId={docsContentContainerId}
-              />
-            </div>
-          )
-        }
+        <div class="sticky top-[80px] w-[320px] right-10">
+          <LinearTableOfContent
+            client:load
+            offset={125}
+            containerId={docsContentContainerId}
+          />
+        </div>
       </aside>
     </div>
   </div>
 
-  {
-    shouldRenderMobileToc ? (
-      <MobileTableOfContent
-        client:load
-        contentContainerId={docsContentContainerId}
-        topOffset={110}
-      />
-    ) : null
-  }
+  <div class="block md:hidden">
+    <MobileTableOfContent
+      client:load
+      contentContainerId={docsContentContainerId}
+      topOffset={110}
+    />
+  </div>
 </Layout>

@@ -11,6 +11,7 @@ from app.utils.datetime import utc_now
 
 MCP_TOKENS_COLLECTION = "mcp_tokens"
 MCP_USAGE_COLLECTION = "mcp_usage"
+MCP_CLIENTS_COLLECTION = "mcp_clients"
 MCP_TOKEN_PREFIX = "wpmcp_"
 
 
@@ -24,13 +25,20 @@ class McpAuthorizationService:
     def hash_token(raw_token: str) -> str:
         return _normalize_hash(raw_token)
 
-    def issue_token(self, *, user_id: str, agent_name: str | None = None) -> tuple[str, dict[str, Any]]:
+    def issue_token(self, *, user_id: str, agent_name: str | None = None, client_id: str | None = None) -> tuple[str, dict[str, Any]]:
         raw_token = f"{MCP_TOKEN_PREFIX}{secrets.token_urlsafe(32)}"
         token_id = str(uuid4())
+
+        if client_id:
+            for existing in self.list_tokens_for_user(user_id):
+                if str(existing.get("clientId") or "") == client_id:
+                    self.revoke_token(user_id, str(existing.get("tokenId") or ""))
+
         token_doc = {
             "key_hash": self.hash_token(raw_token),
             "userId": user_id,
             "agentName": (agent_name or "").strip() or None,
+            "clientId": client_id,
             "created_at": utc_now(),
         }
         firestore_store.create(MCP_TOKENS_COLLECTION, token_doc, doc_id=token_id)
@@ -60,6 +68,22 @@ class McpAuthorizationService:
             tokens.append({"tokenId": token_id, **{k: v for k, v in item.items() if k != "_id"}})
         tokens.sort(key=lambda item: str(item.get("created_at") or ""), reverse=True)
         return tokens
+
+    @staticmethod
+    def get_agent_name_by_client_id(client_id: str) -> str | None:
+        client_doc = firestore_store.get(MCP_CLIENTS_COLLECTION, client_id)
+        if client_doc:
+            name = str(client_doc.get("clientName") or "").strip()
+            if name:
+                return name
+        for item in firestore_store.find_by_fields_with_ids(MCP_TOKENS_COLLECTION, {"clientId": client_id}):
+            name = str(item.get("agentName") or "").strip()
+            if name:
+                return name
+        return None
+
+    def set_client_name(self, client_id: str, client_name: str) -> None:
+        firestore_store.create(MCP_CLIENTS_COLLECTION, {"clientName": client_name}, doc_id=client_id)
 
     def revoke_token(self, user_id: str, token_id: str) -> bool:
         token_doc = self.get_token(token_id)
