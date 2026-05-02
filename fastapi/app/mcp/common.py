@@ -32,11 +32,11 @@ class McpUsageMiddleware(Middleware):
     async def on_call_tool(self, context: MiddlewareContext, call_next):
         userId = current_mcp_userId()
         mcp_authorization_service.get_user_usage(userId)
-        firestore_store.increment("mcp_usage", userId, "usage", 1)
         usage_doc = firestore_store.get("mcp_usage", userId) or {"usage": 0}
-        if int(usage_doc.get("usage", 0)) > MCP_TOKEN_LIMIT_PER_MONTH:
-            firestore_store.increment("mcp_usage", userId, "usage", -1)
+        limit = int(usage_doc.get("limitPerMonth", MCP_TOKEN_LIMIT_PER_MONTH))
+        if int(usage_doc.get("usage", 0)) >= limit:
             raise AuthorizationError("Monthly MCP usage limit reached for this Whitepapper account.")
+        firestore_store.increment("mcp_usage", userId, "usage", 1)
         result = await call_next(context)
         return result
 
