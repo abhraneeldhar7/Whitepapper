@@ -540,7 +540,6 @@
 @media (max-width: 600px) {
     :is(.g-md-editor-component, .g-md-editor-component .yfm) {
         font-size: 16px;
-        padding: 0 0.5em;
     }
 
     :is(.g-md-editor-component, .g-md-editor-component .yfm) h1 {

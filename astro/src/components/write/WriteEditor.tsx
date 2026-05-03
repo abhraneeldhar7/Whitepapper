@@ -8,10 +8,12 @@ import {
   ImagePlusIcon,
   KeyboardIcon,
   KeyboardOffIcon,
+  LoaderCircle,
   LockIcon,
   RssIcon,
   SaveIcon,
   SettingsIcon,
+  ShuffleIcon,
   Trash2Icon,
   Volume2Icon,
   VolumeOffIcon,
@@ -34,16 +36,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   checkPaperSlugAvailable,
   deletePaper,
   generatePaperMetadata,
   updatePaper,
 } from "@/lib/api/papers";
-import { uploadEmbeddedImage, uploadPaperMetadataImage, uploadThumbnail } from "@/lib/api/uploads";
+import { uploadEmbeddedImage, uploadPaperMetadataImage, uploadThumbnail, getRandomDefaultThumbnailUrl } from "@/lib/api/uploads";
 import { countImagesInContent, MAX_IMAGES_PER_PAPER, MAX_PAPER_BODY_LENGTH } from "@/lib/limits";
-import { getCurrentUser, updateCurrentUser } from "@/lib/api/users";
+import { getCurrentUser } from "@/lib/api/users";
 import { apiClient } from "@/lib/api/client";
 import {
   MAX_EMBEDDED_HEIGHT,
@@ -67,6 +69,7 @@ import { Switch } from "../ui/switch";
 import { Textarea } from "../ui/textarea";
 import DistributionDialog from "./DistributionDialog";
 import IntegrationsSection from "../integrations-4";
+import { MAX_CONTENT_PAPER_WIDTH } from "@/lib/design";
 
 type WriteEditorProps = {
   initialPaper: PaperDoc;
@@ -74,7 +77,7 @@ type WriteEditorProps = {
 };
 
 const typingSoundSources = [click1Sound, click2Sound, click3Sound];
-const INIT_PAPER_SLUG_PREFIX = "init-paper-";
+
 
 function toReadableSlug(value: string): string {
   return normalizeSlug(value) || "untitled-paper";
@@ -153,8 +156,14 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
   const [sheetOpen, setSheetOpen] = useState(false);
   const [isTopBarHovered, setIsTopBarHovered] = useState(false);
   const [isTopBarPinned, setIsTopBarPinned] = useState(false);
-  const [keyboardEffectEnabled, setKeyboardEffectEnabled] = useState(Boolean(initialPaper.ownerId));
-  const [typingSoundEnabled, setTypingSoundEnabled] = useState(false);
+  const [keyboardEffectEnabled, setKeyboardEffectEnabled] = useState(() => {
+    try { return localStorage.getItem("wp_keyboardEffect") !== "0"; } catch { return Boolean(initialPaper.ownerId); }
+  });
+  const [typingSoundEnabled, setTypingSoundEnabled] = useState(() => {
+    try { return localStorage.getItem("wp_typingSound") === "1"; } catch { return false; }
+  });
+  const [defaultThumbnailsLoading, setDefaultThumbnailsLoading] = useState(false);
+  const [thumbnailPopoverOpen, setThumbnailPopoverOpen] = useState(false);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const topBarRef = useRef<HTMLDivElement>(null);
 
@@ -231,6 +240,17 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
     }
   }, [sheetOpen, statusPopoverOpen]);
 
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isNew) {
+      const el = titleRef.current;
+      if (el) { el.focus(); el.select(); }
+    } else {
+      editorRef.current?.focus();
+    }
+  }, []);
+
   function playTypingSound() {
     if (!typingSoundEnabled) {
       return;
@@ -245,16 +265,12 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
 
   function handleToggleKeyboardEffect(checked: boolean) {
     setKeyboardEffectEnabled(checked);
-    updateCurrentUser({
-      preferences: { showKeyboardEffect: checked },
-    }).catch(() => { });
+    try { localStorage.setItem("wp_keyboardEffect", checked ? "1" : "0"); } catch {}
   }
 
   function handleToggleTypingSound(checked: boolean) {
     setTypingSoundEnabled(checked);
-    updateCurrentUser({
-      preferences: { typingSoundEnabled: checked },
-    }).catch(() => { });
+    try { localStorage.setItem("wp_typingSound", checked ? "1" : "0"); } catch {}
   }
 
   async function onSave(slugOverride?: string) {
@@ -290,11 +306,12 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
     return `/${user.username}/${nextSlug || slug}`;
   }
 
+  const isNew = paperDoc.new === true;
+
   async function resolveAutoSlugForSave(): Promise<string> {
     const currentSlug = String(slug || "").trim();
-    const isInitSlug = currentSlug.startsWith(INIT_PAPER_SLUG_PREFIX);
 
-    if (!isInitSlug) {
+    if (!isNew) {
       if (currentSlug !== savedPaperDoc.slug) {
         const available = await checkPaperSlugAvailable(currentSlug, paperId);
         if (!available) {
@@ -333,7 +350,7 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
   }
 
   async function handleSaveAction() {
-    if (isAssetUploading || saving) {
+    if (isAssetUploading || saving || !hasSheetChanges) {
       return;
     }
 
@@ -422,7 +439,7 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
       onStart: () => setUploadingEmbeddedCount((prev) => prev + 1),
       onFinish: () => setUploadingEmbeddedCount((prev) => Math.max(0, prev - 1)),
       toastMessages: {
-        loading: "Uploading embedded image...",
+        loading: "Uploading image",
         success: "Embedded image uploaded.",
         error: (error) => (error instanceof Error ? error.message : "Embedded image upload failed."),
       },
@@ -434,7 +451,6 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
     return { success: false, message: "Upload failed." };
   }
 
-  const hasThumbPreview = Boolean(tempUploadingThumbnail || pageDetails.thumbnailUrl);
   const slugValue = slug.trim();
   const hasSheetChanges = !deepEqual(
     {
@@ -453,7 +469,9 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
 
   const handleSaveWithStatus = (nextStatus: "draft" | "public") => {
     setPaperDoc((prev) => ({ ...prev, status: nextStatus }));
+    setSavedPaperDoc((prev) => ({ ...prev, status: nextStatus }));
     setStatusPopoverOpen(false);
+    updatePaper(paperId, { status: nextStatus }).catch(() => {});
   };
 
   const handleCopyPageId = async () => {
@@ -620,7 +638,11 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
     setDeleteLoading(true);
     try {
       await deletePaper(paperId);
-      window.location.href = "/dashboard";
+      const cid = initialPaper.collectionId;
+      const pid = initialPaper.projectId;
+      if (cid && pid) window.location.href = `/dashboard/${pid}/${cid}`;
+      else if (pid) window.location.href = `/dashboard/${pid}`;
+      else window.location.href = "/dashboard";
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to delete page.");
       setDeleteLoading(false);
@@ -628,7 +650,7 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
   };
 
   return (
-    <div className="min-h-screen flex flex-col max-w-[700px] mx-auto pt-15 relative">
+    <div className="min-h-screen flex flex-col w-full pt-15 relative">
       <ScrollToTop />
       <div
         className="fixed top-0 left-0 w-full z-[10] md:pb-8 md:bg-[unset] bg-background/20 md:backdrop-blur-[0px] backdrop-blur-[30px]"
@@ -711,7 +733,11 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
                             </Button>
                           </PopoverContent>
                         </Popover>
-                        {pageDetails.status == "public" ? (
+                        {isNew ? (
+                          <Button variant="outline" className="flex-1" disabled={isAssetUploading || saving} loading={saving} onClick={() => { void handleSaveAction(); }}>
+                            <SaveIcon /> Save
+                          </Button>
+                        ) : pageDetails.status == "public" ? (
                           user?.username ? (
                             <a href={`/${user.username}/${pageDetails.lastSavedSlug || slug}`} className="flex-1 flex" target="_blank">
                               <Button variant="outline" className="flex-1"><ArrowUpRightFromSquare /> Open</Button>
@@ -734,7 +760,7 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
                           size="sm"
                           className="h-[34px] w-[34px] items-center justify-center"
                           onClick={handleCopyPageId}
-                          disabled={saving}
+                          disabled={saving || isNew}
                         >
                           <CopyIcon />
                         </Button>
@@ -743,22 +769,38 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
 
                     <div className="space-y-2">
                       <Label>Custom URL</Label>
-                      <Input
-                        spellCheck={false}
-                        value={slug}
-                        disabled={slug.startsWith(INIT_PAPER_SLUG_PREFIX)}
-                        onChange={(event) => setPaperDoc((prev) => ({ ...prev, slug: event.target.value }))}
-                      />
-                      {slug.startsWith(INIT_PAPER_SLUG_PREFIX) && (
+                      <div className="flex gap-1">
+                        <Input
+                          spellCheck={false}
+                          value={slug}
+                          disabled={isNew}
+                          onChange={(event) => setPaperDoc((prev) => ({ ...prev, slug: event.target.value }))}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={async () => {
+                            const publicUrl = resolvePublicPaperUrl();
+                            if (publicUrl) {
+                              const ok = await copyToClipboard(publicUrl);
+                              toast[ok ? "info" : "error"](ok ? "URL copied." : "Unable to copy URL.");
+                            }
+                          }}
+                          disabled={isNew}
+                        >
+                          <CopyIcon size={14} />
+                        </Button>
+                      </div>
+                      {isNew && (
                         <p className="text-xs text-muted-foreground">Save to auto-generate a URL from the title</p>
                       )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                      <Button variant="secondary" className="flex-1" onClick={handleShare}>
+                      <Button variant="secondary" className="flex-1" onClick={handleShare} disabled={isNew}>
                         <ForwardIcon /> Share
                       </Button>
-                      <Button variant="secondary" className="flex-1" onClick={handleExport}>
+                      <Button variant="secondary" className="flex-1" onClick={handleExport} disabled={isNew}>
                         <DownloadIcon /> Export
                       </Button>
                     </div>
@@ -771,18 +813,18 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
                             <CodeXmlIcon /> View
                           </Button>
                         ) : (
-                          <Button className="w-full" type="button" onClick={generateMetadata} loading={metadataGenerating}>
+                          <Button className="w-full" type="button" onClick={generateMetadata} loading={metadataGenerating} disabled={isNew}>
                             Generate
                           </Button>
                         )}
                       </div>
                     </div>
 
-                    <div className="relative h-[220px] space-y-4 overflow-hidden">
+                    <div className="relative h-[200px] space-y-4 overflow-hidden">
                       <Label>Distribute</Label>
                       <IntegrationsSection hideText />
-                      <div className="absolute bottom-[-2px] left-0 right-0 h-full bg-gradient-to-t from-background to-transparent from-[10%] z-2" />
-                      <Button className="w-full absolute z-3 bottom-0" onClick={() => setDistributionDialogOpen(true)}>
+                      <div className="absolute bottom-[-22px] left-0 right-0 h-full bg-gradient-to-t from-background to-transparent from-[10%] z-2" />
+                      <Button className="w-full absolute z-3 bottom-0" onClick={() => setDistributionDialogOpen(true)} disabled={isNew}>
                         <RssIcon /> Distribute
                       </Button>
                     </div>
@@ -839,121 +881,151 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
                     </div>
                   </div>
                 </ScrollArea>
-                {hasSheetChanges ? (
-                  <SheetFooter className="p-2 z-2 absolute left-0 bottom-0 w-full border-t bg-background">
-                    <div className="flex justify-end">
-                      <Button
-                        disabled={isAssetUploading || saving}
-                        loading={saving}
-                        onClick={() => { void handleSaveAction(); }}
-                      >
-                        <SaveIcon className="mr-1" />
-                        Save
-                      </Button>
-                    </div>
-                  </SheetFooter>
-                ) : null}
               </SheetContent>
             </Sheet>
 
-            {pageDetails.status === "public" ? (
+            <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  disabled={saving || isAssetUploading}
+                >
+                  {pageDetails.status === "public" ? <RssIcon /> : <LockIcon />}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-[3px] w-[120px] mx-[10px]" data-editor-overlay>
+                <div className="flex flex-col gap-[5px]">
+                  <Button
+                    size="sm"
+                    variant={pageDetails.status == "draft" ? "outline" : "ghost"}
+                    onClick={() => handleSaveWithStatus("draft")}
+                  >
+                    <LockIcon className="mr-1" /> Draft
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={pageDetails.status == "public" ? "outline" : "ghost"}
+                    onClick={() => handleSaveWithStatus("public")}>
+                    <RssIcon className="mr-1" /> Public
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {pageDetails.status === "public" && !isNew && !hasSheetChanges ? (
               user?.username ? (
                 <a href={`/${user.username}/${pageDetails.lastSavedSlug || slug}`} target="_blank">
-                  <Button variant="secondary">
+                  <Button variant="default">
                     <ArrowUpRightFromSquare /> Open
                   </Button>
                 </a>
               ) : (
-                <Button variant="secondary" disabled>
+                <Button variant="default" disabled>
                   <ArrowUpRightFromSquare /> Open
                 </Button>
               )
-            ) : null}
-
-            {pageDetails.status === "draft" &&
-              <Popover open={statusPopoverOpen} onOpenChange={setStatusPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    disabled={saving || isAssetUploading}
-                  >
-                    <LockIcon />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="p-[3px] w-[120px] mx-[10px]" data-editor-overlay>
-                  <div className="flex flex-col gap-[5px]">
-                    <Button
-                      size="sm"
-                      variant={pageDetails.status == "draft" ? "outline" : "ghost"}
-                      onClick={() => handleSaveWithStatus("draft")}
-                    >
-                      <LockIcon className="mr-1" /> Draft
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleSaveWithStatus("public")}>
-                      <RssIcon className="mr-1" /> Public
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            }
-
-            <Button
-              className={`${pageDetails.status === "public" ? "w-[100px]" : "w-[80px]"} transition-all duration-300`}
-              disabled={isAssetUploading || saving}
-              loading={saving}
-              onClick={() => { void handleSaveAction(); }}
-            >
-              {pageDetails.status === "public" ? <RssIcon className="mr-1" /> : <SaveIcon className="mr-1" />}
-              {pageDetails.status === "public" ? "Publish" : "Save"}
-            </Button>
+            ) : (
+              <Button
+                variant="default"
+                disabled={isAssetUploading || saving || !hasSheetChanges}
+                loading={saving}
+                onClick={() => { void handleSaveAction(); }}
+              >
+                {pageDetails.status === "public" ? <RssIcon className="mr-1" /> : <SaveIcon className="mr-1" />}
+                {pageDetails.status === "public" ? "Publish" : "Save"}
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="px-5">
+      <div className="px-4 w-full">
 
         <div
-          className={`rounded-lg overflow-hidden flex items-center justify-center relative group shrink-0 cursor-pointer`}
-          onClick={() => thumbnailInputRef.current?.click()}
-        >
-          {tempUploadingThumbnail ? (
-            <img
-              src={tempUploadingThumbnail}
-              alt="Uploading thumbnail"
-              className="w-full h-full object-cover animate-pulse"
-            />
-          ) : pageDetails.thumbnailUrl ? (
-            <div>
-              <img src={pageDetails.thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center duration-300">
-                <ImagePlusIcon size={25} className="text-white" />
+          className="w-full mx-auto"
+          style={{ maxWidth: `${MAX_CONTENT_PAPER_WIDTH}px` }}>
+
+          <Popover open={thumbnailPopoverOpen} onOpenChange={setThumbnailPopoverOpen}>
+            <PopoverTrigger asChild>
+              <div
+                className="w-full rounded-[10px] overflow-hidden flex items-center justify-center relative group shrink-0 cursor-pointer"
+              >
+                {tempUploadingThumbnail ? (
+                  <img
+                    src={tempUploadingThumbnail}
+                    alt="Uploading thumbnail"
+                    className="w-full h-full object-cover animate-pulse"
+                  />
+                ) : pageDetails.thumbnailUrl ? (
+                  <>
+                    <img src={pageDetails.thumbnailUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center duration-300">
+                      <ImagePlusIcon size={25} className="text-white" />
+                    </div>
+                    <div className="absolute top-2 right-2">
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="z-2 md:opacity-0 group-hover:opacity-100"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setThumbnailPopoverOpen(false);
+                          setPaperDoc((prev) => ({ ...prev, thumbnailUrl: "" }));
+                        }}
+                      >
+                        <XIcon size={16} />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-3 h-[250px] md:h-[350px] w-full relative overflow-hidden text-foreground group select-none cursor-pointer">
+                    <img src={blueBgPattern.src} alt="" className="absolute h-full w-full object-cover z-[-1] group-hover:dark:opacity-[0.8] group-hover:opacity-[0.6] transition-all duration-250 opacity-[0.4]" />
+                    <p />
+                    <ImagePlusIcon size={32} className="" />
+                    <p className="text-[12px] font-[500] ">Add Thumbnail</p>
+                  </div>
+                )}
               </div>
-              <div className="absolute top-2 right-2">
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-1">
+              <div className="flex gap-2">
                 <Button
-                  size="icon"
-                  variant="destructive"
-                  className="z-2 md:opacity-0 group-hover:opacity-100"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setPaperDoc((prev) => ({ ...prev, thumbnailUrl: "" }));
+                  variant="ghost"
+                  className="justify-center items-center w-[80px] h-[80px]"
+                  disabled={defaultThumbnailsLoading}
+                  onClick={async () => {
+                    setDefaultThumbnailsLoading(true);
+                    try {
+                      const result = await getRandomDefaultThumbnailUrl();
+                      setPaperDoc((prev) => ({ ...prev, thumbnailUrl: result.url }));
+                      setThumbnailPopoverOpen(false);
+                    } catch {
+                      toast.error("Failed to get a random thumbnail.");
+                    } finally {
+                      setDefaultThumbnailsLoading(false);
+                    }
                   }}
                 >
-                  <XIcon size={16} />
+                  {defaultThumbnailsLoading ? (
+                    <LoaderCircle className="size-6 animate-spin" />
+                  ) : (
+                    <ShuffleIcon className="size-6" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="justify-center items-center w-[80px] h-[80px]"
+                  onClick={() => {
+                    setThumbnailPopoverOpen(false);
+                    thumbnailInputRef.current?.click();
+                  }}
+                >
+                  <ImagePlusIcon className="size-6" />
                 </Button>
               </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-3 h-full w-full relative overflow-hidden text-foreground group select-none cursor-pointer">
-              <img src={blueBgPattern.src} alt="" className="absolute h-full w-full object-cover z-[-1] group-hover:dark:opacity-[0.8] group-hover:opacity-[0.6] transition-all duration-250 opacity-[0.4]" />
-              <p />
-              <ImagePlusIcon size={32} className="" />
-              <p className="text-[12px] font-[500] ">Add Thumbnail</p>
-            </div>
-          )}
+            </PopoverContent>
+          </Popover>
 
           <input
             type="file"
@@ -968,55 +1040,54 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
               }
             }}
           />
-        </div>
-      </div>
 
+          <div className="mt-3 flex flex-col gap-2 flex-1">
+            <div
+              className="w-full">
+              <Textarea
+                ref={titleRef}
+                autoFocus={body.length === 0}
+                value={title}
+                onChange={(event) => {
+                  const nextTitle = event.target.value;
+                  if (nextTitle !== title) {
+                    playTypingSound();
+                  }
+                  setPaperDoc((prev) => ({ ...prev, title: nextTitle }));
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    editorRef.current?.focus();
+                    editorContainerRef.current?.scrollIntoView({
+                      block: "end",
+                      behavior: "smooth",
+                    });
+                  }
+                }}
+                placeholder="Enter page title..."
+                className="bg-transparent dark:bg-transparent border-none focus:ring-0 outline-none text-[40px] md:text-[40px] font-[400] placeholder:opacity-20 resize-none border-none outline-none focus-visible:ring-0 focus:ring-0 px-0"
+              />
+            </div>
 
+            {!isMobile && keyboardEffectEnabled &&
+              <OnscreenKeyboard className="w-full fixed top-[50%] left-[50%] translate-y-[-50%] translate-x-[-50%] z-[2]" />
+            }
+          </div>
 
-
-      <div className="mt-3 flex flex-col gap-2 flex-1">
-        <div className="px-5">
-          <Textarea
-            autoFocus={body.length === 0}
-            value={title}
-            onChange={(event) => {
-              const nextTitle = event.target.value;
-              if (nextTitle !== title) {
-                playTypingSound();
-              }
-              setPaperDoc((prev) => ({ ...prev, title: nextTitle }));
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                editorRef.current?.focus();
-                editorContainerRef.current?.scrollIntoView({
-                  block: "end",
-                  behavior: "smooth",
-                });
-              }
-            }}
-            placeholder="Enter page title..."
-            className="bg-transparent dark:bg-transparent border-none focus:ring-0 outline-none text-[40px] md:text-[40px] font-[400] placeholder:opacity-20 resize-none border-none outline-none focus-visible:ring-0 focus:ring-0 px-0"
-          />
-        </div>
-
-        {!isMobile && keyboardEffectEnabled &&
-          <OnscreenKeyboard className="w-full fixed top-[50%] left-[50%] translate-y-[-50%] translate-x-[-50%] z-[2]" />
-        }
-
-        <div ref={editorContainerRef} className="px-2 md:px-4">
-          <TextEditor
-            ref={editorRef}
-            initialContent={body}
-            onChange={(nextBody) => {
-              if (nextBody !== body) {
-                playTypingSound();
-              }
-              setPaperDoc((prev) => ({ ...prev, body: nextBody }));
-            }}
-            onImageUpload={onEditorImageUpload}
-          />
+          <div ref={editorContainerRef}>
+            <TextEditor
+              ref={editorRef}
+              initialContent={body}
+              onChange={(nextBody) => {
+                if (nextBody !== body) {
+                  playTypingSound();
+                }
+                setPaperDoc((prev) => ({ ...prev, body: nextBody }));
+              }}
+              onImageUpload={onEditorImageUpload}
+            />
+          </div>
         </div>
       </div>
 
@@ -1128,7 +1199,7 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
                         <Label>{String(key)}</Label>
                         {isDescriptionField ? (
                           <Textarea
-                            className="mt-2 min-h-[100px] resize-y"
+                            className="mt-2 min-h-[100px] resize-y break-words"
                             value={valueForInput}
                             onChange={(event) => {
                               handleMetadataValueChange(
@@ -1140,7 +1211,7 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
                           />
                         ) : (
                           <Input
-                            className="mt-2"
+                            className="mt-2 break-words"
                             value={valueForInput}
                             onChange={(event) => {
                               handleMetadataValueChange(
@@ -1159,7 +1230,7 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
                   <div>
                     <Label>jsonLd</Label>
                     <Textarea
-                      className="mt-2 min-h-[200px] resize-y font-mono text-xs"
+                      className="mt-2 min-h-[200px] resize-y font-mono text-xs break-all whitespace-pre-wrap"
                       value={metadataDraft.jsonLd ? JSON.stringify(metadataDraft.jsonLd, null, 2) : ""}
                       onChange={(event) => {
                         try {
@@ -1212,4 +1283,3 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
     </div >
   );
 }
-

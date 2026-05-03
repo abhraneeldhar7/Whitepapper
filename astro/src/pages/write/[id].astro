@@ -21,7 +21,7 @@ try {
 }
 ---
 
-<Layout showSiteNav={false} noindex={true}>
+<Layout showSiteNav={false} hideFooter noindex>
   <WriteEditor
     client:only="react"
     initialPaper={initialPaper}
@@ -30,4 +30,3 @@ try {
     <WriteEditorSkeleton slot="fallback" />
   </WriteEditor>
 </Layout>
-

@@ -2,34 +2,13 @@
 import ProjectWorkspace from "@/components/project/ProjectWorkspace";
 import ProjectWorkspaceSkeleton from "@/components/project/ProjectWorkspaceSkeleton";
 import Layout from "@/layouts/Layout.astro";
-import { createApiClient } from "@/lib/api/client";
-import { getProjectDashboardData } from "@/lib/api/projects";
-import { isMobileUserAgent } from "@/lib/userAgent";
 
-const { getToken } = Astro.locals.auth();
 const projectId = Astro.params.projectId as string;
-
-const serverClient = createApiClient(getToken);
-
-const projectData = await getProjectDashboardData(projectId, serverClient).catch(() => null);
-if (!projectData) {
-  return Astro.redirect("/404");
-}
-
-const { project: initialProject, collections: initialCollections, papers: initialPages } = projectData;
-const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 ---
 
 <Layout showSiteNav={false} hideUserProvider={true}>
   <div id="app-shell" style="position: fixed; inset: 0; z-index: 100; background: var(--background);">
     <ProjectWorkspaceSkeleton />
   </div>
-  <ProjectWorkspace
-    client:only="react"
-    projectId={projectId}
-    initialProject={initialProject}
-    initialPages={initialPages}
-    initialCollections={initialCollections}
-    isMobileUA={isMobileUA}
-  />
+  <ProjectWorkspace client:only="react" projectId={projectId} />
 </Layout>

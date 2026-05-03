@@ -122,6 +122,7 @@ class PaperDoc(BaseModel):
     slug: str
     body: str = ""
     status: Literal["draft", "published", "archived"] = "draft"
+    new: bool = True
     metadata: PaperMetadata | None = None
     createdAt: datetime
     updatedAt: datetime

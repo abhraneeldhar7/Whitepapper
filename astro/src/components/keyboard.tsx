@@ -200,7 +200,7 @@ export default function OnscreenKeyboard({ className }: { className?: string }) 
                     rounded-md transition-all duration-300 bg-foreground/5 border-foreground/5 border
                     ${active ? "opacity-[1]" : "opacity-[0]"}
                   `}>
-                                    {label}
+                                    {/* {label} */}
                                 </div>
                             );
                         })}

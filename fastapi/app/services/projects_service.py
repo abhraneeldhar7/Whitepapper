@@ -332,11 +332,25 @@ class ProjectsService:
         from app.services.papers_service import papers_service
         from app.services.dev_api_service import dev_api_service
 
-        deleted_counts = {
+        deleted_counts: dict[str, int] = {
             "projects": 0,
+            "collections": 0,
+            "papers": 0,
             "apiKeys": 0,
             "storageObjects": 0,
         }
+
+        for paper in papers_service.list_by_projectId(projectId, standalone=True):
+            result = papers_service.delete_cascade(paper["paperId"])
+            deleted_counts["papers"] += result.get("papers", 0)
+            deleted_counts["storageObjects"] += result.get("storageObjects", 0)
+
+        for collection in collections_service.list_project_collections(projectId):
+            result = collections_service.delete_cascade(collection["collectionId"])
+            deleted_counts["collections"] += result.get("collections", 0)
+            deleted_counts["papers"] += result.get("papers", 0)
+            deleted_counts["storageObjects"] += result.get("storageObjects", 0)
+
         deleted_counts["apiKeys"] += dev_api_service.delete_by_project(projectId)
 
         ownerId = current.get(PROJECT_OWNER_KEY)

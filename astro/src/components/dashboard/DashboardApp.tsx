@@ -18,8 +18,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { createPaper, listOwnedPapers } from "@/lib/api/papers";
-import { createProject } from "@/lib/api/projects";
+import { createPaper, listOwnedPapers, listStandalonePapers } from "@/lib/api/papers";
+import { createProject, listProjects } from "@/lib/api/projects";
 import {
   listMcpAuthorizations,
   revokeMcpAuthorization,
@@ -45,11 +45,7 @@ import openCodeLogo from "@/assets/logos/opencode.svg"
 import copilotLogo from "@/assets/logos/githubcopilot.svg"
 import codexLogo from "@/assets/logos/codex.svg"
 
-type DashboardAppProps = {
-  initialProjects: ProjectDoc[];
-  initialPages: PaperDoc[];
-  isMobileUA: boolean;
-};
+type DashboardAppProps = {};
 type DashboardTab = "overview" | "mcp";
 const dashboardTabs: DashboardTab[] = ["overview", "mcp"];
 
@@ -95,13 +91,15 @@ export default function DashboardApp(props: DashboardAppProps) {
   );
 }
 
-function DashboardInner({ initialProjects, initialPages, isMobileUA }: DashboardAppProps) {
+function DashboardInner(_props: DashboardAppProps) {
   const { user: currentUser } = useUser();
+  const isMobileUA = false;
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<DashboardTab>(() =>
     readTabFromQuery<DashboardTab>(dashboardTabs, "overview"),
   );
-  const [projects, setProjects] = useState<ProjectDoc[]>(initialProjects);
-  const [pages, setPages] = useState<PaperDoc[]>(() => sortPapersLatestFirst(initialPages));
+  const [projects, setProjects] = useState<ProjectDoc[]>([]);
+  const [pages, setPages] = useState<PaperDoc[]>([]);
   const [creatingPage, setCreatingPage] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -120,8 +118,17 @@ function DashboardInner({ initialProjects, initialPages, isMobileUA }: Dashboard
   const [revokeMcpDialogOpen, setRevokeMcpDialogOpen] = useState(false);
 
   useEffect(() => {
-    const shell = document.getElementById("app-shell");
-    if (shell) shell.remove();
+    Promise.all([
+      listProjects(),
+      listStandalonePapers(),
+    ]).then(([p, s]) => {
+      setProjects(p);
+      setPages(sortPapersLatestFirst(s));
+    }).catch(() => {}).finally(() => {
+      setLoading(false);
+      const shell = document.getElementById("app-shell");
+      if (shell) shell.remove();
+    });
   }, []);
 
   useEffect(() => {
@@ -232,7 +239,7 @@ function DashboardInner({ initialProjects, initialPages, isMobileUA }: Dashboard
 
           <TabsContent value="overview" className="mt-10">
             <div className="space-y-8">
-              {pages.length === 0 && (
+              {!loading && pages.length === 0 && (
                 <div className="flex flex-col items-center">
                   <EmptyPaperNotes height={180} width={180} />
                   <Label>No papers created</Label>
@@ -262,7 +269,7 @@ function DashboardInner({ initialProjects, initialPages, isMobileUA }: Dashboard
                 <p className="text-sm text-muted-foreground">Projects</p>
 
                 <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                  {projects.length === 0 && (
+                  {!loading && projects.length === 0 && (
                     <div className="grid justify-items-center">
                       <FolderNotes height={150} width={150} />
                       <Label>No projects created</Label>

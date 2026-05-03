@@ -73,3 +73,9 @@ export async function uploadProjectEmbeddedImage(
     body: createUploadBody(file),
   });
 }
+
+export async function getRandomDefaultThumbnailUrl(
+  client: ApiClient = apiClient,
+): Promise<{ url: string }> {
+  return client.get<{ url: string }>("/papers/default-thumbnails/random");
+}

@@ -44,13 +44,13 @@ function getEndpointVariables(endpoint: EndpointConfig, identifierType: Identifi
 
         if (endpoint.id === "collection") {
             return identifierType === "slug"
-                ? { ...variable, label: "Collection Slug", placeholder: "getting-started" }
+                ? { ...variable, label: "Collection Slug", placeholder: "collection-slug" }
                 : { ...variable, label: "Collection ID", placeholder: "collection-id" };
         }
 
         if (endpoint.id === "paper") {
             return identifierType === "slug"
-                ? { ...variable, label: "Paper Slug", placeholder: "introducing-whitepapper" }
+                ? { ...variable, label: "Paper Slug", placeholder: "paper-slug" }
                 : { ...variable, label: "Paper ID", placeholder: "paper-id" };
         }
 
@@ -60,7 +60,7 @@ function getEndpointVariables(endpoint: EndpointConfig, identifierType: Identifi
 
 function getInitialVariables(endpoint: EndpointConfig): Record<string, string> {
     return endpoint.variables.reduce<Record<string, string>>((accumulator, variable) => {
-        accumulator[variable.name] = endpoint.sampleVariables[variable.name] ?? "";
+        accumulator[variable.name] = "";
         return accumulator;
     }, {});
 }
@@ -236,42 +236,44 @@ export function ApiShowcase({ hideRunSection = false }: ApiShowcaseProps) {
     const [variables, setVariables] = useState<Record<string, string>>(() => getInitialVariables(ENDPOINTS[0]));
     const [response, setResponse] = useState<{ type: "success" | "error"; data: any } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    
+
     const visibleVariables = getEndpointVariables(selectedEndpoint, identifierType);
 
     const handleEndpointChange = (endpoint: EndpointConfig) => {
-        setSelectedEndpoint(endpoint);
-        const initialVars = getInitialVariables(endpoint);
-        setVariables(initialVars);
-        setResponse(null);
-        if (endpoint.hasIdentifierOptions) {
-            setIdentifierType("id");
+        const nextVars = getInitialVariables(endpoint);
+        if (variables.apiKey) {
+            nextVars.apiKey = variables.apiKey;
         }
+        setSelectedEndpoint(endpoint);
+        setVariables(nextVars);
+        setResponse(null);
+        setIdentifierType("id");
     };
 
     const handleIdentifierTypeChange = (type: IdentifierType) => {
         setIdentifierType(type);
-        setVariables((prev) => ({
-            ...prev,
-            identifier: type === "slug"
-                ? selectedEndpoint.sampleVariables.identifier ?? prev.identifier ?? ""
-                : prev.identifier ?? "",
-        }));
+        setVariables((prev) => {
+            const next = { ...prev, identifier: "" };
+            return next;
+        });
     };
 
     const handleVariableChange = (name: string, value: string) => {
         setVariables((prev) => ({ ...prev, [name]: value }));
     };
 
- 
     const getCurrentCode = () => {
         let code = selectedEndpoint.code[language];
+        const identifierVar = visibleVariables.find((v) => v.name === "identifier");
+        const identifierPlaceholder = identifierVar?.placeholder ?? "";
+        const identifierValue = (variables.identifier ?? "").trim() || identifierPlaceholder;
+
         code = replaceCodePlaceholders(
             code,
             variables,
             selectedEndpoint.hasIdentifierOptions ? identifierType : null,
-            variables.identifier || "",
-            selectedEndpoint.id
+            identifierValue,
+            selectedEndpoint.id,
         );
         return code;
     };

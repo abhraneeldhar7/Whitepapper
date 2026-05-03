@@ -1,4 +1,5 @@
 from typing import Literal
+import threading
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
@@ -8,7 +9,6 @@ from app.services.auth_service import get_verified_id
 from app.schemas.entities import PaperDoc, PaperMetadata
 from app.services.papers_service import papers_service
 from app.utils.cache import add_cache_buster
-from app.utils.content import extract_image_urls
 from app.utils.sorting import sort_items_latest_first
 
 router = APIRouter(tags=["papers"])
@@ -54,6 +54,11 @@ def list_own_papers(
         standalone=standalone,
     )
     return sort_items_latest_first(papers)
+
+
+@router.get("/papers/default-thumbnails/random")
+def get_random_default_thumbnail() -> dict[str, str]:
+    return {"url": papers_service.get_random_default_thumbnail_url()}
 
 
 @router.post("/papers/{paperId}/thumbnail")
@@ -113,10 +118,18 @@ def patch_paper(
     if "thumbnailUrl" in update_payload and not update_payload["thumbnailUrl"]:
         papers_service.delete_thumbnail(userId, paperId)
     if payload.body is not None:
-        used_urls = extract_image_urls(updated.get("body") or "")
-        papers_service.delete_unused_embedded_images(userId, paperId, used_urls)
+        body_text = updated.get("body") or ""
+        threading.Thread(
+            target=papers_service.delete_unused_embedded_images,
+            args=(userId, paperId, body_text),
+            daemon=True,
+        ).start()
     metadata_urls = papers_service.extract_metadata_image_urls(updated.get("metadata"))
-    papers_service.delete_unused_metadata_images(userId, paperId, metadata_urls)
+    threading.Thread(
+        target=papers_service.delete_unused_metadata_images,
+        args=(userId, paperId, metadata_urls),
+        daemon=True,
+    ).start()
     return updated
 
 

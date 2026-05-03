@@ -38,6 +38,7 @@
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1",
     "remark-highlight": "^0.1.1",
+    "remark-mark-plus": "^1.0.21",
     "shadcn": "^4.0.2",
     "shiki": "^4.0.2",
     "sonner": "^2.0.7",

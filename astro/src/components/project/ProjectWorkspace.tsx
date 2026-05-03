@@ -24,13 +24,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createCollection } from "@/lib/api/collections";
+import { createCollection, listProjectCollections } from "@/lib/api/collections";
 import { createApiKey, getProjectApiKey, resetApiKey, setApiKeyActive, type ApiKeySummary } from "@/lib/api/api_keys";
-
-import { createPaper, listOwnedPapers } from "@/lib/api/papers";
+import { createPaper, listOwnedPapers, listProjectPapers } from "@/lib/api/papers";
 import {
   checkProjectSlugAvailable,
   deleteProject,
+  getProjectById,
   updateProject,
   updateProjectVisibility,
 } from "@/lib/api/projects";
@@ -58,10 +58,6 @@ import { MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
 
 type ProjectWorkspaceProps = {
   projectId: string;
-  initialProject: ProjectDoc;
-  initialPages: PaperDoc[];
-  initialCollections: CollectionDoc[];
-  isMobileUA: boolean;
 };
 
 type ProjectTab = "overview" | "api";
@@ -76,19 +72,15 @@ export default function ProjectWorkspace(props: ProjectWorkspaceProps) {
   );
 }
 
-function ProjectWorkspaceInner({
-  projectId,
-  initialProject,
-  initialPages,
-  initialCollections,
-  isMobileUA,
-}: ProjectWorkspaceProps) {
+function ProjectWorkspaceInner({ projectId }: ProjectWorkspaceProps) {
   const { user: currentUser } = useUser();
+  const isMobileUA = false;
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ProjectTab>(() => readTabFromQuery(projectTabs, "overview"));
-  const [project, setProject] = useState<ProjectDoc>(initialProject);
+  const [project, setProject] = useState<ProjectDoc | null>(null);
   const [draftProject, setDraftProject] = useState<ProjectDoc | null>(null);
-  const [pages, setPages] = useState<PaperDoc[]>(() => sortPapersLatestFirst(initialPages));
-  const [collections, setCollections] = useState<CollectionDoc[]>(initialCollections);
+  const [pages, setPages] = useState<PaperDoc[]>([]);
+  const [collections, setCollections] = useState<CollectionDoc[]>([]);
   const [editingProject, setEditingProject] = useState(false);
   const [savingProject, setSavingProject] = useState(false);
   const [creatingPage, setCreatingPage] = useState(false);
@@ -112,6 +104,7 @@ function ProjectWorkspaceInner({
   const [resettingApiKey, setResettingApiKey] = useState(false);
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [toggleConfirmOpen, setToggleConfirmOpen] = useState(false);
   const [createdApiKey, setCreatedApiKey] = useState<string | null>(null);
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
   const projectLogoInputRef = useRef<HTMLInputElement>(null);
@@ -119,18 +112,20 @@ function ProjectWorkspaceInner({
   const isProjectAssetUploading = uploadingProjectLogo || uploadingProjectEmbeddedCount > 0;
 
   useEffect(() => {
-    const shell = document.getElementById("app-shell");
-    if (shell) shell.remove();
-  }, []);
-
-  useEffect(() => {
-    setProject(initialProject);
-    setDraftProject(null);
-    setPages(sortPapersLatestFirst(initialPages));
-    setCollections(initialCollections);
-    setEditingProject(false);
-    setSlugCheckMessage(null);
-  }, [initialProject, initialPages, initialCollections]);
+    Promise.all([
+      getProjectById(projectId),
+      listProjectPapers(projectId),
+      listProjectCollections(projectId),
+    ]).then(([proj, p, c]) => {
+      if (proj) setProject(proj);
+      setPages(sortPapersLatestFirst(p));
+      setCollections(c);
+    }).catch(() => {}).finally(() => {
+      setLoading(false);
+      const shell = document.getElementById("app-shell");
+      if (shell) shell.remove();
+    });
+  }, [projectId]);
 
   useEffect(() => {
     document.documentElement.dataset.projectWorkspaceReady = "true";
@@ -151,6 +146,7 @@ function ProjectWorkspaceInner({
   }, [projectId]);
 
   function beginEditProject() {
+    if (!project) return;
     setDraftProject({ ...project });
     setSlugCheckMessage(null);
     setEditingProject(true);
@@ -163,7 +159,7 @@ function ProjectWorkspaceInner({
   }
 
   async function handleSaveProjectDetails() {
-    if (!draftProject) return;
+    if (!project || !draftProject) return;
     if (!draftProject.name.trim()) {
       toast.error("Project name cannot be empty.");
       return;
@@ -248,11 +244,11 @@ function ProjectWorkspaceInner({
 
     try {
       const updated = await visibilityPromise;
-      setProject((prev) => ({
+      setProject((prev) => prev ? {
         ...prev,
         isPublic: updated.isPublic,
         updatedAt: updated.updatedAt,
-      }));
+      } : prev);
       setDraftProject((prev) =>
         prev
           ? {
@@ -462,6 +458,8 @@ function ProjectWorkspaceInner({
 
 
 
+  if (loading || !project) return null;
+
   const editableProject = editingProject ? draftProject : project;
   const projectNameForDisplay = editableProject?.name || project.name;
   const projectSlugForDisplay = editableProject?.slug || project.slug;
@@ -585,7 +583,7 @@ function ProjectWorkspaceInner({
                           /> :
                           <>
                             {project.isPublic ?
-                              <a className="text-[15px]  flex items-center gap-2">/{projectSlugForDisplay} <Rss size={14} /></a>
+                              <a href={`/${currentUser?.username ?? "user"}/p/${projectSlugForDisplay}`} target="_blank" rel="noopener noreferrer" className="text-[15px]  flex items-center gap-2">/{projectSlugForDisplay} <Rss size={14} /></a>
                               :
                               <p className="text-[15px] text-muted-foreground flex items-center gap-2">/{projectSlugForDisplay} <LockIcon size={14} /></p>
                             }
@@ -892,16 +890,16 @@ function ProjectWorkspaceInner({
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <p className="w-[100px] text-muted-foreground">Created</p>
-                    {apiLoading ? (
-                      <Skeleton className="h-4 w-20" />
-                    ) : apiDoc ? (
-                      <p className="font-[450]">{formatFirestoreDate(apiDoc.createdAt)}</p>
-                    ) : (
-                      <p className="font-[450] text-muted-foreground">—</p>
-                    )}
-                  </div>
+                  {apiDoc && (
+                    <div className="flex items-center gap-3">
+                      <p className="w-[100px] text-muted-foreground">Created</p>
+                      {apiLoading ? (
+                        <Skeleton className="h-4 w-20" />
+                      ) : (
+                        <p className="font-[450]">{formatFirestoreDate(apiDoc.createdAt)}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-2">
@@ -909,7 +907,7 @@ function ProjectWorkspaceInner({
                     <>
                       <Button
                         variant={apiDoc.isActive ? "secondary" : "default"}
-                        onClick={() => { void handleToggleApiKey(!apiDoc.isActive); }}
+                        onClick={() => setToggleConfirmOpen(true)}
                         loading={togglingApiKey || apiLoading}
                         disabled={resettingApiKey}
                       >
@@ -945,6 +943,35 @@ function ProjectWorkspaceInner({
                   <Button onClick={handleCopyCreatedApiKey}>
                     {apiKeyCopied ? <CheckIcon /> : <CopyIcon />}
                     {apiKeyCopied ? "Copied" : "Copy key"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={toggleConfirmOpen} onOpenChange={setToggleConfirmOpen}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{apiDoc?.isActive ? "Disable" : "Enable"} API key?</DialogTitle>
+                  <DialogDescription>
+                    {apiDoc?.isActive
+                      ? "This will deactivate the key. All requests using it will be rejected until re-enabled."
+                      : "This will reactivate the key. Requests using it will be accepted again."}
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setToggleConfirmOpen(false)}
+                    disabled={togglingApiKey}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant={apiDoc?.isActive ? "destructive" : "default"}
+                    onClick={() => { void handleToggleApiKey(!apiDoc?.isActive); }}
+                    loading={togglingApiKey}
+                  >
+                    {apiDoc?.isActive ? "Disable" : "Enable"}
                   </Button>
                 </DialogFooter>
               </DialogContent>

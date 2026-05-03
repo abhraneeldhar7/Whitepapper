@@ -285,12 +285,12 @@
 
 /* Highlighted Text */
 
-/* .markdownDiv mark {
+.markdownDiv mark {
     background-color: var(--primary, #3b82f6) !important;
     color: var(--primary-foreground);
-    padding: 5px;
+    padding: 2px 5px;
     border-radius: 3px;
-} */
+}
 
 .markdownDiv .highlight {
     background-color: var(--primary, #3b82f6) !important;
@@ -493,7 +493,6 @@
 @media (max-width: 600px) {
     .markdownDiv {
         font-size: 16px;
-        padding: 0 0.5em;
     }
 
     /* Headers */

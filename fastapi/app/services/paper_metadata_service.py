@@ -217,7 +217,6 @@ class PaperMetadataService:
 
         title = (paper_doc.get("title") or "Untitled Paper").strip() or "Untitled Paper"
         slug = (paper_doc.get("slug") or "").strip()
-        status = (paper_doc.get("status") or "draft").strip().lower()
         body = paper_doc.get("body") or ""
         owner_id = str(paper_doc.get("ownerId") or "")
         thumbnail_url = (paper_doc.get("thumbnailUrl") or "").strip()
@@ -280,7 +279,7 @@ class PaperMetadataService:
         og_description = _safe_description(ai_og_description, fallback=fallback_og, max_len=180)
         twitter_description = _safe_description(ai_twitter_description, fallback=fallback_twitter, max_len=160)
         abstract = _safe_description(ai_abstract, fallback=fallback_abstract, max_len=320)
-        robots = "index, follow" if status == "published" else "noindex, nofollow"
+        robots = "index, follow"
 
         result = {
             "title": f"{title} - by {display_name} | Whitepapper",

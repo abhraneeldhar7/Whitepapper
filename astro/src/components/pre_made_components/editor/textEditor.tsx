@@ -2,7 +2,6 @@
 
 import { MarkdownEditorView, useMarkdownEditor, wysiwygToolbarConfigs } from "@gravity-ui/markdown-editor";
 import { ThemeProvider, Toaster, ToasterComponent, ToasterProvider } from "@gravity-ui/uikit";
-import { toast } from "sonner";
 import { forwardRef, useImperativeHandle, useEffect, useMemo, useRef, useState } from "react";
 import "./editor-custom.css";
 
@@ -77,37 +76,34 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
             const file = e.target.files?.[0];
             if (!file) return;
 
-            // 1. Create a temporary blob URL for instant preview
             const tempUrl = URL.createObjectURL(file);
 
-            // 2. Insert the placeholder image AT THE CURSOR POSITION immediately
             (editor as any).actions.addImage.run({ src: tempUrl, alt: 'Uploading...' });
+
+            const placeholderRegex = new RegExp(
+                `!\\[Uploading\\.\\.\\.\\]\\(${tempUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^)]*\\)`,
+                'g',
+            );
 
             const uploadPromise = (async () => {
                 const result = await onImageUpload(file);
 
                 if (result.success && result.url) {
                     const currentContent = editor.getValue();
-                    const newContent = currentContent.replace(tempUrl, result.url);
+                    const newContent = currentContent.replace(placeholderRegex, `![image](${result.url})`);
                     editor.replace(newContent);
                 } else {
                     const currentContent = editor.getValue();
-                    const placeholderString = `![Uploading...](${tempUrl})`;
-                    const newContent = currentContent.replace(placeholderString, '');
+                    const newContent = currentContent.replace(placeholderRegex, '');
                     editor.replace(newContent);
                     throw new Error(result.message || "Upload failed");
                 }
             })();
 
-            toast.promise(uploadPromise, {
-                loading: "Uploading image...",
-                error: (error) => error instanceof Error ? error.message : "Upload failed",
-            });
-
             try {
                 await uploadPromise;
             } finally {
-                URL.revokeObjectURL(tempUrl); // Clean up
+                URL.revokeObjectURL(tempUrl);
                 if (e.target) e.target.value = '';
             }
         };
@@ -187,7 +183,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
                         />
 
                         <div
-                            className="w-full cursor-text min-h-[36px]"
+                            className="w-full cursor-text min-h-[300px]"
                             onClick={() => {
                                 editor.moveCursor('end');
                                 editor.focus();

@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 import random
 from pathlib import Path
-from urllib.parse import urlsplit, urlunsplit
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
@@ -94,7 +93,7 @@ class StorageService:
             overwrite_path = Path(overwrite_name)
             filename = overwrite_name if overwrite_path.suffix else f"{overwrite_name}{ext}"
         else:
-            filename = f"{uuid4()}{ext}" if ext else str(uuid4())
+            filename = str(uuid4())
         object_path = f"{path_prefix}/{filename}"
         blob = self._bucket().blob(object_path)
         blob.upload_from_string(content, content_type=content_type)
@@ -108,19 +107,11 @@ class StorageService:
             deleted += 1
         return deleted
 
-    def delete_unreferenced_blobs(self, prefix: str, used_urls: set[str]) -> int:
-        normalized_used: set[str] = set()
-        for url in used_urls:
-            normalized_used.add(url)
-            parts = urlsplit(url)
-            normalized_used.add(urlunsplit((parts.scheme, parts.netloc, parts.path, "", "")))
-
+    def delete_unreferenced_blobs(self, prefix: str, haystacks: set[str]) -> int:
         deleted = 0
         for blob in self._bucket().list_blobs(prefix=prefix):
-            blob_url = blob.public_url
-            parts = urlsplit(blob_url)
-            blob_url_without_query = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
-            if blob_url not in normalized_used and blob_url_without_query not in normalized_used:
+            filename = Path(blob.name).name
+            if not any(filename in text for text in haystacks):
                 blob.delete()
                 deleted += 1
         return deleted
@@ -145,21 +136,6 @@ class StorageService:
         candidates = [blob for blob in self._bucket().list_blobs(prefix=prefix) if not str(blob.name or "").endswith("/")]
         if not candidates:
             return None
-
-        public_candidates = []
-        for blob in candidates:
-            try:
-                # Force public readability for pre-existing default thumbnails.
-                # This mirrors upload_image behavior where each uploaded blob is made public.
-                blob.make_public()
-                public_candidates.append(blob)
-            except Exception:
-                continue
-
-        if not public_candidates:
-            return None
-
-        blob = random.choice(public_candidates)
-        return blob.public_url
+        return random.choice(candidates).public_url
 
 storage_service = StorageService()

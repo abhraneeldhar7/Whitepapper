@@ -64,6 +64,7 @@ export type PaperDoc = {
   slug: string;
   body: string;
   status: "draft" | "public";
+  new: boolean;
   metadata?: PaperMetadata | null;
   createdAt: string;
   updatedAt: string;

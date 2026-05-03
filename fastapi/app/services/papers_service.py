@@ -1,3 +1,4 @@
+import threading
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
@@ -469,19 +470,21 @@ class PapersService:
 
         payload[PAPER_OWNER_KEY] = ownerId
         payload[PAPER_ID_KEY] = paperId
+        payload["new"] = True
         payload["createdAt"] = now
         payload["updatedAt"] = now
         payload["metadata"] = None
         firestore_store.create(PAPERS_COLLECTION, payload, doc_id=paperId)
 
-        if collectionId:
-            self._refresh_collection_pages_number(collectionId)
+        if collectionId or projectId:
+            resolved_pid = payload.get("projectId")
+            threading.Thread(
+                target=self._refresh_counts,
+                args=(collectionId, resolved_pid),
+                daemon=True,
+            ).start()
 
-        resolved_projectId = payload.get("projectId")
-        if resolved_projectId:
-            self._refresh_project_pages_number(resolved_projectId)
-
-        return {"paperId": paperId, "projectId": resolved_projectId}
+        return {"paperId": paperId, "projectId": payload.get("projectId")}
 
     def update(self, paperId: str, payload: dict) -> dict:
         current = firestore_store.get(PAPERS_COLLECTION, paperId)
@@ -503,6 +506,16 @@ class PapersService:
             if any(item.get(PAPER_ID_KEY) != paperId for item in existing):
                 raise HTTPException(status_code=409, detail="Paper slug already exists.")
             payload["slug"] = new_slug
+
+        is_first_save = bool(current.get("new"))
+        if is_first_save and not payload.get("slug"):
+            title = (payload.get("title") or current.get("title") or "").strip()
+            body_text = (payload.get("body") or current.get("body") or "").strip()
+            seed = title or (body_text[:60].strip() if body_text else None)
+            if seed:
+                payload["slug"] = normalize_slug(seed)
+        if is_first_save:
+            payload["new"] = False
 
         if not payload:
             return current
@@ -544,7 +557,11 @@ class PapersService:
             overwrite_name="thumbnail",
         )
         url = add_cache_buster(url)
-        self.update(paperId, {"thumbnailUrl": url})
+        threading.Thread(
+            target=firestore_store.update,
+            args=(PAPERS_COLLECTION, paperId, {"thumbnailUrl": url}),
+            daemon=True,
+        ).start()
         return {"url": url}
 
     def get_random_default_thumbnail_url(self) -> str:
@@ -611,17 +628,18 @@ class PapersService:
         )
         return {"url": url}
 
-    def delete_unused_embedded_images(self, ownerId: str, paperId: str, used_urls: set[str]) -> int:
+    def delete_unused_embedded_images(self, ownerId: str, paperId: str, body_text: str) -> int:
         return storage_service.delete_unreferenced_blobs(
             f"users/{ownerId}/papers/{paperId}/embedded/",
-            used_urls,
+            {body_text},
         )
 
-    def delete_thumbnail(self, ownerId: str, paperId: str) -> bool:
-        base = f"users/{ownerId}/papers/{paperId}/thumbnail/thumbnail"
-        return storage_service.delete_first_existing(
-            [base, *[f"{base}{ext}" for ext in SUPPORTED_IMAGE_EXTENSIONS]]
-        )
+    def delete_thumbnail(self, ownerId: str, paperId: str) -> None:
+        threading.Thread(
+            target=storage_service.delete_by_prefix,
+            args=(f"users/{ownerId}/papers/{paperId}/thumbnail/",),
+            daemon=True,
+        ).start()
 
     @staticmethod
     def extract_metadata_image_urls(metadata: dict | None) -> set[str]:
@@ -651,19 +669,30 @@ class PapersService:
         collectionId = current.get("collectionId")
         projectId = current.get("projectId")
         ownerId = current.get(PAPER_OWNER_KEY)
-        deleted_storage_objects = 0
-        if ownerId:
-            deleted_storage_objects = self.delete_paper_assets(ownerId, paperId)
+
         firestore_store.delete(PAPERS_COLLECTION, paperId)
 
+        if ownerId:
+            threading.Thread(
+                target=self.delete_paper_assets,
+                args=(ownerId, paperId),
+                daemon=True,
+            ).start()
+
+        if collectionId or projectId:
+            threading.Thread(
+                target=self._refresh_counts,
+                args=(collectionId, projectId),
+                daemon=True,
+            ).start()
+
+        return {"papers": 1, "storageObjects": 0}
+
+    def _refresh_counts(self, collectionId: str | None, projectId: str | None) -> None:
         if collectionId:
             self._refresh_collection_pages_number(collectionId)
         if projectId:
             self._refresh_project_pages_number(projectId)
-        return {
-            "papers": 1,
-            "storageObjects": deleted_storage_objects,
-        }
 
     def delete(self, paperId: str) -> dict[str, bool]:
         self.delete_cascade(paperId)

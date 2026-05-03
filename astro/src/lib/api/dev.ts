@@ -44,6 +44,7 @@ async function devGet<T>(
   const response = await fetch(url.toString(), {
     method: "GET",
     headers: buildDevHeaders(apiKey),
+    cache: "no-store",
   });
 
   if (!response.ok) {

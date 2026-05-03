@@ -19,15 +19,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
 import { copyToClipboardWithToast, normalizeSlug } from "@/lib/utils";
 import { sortPapersLatestFirst } from "@/lib/paperSort";
-import { createPaper, listOwnedPapers } from "@/lib/api/papers";
+import { createPaper, listCollectionPapers, listOwnedPapers } from "@/lib/api/papers";
 import {
   checkCollectionSlugAvailable,
   deleteCollection,
+  getCollection,
   updateCollection,
   updateCollectionVisibility,
 } from "@/lib/api/collections";
 import { MAX_DESCRIPTION_LENGTH, MAX_PAPERS_PER_USER } from "@/lib/limits";
 import type { CollectionDoc, PaperDoc } from "@/lib/entities";
+import { getProjectById } from "@/lib/api/projects";
 import EmptyPaperNotes from "../emptyPagesComp";
 import PaperCardComponent from "../paperCardComponent";
 import PaperPreviewSheet from "../paperPreviewSheet";
@@ -36,10 +38,6 @@ import ScrollToTop from "../scrollToTop";
 type CollectionWorkspaceProps = {
   projectId: string;
   collectionId: string;
-  initialProjectName: string;
-  initialCollection: CollectionDoc;
-  initialPages: PaperDoc[];
-  isMobileUA: boolean;
 };
 
 export default function CollectionWorkspace(props: CollectionWorkspaceProps) {
@@ -53,15 +51,14 @@ export default function CollectionWorkspace(props: CollectionWorkspaceProps) {
 function CollectionWorkspaceInner({
   projectId,
   collectionId,
-  initialProjectName,
-  initialCollection,
-  initialPages,
-  isMobileUA,
 }: CollectionWorkspaceProps) {
   const { user: currentUser } = useUser();
-  const [collection, setCollection] = useState<CollectionDoc | null>(initialCollection);
+  const isMobileUA = false;
+  const [loading, setLoading] = useState(true);
+  const [projectName, setProjectName] = useState("");
+  const [collection, setCollection] = useState<CollectionDoc | null>(null);
   const [draftCollection, setDraftCollection] = useState<CollectionDoc | null>(null);
-  const [pages, setPages] = useState<PaperDoc[]>(() => sortPapersLatestFirst(initialPages));
+  const [pages, setPages] = useState<PaperDoc[]>([]);
   const [creatingPage, setCreatingPage] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedPaper, setSelectedPaper] = useState<PaperDoc | null>(null);
@@ -73,17 +70,20 @@ function CollectionWorkspaceInner({
   const [slugCheckMessage, setSlugCheckMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const shell = document.getElementById("app-shell");
-    if (shell) shell.remove();
-  }, []);
-
-  useEffect(() => {
-    setCollection(initialCollection);
-    setDraftCollection(null);
-    setPages(sortPapersLatestFirst(initialPages));
-    setEditingCollection(false);
-    setSlugCheckMessage(null);
-  }, [initialCollection, initialPages]);
+    Promise.all([
+      getProjectById(projectId),
+      getCollection(collectionId),
+      listCollectionPapers(collectionId),
+    ]).then(([proj, col, p]) => {
+      if (proj) setProjectName(proj.name || "Project");
+      if (col) setCollection(col);
+      setPages(sortPapersLatestFirst(p));
+    }).catch(() => {}).finally(() => {
+      setLoading(false);
+      const shell = document.getElementById("app-shell");
+      if (shell) shell.remove();
+    });
+  }, [projectId, collectionId]);
 
   useEffect(() => {
     document.documentElement.dataset.collectionWorkspaceReady = "true";
@@ -241,7 +241,7 @@ function CollectionWorkspaceInner({
     setPreviewOpen(false);
   }
 
-  if (!collection || collection.collectionId !== collectionId) {
+  if (loading || !collection || collection.collectionId !== collectionId) {
     return null;
   }
 
@@ -263,7 +263,7 @@ function CollectionWorkspaceInner({
       >
         <div>
           <p className="text-sm text-muted-foreground">
-            <a href={`/dashboard/${projectId}`} data-astro-prefetch="viewport" className="transition-all duration-300 hover:text-foreground">{initialProjectName}</a> / {collectionNameForDisplay}
+            <a href={`/dashboard/${projectId}`} data-astro-prefetch="viewport" className="transition-all duration-300 hover:text-foreground">{projectName}</a> / {collectionNameForDisplay}
           </p>
         </div>
 

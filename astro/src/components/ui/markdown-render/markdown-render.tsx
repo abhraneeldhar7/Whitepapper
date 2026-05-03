@@ -70,6 +70,35 @@ function extractTextContent(node: ReactNode): string {
     return extractTextContent(reactNode.props?.children);
 }
 
+function remarkHighlight(): any {
+    return function (tree: any) {
+        function walk(nodes: any[], parent: any, nodeIndex: number) {
+            for (let i = 0; i < nodes.length; i++) {
+                const node = nodes[i];
+                if (node.children) {
+                    walk(node.children, node, i);
+                }
+                if (node.type === 'text' && parent) {
+                    const match = /==([^=\n]+)==/.exec(node.value);
+                    if (!match) continue;
+                    const before = node.value.slice(0, match.index);
+                    const marked = match[1];
+                    const after = node.value.slice(match.index + match[0].length);
+                    const children: any[] = [];
+                    if (before) children.push({ type: 'text', value: before });
+                    children.push({ type: 'mark', children: [{ type: 'text', value: marked }], data: { hName: 'mark' } });
+                    if (after) children.push({ type: 'text', value: after });
+                    parent.children.splice(i, 1, ...children);
+                    i += children.length - 1;
+                }
+            }
+        }
+        walk(tree.children, null, -1);
+    };
+}
+
+const highlightSchema = { ...defaultSchema, tagNames: [...(defaultSchema.tagNames || []), 'mark'] };
+
 export default function MarkdownRender({ content, contentContainerId }: PostRenderProps) {
     const siteUrl = String(import.meta.env.PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4321')).trim();
     let imageIndex = 0;
@@ -79,10 +108,10 @@ export default function MarkdownRender({ content, contentContainerId }: PostRend
             <div id={contentContainerId} className="markdownDiv">
                 <ReactMarkdown
                     children={content}
-                    remarkPlugins={[remarkGfm]}
+                    remarkPlugins={[remarkGfm, remarkHighlight as any]}
                     rehypePlugins={[
                         rehypeRaw,
-                        [rehypeSanitize, defaultSchema],
+                        [rehypeSanitize, highlightSchema],
                         rehypeShikiSync,
                     ]}
                     components={{

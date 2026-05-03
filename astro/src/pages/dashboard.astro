@@ -2,30 +2,11 @@
 import Layout from "@/layouts/Layout.astro";
 import DashboardApp from "@/components/dashboard/DashboardApp";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
-import { createApiClient } from "@/lib/api/client";
-import { listStandalonePapers } from "@/lib/api/papers";
-import { listProjects } from "@/lib/api/projects";
-import { isMobileUserAgent } from "@/lib/userAgent";
-
-const { getToken } = Astro.locals.auth();
-const serverClient = createApiClient(getToken);
-
-const [initialProjects, initialPages] = await Promise.all([
-  listProjects(serverClient),
-  listStandalonePapers(serverClient),
-]);
-
-const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
 ---
 
 <Layout showSiteNav={false} hideUserProvider={true}>
   <div id="app-shell" style="position: fixed; inset: 0; z-index: 100; background: var(--background);">
     <DashboardSkeleton />
   </div>
-  <DashboardApp
-    client:only="react"
-    initialProjects={initialProjects}
-    initialPages={initialPages}
-    isMobileUA={isMobileUA}
-  />
+  <DashboardApp client:only="react" />
 </Layout>

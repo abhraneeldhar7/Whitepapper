@@ -2,48 +2,14 @@
 import CollectionWorkspace from "@/components/collection/CollectionWorkspace";
 import CollectionWorkspaceSkeleton from "@/components/collection/CollectionWorkspaceSkeleton";
 import Layout from "@/layouts/Layout.astro";
-import { createApiClient } from "@/lib/api/client";
-import { getCollection } from "@/lib/api/collections";
-import { getProjectById } from "@/lib/api/projects";
-import { listCollectionPapers } from "@/lib/api/papers";
-import { isMobileUserAgent } from "@/lib/userAgent";
 
-const { getToken } = Astro.locals.auth();
 const projectId = Astro.params.projectId as string;
 const collectionId = Astro.params.collectionId as string;
-
-const isMobileUA = isMobileUserAgent(Astro.request.headers.get("user-agent"));
-
-const serverClient = createApiClient(getToken);
-
-const [collectionResult, pagesResult, projectResult] = await Promise.all([
-  getCollection(collectionId, serverClient).catch(() => null),
-  listCollectionPapers(collectionId, serverClient).catch(() => []),
-  getProjectById(projectId, serverClient).catch(() => null),
-]);
-
-if (!collectionResult) {
-  return Astro.redirect("/404");
-}
-
-if (collectionResult.projectId !== projectId) {
-  return Astro.redirect("/404");
-}
-
-const initialProjectName = projectResult?.name || "Project";
 ---
 
 <Layout showSiteNav={false} hideUserProvider={true}>
   <div id="app-shell" style="position: fixed; inset: 0; z-index: 100; background: var(--background);">
     <CollectionWorkspaceSkeleton />
   </div>
-  <CollectionWorkspace
-    client:only="react"
-    projectId={projectId}
-    collectionId={collectionId}
-    initialProjectName={initialProjectName}
-    initialCollection={collectionResult}
-    initialPages={pagesResult}
-    isMobileUA={isMobileUA}
-  />
+  <CollectionWorkspace client:only="react" projectId={projectId} collectionId={collectionId} />
 </Layout>
