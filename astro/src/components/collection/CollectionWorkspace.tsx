@@ -212,12 +212,17 @@ function CollectionWorkspaceInner({
       error: (error) => (error instanceof Error ? error.message : "Failed to update collection status."),
     });
 
+    const targetStatus = nextIsPublic ? "public" : "draft";
+    setCollection((prev) => prev ? { ...prev, isPublic: nextIsPublic } : prev);
+    setPages((prev) => prev.map((p) => ({ ...p, status: targetStatus as PaperDoc["status"] })));
+
     try {
       const updated = await visibilityPromise;
       setCollection(updated);
       setDraftCollection((prev) => (prev ? { ...prev, isPublic: updated.isPublic, updatedAt: updated.updatedAt } : prev));
     } catch {
-      // toast.promise handles failure UI.
+      setCollection((prev) => prev ? { ...prev, isPublic: collection.isPublic } : prev);
+      setPages((prev) => prev.map((p) => ({ ...p, status: collection.isPublic ? "public" : "draft" as PaperDoc["status"] })));
     } finally {
       setUpdatingCollectionVisibility(false);
     }

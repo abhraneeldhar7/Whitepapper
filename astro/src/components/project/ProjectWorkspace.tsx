@@ -242,6 +242,12 @@ function ProjectWorkspaceInner({ projectId }: ProjectWorkspaceProps) {
       error: (error) => (error instanceof Error ? error.message : "Failed to update project status."),
     });
 
+    const targetStatus = nextIsPublic ? "public" : "draft";
+    const prevPublic = project.isPublic;
+    setProject((prev) => prev ? { ...prev, isPublic: nextIsPublic } : prev);
+    setCollections((prev) => prev.map((c) => ({ ...c, isPublic: nextIsPublic })));
+    setPages((prev) => prev.map((p) => ({ ...p, status: targetStatus as PaperDoc["status"] })));
+
     try {
       const updated = await visibilityPromise;
       setProject((prev) => prev ? {
@@ -259,7 +265,9 @@ function ProjectWorkspaceInner({ projectId }: ProjectWorkspaceProps) {
           : prev,
       );
     } catch {
-      // toast.promise handles failure UI.
+      setProject((prev) => prev ? { ...prev, isPublic: prevPublic } : prev);
+      setCollections((prev) => prev.map((c) => ({ ...c, isPublic: prevPublic })));
+      setPages((prev) => prev.map((p) => ({ ...p, status: prevPublic ? "public" : "draft" as PaperDoc["status"] })));
     } finally {
       setUpdatingProjectVisibility(false);
     }
