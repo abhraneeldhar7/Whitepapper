@@ -9,7 +9,7 @@ import { MAX_LANDING_PAGE_WIDTH } from "@/lib/design";
 export default function ProjectWorkspaceSkeleton() {
   return (
     <div className="min-h-screen bg-background px-5 md:px-15 pt-20">
-      <div className="z-[10] flex p-[10px] justify-end fixed top-0 left-0 w-full">
+      <div className="z-[10] flex justify-end fixed top-5 right-5 ">
         <Skeleton className="h-9 w-9 rounded-full" />
       </div>
 

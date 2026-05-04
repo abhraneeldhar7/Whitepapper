@@ -282,9 +282,26 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
     try { localStorage.setItem("wp_typingSound", checked ? "1" : "0"); } catch {}
   }
 
+  function refreshMetadataUrls(meta: PaperMetadata, username: string, resolvedSlug: string): PaperMetadata {
+    const siteUrl = String(import.meta.env.PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "");
+    if (!siteUrl) return meta;
+    const authorUrl = `${siteUrl}/${username}`;
+    const canonical = `${authorUrl}/${resolvedSlug}`.rstrip("/");
+    const r = { ...meta };
+    if (!r.authorUrl || r.authorUrl.startsWith(siteUrl)) r.authorUrl = authorUrl;
+    if (!r.ogAuthorUrl || r.ogAuthorUrl.startsWith(siteUrl)) r.ogAuthorUrl = authorUrl;
+    if (!r.canonical || r.canonical.startsWith(siteUrl)) r.canonical = canonical;
+    return r;
+  }
+
   async function onSave(slugOverride?: string) {
     setSaving(true);
     try {
+      let saveMetadata = metadata;
+      if (user?.username && metadata) {
+        saveMetadata = refreshMetadataUrls(metadata, user.username, slugOverride ?? slug);
+      }
+
       const updatePayload: Parameters<typeof updatePaper>[1] = {
         title,
         slug: slugOverride ?? slug,
@@ -292,8 +309,8 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
         thumbnailUrl: pageDetails.thumbnailUrl || null,
         status: paperDoc.status,
       };
-      if (metadata) {
-        updatePayload.metadata = metadata;
+      if (saveMetadata) {
+        updatePayload.metadata = saveMetadata;
       }
 
       const updated = await updatePaper(paperId, updatePayload);

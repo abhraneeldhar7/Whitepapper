@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 from fastapi import HTTPException
 
-from app.core.config import get_settings
 from app.core.firestore_store import firestore_store
 from app.core.reserved_paths import is_reserved_username
 from app.services.collections_service import collections_service
@@ -22,7 +21,6 @@ USERS_COLLECTION = "users"
 USER_ID_KEY = "userId"
 USERNAME_KEY = "username"
 USERNAME_UPDATE_COOLDOWN = timedelta(days=7)
-PAPERS_COLLECTION = "papers"
 
 
 class UserService:
@@ -112,31 +110,6 @@ class UserService:
             return True
         return utc_now() - updatedAt >= USERNAME_UPDATE_COOLDOWN
 
-    @staticmethod
-    def _refresh_user_papers_after_username_change(userId: str, new_username: str) -> None:
-        papers = papers_service.list_owned(userId)
-        now = utc_now()
-
-        sevenDaysAgo = utc_now() - timedelta(days=7)
-        recentPapers = [p for p in papers if (p.get("updatedAt") or p.get("createdAt") or utc_now()) >= sevenDaysAgo]
-
-        for paper in recentPapers:
-            paperId = paper.get("paperId")
-            if not paperId:
-                continue
-            try:
-                metadata = paper.get("metadata")
-                if isinstance(metadata, dict):
-                    author_url = f"{get_settings().public_site_url}/{new_username}"
-                    slug = paper.get("slug")
-                    canonical = f"{author_url}/{slug}".rstrip("/")
-                    metadata["authorUrl"] = author_url
-                    metadata["canonical"] = canonical
-                    metadata["updatedAt"] = now
-                    firestore_store.update(PAPERS_COLLECTION, paperId, {"metadata": metadata, "updatedAt": now})
-            except Exception:
-                logger.exception("Failed to update lightweight metadata for paperId=%s", paperId)
-
     def update_user(self, userId: str, user_doc: dict) -> dict:
         current = firestore_store.get(USERS_COLLECTION, userId)
         if not current:
@@ -193,8 +166,6 @@ class UserService:
 
         firestore_store.update(USERS_COLLECTION, userId, payload)
         current.update(payload)
-        if usernameChanged:
-            self._refresh_user_papers_after_username_change(userId, nextUsername)
         return current
 
     def get_by_username(self, username: str) -> dict:
