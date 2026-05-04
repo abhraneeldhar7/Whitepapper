@@ -464,6 +464,17 @@
     margin-bottom: 0;
 }
 
+.g-md-img-size-node-view__wrapper {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 1.5em 0;
+}
+
+.g-md-img-size-node-view__wrapper img {
+    margin: 0;
+}
+
 :is(.g-md-editor-component, .g-md-editor-component .yfm) img {
     width: 100%;
     height: auto;

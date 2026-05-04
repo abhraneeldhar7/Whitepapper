@@ -90,8 +90,7 @@ class StorageService:
             )
 
         if overwrite_name:
-            overwrite_path = Path(overwrite_name)
-            filename = overwrite_name if overwrite_path.suffix else f"{overwrite_name}{ext}"
+            filename = overwrite_name
         else:
             filename = str(uuid4())
         object_path = f"{path_prefix}/{filename}"

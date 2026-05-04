@@ -39,7 +39,7 @@ export async function uploadImage<T>(
 
   try {
     const result = await uploadPromise;
-    options.onSuccess?.(result);
+    await options.onSuccess?.(result);
     return result;
   } catch {
     return undefined;

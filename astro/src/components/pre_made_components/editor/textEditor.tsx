@@ -13,12 +13,13 @@ export interface TextEditorRef {
 interface TextEditorProps {
     onChange: (content: string) => void;
     onImageUpload: (file: File) => Promise<{ success: boolean; url?: string; message?: string }>;
+    preloadImage?: (url: string) => Promise<void>;
     initialContent?: string;
     placeholder?: string;
 }
 
 const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
-    ({ onChange, onImageUpload, initialContent = "", placeholder = "press / for options" }, ref) => {
+    ({ onChange, onImageUpload, preloadImage, initialContent = "", placeholder = "press / for options" }, ref) => {
         const fileInputRef = useRef<HTMLInputElement>(null);
         const editor = useMarkdownEditor({
             md: {
@@ -33,6 +34,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
                 uploadFile: async (file: File) => {
                     const result = await onImageUpload(file);
                     if (result.success && result.url) {
+                        await preloadImage?.(result.url);
                         return { url: result.url };
                     } else {
                         throw new Error(result.message || "Upload failed");
@@ -89,6 +91,7 @@ const TextEditor = forwardRef<TextEditorRef, TextEditorProps>(
                 const result = await onImageUpload(file);
 
                 if (result.success && result.url) {
+                    await preloadImage?.(result.url);
                     const currentContent = editor.getValue();
                     const newContent = currentContent.replace(placeholderRegex, `![image](${result.url})`);
                     editor.replace(newContent);

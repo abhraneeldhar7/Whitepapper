@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowUpRightFromSquare,
   CodeXmlIcon,
@@ -148,7 +148,6 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
   const [uploadingEmbeddedCount, setUploadingEmbeddedCount] = useState(0);
   const [tempUploadingThumbnail, setTempUploadingThumbnail] = useState<string | null>(null);
   const [metadataDialogOpen, setMetadataDialogOpen] = useState(false);
-  const [metadataDraft, setMetadataDraft] = useState<PaperMetadata | null>(paperDoc.metadata ?? null);
   const [metadataGenerating, setMetadataGenerating] = useState(false);
   const [uploadingMetadataImageMap, setUploadingMetadataImageMap] = useState<Record<string, boolean>>({});
   const [tempMetadataImageMap, setTempMetadataImageMap] = useState<Record<string, string>>({});
@@ -166,6 +165,16 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
   const [thumbnailPopoverOpen, setThumbnailPopoverOpen] = useState(false);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const topBarRef = useRef<HTMLDivElement>(null);
+  const hiddenImgRef = useRef<HTMLImageElement>(null);
+
+  const preloadImage = useCallback((url: string): Promise<void> => {
+    return new Promise((resolve) => {
+      if (hiddenImgRef.current) {
+        hiddenImgRef.current.src = url;
+      }
+      setTimeout(resolve, 500);
+    });
+  }, []);
 
   const editorRef = useRef<TextEditorRef>(null);
 
@@ -418,7 +427,8 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
         localPreview = URL.createObjectURL(uploadableFile);
         setTempUploadingThumbnail(localPreview);
       },
-      onSuccess: (uploaded) => {
+      onSuccess: async (uploaded) => {
+        await preloadImage(uploaded.url);
         setPaperDoc((prev) => ({ ...prev, thumbnailUrl: uploaded.url }));
       },
     });
@@ -515,10 +525,7 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
   };
 
   const handleOpenMetadataDialog = () => {
-    if (!metadata) {
-      return;
-    }
-    setMetadataDraft(structuredClone(metadata));
+    if (!metadata) return;
     setMetadataDialogOpen(true);
   };
 
@@ -531,7 +538,6 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
         metadata: paperDoc.metadata ?? null,
       });
       setPaperDoc((prev) => ({ ...prev, metadata: generated }));
-      setMetadataDraft(structuredClone(generated));
       toast.success("Metadata generated");
     } catch (error) {
       console.error("generateMetadata failed:", error);
@@ -546,46 +552,31 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
     type: "text" | "number" | "boolean" | "list",
     value: string,
   ) => {
-    setMetadataDraft((prev) => {
-      if (!prev) {
-        return prev;
-      }
-
-      const next = { ...prev };
+    setPaperDoc((prev) => {
+      const next = { ...prev.metadata } as any;
+      if (!next || !prev.metadata) return prev;
       if (type === "number") {
         const parsed = Number(value);
-        (next as any)[key] = Number.isFinite(parsed) ? parsed : 0;
+        next[key] = Number.isFinite(parsed) ? parsed : 0;
       } else if (type === "boolean") {
-        (next as any)[key] = value.toLowerCase() === "true";
+        next[key] = value.toLowerCase() === "true";
       } else if (type === "list") {
-        (next as any)[key] = value
-          .split(",")
-          .map((item) => item.trim())
-          .filter(Boolean);
+        next[key] = value.split(",").map((item: string) => item.trim()).filter(Boolean);
       } else {
-        (next as any)[key] = value;
+        next[key] = value;
       }
-      return next;
+      return { ...prev, metadata: next as PaperMetadata };
     });
   };
 
   const handleClearMetadataImage = (field: keyof PaperMetadata) => {
-    setMetadataDraft((prev) => {
-      if (!prev) {
-        return prev;
-      }
-      return {
-        ...prev,
-        [field]: "",
-      };
+    setPaperDoc((prev) => {
+      if (!prev.metadata) return prev;
+      return { ...prev, metadata: { ...prev.metadata, [field]: "" } };
     });
   };
 
   const handleMetadataImageUpload = async (field: keyof PaperMetadata, file: File) => {
-    if (!metadataDraft) {
-      return;
-    }
-
     setUploadingMetadataImageMap((prev) => ({ ...prev, [field]: true }));
     let localPreview: string | null = null;
 
@@ -605,14 +596,9 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
       setTempMetadataImageMap((prev) => ({ ...prev, [field]: localPreview as string }));
 
       const uploaded = await uploadPaperMetadataImage(paperId, String(field), uploadableFile);
-      setMetadataDraft((prev) => {
-        if (!prev) {
-          return prev;
-        }
-        return {
-          ...prev,
-          [field]: uploaded.url,
-        };
+      setPaperDoc((prev) => {
+        if (!prev.metadata) return prev;
+        return { ...prev, metadata: { ...prev.metadata, [field]: uploaded.url } };
       });
     } catch (error) {
       console.error(error);
@@ -625,13 +611,6 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
       }
       setUploadingMetadataImageMap((prev) => ({ ...prev, [field]: false }));
     }
-  };
-
-  const handleSaveMetadataDraftLocally = () => {
-    if (!metadataDraft) {
-      return;
-    }
-    setPaperDoc((prev) => ({ ...prev, metadata: structuredClone(metadataDraft) }));
   };
 
   const handleDelete = async () => {
@@ -650,13 +629,14 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
   };
 
   return (
-    <div className="min-h-screen flex flex-col w-full pt-15 relative">
+    <div className="min-h-screen flex flex-col w-full pt-15 relative" onClick={() => setIsTopBarPinned(false)}>
       <ScrollToTop />
       <div
         className="fixed top-0 left-0 w-full z-[10] md:pb-8 md:bg-[unset] bg-background/20 md:backdrop-blur-[0px] backdrop-blur-[30px]"
         data-editor-topbar
         ref={topBarRef}
         onPointerDownCapture={() => setIsTopBarPinned(true)}
+        onClick={(e) => e.stopPropagation()}
         onMouseEnter={() => setIsTopBarHovered(true)}
         onMouseLeave={() => setIsTopBarHovered(false)}
       >
@@ -998,6 +978,7 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
                     setDefaultThumbnailsLoading(true);
                     try {
                       const result = await getRandomDefaultThumbnailUrl();
+                      await preloadImage(result.url);
                       setPaperDoc((prev) => ({ ...prev, thumbnailUrl: result.url }));
                       setThumbnailPopoverOpen(false);
                     } catch {
@@ -1086,6 +1067,7 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
                 setPaperDoc((prev) => ({ ...prev, body: nextBody }));
               }}
               onImageUpload={onEditorImageUpload}
+              preloadImage={preloadImage}
             />
           </div>
         </div>
@@ -1103,13 +1085,13 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
           <DialogHeader>
             <DialogTitle>Paper metadata</DialogTitle>
           </DialogHeader>
-          {metadataDraft ? (
+          {metadata ? (
             <div className="flex flex-col gap-3 min-h-0 flex-1">
               <ScrollArea className="min-h-0 flex-1 pr-3">
                 <div className="space-y-4">
                   {metadataFieldConfig.map((fieldConfig) => {
                     const key = fieldConfig.key;
-                    const rawValue = metadataDraft[key];
+                    const rawValue = metadata[key];
                     const currentPreview = tempMetadataImageMap[String(key)];
                     const isUploadingImage = Boolean(uploadingMetadataImageMap[String(key)]);
 
@@ -1231,13 +1213,13 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
                     <Label>jsonLd</Label>
                     <Textarea
                       className="mt-2 min-h-[200px] resize-y font-mono text-xs break-all whitespace-pre-wrap"
-                      value={metadataDraft.jsonLd ? JSON.stringify(metadataDraft.jsonLd, null, 2) : ""}
+                      value={metadata.jsonLd ? JSON.stringify(metadata.jsonLd, null, 2) : ""}
                       onChange={(event) => {
                         try {
                           const parsed = JSON.parse(event.target.value);
-                          setMetadataDraft((prev) => {
-                            if (!prev) return prev;
-                            return { ...prev, jsonLd: parsed };
+                          setPaperDoc((prev) => {
+                            if (!prev.metadata) return prev;
+                            return { ...prev, metadata: { ...prev.metadata, jsonLd: parsed } };
                           });
                         } catch {
                           // allow editing invalid JSON
@@ -1248,13 +1230,6 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
                 </div>
               </ScrollArea>
               <DialogFooter>
-                <Button
-                  type="button"
-                  onClick={handleSaveMetadataDraftLocally}
-                >
-                  <SaveIcon />
-                  Save
-                </Button>
                 <Button
                   type="button"
                   disabled={metadataGenerating}
@@ -1280,6 +1255,7 @@ export default function WriteEditor({ initialPaper, isMobileUA }: WriteEditorPro
         status={pageDetails.status}
       />
 
+      <img ref={hiddenImgRef} alt="" className="absolute opacity-0 pointer-events-none" style={{ width: 1, height: 1, top: 0, left: 0 }} />
     </div >
   );
 }
